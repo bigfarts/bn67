@@ -1,0 +1,601 @@
+#include "runtime.h"
+
+BN6_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
+BN6_SPRITE(searchman_reticle_alt_sprite, "build/searchman-reticle-alt.bin");
+BN6_SPRITE(searchman_reticle_sprite, "build/searchman-reticle.bin");
+
+BN6_INCBIN(SearchmanIcon, "build/searchman-icon.bin");
+BN6_INCBIN(SearchmanImage, "build/searchman-image.bin");
+BN6_INCBIN(SearchmanPaletteBase, "build/searchman-pal-base.bin");
+BN6_ASM_RESOURCE(
+    SearchmanPaletteEx,
+    ".incbin \"build/searchman-pal-base.bin\",0,0x1A\n"
+    ".short 0x03FF,0x0299,0x0190\n"
+);
+BN6_INCBIN(SearchmanPaletteSp, "build/searchman-pal-sp.bin");
+
+static const uint8_t VISIBLE_FLAG = 2;
+static const uint8_t COLLISION_FLAG = 0x10;
+static const uint8_t ACTOR_ACTIVE_STATE = 4;
+static const uint8_t ACTOR_DESTROY_STATE = 8;
+static const uint8_t APPEAR_PHASE = 0;
+static const uint8_t ATTACK_PHASE = 4;
+static const uint8_t EXIT_PHASE = 8;
+static const uint8_t RETICLE_SCAN_PHASE = 4;
+static const uint8_t RETICLE_LOCKED_PHASE = 8;
+static const uint8_t RETICLE_NORMAL_HIT = 25;
+static const uint8_t RETICLE_FINAL_HIT = 29;
+static const uint8_t SHOT_COUNT = 5;
+static const uint16_t PANEL_WAIT_FRAMES = 20;
+static const uint16_t SHOT_FRAMES = 10;
+static const uint16_t SHOT_COOLDOWN_FRAMES = 30;
+static const uint16_t EXIT_FRAMES = 5;
+static const uint16_t RETICLE_LIFETIME = 300;
+static const uint16_t RETICLE_LOCK_FRAMES = 50;
+static const uint32_t VALID_PANEL_FLAGS = 0x10;
+static const uint32_t IMPACT_RANDOM_MASK = 0x0F;
+static const uint32_t HIT_COLLISION_SELECTOR = 5;
+static const uint32_t PRESENT_COLLISION_REGION = HIT_COLLISION_SELECTOR << 3;
+
+struct SearchmanActorWork {
+    uint32_t scale;                      // +0x60
+};
+
+struct SearchmanReticleWork {
+    Object *player;                      // +0x60
+    uint32_t alternate;                  // +0x64
+};
+
+static bool timer_positive_after_decrement(Object *self)
+{
+    int32_t timer = (int32_t)self->timer - 1;
+    self->timer = (uint16_t)timer;
+    return timer > 0;
+}
+
+static void set_animation(Object *self, uint8_t animation)
+{
+    self->animation = animation;
+    self->palette = 0;
+    bn6_self_sprite_set_animation(animation);
+    bn6_self_sprite_load_animation_data();
+}
+
+static void pulse_scale(Object *self)
+{
+    volatile struct SearchmanActorWork *work =
+        (volatile struct SearchmanActorWork *)self->work;
+    bn6_self_sprite_set_scale(work->scale * 1057u);
+}
+
+static void actor_animate(Object *self)
+{
+    (void)self;
+    bn6_self_object_update_timestop();
+    pulse_scale(self);
+}
+
+static void actor_destroy(Object *self)
+{
+    volatile uint8_t *completion = self->completion;
+    if (completion != NULL) {
+        *completion = 0;
+    }
+    bn6_self_object_free();
+}
+
+static void appear(Object *self)
+{
+    volatile struct SearchmanActorWork *work =
+        (volatile struct SearchmanActorWork *)self->work;
+    if (self->substate == 0) {
+        work->scale = 0x1F;
+        bn6_play_sound(0x94);
+        self->timer = 0;
+        self->substate = 4;
+        return;
+    }
+
+    self->flags |= VISIBLE_FLAG;
+    ++self->timer;
+    if ((self->timer & 2u) != 0) {
+        self->flags &= (uint8_t)~VISIBLE_FLAG;
+    }
+
+    int32_t scale = (int32_t)work->scale - 2;
+    work->scale = (uint32_t)scale;
+    if (scale > 0) {
+        return;
+    }
+
+    self->flags |= VISIBLE_FLAG;
+    work->scale = 0;
+    self->phase_timer = 4;
+}
+
+static void wait_for_panel(Object *self)
+{
+    if (self->substate == 0) {
+        self->timer = PANEL_WAIT_FRAMES;
+        self->substate = 4;
+        return;
+    }
+    if (timer_positive_after_decrement(self)) {
+        return;
+    }
+    if (bn6_panel_has_flags(
+            self->panel_x,
+            self->panel_y,
+            VALID_PANEL_FLAGS,
+            0
+        ) == 0) {
+        self->state_word = ACTOR_DESTROY_STATE;
+        return;
+    }
+    self->phase = ATTACK_PHASE;
+    self->phase_timer = 0;
+}
+
+static void appear_phase(Object *self)
+{
+    if (self->phase_timer_low == 0) {
+        appear(self);
+    } else {
+        wait_for_panel(self);
+    }
+}
+
+static void spawn_reticle(Object *actor, Object *player, uint32_t alternate)
+{
+    Object *reticle = bn6_spawn_type4(CUSTOM_TYPE4_ID, actor->variant);
+    if (reticle == NULL) {
+        return;
+    }
+    volatile struct SearchmanReticleWork *work =
+        (volatile struct SearchmanReticleWork *)reticle->work;
+    work->player = player;
+    reticle->owner_word = actor->owner_word;
+    work->alternate = alternate;
+    reticle->parent = actor;
+    reticle->kind = BN6_OBJECT_KIND(searchman_reticle_main);
+}
+
+static void start_reticle(Object *self)
+{
+    if (self->substate == 0) {
+        self->animation = 0x10;
+        self->subvariant = 0;
+        self->target_panel_x = 0;
+        self->target_panel_y = 0;
+        spawn_reticle(self, self->parent, 0);
+        self->substate = 4;
+        return;
+    }
+    if (self->target_panel_x != 0) {
+        self->phase_timer = 4;
+    }
+}
+
+static void spawn_hit(Object *actor, bool final_alternate)
+{
+    uint32_t visual = final_alternate
+        ? RETICLE_FINAL_HIT
+        : RETICLE_NORMAL_HIT;
+    Object *hit = bn6_spawn_type3(CUSTOM_TYPE3_ID, 0, 0, 0, visual);
+    if (hit == NULL) {
+        return;
+    }
+    hit->panel_x = actor->target_panel_x;
+    hit->panel_y = actor->target_panel_y;
+    hit->parameter = actor->parameter;
+    hit->attack = actor->attack;
+    hit->owner_word = actor->owner_word;
+    hit->kind = BN6_OBJECT_KIND(searchman_hit_main);
+    hit->flags |= COLLISION_FLAG;
+}
+
+static void next_shot(Object *self)
+{
+    self->palette = 0x12;
+    self->timer = SHOT_FRAMES;
+    bn6_play_sound(0xB9);
+    self->removal_state = 0;
+    self->substate = 4;
+}
+
+static void fire_tick(Object *self)
+{
+    if (self->timer == 7 && self->removal_state == 0) {
+        self->removal_state = 1;
+        bool alternate = self->subvariant != 0 && self->animation_state == 1;
+        spawn_hit(self, alternate);
+    }
+
+    if (timer_positive_after_decrement(self)) {
+        return;
+    }
+    --self->animation_state;
+    if ((int8_t)self->animation_state > 0) {
+        next_shot(self);
+    } else {
+        self->phase_timer = 8;
+    }
+}
+
+static void fire_shots(Object *self)
+{
+    if (self->substate == 0) {
+        self->animation_state = SHOT_COUNT;
+        self->animation = 0x11;
+        next_shot(self);
+    } else {
+        fire_tick(self);
+    }
+}
+
+static void shot_cooldown(Object *self)
+{
+    if (self->substate == 0) {
+        self->animation = 0;
+        self->timer = SHOT_COOLDOWN_FRAMES;
+        self->substate = 4;
+        return;
+    }
+    if (!timer_positive_after_decrement(self)) {
+        self->phase = EXIT_PHASE;
+        self->phase_timer = 0;
+    }
+}
+
+static void attack_phase(Object *self)
+{
+    if (self->phase_timer_low == 0) {
+        start_reticle(self);
+    } else if (self->phase_timer_low == 4) {
+        fire_shots(self);
+    } else {
+        shot_cooldown(self);
+    }
+}
+
+static void exit_phase(Object *self)
+{
+    if (self->phase_timer_low == 0) {
+        self->animation_word = 4;
+        self->timer = EXIT_FRAMES;
+        self->phase_timer_low = 4;
+        return;
+    }
+    if (!timer_positive_after_decrement(self)) {
+        self->flags &= (uint8_t)~VISIBLE_FLAG;
+        self->state_word = ACTOR_DESTROY_STATE;
+    }
+}
+
+static void actor_update(Object *self)
+{
+    if (self->phase == APPEAR_PHASE) {
+        appear_phase(self);
+    } else if (self->phase == ATTACK_PHASE) {
+        attack_phase(self);
+    } else {
+        exit_phase(self);
+    }
+    actor_animate(self);
+}
+
+static void actor_init(Object *self)
+{
+    bn6_self_sprite_load(
+        0x80,
+        BN6_SPRITE_GROUP(searchman_battle_sprite),
+        BN6_SPRITE_ID(searchman_battle_sprite)
+    );
+    bn6_self_sprite_load_animation_data();
+    bn6_self_sprite_property_2e3c();
+    set_animation(self, 0);
+    bn6_self_object_set_coords();
+    self->z = 0;
+    bn6_self_sprite_set_flip(bn6_self_object_get_flip());
+    bn6_self_sprite_set_palette(0);
+    bn6_self_sprite_set_scale(0x7FFF);
+    self->flags |= VISIBLE_FLAG;
+    self->state_word = ACTOR_ACTIVE_STATE;
+    actor_update(self);
+}
+
+static bool reticle_key_pressed(const Object *self, uint16_t mask)
+{
+    const volatile uint16_t *input = self->runtime_data;
+    return (*input & mask) == mask;
+}
+
+static void reticle_commit_target(Object *self)
+{
+    Object *actor = self->parent;
+    actor->target_panel_x = self->panel_x;
+    actor->target_panel_y = self->panel_y;
+}
+
+static void reticle_find_bounds(Object *self, int32_t *enemy, int32_t *own)
+{
+    int32_t direction = -(int32_t)bn6_object_front_direction_for(self);
+    int32_t panel = 6 - 5 * (int32_t)(self->owner ^ self->owner_aux);
+
+    while (panel >= 1 && panel <= 6) {
+        if (bn6_panel_get_parameters((uint32_t)panel, self->owner) != 0) {
+            break;
+        }
+        panel += direction;
+    }
+    *own = panel;
+
+    while (panel >= 1 && panel <= 6) {
+        if (bn6_panel_get_parameters((uint32_t)panel, self->owner ^ 1u) == 3) {
+            break;
+        }
+        panel += direction;
+    }
+    *enemy = panel - direction;
+}
+
+static void reticle_set_initial_panel(Object *self)
+{
+    int32_t enemy;
+    int32_t own;
+    reticle_find_bounds(self, &enemy, &own);
+    self->panel_x = (uint8_t)enemy;
+
+    int32_t front = (int32_t)bn6_object_front_direction_for(self);
+    self->target_panel_y = (uint8_t)(own + front);
+    self->target_panel_x = (uint8_t)(enemy - front);
+    self->panel_y = 1;
+}
+
+static bool reticle_change_row(Object *self)
+{
+    int32_t row = self->panel_y;
+    if (self->subvariant != 0) {
+        ++row;
+        if (row <= 3) {
+            self->panel_y = (uint8_t)row;
+            return false;
+        }
+        self->subvariant = 0;
+    } else {
+        --row;
+        if (row >= 1) {
+            self->panel_y = (uint8_t)row;
+            return false;
+        }
+        self->subvariant = 1;
+    }
+    return true;
+}
+
+static void reticle_change_column(Object *self)
+{
+    for (uint32_t attempt = 0; attempt < 2; ++attempt) {
+        int32_t direction = (int32_t)bn6_object_front_direction_for(self);
+        if (self->removal_state == 0) {
+            direction = -direction;
+        }
+        int32_t column = (int32_t)self->panel_x + direction;
+        if (column != self->target_panel_x && column != self->target_panel_y) {
+            self->panel_x = (uint8_t)column;
+            return;
+        }
+        self->removal_state ^= 1u;
+    }
+}
+
+static void reticle_scan(Object *self)
+{
+    if (self->phase_timer_low == 0) {
+        uint8_t frames = self->variant == 0 ? 6 : 4;
+        self->timer = frames;
+        self->phase_timer_low = frames;
+    }
+
+    if (reticle_key_pressed(self, 1)) {
+        if (!reticle_key_pressed(self, 2)) {
+            bn6_play_sound(0x8B);
+            self->parent->subvariant = 1;
+        }
+        self->animation_state = 5;
+        self->phase = RETICLE_LOCKED_PHASE;
+        self->phase_timer_low = 0;
+        return;
+    }
+
+    int32_t timer = (int32_t)self->timer - 1;
+    self->timer = (uint16_t)timer;
+    if (timer < 0) {
+        self->phase = self->aux_timer == 0 ? RETICLE_LOCKED_PHASE : 0;
+        self->phase_timer_low = 0;
+    }
+}
+
+static void reticle_step(Object *self)
+{
+    if (reticle_change_row(self)) {
+        reticle_change_column(self);
+    }
+    bn6_self_object_set_coords();
+    bn6_play_sound(0x10E);
+    self->phase = RETICLE_SCAN_PHASE;
+    reticle_scan(self);
+}
+
+static void reticle_locked(Object *self)
+{
+    if (self->phase_timer_low == 0) {
+        self->animation = 1;
+        bn6_play_sound(0xBD);
+        reticle_commit_target(self);
+        self->timer = RETICLE_LOCK_FRAMES;
+        self->phase_timer_low = RETICLE_LOCK_FRAMES;
+    }
+
+    if (self->animation_state != 0) {
+        --self->animation_state;
+        if (!reticle_key_pressed(self, 2)) {
+            self->parent->subvariant = 1;
+        }
+    }
+    if (!timer_positive_after_decrement(self)) {
+        self->state = ACTOR_DESTROY_STATE;
+    }
+}
+
+static void reticle_update(Object *self)
+{
+    if (self->phase == 0) {
+        reticle_step(self);
+    } else if (self->phase == RETICLE_SCAN_PHASE) {
+        reticle_scan(self);
+    } else {
+        reticle_locked(self);
+    }
+    if (self->aux_timer != 0) {
+        --self->aux_timer;
+    }
+    bn6_self_object_update_timestop();
+}
+
+static void reticle_init(Object *self)
+{
+    volatile struct SearchmanReticleWork *work =
+        (volatile struct SearchmanReticleWork *)self->work;
+    uint32_t group = BN6_SPRITE_GROUP(searchman_reticle_sprite);
+    uint32_t sprite = BN6_SPRITE_ID(searchman_reticle_sprite);
+    if (work->alternate != 0) {
+        group = BN6_SPRITE_GROUP(searchman_reticle_alt_sprite);
+        sprite = BN6_SPRITE_ID(searchman_reticle_alt_sprite);
+    }
+    bn6_self_sprite_load(0x80, group, sprite);
+    bn6_self_sprite_load_animation_data();
+    bn6_self_sprite_no_shadow();
+    set_animation(self, 0);
+    bn6_self_sprite_set_palette(0);
+    reticle_set_initial_panel(self);
+    bn6_self_object_set_coords();
+    self->subvariant = 1;
+    self->removal_state = 1;
+    self->aux_timer = RETICLE_LIFETIME;
+
+    Object *player = work->player;
+    self->runtime_data = (void *)((uintptr_t)player->runtime_data + 0x2Cu);
+    self->animation_state = 0;
+    self->flags |= VISIBLE_FLAG;
+    self->z = 0;
+    self->state_word = ACTOR_ACTIVE_STATE;
+    self->phase = RETICLE_SCAN_PHASE;
+    reticle_update(self);
+}
+
+static void randomize_impact(int32_t *x, int32_t *z)
+{
+    uint32_t random = bn6_rng_next();
+    int32_t x_offset = (int32_t)(random & IMPACT_RANDOM_MASK) - 7;
+    int32_t z_offset = (int32_t)((random >> 16) & IMPACT_RANDOM_MASK) - 7;
+    *x += x_offset << 16;
+    *z += z_offset << 16;
+}
+
+static void hit_update(Object *self)
+{
+    Collision *collision = self->collision;
+    bn6_collision_remove(collision);
+    bn6_self_collision_spawn_effect();
+
+    if (collision->hit_flags == 0) {
+        uint32_t random = bn6_rng_next();
+        uint32_t effect = 7u | ((random & 2u) << 8);
+        int32_t x = self->x;
+        int32_t y = self->y;
+        int32_t z = self->z;
+        randomize_impact(&x, &z);
+        (void)bn6_spawn_type4_at(0, x, y, z, effect);
+    }
+
+    bn6_collision_clear_region(collision);
+    bn6_collision_free(self->collision);
+    bn6_self_object_free();
+}
+
+static void hit_init(Object *self)
+{
+    if (bn6_self_panel_is_valid_object() == 0) {
+        bn6_self_object_free();
+        return;
+    }
+    bn6_self_object_set_coords();
+    self->z = 0x00100000;
+    Collision *collision = bn6_self_collision_create();
+    if (collision == NULL) {
+        bn6_self_object_free();
+        return;
+    }
+    bn6_collision_setup(
+        collision,
+        self->variant,
+        HIT_COLLISION_SELECTOR,
+        3
+    );
+    bn6_self_collision_set_hit_effect(
+        self->variant == RETICLE_NORMAL_HIT ? 0 : 9
+    );
+    bn6_self_collision_present(0, PRESENT_COLLISION_REGION);
+    self->state_word = ACTOR_ACTIVE_STATE;
+}
+
+BN6_OBJECT3(searchman_hit_main)
+{
+    if (self->state == 0) {
+        hit_init(self);
+    } else if (self->state == ACTOR_ACTIVE_STATE) {
+        hit_update(self);
+    } else {
+        bn6_self_object_free();
+    }
+}
+
+BN6_OBJECT4(searchman_reticle_main)
+{
+    if (self->state == 0) {
+        reticle_init(self);
+    } else if (self->state == ACTOR_ACTIVE_STATE) {
+        reticle_update(self);
+    } else {
+        bn6_self_object_free();
+    }
+}
+
+BN6_OBJECT1(searchman_actor_main)
+{
+    if (self->state == 0) {
+        actor_init(self);
+    } else if (self->state == ACTOR_ACTIVE_STATE) {
+        actor_update(self);
+    } else {
+        actor_destroy(self);
+    }
+}
+
+BN6_SUMMON_ATTACK(0x107, searchman_attack_main)
+{
+    Object *actor = bn6_spawn_type1(CUSTOM_TYPE1_ID, spawn_argument);
+    if (actor == NULL) {
+        return;
+    }
+    actor->panel_x = (uint8_t)panel_x;
+    actor->panel_y = (uint8_t)panel_y;
+    actor->parameter = (uint8_t)parameter;
+    actor->owner_word = owner->owner_word;
+    actor->parent = owner;
+    actor->attack = attack;
+    actor->completion = completion;
+    actor->kind = BN6_OBJECT_KIND(searchman_actor_main);
+    *completion = 1;
+}

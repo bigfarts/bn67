@@ -1,0 +1,626 @@
+# Disassembly notes
+
+All addresses are GBA ROM addresses unless identified as file offsets. The
+port was translated from the supplied English BN5 ROM rather than from the
+unrelated dormant effects originally mistaken for SearchMan in BN6.
+
+## Native BN5 attack chain
+
+The BN5 SearchMan time-freeze wrapper is at `0x080C1458`. It creates type-1
+object `0x31`; the object's main routine begins at `0x080C11D8` and its init
+begins at `0x080C11F8`. The actor loads sprite group/index `0x08/0x03`.
+
+The actor creates two cooperating native objects:
+
+| Role | BN5 class/id | Main | Init | Spawn helper |
+| --- | --- | ---: | ---: | ---: |
+| moving scope | type 4 / `0x43` | `0x080E5208` | `0x080E5228` | `0x080E547C` |
+| shot collision | type 3 / `0x57` | `0x080D0D78` | `0x080D0D98` | `0x080D0E1E` |
+
+The reticle uses group `0x10`, index `0x23` normally and index `0x22` for its
+alternate form. It scans the opponent's panel region, accepts A to lock, and
+sets the actor's delete-command byte when B accompanies A or is pressed during
+the short window after the lock.
+
+The firing loop at `0x080C136C`-`0x080C13CC` initializes a count of five. Each
+shot is spawned when its ten-frame timer reaches seven. The special flag is
+set only when both the delete-command byte is nonzero and the remaining-shot
+count is one. Therefore the **fifth spawned shot** is the only possible delete
+shot. Normal shots pass parameter `25`; the special shot passes `29`.
+
+The hit init maps parameter `25` to hit effect `0` and every other parameter
+to hit effect `9`. The collision engine applies the latter only on contact.
+The hit object removes collision, handles either contact or the miss visual,
+clears/frees its collision data, and frees itself in that same update.
+
+## BN6 hooks and translation
+
+The port installs all three cooperating object classes because BN6 does not
+contain a usable SearchMan actor/reticle/hit set.
+
+| Hook | BN6 file offset | Patched target |
+| --- | ---: | ---: |
+| time-freeze subfamily `0x0E` | `0x02CD94` | compiler-generated shared attack route |
+| shared type-1 ID `0x31` | `0x003D60` | `CustomType1Main` |
+| shared type-3 ID `0x2C` | `0x003F74` | `CustomType3Main` |
+| shared type-4 ID `0x17` | `0x004324` | `CustomType4Main` |
+
+The three object hooks are project-wide rather than SearchMan-specific. Every
+imported object keeps its native BN6 class, claims that class's single custom
+ID, and stores a logical kind at object word `+0x7C`. The registry compiler uses
+that kind to select the real controller from one generated table per class.
+Kinds are assigned from dependency order and declaration order; package code
+uses convention-derived symbols such as `SEARCHMAN_RETICLE_MAIN` rather than
+maintaining numeric labels. A zero, stale, or out-of-range kind
+frees the object instead of interpreting it as another controller. The shared
+hubs claim unused native entries; the released HeatMan `0x30` and LifeSync
+`0x5C` object entries remain byte-for-byte original.
+
+Runtime code and imported assets are allocated from file offset `0x800000`
+onward in an expanded 16 MiB image; exact addresses are selected by Armips.
+The object state machine, timers, reticle movement/input, five-shot loop, and
+hit-effect selection follow BN5 state for state. The intentional engine
+adaptations are:
+
+- BN5 collision result flags are at collision data `+0x68`; BN6 uses `+0x70`.
+- Calls from the expanded ROM are outside Thumb `BL` range and go through a
+  long-call macro. The macro restores `r4` before entering BN6 because object
+  spawners consume `r4` as an implicit argument.
+- The miss visual's type-4 spawner replaces `r5` with the spawned effect. The
+  port preserves the original shot-object `r5` across that call so cleanup
+  always frees the shot rather than the effect.
+- After using `r2` as the normal/final-shot selector, the actor copies its
+  translated one-hot Cursor value (`0x40`, originating from chip-table element
+  `6`) into every hit object's `+0x0E` byte. The runtime collision test confirms
+  that all five 20-damage base pulses still resolve with this value; writing
+  numeric table element `6` here is the invalid form.
+- Base, EX, and SP all select actor palette `0`, giving every summoned
+  SearchMan the same in-battle colors while leaving menu-art palettes distinct.
+
+The last point is what prevents a missed collision object from surviving time
+freeze and damaging something later.
+
+## Imported assets
+
+The following exact BN5 ROM slices are extracted at build time:
+
+| Asset | BN5 file offset | Length |
+| --- | ---: | ---: |
+| chip icon | `0x7493B8` | `0x80` |
+| 56x48 library art | `0x728568` | `0x540` |
+| base palette | `0x7343C8` | `0x20` |
+| SP palette | `0x7343E8` | `0x20` |
+| SearchMan actor archive | `0x254F64` | `0xABFC` |
+| alternate reticle archive | `0x358410` | `0x5B8` |
+| reticle archive | `0x3589C8` | `0x460` |
+
+All imported assets and runtime code are placed with Armips `.autoregion` in
+the expanded ROM rather than assigned fixed output offsets.
+
+ChaosLrd also imports BN5 group `0x14` entry `0x0D`. It includes its header at
+`0x389E68`; dropping that first word selects unrelated animation data and
+causes the visible `MegaBstr` teardown. The complete archive is appended to
+the relocated BN6 table.
+
+The hit also loads packed value `0x00010401` and calls BN5's type-4 `0x0A`
+palette-object wrapper at `0x080E1158`. Its variant-1 state is the four-frame
+whole-screen whitening effect. BN6 retains the state machine, but schedules
+its native `0x0A` slot only after this time-freeze sequence exits. The port
+therefore runs that same palette write/restore state through the shared custom
+type-4 ID with the Chaos flash kind, which is updated during time freeze and
+places the flash on the actual hit.
+BN6 splits the rendered scene across palette slots `0x14` and `0x15`; writing
+only one leaves either the field or the actors colored. The translated state
+writes and restores both slots together, producing four full-screen white
+frames and returning every palette before the teardown continues.
+
+The registry compiler's unified sprite-table installer preserves every native
+pointer and appends these SearchMan mappings:
+
+- `SEARCHMAN_BATTLE_SPRITE_GROUP` / `SEARCHMAN_BATTLE_SPRITE` -> actor archive
+- `SEARCHMAN_RETICLE_ALT_SPRITE_GROUP` / `SEARCHMAN_RETICLE_ALT_SPRITE` -> alternate reticle
+- `SEARCHMAN_RETICLE_SPRITE_GROUP` / `SEARCHMAN_RETICLE_SPRITE` -> normal reticle
+
+Both halves of each selector are compiler outputs, not duplicated numeric
+constants. An
+archive label such as `BugchargeGospelSprite` is only a ROM address; it cannot
+identify a table slot until a generated pointer-table entry refers to it.
+
+ChaosLrd deliberately appends the Bass archive twice. The main Bass actor and
+Ball Bass animate simultaneously, and BN6 keys its sprite cache by the packed
+group/index selector rather than the resolved archive pointer. Giving both
+objects one selector makes their animation loads overwrite one cache identity
+and produces corrupt composite graphics; distinct entry labels preserve the
+two selectors while still sharing the underlying archive bytes.
+
+Ball Bass has a second selector path that is easy to miss: BN6's type-1
+allocator copies implicit argument `r4` into object word `+0x04`, whose low
+bytes are the sprite group and index read by `ChaosBallInit`. The packed word
+is therefore assembled from `CHAOSLORD_BALL_SPRITE_GROUP` and
+`CHAOSLORD_BALL_SPRITE`.
+Changing only the visible `r2` value leaves the old index in the object and
+loads BN6's native white-dot placeholder instead of the Ball Bass composite.
+
+The controller also preserves BN5's `0x8E` opening timer so Nebula Gray's
+fade is not shortened. Bass's final animation `0x0F` has two five-frame
+frames and marks its looping boundary with the animation-end flag. Phase 16
+retires the controller at that boundary, while retaining BN5's `0x28` timer
+as a fallback. This removes only the invisible post-animation wait needed to
+fit BN6's shorter time-freeze callback budget.
+
+Ball Bass does not use group `0x14`/index `0x14` for its impact. BN5 derives
+the type-4 `0x24` pattern selector as attack-object variant `1 + 5`, yielding
+native pattern `6`; that pattern requests native generic effect `0x24`, whose
+descriptor is group `0x14`/index `0x00` with palette `1`. The port preserves
+that calculation, so neither the generic-effect table nor the pattern table
+needs relocation. Forcing index `0x14` instead selects the lightning archive
+and produces the stray bolt when Bass disappears.
+
+BN5 has base and SP library-art palettes, not an EX palette. The patch keeps
+the base foreground and uses yellow BGR555 values `0x03FF`, `0x0299`, and
+`0x0190` for EX's background; SP uses the native BN5 SP palette.
+
+## Manifest-owned chip records
+
+Package manifests declare chip records by ID under `[chips]`. The package
+compiler maps semantic fields for codes, rarity, element, class, MB, behavior
+route and parameters, library metadata, power, and artwork onto BN6's `0x2C`-
+byte record. Unspecified fields retain their native edition value; this is
+used for LaserMan's library metadata and for edition-native menu art. Nested
+`gregar` and `falzar` tables override the common fields before assembly, so
+the remaining version differences no longer require conditional record bytes
+in package assembly. The alphabetical key at `+0x18` is deliberately absent
+from the schema because the final sort pass regenerates it from chip names.
+
+## Relocated text archives
+
+Names and descriptions each use two archives. Archive 0 has IDs
+`0x000`-`0x0FF`; archive 1 begins at `0x100`. `build_text_archives.py` reads
+both original halves, applies readable charset-encoded replacements generated
+from semantic chip `name` and `description` fields, and emits four complete
+archives. Low-level text edits may still select an explicit archive and local
+index. `config.gregar.toml` and `config.falzar.toml` name each archive and
+define its format, extent, generated binary, and pointer references. The
+generated package assembly repoints those references.
+Verification compares every untouched entry against the source ROM in both
+versions.
+
+## Jealousy port
+
+BN5 Jealousy is chip ID `0xD4`. Its family-`0x15`/subfamily-`0x13` wrapper at
+`0x080E4540` creates type-4 object `0x36`, whose controller begins at
+`0x080E443C`. The controller is invisible; Jealousy has no dedicated battle
+sprite archive to import.
+
+The controller scans the opposing side's four unit pointers and preserves the
+largest loaded-chip count. Every ten frames it scans all 18 panels, passes the
+opposing ownership flag in the panel predicate's required-flags `r2` argument, creates an
+80-damage collision object on each valid opposing panel, and decrements that
+count once. Its final 90-frame state refreshes the native chip-delete overlay
+and runs the original link-battle cleanup calls before entering the generic
+type-4 outro.
+
+LifeSync is chip ID `0xBF` in BN6. Its released launcher is reused, while the
+object controller uses the project-wide unused Type 4 entry:
+
+| Hook | BN6 file offset | Patched target |
+| --- | ---: | ---: |
+| family `0x15`, subfamily `0x07` | `0x02CCD0` | `JealousyAttackMain` |
+| shared type-4 ID `0x17` | `0x004324` | `CustomType4Main` |
+
+LifeSync's released object entry `0x5C` remains native and unmodified.
+
+BN6 retains direct equivalents of all five generic type-4 lifecycle states and
+of Jealousy's side comparison, chip-list lookup, panel predicate, overlay,
+gauge, and damage-object helpers. Gregar's damage-object wrapper is at
+`0x080C6C16`; Falzar's is at `0x080C53A6`, so that one call is selected in the
+version assembly rather than shared as a fixed address.
+
+Jealousy's pulse loop remains the normal BN6 full-field damage-object path; it
+does not inspect the opponent's hand or trap table. Every pulse resolves through
+ordinary collision and damage prevention. As in BN5, the later chip-deletion
+phase is separate from those hits and runs whenever the link battle is active,
+even if AntiDamage or another trap intercepted the complete pulse train.
+
+Jealousy's two time-freeze DMA records copy `0x100` bytes of BN5 overlay tiles
+from file offset `0x6FAD2C` to `0x06017940` and its `0x20`-byte palette from
+`0x6FAE2C` to BN6's relocated staging buffer at `0x030016F0`. The equivalent
+native BN6 transfer tables use this address; BN5's `0x030036F0` overwrites
+unrelated BN6 IWRAM. The menu icon (`0x748F38`, `0x80` bytes), library
+art (`0x7250E8`, `0x540` bytes), and palette (`0x734188`, `0x20` bytes) are also
+relocated with `.autoregion`.
+
+## BugChain port
+
+Blue Moon BugChain is chip ID `0xD3`. Its family-`0x0C`/subfamily-`0x1F`
+wrapper at `0x080E6678` creates type-4 controller `0x3F`, whose main begins at
+`0x080E65EC`. The chip-specific state waits 60 frames and calls the transfer
+routine at `0x080E669A`; that routine duplicates active bug properties from
+the user onto the opposing Navi without clearing the source. Blue Moon gates
+the effect to link battles. It also creates type-4 object `0x40` on both Navis;
+that object's main at `0x080E6724` loads group `0x0C`/index `0x32` and follows
+its owner for 50 frames. At timer value 42, `0x080E67A4` plays SFX `0x15D`.
+
+BN6 CopyDamage is chip ID `0xBE`. The port keeps that Standard-chip library
+slot and uses the unused family-`0x15`/subfamily-`0x22` dispatch at file offset
+`0x02CD3C`. Its controller and aura use the project-wide custom type-4 ID
+`0x17`, with distinct inline-derived kinds selecting their controllers. The
+common BN6 time-freeze lifecycle supplies the intro, freeze, outro, and cleanup
+states. BN6 no longer keeps Blue Moon's
+battle-kind enum in the same byte: its native link-only paths instead read the
+battle configuration flags through `0x0802D246` and test bit `0x08`, which the
+port uses for the equivalent gate.
+
+BN6 expanded the battle-property block, so copying Blue Moon's seven raw byte
+offsets would move unrelated state. The translated transfer instead covers
+the nine byte fields and one halfword field cleared by BN6 BugFix at
+`0x080E5D04`: `0x31`, `0x13`, `0x14`, `0x16`, `0x24`, `0x19`, `0x18`,
+`0x1A`, `0x63`, and halfword `0x54`. A nonzero source value replaces the
+target only when it is larger, preserving a stronger bug already present.
+
+Blue Moon SFX `0x15D` has no exact BN6 match. Its one-track sequence, sample
+header, and complete `0x4A1`-byte PCM body at
+`0x081970A0` are imported at generated selector `BUGCHAIN_AURA_SONG`. Each aura
+plays the cue at timer 42, matching `0x080E67A4`.
+
+The exact Blue Moon menu assets are relocated from icon `0x74626C` (`0x80`
+bytes), image `0x7315EC` (`0x540` bytes), and palette `0x73F1AC` (`0x20`
+bytes). The aura archive is `0x380CA4`-`0x381C30` (`0xF8C` bytes). The unified
+installer relocates the complete group-`0x08`, `0x0C`, `0x10`, and `0x14`
+tables and appends every imported archive after each group's native entries.
+The compiler assigns every imported archive a stable generated group/index
+pair.
+ChaosLrd, SearchMan, LaserMan, RollArrow, BugCharge, SignalRed, and
+DeathPhoenix use later appended entries in the same final table images. The
+original tables and every native pointer remain byte-for-byte untouched.
+
+## BugCharge and SignalRed slots
+
+BN6 BugFix remains native at chip ID `0x0B0`: neither its chip record nor its
+family-`0x15`/subfamily-`0x1A` and type-4 `0x3B` dispatch entries are patched.
+BugCharge instead occupies chip ID `0x131`, the Gregar-exclusive BugRSword
+slot previously used by this patch's SignalRed port. It keeps that physical
+library position and version flag, and uses the Giga class while importing BN5's B code,
+77 MB cost, Null element, and 200 per-shot power.
+
+SignalRed moves to Navi+20's Standard-chip ID `0x0C1`, retaining Navi+20's
+library position. Both imported chips select the family-`0x15`/subfamily-`0x26`
+route that native HubBatch also uses. The shared launcher checks record byte
+`0x0A` in packed attack word `r6`. SignalRed uses zero. BugCharge uses private
+marker `0x8B` rather than BN5's `0x8A`, because native BgDthThd already uses
+`0x8A`; HubBatch uses `0x94`. Every marker other than zero and `0x8B` is
+forwarded to the original version-specific launcher, preserving PunchArm,
+NeedlArm, PuzzlArm, BoomrArm, DarkInvs, HubBatch, and BgDthThd. The two imported
+controllers are then spawned through the shared custom type-4 ID `0x17` and
+distinguished by their `+0x7C` kinds. BugCharge's charge-head visual has its own
+kind in the same table. Native type-4 entry `0x84` is no longer patched, and
+FolderBack is another direct entry in the shared custom table rather than an
+outer dispatcher.
+
+Runtime tracing of Colonel BugCharge identifies group `0x0C`/index `0x43` as
+both the stationary and moving Gospel archive. The stationary object is 24
+pixels forward of the user at Z `0x17`. BN5's object code gives this visual a
+fixed 60-tick active state and a 30-tick teardown, so with a high bug count the
+apparition can disappear before the controller finishes launching heads. The
+port instead assigns `55 + 15 * shot_count` to its hold timer, matching the
+controller's 40-frame charge, 15-frame shot cadence, and 30-frame recovery.
+The moving object begins on the front panel at Z `0x14`, advances 10 pixels per
+frame, and changes its collision panel at the midpoint between panel centers.
+The translated counter consumes BN5's nine property types plus BN6 field
+`0x63`; after clearing it calls BugFix's native `0x0801E658` runtime-state reset
+so an already-latched Custom bug is removed too. Every nonzero BN6 severity
+counts as one active type rather than leaving values greater than one behind.
+
+## SignalRed port
+
+Blue Moon SignalRed is chip ID `0x131`. Its family-`0x15`/subfamily-`0x26`
+wrapper at `0x080E8404` creates the short-lived type-4 controller whose effect
+begins at `0x080E8448`. That controller calls `0x080DD772` to create the real
+persistent traffic light, type 3 / ID `0x81`, controlled by `0x080DD544`.
+
+The native object is placed one panel in front of its owner, has 100 HP, and
+loads sprite group/index `0x0C/0x33`. It spends 420 frames in animation 0
+(red), with the opposing chip-enable flag cleared, followed by 50 frames in
+animation 1 (green), with that flag restored. Blue Moon uses mask `0x08` for
+owner 0 and `0x04` for owner 1 and plays sound `0x15C` when green begins. The
+cycle repeats until the object is destroyed. The placement cue is Blue Moon
+sound `0x0A0`. BN6 sound `0x180` reuses its note stream but not its sample,
+priority, or timbre, so SignalRed imports the original Blue Moon song header,
+voice, track, and PCM sample at generated selector `SIGNALRED_SPAWN_SONG`.
+Blue Moon's green cue `0x15C` corresponds to BN6 sound `0x0D1` (the same
+sequence with BN6's native volume balance), rather than the unrelated
+same-numbered sounds.
+
+The port shares the native HubBatch/BugRSword family route with BugCharge and
+SignalRed and installs the translated controllers at these hooks:
+
+| Hook | BN6 file offset | Patched target |
+| --- | ---: | ---: |
+| family `0x15`, subfamily `0x26` | `0x02CD4C` | compiler-generated `AttackRoute15_26` |
+| shared type-4 ID `0x17` | `0x004324` | `CustomType4Main` |
+
+The unified sprite installer appends `SignalRedBattleSprite` to group `0x10`
+at derived index `0x61`; it does not modify the native entry formerly used by
+the port.
+
+SignalRed's persistent light uses the shared custom type-3 ID `0x2C`. Its
+inline-derived kind selects `SignalRedObjectMain` directly, alongside the
+ChaosLrd, SearchMan, LaserMan, RollArrow, and BugCharge type-3 controllers.
+
+Blue Moon also registers the light in its per-owner deployable list through
+`0x0800B230` and unregisters it through `0x0800B272`. Their structurally
+identical BN6 counterparts are `0x0800F614` and `0x0800F656`. Retaining that
+registration is what exposes the object to DustCross's B+Left suction path;
+collision targetability alone is not sufficient. SignalRed registers in the
+one-object deployable slot for its owner, while DustCross scans all eight
+deployable pointers and marks a target with the suction bit belonging to the
+DustCross user. SignalRed accepts only the bit for the side opposite its owner,
+so a player cannot vacuum their own light.
+
+BN6 collision setup keeps a matched obstacle mask pair on SignalRed, just as
+Blue Moon does; clearing either complete word prevents incoming attacks from
+resolving against the light. BN6 retains Blue Moon's owner-specific collision
+pair at regions `19/20`: the active masks remain `0x02010000/0x01010000` and
+`0x55800000/0xAA800000`, with only BN6's standard passive bit `0x80` added to
+region 19. Using that pair prevents the chip owner's attacks from damaging the
+light; the neutral `14/15` RockCube pair does not. SignalRed resubmits region
+`19` every frame. Rush eligibility is decided earlier by `0x08010740`, which
+tests bit `0x02` of chip-record byte `0x16`. SignalRed clears only that bit
+(`0xC6` to `0xC4`) so its activation is not classified as Image Invis. The port
+allocates the record at object initialization but defers
+setup/presentation until time stop ends, so the persistent hurtbox begins in
+normal battle time. Its three-frame placement startup and imported cue still
+run during the activating chip's time freeze; only collision and the subsequent
+red/green timer are deferred. Each active frame then clears prior hit presentation,
+collects the five element-specific
+collision damage slots, runs deployable lifetime maintenance, and applies the
+total through BN6's saturating object-HP subtractor at `0x0800E2D8`. The broader
+Navi damage state controller is not used because it requires a secondary status
+object this passive obstacle does not own. Incoming damage sets the same
+one-frame white sprite flash used by RockCube. The controller destroys the
+light when its resulting HP reaches zero, spawning BN6's fire-explosion effect
+kind `0x00` at a 16-pixel height and playing its native explosion SFX `0x070`.
+Red/green state changes pause while time is stopped.
+Because deployable registration precedes object initialization, every init
+failure also uses the full unregister/free path instead of leaving a freed
+pointer in the DustCross list.
+
+DustCross's suction sweep at `0x080F10B4` walks all eight deployable-list
+entries. For each eligible object, `0x0800F8B0` raises the common removal bit
+`0x8000` and the DustCross owner's suction bit (`0x100000` or `0x200000`). On
+either owner-specific bit, native deployables call `0x0800F90E` before cleanup;
+that helper serializes the object's kind, animation, palette, flip, and position
+into DustCross's stored-ammo path. SignalRed checks only the opponent's suction
+bit before calling that helper and uses the otherwise-free four-bit
+kind 15 and redirects DustCross's suction/firing sprite tables to a 16-entry
+copy whose final entry is SignalRed's group `0x10`, index `0x61` archive. It
+then restores the chip flag, cleans up collision state, unregisters, and frees
+the field object. Collision event `0x40000` is a separate timed wind-removal
+path handled by `0x0800F8CE`; its 20-frame visibility timer owns object byte
+`+0x0B`, so SignalRed leaves that byte clear during normal operation.
+
+The BN6 battle-flag helpers at `0x08001382` and `0x0800138E` retain Blue
+Moon's set/clear contract; the battle structure field moved from `+0x64` to
+`+0x5C`. SignalRed's gameplay routines live in `src/signalred.c`;
+its assembly file contains only binary resources and the DustCross table
+extension.
+
+The exact Blue Moon asset slices are:
+
+| Asset | Blue Moon file offset | Length |
+| --- | ---: | ---: |
+| chip icon | `0x746EEC` | `0x80` |
+| 56x48 library art | `0x73A8EC` | `0x540` |
+| menu palette | `0x73FAEC` | `0x20` |
+| traffic-light battle archive | `0x381C30` | `0x694` |
+
+Both versions use the imported battle archive and repoint Navi+20's three
+menu-art fields to the imported SignalRed assets.
+
+## DeathPhoenix port
+
+BN5 DeathPhoenix's time-freeze wrapper creates type-1 object `0x28`, whose
+controller at `0x080BFD98` builds three shuffled panel rows and schedules
+twelve strikes. Each strike creates type-4 object `0x89` through the wrapper at
+`0x080EA71C`. Its main function is `0x080EA5E4`; the adjacent type-4 `0x8A`
+main at `0x080EA740` is unrelated MegaBuster behavior and must not be ported.
+
+Type-4 `0x89` creates direct-damage contacts at animation frames 0 and 16. It
+also calls `0x080E8BF4` every four frames to create the visible type-4 `0x71`
+flame actor. Type-4 `0x71` is implemented at `0x080E8ACC`, loads sprite group
+`0x10`/index `0x49`, and supplies the moving purple fireball animation. That
+archive occupies BN5 ROM `0x36F074`-`0x36F7BC`; group `0x10`/index `0x48` at
+`0x36E908` is a different vertical-column effect.
+
+The port translates type-4 `0x89` and `0x71` into distinct strike and flame
+kinds behind the shared custom type-4 ID `0x17`. Both use the imported archive
+through released BN6 sprite group `0x14`/index `0x21`. The damage contacts
+remain separate native BN6 objects, matching BN5's split between collision and
+visible flame actors. The main DeathPhoenix controller likewise uses its own
+kind behind the shared custom type-1 ID `0x31`.
+
+After the twelfth strike and the phoenix's disappear phase, the controller
+checks BN6's saved-Navi record at `0x0203C960`. The record's backing pointer is
+validated in addition to its ID because BN6 leaves an unused record zeroed,
+whereas BN5 initializes the ID to `0xFF`. If a Navi was used previously, the
+port invokes it through the saved-Navi dispatch table at `0x0802CD5C`, waits
+for it to finish, and preserves BN5's 30-frame post-Navi pause.
+
+BN5 then performs its own mode-0 return transition and waits another 30
+frames. BN6's outer time-freeze controller automatically performs the same
+return transition after the completion byte is released. The port therefore
+releases completion immediately after the post-Navi pause and lets that outer
+controller own the transition. Retaining BN5's cleanup wait or explicitly
+starting a second mode-0 transition here causes the long extra pause and the
+double MegaMan spawn-out/spawn-in sequence.
+
+DeathPhoenix is installed at chip ID `0x134` in both versions. Falzar repoints
+the three menu-art fields to BN5's assets; Gregar leaves those fields
+byte-for-byte equal to the original CrossDiv record.
+
+## Runtime QA
+
+The exact emulator procedure for selecting BN5 DeathPhoenix (`0x13A`) and
+the patched BN6 replacement slot (`0x134`) without editing a folder is kept in
+[`RUNTIME_QA.md`](RUNTIME_QA.md). It also records the Custom cache hook,
+ownership-validator exception, matching-save requirement, and stale card-art
+caveat so this setup does not need to be rediscovered.
+
+The SignalRed runtime probe uses a deterministic clear field, with no rock on
+the spawn panel. In both versions it observes the light on the panel directly
+in front of the user, flag `0x08` cleared throughout red, restored during
+green, an opponent Cannon held during red and released only after green opens,
+then the flag cleared again when the cycle returns to red.
+
+The emulator collision probe additionally exercises both contact and miss
+paths. On contact it observes five one-update shot objects, effect `0` on
+shots one through four, effect `9` only on shot five, one delete only after
+that fifth contact, and a zero counter timer. On a miss, all five collision
+results stay zero, neither HP nor delete state changes, and every shot still
+receives exactly one update in both Gregar and Falzar.
+
+## RollArrow port
+
+Blue Moon runtime tracing identifies the actual Roll actor at spawn routine
+`0x080C8110`, main `0x080C812C`, and init `0x080C814C`. Its sprite-loader
+calls at `0x080C815C`/`0x080C8160` select group `0x08`, index `0x01`; the
+corresponding uncompressed archive is at ROM `0x2A5A10` and is `0xAC58` bytes.
+Roll fires immediately in animation `7` and holds the shot for six frames. Her
+projectile is the generic type-3 object spawned through `0x080CE81A`; its init loader calls at
+`0x080CE724`/`0x080CE728` select group `0x0C`, index `0x10`. The uncompressed
+heart-arrow archive is at ROM `0x35E5C0` and is `0x160` bytes. The native fire
+routine starts that arrow at Roll's bow origin: eight pixels forward in X,
+one pixel above her actor Y origin, and 36 pixels in Z. After firing, Roll stays
+on her panel for the native animation-0 and animation-4 holds, then disappears;
+there is no horizontal retreat.
+
+The port keeps the heart-arrow in type-3, matching Blue Moon and BN6's
+counter-hit ownership path. It uses the Roll-arrow kind behind the shared
+custom type-3 ID `0x2C`. Hosting the collision-bearing arrow in type 1 works
+for ordinary damage but corrupts the native counter response.
+
+The earlier `0x080C8644` group-`0x08`/index-`0x0D` trace was KendoMan, and
+the paired group-`0x0C`/index-`0x35` object was unrelated. Neither is used by
+this port.
+
+The BN6 port keeps TrainArrow's IDs `0x18`-`0x1A`, routes them through the
+already released Navi-family dispatch used by SearchMan, and distinguishes the
+three IDs in that shared launcher. Roll uses the shared custom type-1 ID
+`0x31`, while the straight-moving arrow uses the shared custom type-3 ID
+`0x2C`. The arrow uses BN6's native collision
+lifecycle with BN4's `8/5/3` setup and hit-effect `9`, so it travels at seven
+pixels per frame, stops on the first real contact, and invokes BN6's built-in
+loaded-chip deletion response rather than manufacturing a damage hit on every
+panel. Generated selector pairs `ROLLARROW_ACTOR_SPRITE_GROUP` /
+`ROLLARROW_ACTOR_SPRITE` and `ROLLARROW_PROJECTILE_SPRITE_GROUP` /
+`ROLLARROW_PROJECTILE_SPRITE` point at the runtime-confirmed Blue Moon Roll
+and heart-arrow archives. The record codes,
+MB values, power, icons, image, and palettes are copied from Blue Moon.
+
+Blue Moon's summon SFX `0xB0` and fire SFX `0x132` are imported with their
+original tracks, voicegroups, and PCM samples. The BN6 song table is relocated
+through native entry `0x1D9`; the registry compiler assigns the shared cue's
+`COMMON_NAVI_SUMMON_SONG` selector and RollArrow's `ROLLARROW_FIRE_SONG`
+selector. RollArrow calls the common selector directly.
+
+## LaserMan port
+
+Blue Moon's LaserMan chip creates type-1 object `0x4D` through the wrapper at
+`0x080CABC4`. Its main, init, and update routines are at `0x080CABF0`,
+`0x080CAC34`, and `0x080CAC96`. Runtime tracing of the real chip confirms that
+the actor loads sprite group `0x08`, index `0x16`, plays summon SFX `0xB0`, and
+uses animations `0`, `2`, `3`, and `4` for its idle, raised-arms, firing, and
+recovery poses.
+
+The firing state creates Blue Moon type-4 object `0xA0` through
+`0x080E0FE6` and plays SFX `0x103`. Its init at `0x080E0E3C` loads that same
+group-`0x08`/index-`0x16` archive and uses animations `17`, `18`, and `19` for
+the thin lead-in, full blue-white row beam, and white tail. The shared archive
+is LZ77-compressed at ROM offset `0x339B6C`; the source stream occupies
+`0x395C` bytes. Asset extraction expands it to an ordinary archive before
+assembly, so the package uses the same uncompressed sprite registry path as
+every other imported sprite.
+
+The actor's command parser at `0x080CAD1C` reads the held-key halfword and
+tests Up (`0x40`), Down (`0x80`), Right (`0x10`), then Left (`0x20`). It stores
+command IDs `1`-`4` in that priority order. The beam dispatch table at
+`0x080E0F58` selects the following halfword streams: Up
+`5,6,7,FD`; Down `1,2,3,4,FF0C,FD`; Right `010A,FD`; and Left `FE,FD`.
+`FD` is the normal damage hit. `FE` dynamically packs the target's decremented
+Custom Screen count with property ID `0x12` and clamps the count at two. The
+port applies that direct Cust -1 behavior through BN6's Custom Level property
+`0x0A`; it does not translate the command into the separate Custom bug property
+`0x63`. Properties are read through the
+per-side accessor at `0x080136CC` and written through the setter at
+`0x080136B0`. The remaining Blue Moon property IDs translate to BN6 as
+follows: `5,6,7` zero Attack, Rapid, and Charge (`1,2,3`); `1,2,3,4` clear
+SuperArmor, FloatShoes, AirShoes, and UnderShirt (`23,1B,1C,1D`); `FF0C`
+restores B-Left to `FF`; and `010A` restores the B button and power attack to
+the default values `0` and `1`. Internal Buster levels are zero-based, so the
+three zeroes produced by Up are the displayed level 1 values.
+After choosing palette 0 for normal/Down and palette 10 for the other commands,
+the source calls sprite-property setter `0x08002F22` with table values
+`0, B060, A80A, 0, B9C0`. BN6's structural setter is `0x08002ED0`; the port
+preserves all five values so Up, Down, and Left retain their distinct beam
+transforms rather than collapsing to the yellow palette-only appearance.
+
+The BN6 port retains HeatMan's IDs `0xE3`-`0xE5`, family `0x1B`, and subfamily
+`0x02`, replacing that family's dispatch at `0x0802CD64`. The shared custom
+type-1 ID `0x31` hosts the actor and visible beam under separate kinds. Both use foreground
+OAM priority 1, which places the beam in front of targets and field objects;
+the earlier-allocated actor still wins their same-priority overlap at the
+muzzle. LaserMan's row-hit objects use their own kind behind shared custom
+type-3 ID `0x2C`. Blue Moon's collision region `0x0B` is not a
+compatible attack mask in BN6, so the port seeds each hit with BN6's proven
+normal attack region 25 before using the native collision helpers. The final
+`FD` event uses SearchMan's exact working region-25 collision initialization
+but LaserMan's quiet cleanup, avoiding the
+six random miss-impact sparkles that SearchMan's own cleanup would create for
+the six panel hits. Only the final `FD` damage event creates six panel-contact
+objects. The chosen direction is latched outside the event halfword, and its
+entire property stream is translated exactly once only when BN6's collision
+result at `+0x70` reports contact and that row object occupies the opposing
+Navi's current panel. A trap or obstacle elsewhere in the beam cannot authorize
+the effect, and missed beams have no command effect. The property words are not
+passed through BN6's incompatible extended-effect IDs. Thus no direction has
+no extra effect, while a held direction applies only its documented stat or
+Custom Window change after a hit. The compiler-generated
+`LASERMAN_BATTLE_SPRITE_GROUP` / `LASERMAN_BATTLE_SPRITE` pair points directly
+at the expanded shared archive. The reused BN6 object tails still require the
+beam Z word to be cleared explicitly for the native actor and laser to render
+in game.
+
+Blue Moon creates the laser one panel in front of the actor and then offsets
+its sprite origin another 64 pixels in the owning side's direction. The port
+reproduces both operations, which keeps the beam emitter aligned with
+LaserMan's hand. It also samples and latches commands during the raised-arms
+pose, and now takes an initial sample when the time-freeze summon is created so
+a direction held with the chip-use input is not lost during the cut-in delay.
+Blue Moon gated that parser away from Base; the BN6 port intentionally enables
+it for Base, EX, and SP. On each confirmed Down-command contact, the port
+updates BN6's cached B-Left ID and clears the corresponding live FloatShoes,
+AirShoes, UnderShirt, and SuperArmor status bits. It deliberately does not
+rewrite the live power-attack cache unconditionally, because that byte can hold
+a temporary Cross charge shot. Before applying Right, it compares that cache with the old
+underlying power-attack property. Matching values identify a normal modified
+charge shot and permit the cache refresh; a mismatch identifies a temporary
+Cross or other-form override, so Right changes the underlying default Buster
+properties without replacing the active form's charge shot.
+Effect events retain the original six-frame
+cadence. Because the imported full-width beam is stationary in the BN6 object
+model, the sole `FD` damage event is represented on all six panels; only one
+six-object damage event is alive at a time.
+
+Blue Moon provides Base, SP, and DS chip records. As with SearchMan, the BN6
+series maps those behavior selectors to Base/EX/SP parameters `0/3/4`. Base
+uses the native red-background palette. The LaserMan artwork assigns its
+variant background to palette indices `1`-`5`, so EX replaces only those five
+entries with green shades and retains the base foreground at indices `6`-`15`.
+SP uses the native yellow-background palette. The in-battle actor always
+selects palette 0. Base is available in `L` and `*`, while EX and SP remain
+`L`-only. HeatMan's version-specific library-order metadata remains intact in
+both Gregar and Falzar; the final ROM pass regenerates alphabetical keys for
+the complete sortable chip table from the relocated names. The relocated sound
+table uses the common package's imported BN4 summon SFX `0xB0` directly and
+adds the exact BN4 SFX `0x103` track, voicegroup, and PCM sample for the firing
+cue.

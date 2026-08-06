@@ -1,0 +1,6 @@
+CompileFlags:
+  Add:
+    - --target=arm-none-eabi
+  Remove:
+    - -mthumb-interwork
+    - -ffixed-r5

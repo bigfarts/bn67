@@ -1,0 +1,38 @@
+[chips."0x0E3"]
+name = "LaserMan"
+description = ["A laser", "pierces", "1 thru"]
+codes = ["L", "*"]
+attack_element = 0
+rarity = 2
+element = "null"
+class = "mega"
+mb = 60
+power = 100
+behavior = { effect_flags = 0x47, counter_settings = 0x8A, family = 0x1B, subfamily = 0x02, dark_soul_usage = 0x00, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0] }
+artwork = { icon = "LasermanIcon", image = "LasermanImage", palette = "LasermanPaletteBase" }
+
+[chips."0x0E4"]
+name = "LaserMn[EX]"
+description = ["A laser", "pierces", "1 thru"]
+codes = ["L"]
+attack_element = 0
+rarity = 3
+element = "null"
+class = "mega"
+mb = 80
+power = 150
+behavior = { effect_flags = 0x47, counter_settings = 0x8A, family = 0x1B, subfamily = 0x02, dark_soul_usage = 0x00, unknown_0e = 0x04, lock_on = 0x00, parameters = [3, 0, 0, 0] }
+artwork = { icon = "LasermanIcon", image = "LasermanImage", palette = "LasermanPaletteEx" }
+
+[chips."0x0E5"]
+name = "LaserMn[SP]"
+description = ["A laser", "pierces", "1 thru"]
+codes = ["L"]
+attack_element = 0
+rarity = 4
+element = "null"
+class = "mega"
+mb = 80
+power = 200
+behavior = { effect_flags = 0x47, counter_settings = 0x8A, family = 0x1B, subfamily = 0x02, dark_soul_usage = 0x00, unknown_0e = 0x04, lock_on = 0x00, parameters = [4, 0, 0, 0] }
+artwork = { icon = "LasermanIcon", image = "LasermanImage", palette = "LasermanPaletteSp" }

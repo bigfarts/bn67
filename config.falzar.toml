@@ -1,0 +1,140 @@
+edition = "falzar"
+
+[[object_classes]]
+number = 1
+native_id = 0x31
+dispatch_entry = 0x08003D60
+
+[[object_classes]]
+number = 3
+native_id = 0x2C
+dispatch_entry = 0x08003F74
+
+[[object_classes]]
+number = 4
+native_id = 0x17
+dispatch_entry = 0x08004324
+
+[[sprite_groups]]
+number = 0x08
+pointer_address = 0x08031CCC
+native_table = "build/sprite-group08-table.bin"
+native_entries = 23
+
+[[sprite_groups]]
+number = 0x0C
+pointer_address = 0x08031CD0
+native_table = "build/sprite-group0C-table.bin"
+native_entries = 105
+
+[[sprite_groups]]
+number = 0x10
+pointer_address = 0x08031CD4
+native_table = "build/sprite-group10-table.bin"
+native_entries = 92
+
+[[sprite_groups]]
+number = 0x14
+pointer_address = 0x08031CD8
+native_table = "build/sprite-group14-table.bin"
+native_entries = 32
+
+[[attack_routes]]
+family = 0x15
+subfamily = 0x07
+hook_address = 0x0802CCD0
+
+[[attack_routes]]
+family = 0x15
+subfamily = 0x22
+hook_address = 0x0802CD3C
+
+[[attack_routes]]
+family = 0x15
+subfamily = 0x23
+hook_address = 0x0802CD40
+
+[[attack_routes]]
+family = 0x15
+subfamily = 0x26
+hook_address = 0x0802CD4C
+BN6_EXPORT = 0x080E979C
+
+[[attack_routes]]
+family = 0x1B
+subfamily = 0x02
+hook_address = 0x0802CD64
+
+[[attack_routes]]
+family = 0x1B
+subfamily = 0x0E
+hook_address = 0x0802CD94
+BN6_EXPORT = 0x080BA660
+
+[[attack_routes]]
+family = 0x1B
+subfamily = 0x11
+hook_address = 0x0802CDA0
+
+[[attack_routes]]
+family = 0x1B
+subfamily = 0x17
+hook_address = 0x0802CDB8
+
+[songs]
+native_table = "build/song-table.bin"
+native_entries = 0x1DA
+references = [0x0814E94C, 0x0814E980, 0x0814E9CC, 0x0814EA20, 0x0814EA54]
+
+[chips]
+table_address = 0x08021DA8
+record_size = 0x2C
+record_count = 0x13A
+
+[text]
+folder_edit_skip_address = 0x08120116
+folder_edit_skip_target = 0x0812012E
+
+[[text.archives]]
+name = "chip-names-0"
+region = 0
+source = "names"
+source_index = 0
+encoding = "name"
+native_entries = 0x100
+symbol = "ChipNameArchive0"
+binary = "build/chip-names-0.bin"
+references = [0x08027D2C, 0x0802C7C4, 0x08042068, 0x08042080, 0x080476E4, 0x08120178, 0x08120218, 0x08120270, 0x081263B8]
+
+[[text.archives]]
+name = "chip-names-1"
+region = 0
+source = "names"
+source_index = 1
+encoding = "name"
+native_entries = 0x3A
+symbol = "ChipNameArchive1"
+binary = "build/chip-names-1.bin"
+references = [0x08027D30, 0x0802C7C8, 0x0804206C, 0x080476E8, 0x0812017C, 0x0812021C, 0x08120274, 0x081263BC]
+
+[[text.archives]]
+name = "chip-descriptions-0"
+region = 1
+source = "descriptions"
+source_index = 0
+encoding = "description"
+native_entries = 0x100
+symbol = "ChipDescriptionArchive0"
+binary = "build/chip-descriptions-0.bin"
+references = [0x08027D50, 0x0811968C, 0x0811A08C]
+
+[[text.archives]]
+name = "chip-descriptions-1"
+region = 1
+source = "descriptions"
+source_index = 1
+encoding = "description"
+native_entries = 0x3A
+symbol = "ChipDescriptionArchive1"
+binary = "build/chip-descriptions-1.bin"
+references = [0x08027D54, 0x08119690, 0x0811A090]

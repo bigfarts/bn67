@@ -1,0 +1,8 @@
+/build/
+/dist/
+/tangopatch/roms/
+__pycache__/
+/replays/
+/saves/
+/compile_commands.json
+/.cache/

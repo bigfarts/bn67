@@ -1,0 +1,14 @@
+[chips."0x131"]
+name = "BugCharg"
+description = ["All your", "bugs will", "attack!"]
+codes = ["B"]
+attack_element = 0
+rarity = 4
+element = "null"
+class = "giga"
+mb = 77
+power = 200
+behavior = { counter_settings = 0x8B, family = 0x15, subfamily = 0x26, dark_soul_usage = 0x01, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
+library = { number = 0x05, flags = 0x14, lock_on_type = 0x00, sort_order = 0x0131, gate_usage = 0x01, dark_chip_id = "none" }
+gregar = { behavior = { effect_flags = 0x41 }, artwork = { icon = "BugchargeIcon", image = "BugchargeImage", palette = "BugchargePalette" } }
+falzar = { behavior = { effect_flags = 0x01 } } # Retain Falzar's native slot art.
