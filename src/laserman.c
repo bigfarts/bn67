@@ -148,7 +148,8 @@ static void actor_destroy(Object *self)
 static void spawn_laser(Object *actor)
 {
     Object *beam = bn6_spawn_type1(
-        BN6_OBJECT_ID(laserman_beam_main), actor->subvariant
+        BN6_OBJECT_ID(laserman_beam_main),
+        bn6_object_spawn_with_variant(actor->subvariant)
     );
     if (beam == NULL) {
         return;
@@ -252,7 +253,11 @@ static void spawn_hit(
 )
 {
     Object *hit = bn6_spawn_type3(
-        BN6_OBJECT_ID(laserman_hit_main), 0, 0, 0, HIT_VISUAL
+        BN6_OBJECT_ID(laserman_hit_main),
+        0,
+        0,
+        0,
+        bn6_object_spawn_with_variant(HIT_VISUAL)
     );
     if (hit == NULL) {
         return;
@@ -555,7 +560,7 @@ BN6_OBJECT1(laserman_actor_main)
 BN6_SUMMON_ATTACK(0x0E3, laserman_attack_main)
 {
     Object *actor = bn6_spawn_type1(
-        BN6_OBJECT_ID(laserman_actor_main), spawn_argument
+        BN6_OBJECT_ID(laserman_actor_main), spawn_parameters
     );
     if (actor == NULL) {
         return;

@@ -154,7 +154,8 @@ static void appear_phase(Object *self)
 static void spawn_reticle(Object *actor, Object *player, uint32_t alternate)
 {
     Object *reticle = bn6_spawn_type4(
-        BN6_OBJECT_ID(searchman_reticle_main), actor->variant
+        BN6_OBJECT_ID(searchman_reticle_main),
+        bn6_object_spawn_with_variant(actor->variant)
     );
     if (reticle == NULL) {
         return;
@@ -185,11 +186,15 @@ static void start_reticle(Object *self)
 
 static void spawn_hit(Object *actor, bool delete_shot)
 {
-    uint32_t collision_type = delete_shot
+    Bn6CollisionType collision_type = delete_shot
         ? DELETE_COLLISION_TYPE
         : NORMAL_COLLISION_TYPE;
     Object *hit = bn6_spawn_type3(
-        BN6_OBJECT_ID(searchman_hit_main), 0, 0, 0, collision_type
+        BN6_OBJECT_ID(searchman_hit_main),
+        0,
+        0,
+        0,
+        bn6_object_spawn_with_variant((uint8_t)collision_type)
     );
     if (hit == NULL) {
         return;
@@ -525,12 +530,15 @@ static void hit_update(Object *self)
 
     if (collision->received_collision_flags == 0) {
         uint32_t random = bn6_rng_next();
-        uint32_t effect = 7u | ((random & 2u) << 8);
+        Bn6ObjectSpawnParameters effect_parameters = {
+            .variant = 7,
+            .subvariant = (uint8_t)(random & 2u),
+        };
         int32_t x = self->x;
         int32_t y = self->y;
         int32_t z = self->z;
         randomize_impact(&x, &z);
-        (void)bn6_spawn_type4_at(0, x, y, z, effect);
+        (void)bn6_spawn_type4_at(0, x, y, z, effect_parameters);
     }
 
     bn6_collision_clear_region(collision);
@@ -602,7 +610,7 @@ BN6_OBJECT1(searchman_actor_main)
 BN6_SUMMON_ATTACK(0x107, searchman_attack_main)
 {
     Object *actor = bn6_spawn_type1(
-        BN6_OBJECT_ID(searchman_actor_main), spawn_argument
+        BN6_OBJECT_ID(searchman_actor_main), spawn_parameters
     );
     if (actor == NULL) {
         return;

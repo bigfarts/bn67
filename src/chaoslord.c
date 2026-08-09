@@ -167,12 +167,14 @@ static void ball_request_destroy(Object *ball)
 
 static Object *spawn_ball(Object *controller)
 {
-    uint32_t spawn_argument =
-        0x10010000u
-        | BN6_SPRITE_GROUP(chaoslord_main_sprite)
-        | (BN6_SPRITE_ID(chaoslord_main_sprite) << 8);
+    Bn6ObjectSpawnParameters spawn_parameters = {
+        .variant = (uint8_t)BN6_SPRITE_GROUP(chaoslord_main_sprite),
+        .subvariant = (uint8_t)BN6_SPRITE_ID(chaoslord_main_sprite),
+        .animation_state = 1,
+        .removal_state = 0x10,
+    };
     Object *ball = bn6_spawn_type1(
-        BN6_OBJECT_ID(chaoslord_ball_main), spawn_argument
+        BN6_OBJECT_ID(chaoslord_ball_main), spawn_parameters
     );
     if (ball == NULL) {
         return NULL;
@@ -249,7 +251,7 @@ static Object *spawn_aura(
     int32_t x,
     int32_t y,
     int32_t z,
-    uint32_t spawn_argument
+    Bn6ObjectSpawnParameters spawn_parameters
 )
 {
     Object *aura = bn6_spawn_type4_at(
@@ -257,7 +259,7 @@ static Object *spawn_aura(
         x,
         y,
         z,
-        spawn_argument
+        spawn_parameters
     );
     if (aura == NULL) {
         return NULL;
@@ -272,7 +274,7 @@ static Object *spawn_burst(
     int32_t x,
     int32_t y,
     uint32_t vector,
-    uint32_t spawn_argument
+    Bn6ObjectSpawnParameters spawn_parameters
 )
 {
     Object *burst = bn6_spawn_type4_at(
@@ -280,7 +282,7 @@ static Object *spawn_burst(
         x,
         y,
         0,
-        spawn_argument
+        spawn_parameters
     );
     if (burst == NULL) {
         return NULL;
@@ -301,7 +303,7 @@ static Object *spawn_teardown(Object *controller)
         controller->x,
         controller->y,
         controller->z + (16 << 16),
-        0x12
+        bn6_object_spawn_with_variant(0x12)
     );
     if (effect == NULL) {
         return NULL;
@@ -312,8 +314,13 @@ static Object *spawn_teardown(Object *controller)
 
 static Object *spawn_flash(void)
 {
+    Bn6ObjectSpawnParameters spawn_parameters = {
+        .variant = 1,
+        .subvariant = 4,
+        .animation_state = 1,
+    };
     Object *flash = bn6_spawn_type4(
-        BN6_OBJECT_ID(chaoslord_flash_main), 0x00010401
+        BN6_OBJECT_ID(chaoslord_flash_main), spawn_parameters
     );
     if (flash == NULL) {
         return NULL;
@@ -325,7 +332,7 @@ static Object *spawn_flash(void)
 
 static Object *spawn_attack_object(
     Object *controller,
-    uint32_t variant
+    uint8_t variant
 )
 {
     Object *attack = bn6_spawn_type3(
@@ -333,7 +340,7 @@ static Object *spawn_attack_object(
         controller->x,
         controller->y,
         controller->z,
-        variant
+        bn6_object_spawn_with_variant(variant)
     );
     if (attack == NULL) {
         return NULL;
@@ -404,11 +411,32 @@ static void controller_init(Object *self)
     uint64_t coordinates = bn6_panel_to_coords(panel_x, 2);
     int32_t x = (int32_t)(uint32_t)coordinates + direction * (8 << 16);
     int32_t y = (int32_t)(uint32_t)(coordinates >> 32);
-    (void)spawn_aura(self, x, y, 0, 0x005A0A0A);
-    (void)spawn_aura(self, x, y, 0, 0x005A0A07);
-    (void)spawn_aura(self, x, y, 0, 0x005A0A04);
-    (void)spawn_aura(self, x, y, 0, 0x005A0A01);
-    (void)spawn_aura(self, x, y, 0, 0x017C0A0D);
+    (void)spawn_aura(self, x, y, 0, (Bn6ObjectSpawnParameters){
+        .variant = 0x0A,
+        .subvariant = 0x0A,
+        .animation_state = 0x5A,
+    });
+    (void)spawn_aura(self, x, y, 0, (Bn6ObjectSpawnParameters){
+        .variant = 0x07,
+        .subvariant = 0x0A,
+        .animation_state = 0x5A,
+    });
+    (void)spawn_aura(self, x, y, 0, (Bn6ObjectSpawnParameters){
+        .variant = 0x04,
+        .subvariant = 0x0A,
+        .animation_state = 0x5A,
+    });
+    (void)spawn_aura(self, x, y, 0, (Bn6ObjectSpawnParameters){
+        .variant = 0x01,
+        .subvariant = 0x0A,
+        .animation_state = 0x5A,
+    });
+    (void)spawn_aura(self, x, y, 0, (Bn6ObjectSpawnParameters){
+        .variant = 0x0D,
+        .subvariant = 0x0A,
+        .animation_state = 0x7C,
+        .removal_state = 0x01,
+    });
 
     self->timer = INTRO_FRAMES;
     self->velocity_x = direction * 0x00009D89;
@@ -445,8 +473,12 @@ static void controller_phase_intro(Object *self)
         int16_t vector_y = entry->y;
         uint32_t vector = ((uint32_t)(uint16_t)vector_x << 16)
             | (uint16_t)vector_y;
-        uint32_t spawn_argument = 0x0100001Eu | (entry->palette << 8);
-        (void)spawn_burst(self, x, y, vector, spawn_argument);
+        Bn6ObjectSpawnParameters spawn_parameters = {
+            .variant = 0x1E,
+            .subvariant = entry->palette,
+            .removal_state = 1,
+        };
+        (void)spawn_burst(self, x, y, vector, spawn_parameters);
     }
 
     bn6_play_sound(0x107);
@@ -592,9 +624,10 @@ BN6_OBJECT1(chaoslord_controller_main)
 
 BN6_SUMMON_ATTACK(0x12E, chaoslord_attack_main)
 {
-    (void)spawn_argument;
+    (void)spawn_parameters;
     Object *controller = bn6_spawn_type1(
-        BN6_OBJECT_ID(chaoslord_controller_main), 0
+        BN6_OBJECT_ID(chaoslord_controller_main),
+        bn6_object_spawn_empty()
     );
     if (controller == NULL) {
         return;
@@ -676,7 +709,10 @@ static void attack_apply_panels(Object *self)
 
 static void spawn_impact_effect(Object *self)
 {
-    Object *effect = bn6_spawn_type4(0x24, (uint32_t)self->variant + 5u);
+    Object *effect = bn6_spawn_type4(
+        0x24,
+        bn6_object_spawn_with_variant((uint8_t)(self->variant + 5u))
+    );
     if (effect == NULL) {
         return;
     }

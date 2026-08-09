@@ -8,7 +8,7 @@ element = "null"
 class = "giga"
 mb = 93
 power = 150
-behavior = { counter_settings = 0x94, dark_soul_usage = 0x0A, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
+behavior = { counter_settings = 0x94, dark_soul_usage = 0x0A, unknown_0e = 0x04, lock_on = 0x00, object_spawn = {}, delay = 0 }
 library = { number = 0x00, flags = 0x00, lock_on_type = 0x10, sort_order = 0x0134, gate_usage = 0x01, dark_chip_id = "none" }
 
 [chips."0x134".variants]

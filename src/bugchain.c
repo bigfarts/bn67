@@ -74,10 +74,13 @@ static void transfer_bugs(Object *controller)
     }
 }
 
-static void spawn_visual(Object *player, uint32_t spawn_argument)
+static void spawn_visual(
+    Object *player,
+    Bn6ObjectSpawnParameters spawn_parameters
+)
 {
     Object *visual = bn6_spawn_type4(
-        BN6_OBJECT_ID(bugchain_visual_main), spawn_argument
+        BN6_OBJECT_ID(bugchain_visual_main), spawn_parameters
     );
     if (visual == NULL) {
         return;
@@ -85,7 +88,10 @@ static void spawn_visual(Object *player, uint32_t spawn_argument)
     visual->parent = player;
 }
 
-static void effect_update(Object *controller, uint32_t spawn_argument)
+static void effect_update(
+    Object *controller,
+    Bn6ObjectSpawnParameters spawn_parameters
+)
 {
     if (controller->substate == 0) {
         if ((bn6_battle_get_config_flags() & BN6_BATTLE_CONFIG_FLAG_LINK) == 0) {
@@ -96,11 +102,11 @@ static void effect_update(Object *controller, uint32_t spawn_argument)
 
         Object *player = bn6_player_object_for_side(0);
         if (player != NULL) {
-            spawn_visual(player, spawn_argument);
+            spawn_visual(player, spawn_parameters);
         }
         player = bn6_player_object_for_side(1);
         if (player != NULL) {
-            spawn_visual(player, spawn_argument);
+            spawn_visual(player, spawn_parameters);
         }
         controller->timer = EFFECT_FRAMES;
         controller->substate = 4;
@@ -115,7 +121,10 @@ static void effect_update(Object *controller, uint32_t spawn_argument)
     }
 }
 
-static void update(Object *controller, uint32_t spawn_argument)
+static void update(
+    Object *controller,
+    Bn6ObjectSpawnParameters spawn_parameters
+)
 {
     switch (controller->phase) {
     case 0:
@@ -125,7 +134,7 @@ static void update(Object *controller, uint32_t spawn_argument)
         bn6_self_type4_dimming_freeze();
         break;
     case 8:
-        effect_update(controller, spawn_argument);
+        effect_update(controller, spawn_parameters);
         break;
     default:
         bn6_self_type4_dimming_outro();
@@ -140,7 +149,7 @@ BN6_OBJECT4(bugchain_controller_main)
         bn6_self_type4_dimming_init();
         break;
     case 4:
-        update(self, spawn_argument);
+        update(self, spawn_parameters);
         break;
     default:
         bn6_self_type4_dimming_free();
@@ -213,7 +222,7 @@ BN6_OBJECT4(bugchain_visual_main)
 BN6_PERSISTENT_ATTACK(0x0BE, bugchain_attack_main)
 {
     Object *controller = bn6_spawn_type4(
-        BN6_OBJECT_ID(bugchain_controller_main), spawn_argument
+        BN6_OBJECT_ID(bugchain_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;

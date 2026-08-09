@@ -132,7 +132,7 @@ static bool head_update(Object *self)
 
 static void spawn_charge_head(
     Object *controller,
-    uint32_t spawn_argument
+    Bn6ObjectSpawnParameters spawn_parameters
 )
 {
     Object *player = bn6_player_object_for_side(controller->owner);
@@ -140,7 +140,7 @@ static void spawn_charge_head(
         return;
     }
     Object *head = bn6_spawn_type4(
-        BN6_OBJECT_ID(bugcharge_head_main), spawn_argument
+        BN6_OBJECT_ID(bugcharge_head_main), spawn_parameters
     );
     if (head == NULL) {
         return;
@@ -159,7 +159,7 @@ static void spawn_gospel(Object *controller)
         0,
         0,
         0,
-        GOSPEL_VISUAL
+        bn6_object_spawn_with_variant(GOSPEL_VISUAL)
     );
     if (gospel == NULL) {
         return;
@@ -172,11 +172,14 @@ static void spawn_gospel(Object *controller)
     gospel->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
 }
 
-static void effect_update(Object *self, uint32_t spawn_argument)
+static void effect_update(
+    Object *self,
+    Bn6ObjectSpawnParameters spawn_parameters
+)
 {
     if (self->substate == 0) {
         self->timer = count_and_clear_bugs(self);
-        spawn_charge_head(self, spawn_argument);
+        spawn_charge_head(self, spawn_parameters);
         bn6_play_sound(BN6_SONG_ID(bugcharge_charge_song));
         self->aux_timer = CHARGE_FRAMES;
         self->substate = FIRE_SUBSTATE;
@@ -206,14 +209,17 @@ static void effect_update(Object *self, uint32_t spawn_argument)
     self->phase_timer = 0;
 }
 
-static void controller_update(Object *self, uint32_t spawn_argument)
+static void controller_update(
+    Object *self,
+    Bn6ObjectSpawnParameters spawn_parameters
+)
 {
     if (self->phase == 0) {
         bn6_self_type4_dimming_intro();
     } else if (self->phase == 4) {
         bn6_self_type4_dimming_freeze();
     } else if (self->phase == EFFECT_PHASE) {
-        effect_update(self, spawn_argument);
+        effect_update(self, spawn_parameters);
     } else {
         bn6_self_type4_dimming_outro();
     }
@@ -272,7 +278,7 @@ static void spawn_hit(Object *source, uint32_t panel_x, uint32_t panel_y)
         0,
         0,
         0,
-        GOSPEL_VISUAL
+        bn6_object_spawn_with_variant(GOSPEL_VISUAL)
     );
     if (hit == NULL) {
         return;
@@ -431,7 +437,7 @@ BN6_OBJECT4(bugcharge_controller_main)
     if (self->state == 0) {
         bn6_self_type4_dimming_init();
     } else if (self->state == ACTIVE_STATE) {
-        controller_update(self, spawn_argument);
+        controller_update(self, spawn_parameters);
     } else {
         bn6_self_type4_dimming_free();
     }
@@ -440,7 +446,7 @@ BN6_OBJECT4(bugcharge_controller_main)
 BN6_PERSISTENT_ATTACK(0x131, bugcharge_attack_main)
 {
     Object *controller = bn6_spawn_type4(
-        BN6_OBJECT_ID(bugcharge_controller_main), spawn_argument
+        BN6_OBJECT_ID(bugcharge_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;

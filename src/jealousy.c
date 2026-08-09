@@ -226,7 +226,7 @@ BN6_OBJECT4(jealousy_controller_main)
 BN6_PERSISTENT_ATTACK(0x0BF, jealousy_attack_main)
 {
     Object *controller = bn6_spawn_type4(
-        BN6_OBJECT_ID(jealousy_controller_main), spawn_argument
+        BN6_OBJECT_ID(jealousy_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;

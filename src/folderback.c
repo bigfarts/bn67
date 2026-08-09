@@ -212,7 +212,7 @@ BN6_OBJECT4(folderback_controller_main)
 BN6_PERSISTENT_ATTACK(0x139, folderback_attack_main)
 {
     Object *controller = bn6_spawn_type4(
-        BN6_OBJECT_ID(folderback_controller_main), spawn_argument
+        BN6_OBJECT_ID(folderback_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;

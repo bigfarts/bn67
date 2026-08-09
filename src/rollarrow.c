@@ -56,7 +56,7 @@ static void spawn_projectile(Object *actor)
         actor->panel_y,
         actor->parameter,
         0,
-        PROJECTILE_COLLISION_TYPE
+        bn6_object_spawn_with_variant(PROJECTILE_COLLISION_TYPE)
     );
     if (projectile == NULL) {
         return;
@@ -305,7 +305,7 @@ BN6_OBJECT3(rollarrow_arrow_main)
 BN6_SUMMON_ATTACK(0x018, rollarrow_attack_main)
 {
     Object *actor = bn6_spawn_type1(
-        BN6_OBJECT_ID(rollarrow_actor_main), spawn_argument
+        BN6_OBJECT_ID(rollarrow_actor_main), spawn_parameters
     );
     if (actor == NULL) {
         return;

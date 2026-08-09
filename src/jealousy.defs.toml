@@ -8,6 +8,6 @@ element = "null"
 class = "standard"
 mb = 60
 power = 80
-behavior = { effect_flags = 0x43, counter_settings = 0x8A, dark_soul_usage = 0x0A, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
+behavior = { effect_flags = 0x43, counter_settings = 0x8A, dark_soul_usage = 0x0A, unknown_0e = 0x04, lock_on = 0x00, object_spawn = {}, delay = 0 }
 library = { number = 0x00, flags = 0x80, lock_on_type = 0x10, sort_order = 0x00C3, gate_usage = 0x01, dark_chip_id = "none" }
 artwork = { icon = "jealousy_icon", image = "jealousy_image", palette = "jealousy_palette" }

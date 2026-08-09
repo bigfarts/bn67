@@ -290,7 +290,7 @@ static Object *spawn_persistent(Object *controller)
         (int32_t)(uint32_t)coordinates,
         (int32_t)(uint32_t)(coordinates >> 32),
         0,
-        0
+        bn6_object_spawn_empty()
     );
     if (object == NULL) {
         return NULL;
@@ -374,7 +374,7 @@ BN6_OBJECT3(signalred_object_main)
 BN6_PERSISTENT_ATTACK(0x0C1, signalred_attack_main)
 {
     Object *controller = bn6_spawn_type4(
-        BN6_OBJECT_ID(signalred_controller_main), spawn_argument
+        BN6_OBJECT_ID(signalred_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;

@@ -170,7 +170,7 @@ the base foreground and uses yellow BGR555 values `0x03FF`, `0x0299`, and
 
 Package manifests declare chip records by ID under `[chips]`. The package
 compiler maps semantic fields for codes, rarity, element, class, MB, behavior
-route and parameters, library metadata, power, and artwork onto BN6's `0x2C`-
+route and object-spawn fields, library metadata, power, and artwork onto BN6's `0x2C`-
 byte record. Unspecified fields retain their native edition value; this is
 used for LaserMan's library metadata and for edition-native menu art. Nested
 `gregar` and `falzar` tables override the common fields before assembly, so
@@ -607,7 +607,7 @@ model, the sole `FD` damage event is represented on all six panels; only one
 six-object damage event is alive at a time.
 
 Blue Moon provides Base, SP, and DS chip records. As with SearchMan, the BN6
-series maps those behavior selectors to Base/EX/SP parameters `0/3/4`. Base
+series maps their object-spawn variants to Base/EX/SP values `0/3/4`. Base
 uses the native red-background palette. The LaserMan artwork assigns its
 variant background to palette indices `1`-`5`, so EX replaces only those five
 entries with green shades and retains the base foreground at indices `6`-`15`.

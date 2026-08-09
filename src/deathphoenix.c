@@ -213,7 +213,8 @@ static void strike_spawn(
 )
 {
     Object *strike = bn6_spawn_type4(
-        BN6_OBJECT_ID(deathphoenix_strike_main), alternate
+        BN6_OBJECT_ID(deathphoenix_strike_main),
+        bn6_object_spawn_with_variant((uint8_t)alternate)
     );
     if (strike == NULL) {
         return;
@@ -405,7 +406,8 @@ static void actor_update(Object *self)
 static void flame_spawn(Object *strike, uint32_t alternate)
 {
     Object *flame = bn6_spawn_type4(
-        BN6_OBJECT_ID(deathphoenix_flame_main), alternate
+        BN6_OBJECT_ID(deathphoenix_flame_main),
+        bn6_object_spawn_with_variant((uint8_t)alternate)
     );
     if (flame == NULL) {
         return;
@@ -623,7 +625,7 @@ BN6_OBJECT1(deathphoenix_actor_main)
 BN6_SUMMON_ATTACK(0x134, deathphoenix_attack_main)
 {
     Object *actor = bn6_spawn_type1(
-        BN6_OBJECT_ID(deathphoenix_actor_main), spawn_argument
+        BN6_OBJECT_ID(deathphoenix_actor_main), spawn_parameters
     );
     if (actor == NULL) {
         return;

@@ -203,7 +203,10 @@ NATIVE_WRAPPER_R4(
     (uint32_t unused, int32_t x, int32_t y, int32_t z, uint32_t effect)
 )
 
-NAKED Object *bn6_spawn_type1(uint32_t type, uint32_t implicit_r4)
+NAKED Object *bn6_spawn_type1(
+    uint32_t type,
+    Bn6ObjectSpawnParameters spawn_parameters
+)
 {
     __asm__(
         ".syntax unified\n"
@@ -328,7 +331,7 @@ NAKED Object *bn6_spawn_type3(
     int32_t x,
     int32_t y,
     int32_t z,
-    uint32_t implicit_r4
+    Bn6ObjectSpawnParameters spawn_parameters
 )
 {
     __asm__(
@@ -344,7 +347,10 @@ NAKED Object *bn6_spawn_type3(
     );
 }
 
-NAKED Object *bn6_spawn_type4(uint32_t type, uint32_t implicit_r4)
+NAKED Object *bn6_spawn_type4(
+    uint32_t type,
+    Bn6ObjectSpawnParameters spawn_parameters
+)
 {
     __asm__(
         ".syntax unified\n"
@@ -364,7 +370,7 @@ NAKED Object *bn6_spawn_type4_at(
     int32_t x,
     int32_t y,
     int32_t z,
-    uint32_t implicit_r4
+    Bn6ObjectSpawnParameters spawn_parameters
 )
 {
     __asm__(

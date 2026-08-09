@@ -350,9 +350,9 @@ typedef struct __attribute__((aligned(4))) Bn6PanelDamageProperties {
     }
 
 /*
- * Family 0x1C enters with z in r3, spawn_argument in r4, owner in r5, and
+ * Family 0x1C enters with z in r3, object spawn parameters in r4, owner in r5, and
  * resolved attack in r6.  Preserve z before putting owner in the fourth C
- * argument, then arrange attack/z/spawn_argument as stacked arguments 5-7.
+ * argument, then arrange attack/z/spawn_parameters as stacked arguments 5-7.
  * Saving r7 alongside r4/lr keeps the C call's stack 8-byte aligned.
  */
 #define BN6_EXPORT_EPHEMERAL_ATTACK(name, target) \
@@ -371,21 +371,49 @@ typedef struct __attribute__((aligned(4))) Bn6PanelDamageProperties {
         ); \
     }
 
+/*
+ * The native object spawners copy this value, not a pointer, into object bytes
+ * +0x04 through +0x07.  Attack behavior.object_spawn uses the same layout.
+ */
+typedef struct __attribute__((aligned(4))) Bn6ObjectSpawnParameters {
+    uint8_t variant;
+    uint8_t subvariant;
+    uint8_t animation_state;
+    uint8_t removal_state;
+} Bn6ObjectSpawnParameters;
+
+static inline Bn6ObjectSpawnParameters bn6_object_spawn_empty(void)
+{
+    return (Bn6ObjectSpawnParameters){0};
+}
+
+static inline Bn6ObjectSpawnParameters bn6_object_spawn_with_variant(
+    uint8_t variant
+)
+{
+    return (Bn6ObjectSpawnParameters){ .variant = variant };
+}
+
 struct ObjectFields {
     uint8_t header_flags;                // +0x00, BN6_OBJECT_FLAG_*
     uint8_t unknown_01[3];
     union {
-        uint16_t variant_word;            // +0x04
+        Bn6ObjectSpawnParameters spawn_parameters; // +0x04
         struct {
-            uint8_t variant;              // +0x04
-            uint8_t subvariant;            // +0x05
-        };
-    };
-    union {
-        uint16_t animation_state_word;    // +0x06
-        struct {
-            uint8_t animation_state;      // +0x06
-            uint8_t removal_state;        // +0x07
+            union {
+                uint16_t variant_word;    // +0x04
+                struct {
+                    uint8_t variant;      // +0x04
+                    uint8_t subvariant;   // +0x05
+                };
+            };
+            union {
+                uint16_t animation_state_word; // +0x06
+                struct {
+                    uint8_t animation_state;   // +0x06
+                    uint8_t removal_state;     // +0x07
+                };
+            };
         };
     };
     union {
@@ -490,6 +518,14 @@ struct RuntimeFields {
     BattleContext *battle_context;       // +0x18
 };
 
+_Static_assert(
+    sizeof(Bn6ObjectSpawnParameters) == sizeof(uint32_t),
+    "object spawn parameters must occupy one native register"
+);
+_Static_assert(
+    offsetof(struct ObjectFields, spawn_parameters) == 0x04,
+    "object spawn parameters offset"
+);
 _Static_assert(offsetof(struct ObjectFields, state_word) == 0x08, "object state offset");
 _Static_assert(offsetof(struct ObjectFields, variant) == 0x04, "object variant offset");
 _Static_assert(offsetof(struct ObjectFields, parameter) == 0x0E, "object parameter offset");
@@ -626,21 +662,27 @@ void bn6_palette_write(
 );
 void bn6_palette_restore(uint32_t cache);
 
-Object *bn6_spawn_type1(uint32_t type, uint32_t implicit_r4);
+Object *bn6_spawn_type1(
+    uint32_t type,
+    Bn6ObjectSpawnParameters spawn_parameters
+);
 Object *bn6_spawn_type3(
     uint32_t type,
     int32_t x,
     int32_t y,
     int32_t z,
-    uint32_t implicit_r4
+    Bn6ObjectSpawnParameters spawn_parameters
 );
-Object *bn6_spawn_type4(uint32_t type, uint32_t implicit_r4);
+Object *bn6_spawn_type4(
+    uint32_t type,
+    Bn6ObjectSpawnParameters spawn_parameters
+);
 Object *bn6_spawn_type4_at(
     uint32_t type,
     int32_t x,
     int32_t y,
     int32_t z,
-    uint32_t implicit_r4
+    Bn6ObjectSpawnParameters spawn_parameters
 );
 Object *bn6_spawn_battle_effect(
     uint32_t unused,

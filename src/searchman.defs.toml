@@ -8,7 +8,7 @@ element = "cursor"
 class = "mega"
 mb = 42
 power = 20
-behavior = { effect_flags = 0x47, counter_settings = 0x8A, dark_soul_usage = 0x1F, unknown_0e = 0x00, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
+behavior = { effect_flags = 0x47, counter_settings = 0x8A, dark_soul_usage = 0x1F, unknown_0e = 0x00, lock_on = 0x00, object_spawn = {}, delay = 0 }
 library = { number = 0x1C, flags = 0x00, lock_on_type = 0x00, sort_order = 0x0107, gate_usage = 0x01, dark_chip_id = "none" }
 artwork = { icon = "searchman_icon", image = "searchman_image", palette = "searchman_palette_base" }
 
@@ -22,7 +22,7 @@ element = "cursor"
 class = "mega"
 mb = 64
 power = 40
-behavior = { effect_flags = 0x47, counter_settings = 0x8A, dark_soul_usage = 0x00, unknown_0e = 0x00, lock_on = 0x00, parameters = [3, 0, 0, 0], delay = 0 }
+behavior = { effect_flags = 0x47, counter_settings = 0x8A, dark_soul_usage = 0x00, unknown_0e = 0x00, lock_on = 0x00, object_spawn = { variant = 3 }, delay = 0 }
 library = { number = 0x1D, flags = 0x00, lock_on_type = 0x00, sort_order = 0x0108, gate_usage = 0x01, dark_chip_id = "none" }
 artwork = { icon = "searchman_icon", image = "searchman_image", palette = "searchman_palette_ex" }
 
@@ -36,6 +36,6 @@ element = "cursor"
 class = "mega"
 mb = 86
 power = 75
-behavior = { effect_flags = 0x47, counter_settings = 0x8A, dark_soul_usage = 0x00, unknown_0e = 0x00, lock_on = 0x00, parameters = [4, 0, 0, 0], delay = 0 }
+behavior = { effect_flags = 0x47, counter_settings = 0x8A, dark_soul_usage = 0x00, unknown_0e = 0x00, lock_on = 0x00, object_spawn = { variant = 4 }, delay = 0 }
 library = { number = 0x1E, flags = 0x00, lock_on_type = 0x00, sort_order = 0x0109, gate_usage = 0x01, dark_chip_id = "none" }
 artwork = { icon = "searchman_icon", image = "searchman_image", palette = "searchman_palette_sp" }

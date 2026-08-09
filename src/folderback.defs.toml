@@ -8,6 +8,6 @@ element = "null"
 class = "giga"
 mb = 99
 power = 0
-behavior = { effect_flags = 0x41, counter_settings = 0x00, dark_soul_usage = 0x0A, unknown_0e = 0x00, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
+behavior = { effect_flags = 0x41, counter_settings = 0x00, dark_soul_usage = 0x0A, unknown_0e = 0x00, lock_on = 0x00, object_spawn = {}, delay = 0 }
 library = { number = 0x0D, flags = 0x10, lock_on_type = 0x00, sort_order = 0x0139, gate_usage = 0x01, dark_chip_id = "none" }
 artwork = { icon = "folderback_icon", image = "folderback_image", palette = "folderback_palette" }

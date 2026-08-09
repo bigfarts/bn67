@@ -580,7 +580,7 @@ CHIP_FIELD_LAYOUT: dict[str, tuple[int, str]] = {
     "behavior.dark_soul_usage": (0x0D, "byte"),
     "behavior.unknown_0e": (0x0E, "byte"),
     "behavior.lock_on": (0x0F, "byte"),
-    "behavior.parameters": (0x10, "bytes"),
+    "behavior.object_spawn": (0x10, "bytes"),
     "behavior.delay": (0x14, "byte"),
     "library.number": (0x15, "byte"),
     "library.flags": (0x16, "byte"),
@@ -613,9 +613,15 @@ CHIP_BEHAVIOR_FIELDS = {
     "dark_soul_usage",
     "unknown_0e",
     "lock_on",
-    "parameters",
+    "object_spawn",
     "delay",
 }
+CHIP_OBJECT_SPAWN_FIELDS = (
+    "variant",
+    "subvariant",
+    "animation_state",
+    "removal_state",
+)
 CHIP_LIBRARY_FIELDS = {
     "number",
     "flags",
@@ -710,20 +716,30 @@ def parse_chip_record(
     if not isinstance(behavior, dict):
         raise PackageError(f"{context}: behavior must be a table")
     check_keys(behavior, CHIP_BEHAVIOR_FIELDS, f"{context}: behavior")
-    for key in CHIP_BEHAVIOR_FIELDS - {"parameters"}:
+    for key in CHIP_BEHAVIOR_FIELDS - {"object_spawn"}:
         if key in behavior:
             fields[f"behavior.{key}"] = checked_int(
                 behavior[key], 0, 0xFF, f"{context}: behavior.{key}"
             )
-    if "parameters" in behavior:
-        parameters = behavior["parameters"]
-        if not isinstance(parameters, list) or len(parameters) != 4:
+    if "object_spawn" in behavior:
+        object_spawn = behavior["object_spawn"]
+        if not isinstance(object_spawn, dict):
             raise PackageError(
-                f"{context}: behavior.parameters must contain exactly four bytes"
+                f"{context}: behavior.object_spawn must be a table"
             )
-        fields["behavior.parameters"] = tuple(
-            checked_int(value, 0, 0xFF, f"{context}: behavior.parameters[{index}]")
-            for index, value in enumerate(parameters)
+        check_keys(
+            object_spawn,
+            set(CHIP_OBJECT_SPAWN_FIELDS),
+            f"{context}: behavior.object_spawn",
+        )
+        fields["behavior.object_spawn"] = tuple(
+            checked_int(
+                object_spawn.get(field, 0),
+                0,
+                0xFF,
+                f"{context}: behavior.object_spawn.{field}",
+            )
+            for field in CHIP_OBJECT_SPAWN_FIELDS
         )
 
     library = table.get("library", {})

@@ -57,12 +57,12 @@ uint8_t *bn6_chip_queue(void);
     ); \
     static USED void BN6_JOIN(main, _fn)( \
         Object *self, \
-        uint32_t spawn_argument __attribute__((unused)) \
+        Bn6ObjectSpawnParameters spawn_parameters __attribute__((unused)) \
     ); \
     BN6_EXPORT_OBJECT(main, BN6_JOIN(main, _fn)) \
     static USED void BN6_JOIN(main, _fn)( \
         Object *self, \
-        uint32_t spawn_argument __attribute__((unused)) \
+        Bn6ObjectSpawnParameters spawn_parameters __attribute__((unused)) \
     )
 
 #define BN6_OBJECT1(main) BN6_OBJECT_BODY(1, main)
@@ -87,7 +87,7 @@ uint8_t *bn6_chip_queue(void);
         Object *owner, \
         uint32_t attack, \
         context_type context_name, \
-        uint32_t spawn_argument \
+        Bn6ObjectSpawnParameters spawn_parameters \
     ); \
     export(main, BN6_JOIN(main, _fn)) \
     static USED return_type BN6_JOIN(main, _fn)( \
@@ -97,7 +97,7 @@ uint8_t *bn6_chip_queue(void);
         Object *owner, \
         uint32_t attack, \
         context_type context_name, \
-        uint32_t spawn_argument \
+        Bn6ObjectSpawnParameters spawn_parameters \
     )
 
 #define BN6_PERSISTENT_ATTACK(chip_id, main) \

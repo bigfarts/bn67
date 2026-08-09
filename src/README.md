@@ -116,7 +116,10 @@ Object and attack entry points follow `<package>_<name>_main`; sprite archives
 follow `<package>_<name>_sprite`; and songs follow `<package>_<name>_song`. The
 compiler rejects labels that do not match those conventions. Object and attack
 macros combine registration, the native ABI veneer, and the C implementation.
-Every object macro exposes the native `r4` value as `spawn_argument`.
+Every object and attack macro exposes the native `r4` value by value as
+`Bn6ObjectSpawnParameters spawn_parameters`. It is a four-byte struct, not a
+pointer: its `variant`, `subvariant`, `animation_state`, and `removal_state`
+fields are copied to new-object offsets `+0x04` through `+0x07`.
 `BN6_SPRITE` and `BN6_SONG` likewise combine registration with the resource
 definition; `BN6_PCM` supplies the standard PCM song body.
 
@@ -125,7 +128,7 @@ Use the allocated values in ordinary C expressions:
 ```c
 Object *reticle = bn6_spawn_type4(
     BN6_OBJECT_ID(searchman_reticle_main),
-    spawn_argument
+    bn6_object_spawn_with_variant(actor->variant)
 );
 bn6_self_sprite_load(
     0x80,
@@ -180,12 +183,17 @@ element = "null"
 class = "giga"
 mb = 77
 power = 200
-behavior = { counter_settings = 0x8B, parameters = [0, 0, 0, 0] }
+behavior = { counter_settings = 0x8B, object_spawn = {} }
 
 [chips."0x131".variants]
 gregar = { behavior = { effect_flags = 0x41 } }
 falzar = { behavior = { effect_flags = 0x01 } }
 ```
+
+`behavior.object_spawn` uses the same named fields as
+`Bn6ObjectSpawnParameters`. Missing fields inside the table are zero, so
+`object_spawn = { variant = 3 }` initializes only `variant`. Omitting the
+`object_spawn` table entirely preserves the native chip record's four bytes.
 
 Unrelated text replacements use a separate archive/index namespace:
 

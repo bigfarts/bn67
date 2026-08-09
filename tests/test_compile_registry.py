@@ -8,6 +8,7 @@ import tempfile
 import tomllib
 import unittest
 
+from build_text_archives import build_archive
 from compile_registry import (
     PackageError,
     discover_packages,
@@ -21,9 +22,11 @@ from compile_registry import (
     generate_text_manifest,
     load_config,
     load_metadata,
+    parse_chip_record,
     text_archive_entry_count,
     validate_and_allocate,
 )
+from extract_assets import ASSETS
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,6 +36,32 @@ class PackageCompilerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.temporary = tempfile.TemporaryDirectory()
+        cls.fixture_root = Path(cls.temporary.name)
+        (cls.fixture_root / "build").mkdir()
+        extracted_assets = {asset.output: asset for asset in ASSETS}
+        cls.config_paths = {}
+        for variant in ("gregar", "falzar"):
+            source = ROOT / f"config.{variant}.toml"
+            config_path = cls.fixture_root / source.name
+            config_text = source.read_text()
+            config_path.write_text(config_text)
+            cls.config_paths[variant] = config_path
+            raw = tomllib.loads(config_text)
+            fixed_tables = (
+                [item["native_table"] for item in raw["object_classes"]]
+                + [item["native_table"] for item in raw["sprite_groups"]]
+                + [raw["songs"]["native_table"]]
+                + [item["native_table"] for item in raw["attack_pools"].values()]
+            )
+            for relative in fixed_tables:
+                asset = extracted_assets[Path(relative).name]
+                (cls.fixture_root / relative).write_bytes(bytes(asset.length))
+            for archive in raw["text"]["archives"]:
+                entry_count = 0x100 if archive["source_index"] == 0 else 0xA8
+                (cls.fixture_root / archive["binary"]).write_bytes(
+                    build_archive([b"\xE6"] * entry_count)
+                )
+
         cls.metadata = {}
         for variant, falzar in (("gregar", 0), ("falzar", 1)):
             metadata_path = Path(cls.temporary.name) / f"metadata-{variant}.json"
@@ -58,14 +87,17 @@ class PackageCompilerTests(unittest.TestCase):
     def tearDownClass(cls) -> None:
         cls.temporary.cleanup()
 
+    def config(self, variant="gregar"):
+        return replace(load_config(self.config_paths[variant]), root=ROOT)
+
     def packages(self, variant="gregar"):
-        config = load_config(ROOT / f"config.{variant}.toml")
+        config = self.config(variant)
         return config, discover_packages(config, self.metadata[variant])
 
     def test_config_is_loaded_independently(self) -> None:
         for variant in ("gregar", "falzar"):
             raw = tomllib.loads((ROOT / f"config.{variant}.toml").read_text())
-            config = load_config(ROOT / f"config.{variant}.toml")
+            config = self.config(variant)
 
             self.assertNotIn("manifest_globs", raw)
             self.assertEqual(config.variant, raw["variant"])
@@ -82,7 +114,7 @@ class PackageCompilerTests(unittest.TestCase):
                 self.assertNotIn("native_entries", item)
                 self.assertEqual(
                     config.object_classes[item["number"]].native_entries,
-                    (ROOT / item["native_table"]).stat().st_size // 4,
+                    (self.fixture_root / item["native_table"]).stat().st_size // 4,
                 )
             for group in raw["sprite_groups"]:
                 self.assertIn("references", group)
@@ -90,19 +122,23 @@ class PackageCompilerTests(unittest.TestCase):
                 self.assertNotIn("native_entries", group)
                 self.assertEqual(
                     config.sprite_groups[group["number"]].native_entries,
-                    (ROOT / group["native_table"]).stat().st_size // 4,
+                    (self.fixture_root / group["native_table"]).stat().st_size // 4,
                 )
             self.assertNotIn("native_entries", raw["songs"])
             self.assertEqual(
                 config.songs.native_entries,
-                (ROOT / raw["songs"]["native_table"]).stat().st_size // 8,
+                (self.fixture_root / raw["songs"]["native_table"]).stat().st_size
+                // 8,
             )
             for kind, pool in config.attack_pools.items():
                 self.assertEqual(pool.family, raw["attack_pools"][kind]["family"])
                 self.assertNotIn("native_entries", raw["attack_pools"][kind])
                 self.assertEqual(
                     pool.native_entries,
-                    (ROOT / raw["attack_pools"][kind]["native_table"]).stat().st_size
+                    (
+                        self.fixture_root
+                        / raw["attack_pools"][kind]["native_table"]
+                    ).stat().st_size
                     // 4,
                 )
             archives = {
@@ -112,7 +148,7 @@ class PackageCompilerTests(unittest.TestCase):
             }
             for item in raw["text"]["archives"]:
                 self.assertNotIn("native_entries", item)
-                binary = (ROOT / item["binary"]).read_bytes()
+                binary = (self.fixture_root / item["binary"]).read_bytes()
                 self.assertEqual(
                     archives[item["name"]].native_entries,
                     int.from_bytes(binary[:2], "little") // 2,
@@ -458,11 +494,31 @@ class PackageCompilerTests(unittest.TestCase):
             source.with_suffix(".defs.toml").write_text(
                 '[chips."0x001"]\ncodes = ["AA"]\n'
             )
-            config = replace(
-                load_config(ROOT / "config.gregar.toml"), root=root.resolve()
-            )
+            config = replace(self.config(), root=root.resolve())
             with self.assertRaisesRegex(PackageError, "codes must contain"):
                 discover_packages(config, {"invalid": []})
+
+    def test_object_spawn_parameters_are_named_fields(self) -> None:
+        fields = dict(
+            parse_chip_record(
+                {
+                    "behavior": {
+                        "object_spawn": {
+                            "variant": 3,
+                            "animation_state": 5,
+                        }
+                    }
+                },
+                "test chip",
+            )
+        )
+        self.assertEqual(fields["behavior.object_spawn"], (3, 0, 5, 0))
+
+        with self.assertRaisesRegex(PackageError, r"unknown field\(s\): parameters"):
+            parse_chip_record(
+                {"behavior": {"parameters": [3, 0, 0, 0]}},
+                "test chip",
+            )
 
     def test_discovery_and_output_are_deterministic(self) -> None:
         config, first = self.packages()
@@ -521,7 +577,7 @@ class PackageCompilerTests(unittest.TestCase):
             with self.assertRaisesRegex(PackageError, "source include cycle"):
                 discover_packages(
                     replace(
-                        load_config(ROOT / "config.gregar.toml"),
+                        self.config(),
                         root=root.resolve(),
                     ),
                     metadata,
