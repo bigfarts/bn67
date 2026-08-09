@@ -27,6 +27,7 @@ ASM_SOURCES := $(wildcard $(PATCH_DIR)/src/*.asm)
 C_SOURCES := $(wildcard $(PATCH_DIR)/src/*.c)
 C_HEADERS := $(wildcard $(PATCH_DIR)/src/*.h)
 C_LINKER_SCRIPT := $(PATCH_DIR)/src/link.ld
+# Asset extraction writes one shared set of files, so it needs a completion marker.
 ASSET_STAMP := $(BUILD_DIR)/.assets.stamp
 
 CFLAGS := -std=c11 -Os -mthumb -march=armv4t -mthumb-interwork \
@@ -105,6 +106,7 @@ EDITION_TEXT_OFFSET_falzar := 0x42068
 
 edition_targets = $(foreach edition,$(EDITIONS),$(BUILD_DIR)/$(1)$(edition)$(2))
 EDITION_REGISTRY_METADATA := $(call edition_targets,registry-metadata-,.generated.json)
+# Registry, title, and text generation each write multiple peer outputs.
 EDITION_REGISTRY_STAMPS := $(call edition_targets,.registry-,.stamp)
 EDITION_ELFS := $(call edition_targets,gameplay-,.elf)
 EDITION_BINARIES := $(call edition_targets,gameplay-,.bin)

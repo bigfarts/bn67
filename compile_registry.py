@@ -14,9 +14,7 @@ from typing import Any
 
 NAME_RE = re.compile(r"^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$")
 SNAKE_CASE_RE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
-POINTER_METADATA_RE = re.compile(
-    r"^pointer__(0[xX][0-9A-Fa-f]+)__([a-z][a-z0-9_]*)$"
-)
+POINTER_METADATA_RE = re.compile(r"^pointer__(0[xX][0-9A-Fa-f]+)__([a-z][a-z0-9_]*)$")
 RUNTIME_SOURCE_NAMES = {"abi.c", "runtime.c"}
 SONG_PLAYER_FIRST = 0x0C
 SONG_PLAYER_LAST = 0x1F
@@ -314,8 +312,7 @@ def load_config(path: Path) -> Config:
             raise PackageError(f"{item_context}: references must be word-aligned")
         interceptor = item.get("interceptor")
         if interceptor is not None and (
-            not isinstance(interceptor, str)
-            or not SNAKE_CASE_RE.fullmatch(interceptor)
+            not isinstance(interceptor, str) or not SNAKE_CASE_RE.fullmatch(interceptor)
         ):
             raise PackageError(
                 f"{item_context}: interceptor must be a snake_case symbol"
@@ -336,9 +333,7 @@ def load_config(path: Path) -> Config:
     )
     object_dispatch = ObjectDispatch(
         require_int(object_dispatch_raw, "hook_address", f"{path}: object_dispatch"),
-        require_int(
-            object_dispatch_raw, "advance_address", f"{path}: object_dispatch"
-        ),
+        require_int(object_dispatch_raw, "advance_address", f"{path}: object_dispatch"),
         require_int(
             object_dispatch_raw,
             "continuation_address",
@@ -753,9 +748,7 @@ def load_package(source_path: Path, config: Config) -> Package:
             raise PackageError(f"{context}: variants must be a table")
         variant_table = variants.get(config.variant, {})
         if not isinstance(variant_table, dict):
-            raise PackageError(
-                f"{context}: variant {config.variant!r} must be a table"
-            )
+            raise PackageError(f"{context}: variant {config.variant!r} must be a table")
         override = parse_chip_record(
             variant_table, f"{context}: variant {config.variant}"
         )
@@ -840,9 +833,7 @@ def load_package(source_path: Path, config: Config) -> Package:
                     f"{entry_context}: replacement must be a non-empty string "
                     "or string array"
                 )
-            text.append(
-                TextResource(name, archive_name, entry_index, normalized)
-            )
+            text.append(TextResource(name, archive_name, entry_index, normalized))
 
     return Package(
         name,
@@ -872,7 +863,9 @@ def load_metadata(path: Path) -> dict[str, list[str]]:
         if not isinstance(entry, dict) or not isinstance(entry.get("name"), str):
             raise PackageError(f"{path}: invalid package metadata entry")
         symbols = entry.get("symbols")
-        if not isinstance(symbols, list) or not all(isinstance(item, str) for item in symbols):
+        if not isinstance(symbols, list) or not all(
+            isinstance(item, str) for item in symbols
+        ):
             raise PackageError(f"{path}: invalid symbols for {entry['name']}")
         result[entry["name"]] = symbols
     return result
@@ -884,7 +877,7 @@ def check_snake_resource_label(package: str, label: str, suffix: str) -> None:
         raise PackageError(
             f"{package}: {label} must use the {prefix}<name>{suffix} convention"
         )
-    middle = label[len(prefix):-len(suffix)]
+    middle = label[len(prefix) : -len(suffix)]
     if not middle or SNAKE_CASE_RE.fullmatch(label) is None:
         raise PackageError(f"{package}: invalid snake_case resource name {label}")
 
@@ -900,7 +893,7 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         prefix = "__bn6_meta__"
         if not symbol.startswith(prefix):
             raise PackageError(f"{package.name}: invalid metadata symbol {symbol}")
-        body = symbol[len(prefix):]
+        body = symbol[len(prefix) :]
         pointer = POINTER_METADATA_RE.fullmatch(body)
         if pointer is not None:
             address_text, patch_symbol = pointer.groups()
@@ -936,8 +929,12 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
             raise PackageError(f"{package.name}: invalid metadata symbol {symbol}")
     return replace(
         package,
-        includes=tuple(includes), objects=tuple(objects), sprites=tuple(sprites),
-        songs=tuple(songs), attack=attack, pointer_patches=tuple(patches),
+        includes=tuple(includes),
+        objects=tuple(objects),
+        sprites=tuple(sprites),
+        songs=tuple(songs),
+        attack=attack,
+        pointer_patches=tuple(patches),
     )
 
 
@@ -967,7 +964,7 @@ def discover_packages(config: Config, metadata: dict[str, list[str]]) -> list[Pa
 
     def visit(name: str) -> None:
         if name in visiting:
-            cycle = visiting[visiting.index(name):] + [name]
+            cycle = visiting[visiting.index(name) :] + [name]
             raise PackageError("source include cycle: " + " -> ".join(cycle))
         if any(item.name == name for item in ordered):
             return
@@ -993,9 +990,7 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
 
     for item in objects:
         if item.object_class not in config.object_classes:
-            raise PackageError(
-                f"{item.main}: unknown object class {item.object_class}"
-            )
+            raise PackageError(f"{item.main}: unknown object class {item.object_class}")
     text_owners: dict[tuple[str, int], str] = {}
     for item in text:
         key = (item.archive, item.index)
@@ -1027,8 +1022,7 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
                 f"{len(names)} package objects"
             )
         object_allocations[number] = {
-            name: first_custom_id + index
-            for index, name in enumerate(names)
+            name: first_custom_id + index for index, name in enumerate(names)
         }
 
     # Sprite handles contain both a table group and an index. Spread resources
@@ -1065,8 +1059,7 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
             f"more than {player_count} imported songs; no deterministic player groups remain"
         )
     song_players = {
-        item.archive: SONG_PLAYER_FIRST + index
-        for index, item in enumerate(songs)
+        item.archive: SONG_PLAYER_FIRST + index for index, item in enumerate(songs)
     }
     return Allocations(
         object_allocations,
@@ -1177,11 +1170,7 @@ def emit_chip_records(
     lines = ["// Semantic chip-record patches declared by packages."]
     for package in packages:
         for chip in package.chips:
-            if (
-                not chip.common
-                and not chip.override
-                and package.attack is None
-            ):
+            if not chip.common and not chip.override and package.attack is None:
                 continue
             lines.extend(["", f"// {chip.package}: chip 0x{chip.chip_id:03X}"])
             common = dict(chip.common)
@@ -1201,24 +1190,14 @@ def emit_chip_records(
 def emit_attack_tables(
     config: Config, packages: list[Package], allocations: Allocations
 ) -> list[str]:
-    """Relocate native attack tables and extend each to all 256 subfamilies."""
-    lines = ["// Compiler-owned 256-entry chip attack tables."]
+    """Relocate native attack tables and append allocated subfamilies."""
+    lines = ["// Compiler-owned chip attack tables."]
     for kind, pool in config.attack_pools.items():
         label = f"attack_family_{pool.family:02x}_table"
         lines.extend(["", f"// {kind}: native family 0x{pool.family:02X}"])
         for address in pool.references:
             lines.extend([f".org 0x{address:08X}", f"    .dw {label}"])
 
-    lines.extend(
-        [
-            "",
-            ".autoregion",
-            ".align 2",
-            "unassigned_attack_main:",
-            "    bx lr",
-            ".endautoregion",
-        ]
-    )
     attacks = {
         package.attack.main: package.attack
         for package in packages
@@ -1240,16 +1219,10 @@ def emit_attack_tables(
                 f'    .incbin "{pool.native_table}"',
             ]
         )
-        for subfamily in range(pool.native_entries, 0x100):
-            attack = assigned.get(subfamily)
-            if attack is None:
-                lines.append(
-                    f"    .dw unassigned_attack_main + 1 // 0x{subfamily:02X}"
-                )
-            else:
-                lines.append(
-                    f"    .dw {attack.main} + 1 // 0x{subfamily:02X} {attack.package}"
-                )
+        for subfamily, attack in sorted(assigned.items()):
+            lines.append(
+                f"    .dw {attack.main} + 1 // 0x{subfamily:02X} {attack.package}"
+            )
         lines.extend([f"{label}_end:", ".endautoregion"])
     return lines
 
@@ -1257,8 +1230,8 @@ def emit_attack_tables(
 def emit_object_tables(
     config: Config, packages: list[Package], allocations: Allocations
 ) -> list[str]:
-    """Relocate native object-class tables and extend each to all 256 IDs."""
-    lines = ["// Compiler-owned 256-entry object-class tables."]
+    """Relocate native object-class tables and append allocated IDs."""
+    lines = ["// Compiler-owned object-class tables."]
     class_numbers = sorted(config.object_classes)
     for number in class_numbers:
         object_class = config.object_classes[number]
@@ -1316,15 +1289,6 @@ def emit_object_tables(
             "    bx r0",
             "    .pool",
             ".endautoregion",
-            "",
-            ".autoregion",
-            ".align 2",
-            "unassigned_object_main:",
-            "    push {lr}",
-            "    engine_call object_free",
-            "    pop {pc}",
-            "    .pool",
-            ".endautoregion",
         ]
     )
     all_objects = [item for package in packages for item in package.objects]
@@ -1332,9 +1296,7 @@ def emit_object_tables(
         object_class = config.object_classes[number]
         namespace = allocations.objects[number]
         active = {
-            item.main: item
-            for item in all_objects
-            if item.object_class == number
+            item.main: item for item in all_objects if item.object_class == number
         }
         reverse = {resource_id: name for name, resource_id in namespace.items()}
         label = f"object_class_{number}_table"
@@ -1347,11 +1309,10 @@ def emit_object_tables(
                 f'    .incbin "{object_class.native_table}"',
             ]
         )
-        for resource_id in range(object_class.native_entries, 0x100):
-            name = reverse.get(resource_id)
-            target = "unassigned_object_main" if name is None else active[name].main
-            suffix = "" if name is None else f" {name}"
-            lines.append(f"    .dw {target} + 1 // 0x{resource_id:02X}{suffix}")
+        for resource_id, name in sorted(reverse.items()):
+            lines.append(
+                f"    .dw {active[name].main} + 1 // 0x{resource_id:02X} {name}"
+            )
         lines.extend([f"{label}_end:", ".endautoregion"])
     return lines
 
@@ -1403,7 +1364,7 @@ def emit_sprite_tables(
         for resource_id in sorted(reverse):
             name = reverse[resource_id]
             item = active[name]
-            lines.append(f"    .dw {item.archive} // {name} (0x{resource_id:02X})")
+            lines.append(f"    .dw {item.archive} // 0x{resource_id:02X} {name}")
         lines.extend([f"{table}_end:", ".endautoregion"])
     return lines
 
@@ -1413,9 +1374,7 @@ def emit_song_table(
 ) -> list[str]:
     lines = ["// Relocated native song table with package-owned songs appended."]
     for address in config.songs.references:
-        lines.extend(
-            [f".org 0x{address:08X}", "    .dw relocated_song_table"]
-        )
+        lines.extend([f".org 0x{address:08X}", "    .dw relocated_song_table"])
     lines.extend(
         [
             "",
@@ -1425,9 +1384,7 @@ def emit_song_table(
             f'    .incbin "{config.songs.native_table}"',
         ]
     )
-    active = {
-        item.archive: item for package in packages for item in package.songs
-    }
+    active = {item.archive: item for package in packages for item in package.songs}
     reverse = {resource_id: name for name, resource_id in allocations.songs.items()}
     for resource_id in range(
         config.songs.native_entries,
@@ -1437,7 +1394,7 @@ def emit_song_table(
         item = active[name]
         lines.extend(
             [
-                f"    .dw {item.archive} // {name} (0x{resource_id:04X})",
+                f"    .dw {item.archive} // 0x{resource_id:04X} {name}",
                 f"    .dh 0x{allocations.song_players[name]:04X},0x{allocations.song_players[name]:04X}",
             ]
         )
@@ -1456,9 +1413,7 @@ def emit_text_archives(config: Config) -> list[str]:
     ]
     for archive in archives:
         for address in archive.references:
-            lines.extend(
-                [f".org 0x{address:08X}", f"    .dw {archive.symbol}"]
-            )
+            lines.extend([f".org 0x{address:08X}", f"    .dw {archive.symbol}"])
     for group in config.text.groups:
         lines.extend(["", ".autoregion"])
         for archive in group.archives:

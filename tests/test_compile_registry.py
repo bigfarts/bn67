@@ -276,14 +276,23 @@ class PackageCompilerTests(unittest.TestCase):
 
         self.assertNotIn("attack_route", assembly)
         self.assertNotIn("cmp r0", assembly)
+        self.assertNotIn("unassigned_attack_main", assembly)
         self.assertEqual(
             sum(
                 1
                 for line in assembly.splitlines()
                 if line.startswith("    .dw ") and " // 0x" in line
             ),
-            sum(0x100 - pool.native_entries for pool in config.attack_pools.values()),
+            len(attacks),
         )
+        for pool in config.attack_pools.values():
+            allocated = [
+                allocation.subfamily
+                for allocation in allocations.attacks.values()
+                if allocation.family == pool.family
+            ]
+            if allocated:
+                self.assertNotIn(f"// 0x{max(allocated) + 1:02X}", assembly)
         for pool in config.attack_pools.values():
             label = f"attack_family_{pool.family:02x}_table"
             self.assertIn(f"{label}:", assembly)
@@ -308,6 +317,7 @@ class PackageCompilerTests(unittest.TestCase):
 
         self.assertNotIn("custom_type_", assembly)
         self.assertNotIn("custom_object_kind", assembly)
+        self.assertNotIn("unassigned_object_main", assembly)
         for number, namespace in allocations.objects.items():
             first_custom_id = config.object_classes[number].native_entries
             self.assertEqual(min(namespace.values()), first_custom_id)
@@ -317,6 +327,8 @@ class PackageCompilerTests(unittest.TestCase):
                     f".dw {main} + 1 // 0x{object_id:02X} {main}",
                     assembly,
                 )
+            if namespace:
+                self.assertNotIn(f"// 0x{max(namespace.values()) + 1:02X}", assembly)
             label = f"object_class_{number}_table"
             self.assertIn(f"{label}:", assembly)
             self.assertIn(f"{label}_end:", assembly)
