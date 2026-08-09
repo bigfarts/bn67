@@ -384,7 +384,7 @@ static bool gospel_update(Exe6Obj *self)
     return true;
 }
 
-EXE6_SHL(bugcharge_hit_main)
+EXE6_SHELL(bugcharge_hit_main)
 {
     if (self->state == 0) {
         if (!hit_init(self)) {
@@ -400,7 +400,7 @@ EXE6_SHL(bugcharge_hit_main)
     exe6_battle_obj_char_move2();
 }
 
-EXE6_SHL(bugcharge_gospel_main)
+EXE6_SHELL(bugcharge_gospel_main)
 {
     if (self->state == 0) {
         if (!gospel_init(self) || !gospel_update(self)) {
@@ -417,7 +417,7 @@ EXE6_SHL(bugcharge_gospel_main)
     exe6_battle_obj_char_move2();
 }
 
-EXE6_EFC(bugcharge_head_main)
+EXE6_EFFECT(bugcharge_head_main)
 {
     if (self->state == 0) {
         head_init(self);
@@ -432,7 +432,7 @@ EXE6_EFC(bugcharge_head_main)
     exe6_battle_obj_char_move2();
 }
 
-EXE6_EFC(bugcharge_controller_main)
+EXE6_EFFECT(bugcharge_controller_main)
 {
     if (self->state == 0) {
         exe6_event_chip_common_init();

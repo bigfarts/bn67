@@ -142,7 +142,7 @@ static void update(
     }
 }
 
-EXE6_EFC(bugchain_controller_main)
+EXE6_EFFECT(bugchain_controller_main)
 {
     switch (self->state) {
     case 0:
@@ -203,7 +203,7 @@ static void visual_init(Exe6Obj *visual)
     visual_update(visual);
 }
 
-EXE6_EFC(bugchain_visual_main)
+EXE6_EFFECT(bugchain_visual_main)
 {
     switch (self->state) {
     case 0:

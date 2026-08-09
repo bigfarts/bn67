@@ -341,7 +341,7 @@ static void update(Exe6Obj *controller)
     }
 }
 
-EXE6_EFC(signalred_controller_main)
+EXE6_EFFECT(signalred_controller_main)
 {
     switch (self->state) {
     case 0:
@@ -356,7 +356,7 @@ EXE6_EFC(signalred_controller_main)
     }
 }
 
-EXE6_SHL(signalred_obj_main)
+EXE6_SHELL(signalred_obj_main)
 {
     switch (self->state) {
     case 0:

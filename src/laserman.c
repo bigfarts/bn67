@@ -518,7 +518,7 @@ static void hit_update(Exe6Obj *self)
     exe6_obj_move_delete();
 }
 
-EXE6_SHL(laserman_hit_main)
+EXE6_SHELL(laserman_hit_main)
 {
     if (self->state == 0) {
         (void)hit_init(self);
@@ -529,7 +529,7 @@ EXE6_SHL(laserman_hit_main)
     }
 }
 
-EXE6_EM(laserman_beam_main)
+EXE6_ENEMY(laserman_beam_main)
 {
     if (self->state == 0) {
         beam_init(self);
@@ -542,7 +542,7 @@ EXE6_EM(laserman_beam_main)
     exe6_obj_char_move();
 }
 
-EXE6_EM(laserman_actor_main)
+EXE6_ENEMY(laserman_actor_main)
 {
     if (self->state == 0) {
         actor_init(self);

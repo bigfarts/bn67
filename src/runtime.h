@@ -65,9 +65,9 @@ uint8_t *exe6_chip_queue(void);
         Exe6ObjSpawnParameters spawn_parameters __attribute__((unused)) \
     )
 
-#define EXE6_EM(main) EXE6_OBJ_BODY(1, main)
-#define EXE6_SHL(main) EXE6_OBJ_BODY(3, main)
-#define EXE6_EFC(main) EXE6_OBJ_BODY(4, main)
+#define EXE6_ENEMY(main) EXE6_OBJ_BODY(1, main)
+#define EXE6_SHELL(main) EXE6_OBJ_BODY(3, main)
+#define EXE6_EFFECT(main) EXE6_OBJ_BODY(4, main)
 
 #define EXE6_USE_SONG(archive) \
     extern const uint8_t EXE6_LINK_SONG_ID(archive)[]; \

@@ -573,7 +573,7 @@ static void hit_init(Exe6Obj *self)
     self->state_word = ACTOR_ACTIVE_STATE;
 }
 
-EXE6_SHL(searchman_hit_main)
+EXE6_SHELL(searchman_hit_main)
 {
     if (self->state == 0) {
         hit_init(self);
@@ -584,7 +584,7 @@ EXE6_SHL(searchman_hit_main)
     }
 }
 
-EXE6_EFC(searchman_reticle_main)
+EXE6_EFFECT(searchman_reticle_main)
 {
     if (self->state == 0) {
         reticle_init(self);
@@ -595,7 +595,7 @@ EXE6_EFC(searchman_reticle_main)
     }
 }
 
-EXE6_EM(searchman_actor_main)
+EXE6_ENEMY(searchman_actor_main)
 {
     if (self->state == 0) {
         actor_init(self);

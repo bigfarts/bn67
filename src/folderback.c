@@ -183,7 +183,7 @@ static void open_custom(uint32_t owner)
     }
 }
 
-EXE6_EFC(folderback_controller_main)
+EXE6_EFFECT(folderback_controller_main)
 {
     if (self->state == 0) {
         self->state_word = 4;

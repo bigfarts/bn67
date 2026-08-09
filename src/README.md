@@ -69,7 +69,7 @@ EXE6_SONG(
 );
 EXE6_POINTER_PATCH(0x08012010, searchman_data);
 
-EXE6_EM(searchman_actor_main)
+EXE6_ENEMY(searchman_actor_main)
 {
     /* `self` is the current object. */
 }

@@ -171,7 +171,7 @@ static void actor_destroy(Exe6Obj *self)
     exe6_obj_move_delete();
 }
 
-EXE6_EM(rollarrow_actor_main)
+EXE6_ENEMY(rollarrow_actor_main)
 {
     switch (self->state) {
     case 0:
@@ -281,7 +281,7 @@ static bool projectile_update(Exe6Obj *self)
     return true;
 }
 
-EXE6_SHL(rollarrow_arrow_main)
+EXE6_SHELL(rollarrow_arrow_main)
 {
     switch (self->state) {
     case 0:

@@ -235,7 +235,7 @@ static void ball_init(Exe6Obj *self)
     ball_update(self);
 }
 
-EXE6_EM(chaoslord_ball_main)
+EXE6_ENEMY(chaoslord_ball_main)
 {
     if (self->state == 0) {
         ball_init(self);
@@ -610,7 +610,7 @@ static void controller_destroy(Exe6Obj *self)
     exe6_obj_move_delete();
 }
 
-EXE6_EM(chaoslord_controller_main)
+EXE6_ENEMY(chaoslord_controller_main)
 {
     if (self->state == 0) {
         controller_init(self);
@@ -859,7 +859,7 @@ static void attack_init(Exe6Obj *self)
     attack_update(self);
 }
 
-EXE6_SHL(chaoslord_attack_obj_main)
+EXE6_SHELL(chaoslord_attack_obj_main)
 {
     if (self->state == 0) {
         attack_init(self);
@@ -984,7 +984,7 @@ static void aura_init(Exe6Obj *self)
     aura_update(self);
 }
 
-EXE6_EFC(chaoslord_aura_main)
+EXE6_EFFECT(chaoslord_aura_main)
 {
     if (self->state == 0) {
         aura_init(self);
@@ -1083,7 +1083,7 @@ static void burst_init(Exe6Obj *self)
     self->state_word = ACTIVE_STATE;
 }
 
-EXE6_EFC(chaoslord_burst_main)
+EXE6_EFFECT(chaoslord_burst_main)
 {
     if (self->state == 0) {
         burst_init(self);
@@ -1134,7 +1134,7 @@ static void teardown_init(Exe6Obj *self)
     self->state_word = ACTIVE_STATE;
 }
 
-EXE6_EFC(chaoslord_teardown_main)
+EXE6_EFFECT(chaoslord_teardown_main)
 {
     if (self->state == 0) {
         teardown_init(self);
@@ -1161,7 +1161,7 @@ static void flash_update(Exe6Obj *self)
     exe6_col_fade_set(0, color, 0x0F, 0x15, EXE6_PALETTE_BG_OUTPUT_00);
 }
 
-EXE6_EFC(chaoslord_flash_main)
+EXE6_EFFECT(chaoslord_flash_main)
 {
     if (self->state == 0) {
         self->aux_timer = self->subvariant;

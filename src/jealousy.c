@@ -208,7 +208,7 @@ static void update(Exe6Obj *controller)
     }
 }
 
-EXE6_EFC(jealousy_controller_main)
+EXE6_EFFECT(jealousy_controller_main)
 {
     switch (self->state) {
     case 0:

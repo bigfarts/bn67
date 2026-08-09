@@ -585,7 +585,7 @@ static void flame_init(Exe6Obj *self)
     self->state_word = ACTIVE_STATE;
 }
 
-EXE6_EFC(deathphoenix_flame_main)
+EXE6_EFFECT(deathphoenix_flame_main)
 {
     if (self->state == 0) {
         flame_init(self);
@@ -597,7 +597,7 @@ EXE6_EFC(deathphoenix_flame_main)
     exe6_battle_obj_char_move();
 }
 
-EXE6_EFC(deathphoenix_strike_main)
+EXE6_EFFECT(deathphoenix_strike_main)
 {
     if (self->state == 0) {
         strike_init(self);
@@ -609,7 +609,7 @@ EXE6_EFC(deathphoenix_strike_main)
     exe6_battle_obj_char_move();
 }
 
-EXE6_EM(deathphoenix_actor_main)
+EXE6_ENEMY(deathphoenix_actor_main)
 {
     if (self->state == 0) {
         actor_init(self);
