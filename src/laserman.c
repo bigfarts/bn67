@@ -4,7 +4,6 @@ BN6_INCLUDE(common);
 BN6_USE_SONG(common_navi_summon_song);
 BN6_SPRITE(laserman_battle_sprite, "build/laserman-battle-sprite.bin");
 
-BN6_INCBIN(laserman_icon, "build/laserman-icon.bin");
 BN6_INCBIN(laserman_image, "build/laserman-image.bin");
 BN6_INCBIN(laserman_palette_base, "build/laserman-pal-base.bin");
 BN6_ASM_RESOURCE(

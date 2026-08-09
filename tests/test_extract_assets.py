@@ -45,6 +45,11 @@ class ExtractAssetsTests(unittest.TestCase):
             )
         )
 
+    def test_default_navi_icon_is_not_extracted(self) -> None:
+        outputs = {asset.output for asset in ASSETS}
+        self.assertNotIn("laserman-icon.bin", outputs)
+        self.assertNotIn("searchman-icon.bin", outputs)
+
 
 if __name__ == "__main__":
     unittest.main()

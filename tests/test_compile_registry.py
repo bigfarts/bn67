@@ -271,10 +271,17 @@ class PackageCompilerTests(unittest.TestCase):
 
     def test_chip_records_are_semantic_definition_resources(self) -> None:
         gregar_config, gregar_packages = self.packages("gregar")
-        _, falzar_packages = self.packages("falzar")
+        falzar_config, falzar_packages = self.packages("falzar")
         allocations = validate_and_allocate(gregar_config, gregar_packages)
         assembly = "\n".join(
             emit_chip_records(gregar_config, gregar_packages, allocations)
+        )
+        falzar_assembly = "\n".join(
+            emit_chip_records(
+                falzar_config,
+                falzar_packages,
+                validate_and_allocate(falzar_config, falzar_packages),
+            )
         )
 
         bugcharge = next(
@@ -334,6 +341,8 @@ class PackageCompilerTests(unittest.TestCase):
             ".db 0x03,0x00,0x00,0x00 // behavior.object_spawn",
             assembly,
         )
+        self.assertEqual(assembly.count(".dw 0x08729D50 // artwork.icon"), 6)
+        self.assertEqual(falzar_assembly.count(".dw 0x0872BE14 // artwork.icon"), 6)
         self.assertIn(".dw bugcharge_icon // artwork.icon", assembly)
         self.assertNotIn(".dw 0x0872C594 // artwork.icon", assembly)
         for path in ROOT.glob("src/*.c"):

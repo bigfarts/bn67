@@ -5,7 +5,6 @@ BN6_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
 BN6_SPRITE(searchman_reticle_alt_sprite, "build/searchman-reticle-alt.bin");
 BN6_SPRITE(searchman_reticle_sprite, "build/searchman-reticle.bin");
 
-BN6_INCBIN(searchman_icon, "build/searchman-icon.bin");
 BN6_INCBIN(searchman_image, "build/searchman-image.bin");
 BN6_INCBIN(searchman_palette_base, "build/searchman-pal-base.bin");
 BN6_ASM_RESOURCE(

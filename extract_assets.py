@@ -158,8 +158,7 @@ ASSETS = (
     Asset("bn5_protoman", "jealousy-effect-tiles.bin", 0x6FAD2C, 0x100),
     Asset("bn5_protoman", "jealousy-effect-palette.bin", 0x6FAE2C, 0x20),
 
-    # BN5 ProtoMan: SearchMan menu art, Navi archive, and both reticles.
-    Asset("bn5_protoman", "searchman-icon.bin", 0x7493B8, 0x80),
+    # BN5 ProtoMan: SearchMan library art, Navi archive, and both reticles.
     Asset("bn5_protoman", "searchman-image.bin", 0x728568, 0x540),
     Asset("bn5_protoman", "searchman-pal-base.bin", 0x7343C8, 0x20),
     Asset("bn5_protoman", "searchman-pal-sp.bin", 0x7343E8, 0x20),
@@ -213,9 +212,8 @@ ASSETS = (
     Asset("bn4_blue_moon", "rollarrow-projectile-sprite.bin", 0x35E5C0, 0x160),
     Asset("bn4_blue_moon", "rollarrow-fire-sample.bin", 0x1D2AFC, 0xC34),
 
-    # BN4 Blue Moon: LaserMan menu art, shared sprite, and fire SFX. Extraction
+    # BN4 Blue Moon: LaserMan library art, shared sprite, and fire SFX. Extraction
     # expands the source archive so packages never need compression metadata.
-    Asset("bn4_blue_moon", "laserman-icon.bin", 0x74676C, 0x80),
     Asset("bn4_blue_moon", "laserman-image.bin", 0x73842C, 0x540),
     Asset("bn4_blue_moon", "laserman-pal-base.bin", 0x73F94C, 0x20),
     Asset("bn4_blue_moon", "laserman-pal-sp.bin", 0x73F96C, 0x20),
