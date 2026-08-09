@@ -1,9 +1,9 @@
 #include "runtime.h"
 
-BN6_SPRITE(bugchain_battle_sprite, "build/bugchain-battle-sprite.bin");
-BN6_SONG(
+EXE6_SPRITE(bugchain_battle_sprite, "build/bugchain-battle-sprite.bin");
+EXE6_SONG(
     bugchain_aura_song,
-    BN6_PCM(
+    EXE6_PCM(
         bugchain_sound,
         0x40,
         0x00,
@@ -12,9 +12,9 @@ BN6_SONG(
         "build/bugchain-sound-sample.bin"
     )
 );
-BN6_INCBIN(bugchain_icon, "build/bugchain-icon.bin");
-BN6_INCBIN(bugchain_image, "build/bugchain-image.bin");
-BN6_INCBIN(bugchain_palette, "build/bugchain-palette.bin");
+EXE6_INCBIN(bugchain_icon, "build/bugchain-icon.bin");
+EXE6_INCBIN(bugchain_image, "build/bugchain-image.bin");
+EXE6_INCBIN(bugchain_palette, "build/bugchain-palette.bin");
 
 static const uint16_t EFFECT_FRAMES = 60;
 static const uint16_t VISUAL_FRAMES = 50;
@@ -22,7 +22,7 @@ static const uint16_t SOUND_FRAME = 42;
 
 enum BugPropertyOffset {
     MOVEMENT_BUG_PROPERTY_OFFSET = 0x31,
-    PANEL_BUG_PROPERTY_OFFSET = 0x13,
+    BLOCK_BUG_PROPERTY_OFFSET = 0x13,
     BUSTER_BUG_PROPERTY_OFFSET = 0x14,
     DAMAGE_HP_BUG_PROPERTY_OFFSET = 0x16,
     CUSTOM_DAMAGE_BUG_PROPERTY_OFFSET = 0x54,
@@ -35,7 +35,7 @@ enum BugPropertyOffset {
 
 static const uint8_t BYTE_PROPERTIES[] = {
     MOVEMENT_BUG_PROPERTY_OFFSET,
-    PANEL_BUG_PROPERTY_OFFSET,
+    BLOCK_BUG_PROPERTY_OFFSET,
     BUSTER_BUG_PROPERTY_OFFSET,
     DAMAGE_HP_BUG_PROPERTY_OFFSET,
     EMOTION_BUG_PROPERTY_OFFSET,
@@ -45,11 +45,11 @@ static const uint8_t BYTE_PROPERTIES[] = {
     CUSTOM_BUG_PROPERTY_OFFSET,
 };
 
-static void transfer_bugs(Object *controller)
+static void transfer_bugs(Exe6Obj *controller)
 {
     uint32_t source_side = controller->owner;
-    uint8_t *source = bn6_player_properties_for_side(source_side);
-    uint8_t *target = bn6_player_properties_for_side(source_side ^ 1u);
+    uint8_t *source = exe6_navi_status_work_adrs_get(source_side);
+    uint8_t *target = exe6_navi_status_work_adrs_get(source_side ^ 1u);
 
     for (size_t index = 0;
          index < sizeof(BYTE_PROPERTIES) / sizeof(BYTE_PROPERTIES[0]);
@@ -75,12 +75,12 @@ static void transfer_bugs(Object *controller)
 }
 
 static void spawn_visual(
-    Object *player,
-    Bn6ObjectSpawnParameters spawn_parameters
+    Exe6Obj *player,
+    Exe6ObjSpawnParameters spawn_parameters
 )
 {
-    Object *visual = bn6_spawn_type4(
-        BN6_OBJECT_ID(bugchain_visual_main), spawn_parameters
+    Exe6Obj *visual = exe6_efc_open(
+        EXE6_OBJ_ID(bugchain_visual_main), spawn_parameters
     );
     if (visual == NULL) {
         return;
@@ -89,22 +89,22 @@ static void spawn_visual(
 }
 
 static void effect_update(
-    Object *controller,
-    Bn6ObjectSpawnParameters spawn_parameters
+    Exe6Obj *controller,
+    Exe6ObjSpawnParameters spawn_parameters
 )
 {
     if (controller->substate == 0) {
-        if ((bn6_battle_get_config_flags() & BN6_BATTLE_CONFIG_FLAG_LINK) == 0) {
+        if ((exe6_em_set_flag_get() & EXE6_BATTLE_CONFIG_FLAG_LINK) == 0) {
             controller->phase = 0x0C;
             controller->phase_timer = 0;
             return;
         }
 
-        Object *player = bn6_player_object_for_side(0);
+        Exe6Obj *player = exe6_get_navi_adrs(0);
         if (player != NULL) {
             spawn_visual(player, spawn_parameters);
         }
-        player = bn6_player_object_for_side(1);
+        player = exe6_get_navi_adrs(1);
         if (player != NULL) {
             spawn_visual(player, spawn_parameters);
         }
@@ -122,44 +122,44 @@ static void effect_update(
 }
 
 static void update(
-    Object *controller,
-    Bn6ObjectSpawnParameters spawn_parameters
+    Exe6Obj *controller,
+    Exe6ObjSpawnParameters spawn_parameters
 )
 {
     switch (controller->phase) {
     case 0:
-        bn6_self_type4_dimming_intro();
+        exe6_event_chip_common_fade();
         break;
     case 4:
-        bn6_self_type4_dimming_freeze();
+        exe6_event_chip_common_telop();
         break;
     case 8:
         effect_update(controller, spawn_parameters);
         break;
     default:
-        bn6_self_type4_dimming_outro();
+        exe6_event_chip_common_end();
         break;
     }
 }
 
-BN6_OBJECT4(bugchain_controller_main)
+EXE6_EFC(bugchain_controller_main)
 {
     switch (self->state) {
     case 0:
-        bn6_self_type4_dimming_init();
+        exe6_event_chip_common_init();
         break;
     case 4:
         update(self, spawn_parameters);
         break;
     default:
-        bn6_self_type4_dimming_free();
+        exe6_event_chip_common_exit();
         break;
     }
 }
 
-static void copy_coords(Object *visual)
+static void copy_coords(Exe6Obj *visual)
 {
-    Object *player = visual->parent;
+    Exe6Obj *player = visual->parent;
     if (player == NULL) {
         return;
     }
@@ -168,10 +168,10 @@ static void copy_coords(Object *visual)
     visual->z = player->z;
 }
 
-static void visual_update(Object *visual)
+static void visual_update(Exe6Obj *visual)
 {
     if (visual->timer == SOUND_FRAME) {
-        bn6_play_sound(BN6_SONG_ID(bugchain_aura_song));
+        exe6_sound_req(EXE6_SONG_ID(bugchain_aura_song));
     }
 
     uint16_t timer = (uint16_t)(visual->timer - 1u);
@@ -182,28 +182,28 @@ static void visual_update(Object *visual)
     copy_coords(visual);
 }
 
-static void visual_init(Object *visual)
+static void visual_init(Exe6Obj *visual)
 {
-    bn6_self_sprite_load(
+    exe6_obj_char_init(
         0x80,
-        BN6_SPRITE_GROUP(bugchain_battle_sprite),
-        BN6_SPRITE_ID(bugchain_battle_sprite)
+        EXE6_SPRITE_GROUP(bugchain_battle_sprite),
+        EXE6_SPRITE_ID(bugchain_battle_sprite)
     );
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_no_shadow();
+    exe6_obj_char_set();
+    exe6_obj_no_shadow();
     visual->animation_word = 0;
-    bn6_self_sprite_set_animation(0);
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_update();
+    exe6_obj_dma_seq_set(0);
+    exe6_obj_char_set();
+    exe6_obj_char_move();
     visual->owner = visual->parent->owner;
-    bn6_self_sprite_set_flip(visual->owner);
-    visual->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+    exe6_obj_flip_set(visual->owner);
+    visual->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     visual->timer = VISUAL_FRAMES;
     visual->state_word = 4;
     visual_update(visual);
 }
 
-BN6_OBJECT4(bugchain_visual_main)
+EXE6_EFC(bugchain_visual_main)
 {
     switch (self->state) {
     case 0:
@@ -213,22 +213,22 @@ BN6_OBJECT4(bugchain_visual_main)
         visual_update(self);
         break;
     default:
-        bn6_self_object_free();
+        exe6_obj_move_delete();
         return;
     }
-    bn6_self_object_update_dimming();
+    exe6_battle_obj_char_move2();
 }
 
-BN6_PERSISTENT_ATTACK(0x0BE, bugchain_attack_main)
+EXE6_PERSISTENT_ATTACK(0x0BE, bugchain_attack_main)
 {
-    Object *controller = bn6_spawn_type4(
-        BN6_OBJECT_ID(bugchain_controller_main), spawn_parameters
+    Exe6Obj *controller = exe6_efc_open(
+        EXE6_OBJ_ID(bugchain_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;
     }
-    controller->panel_x = (uint8_t)panel_x;
-    controller->panel_y = (uint8_t)panel_y;
+    controller->block_x = (uint8_t)block_x;
+    controller->block_y = (uint8_t)block_y;
     controller->parameter = (uint8_t)parameter;
     controller->parent = owner;
     controller->owner_word = owner->owner_word;

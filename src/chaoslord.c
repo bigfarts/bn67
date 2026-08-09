@@ -1,16 +1,16 @@
 #include "runtime.h"
 
-BN6_SPRITE(chaoslord_main_sprite, "build/chaoslord-bass-sprite.bin");
-BN6_SPRITE(chaoslord_aura_sprite, "build/chaoslord-aura-sprite.bin");
-BN6_SPRITE(chaoslord_teardown_sprite, "build/chaoslord-teardown-sprite.bin");
-BN6_SPRITE(chaoslord_apparition_sprite, "build/chaoslord-apparition-sprite.bin");
+EXE6_SPRITE(chaoslord_main_sprite, "build/chaoslord-bass-sprite.bin");
+EXE6_SPRITE(chaoslord_aura_sprite, "build/chaoslord-aura-sprite.bin");
+EXE6_SPRITE(chaoslord_teardown_sprite, "build/chaoslord-teardown-sprite.bin");
+EXE6_SPRITE(chaoslord_apparition_sprite, "build/chaoslord-apparition-sprite.bin");
 
 #if !FALZAR
-BN6_INCBIN(chaoslord_icon, "build/chaoslord-icon.bin");
-BN6_INCBIN(chaoslord_image, "build/chaoslord-image.bin");
-BN6_INCBIN(chaoslord_palette, "build/chaoslord-palette.bin");
+EXE6_INCBIN(chaoslord_icon, "build/chaoslord-icon.bin");
+EXE6_INCBIN(chaoslord_image, "build/chaoslord-image.bin");
+EXE6_INCBIN(chaoslord_palette, "build/chaoslord-palette.bin");
 #endif
-BN6_INCBIN(chaoslord_trig_table, "build/chaoslord-trig.bin");
+EXE6_INCBIN(chaoslord_trig_table, "build/chaoslord-trig.bin");
 
 static const uint8_t ACTIVE_STATE = 4;
 static const uint8_t DESTROY_STATE = 8;
@@ -28,42 +28,42 @@ static const uint16_t ATTACK_FRAMES = 0x80;
 static const uint16_t ATTACK_SPAWN_TIMER = 0x80;
 static const uint16_t OUTRO_FRAMES = 0x28;
 static const uint16_t BALL_FLIGHT_FRAMES = 0x0F;
-static const Bn6PanelDamageProperties DAMAGE_PROPERTIES = {
-    .region = BN6_COLLISION_REGION_CENTERED_3X3,
-    .hit_effect = BN6_HIT_EFFECT_NONE,
-    .target_collision_type = BN6_COLLISION_TYPE_STANDARD_TARGET,
-    .self_collision_type = BN6_COLLISION_TYPE_15,
+static const Exe6BlockDamageProperties DAMAGE_PROPERTIES = {
+    .region = EXE6_HIT_REGION_CENTERED_3X3,
+    .hit_effect = EXE6_HIT_EFFECT_NONE,
+    .target_hit_type = EXE6_HIT_TYPE_STANDARD_TARGET,
+    .self_hit_type = EXE6_HIT_TYPE_15,
 };
 #if FALZAR
-static const uintptr_t PANEL_DAMAGE_MAIN = 0x080C53C1;
+static const uintptr_t BLOCK_DAMAGE_MAIN = 0x080C53C1;
 #else
-static const uintptr_t PANEL_DAMAGE_MAIN = 0x080C6C31;
+static const uintptr_t BLOCK_DAMAGE_MAIN = 0x080C6C31;
 #endif
-struct BurstEntry {
+struct Exe6BurstEntry {
     int8_t x;
     int8_t y;
     uint8_t palette;
 };
 
-struct AttackSpriteEntry {
+struct Exe6AttackSpriteEntry {
     uint8_t group;
     uint8_t index;
     uint8_t animation;
     uint8_t palette;
 };
 
-struct PanelOffset {
+struct Exe6BlockOffset {
     int8_t x;
     int8_t y;
 };
 
-struct ChaoslordControllerWork {
+struct Exe6ChaoslordControllerWork {
     uint32_t scale_low;                  // +0x60
     uint32_t scale_middle;               // +0x64
     uint32_t scale_high;                 // +0x68
 };
 
-struct ChaoslordBurstWork {
+struct Exe6ChaoslordBurstWork {
     int32_t radius;                      // +0x60
     int32_t radius_step;                 // +0x64
     int32_t center_x;                    // +0x68
@@ -72,11 +72,11 @@ struct ChaoslordBurstWork {
     uint32_t elevated;                   // +0x74
 };
 
-struct ChaoslordImpactWork {
-    uint8_t panels[9];                   // +0x60
+struct Exe6ChaoslordImpactWork {
+    uint8_t blocks[9];                   // +0x60
 };
 
-static const struct BurstEntry BURST_TABLE[] = {
+static const struct Exe6BurstEntry BURST_TABLE[] = {
     { 0x30, -0x13, 1 },
     { 0x03, -0x16, 0 },
     { 0x0A, -0x34, 0 },
@@ -89,8 +89,8 @@ static const struct BurstEntry BURST_TABLE[] = {
     { 0x1F, -0x3A, 1 },
 };
 
-/* BN6 panel pattern 0x11, used to find room for the entrance. */
-static const struct PanelOffset ENTRANCE_PANEL_PATTERN[] = {
+/* BN6 block pattern 0x11, used to find room for the entrance. */
+static const struct Exe6BlockOffset ENTRANCE_BLOCK_PATTERN[] = {
     { 0, 0 },
     { 0, -1 },
     { 0, 1 },
@@ -99,8 +99,8 @@ static const struct PanelOffset ENTRANCE_PANEL_PATTERN[] = {
     { 1, 1 },
 };
 
-/* BN6 panel pattern 0x0F, used by the native type-4 impact effect. */
-static const struct PanelOffset IMPACT_PANEL_PATTERN[] = {
+/* BN6 block pattern 0x0F, used by the native type-4 impact effect. */
+static const struct Exe6BlockOffset IMPACT_BLOCK_PATTERN[] = {
     { 0, 0 },
     { 0, -1 },
     { 0, 1 },
@@ -112,28 +112,28 @@ static const struct PanelOffset IMPACT_PANEL_PATTERN[] = {
     { -1, -1 },
 };
 
-static const struct AttackSpriteEntry ATTACK_SPRITE_TABLE[] = {
+static const struct Exe6AttackSpriteEntry ATTACK_SPRITE_TABLE[] = {
     { 0x14, 0x08, 0x00, 0x02 },
     { 0x14, 0x19, 0x00, 0x00 },
 };
 
-static bool timer_nonnegative_after_decrement(Object *self)
+static bool timer_nonnegative_after_decrement(Exe6Obj *self)
 {
     int32_t timer = (int32_t)self->timer - 1;
     self->timer = (uint16_t)timer;
     return timer >= 0;
 }
 
-static void set_phase(Object *self, uint8_t phase)
+static void set_phase(Exe6Obj *self, uint8_t phase)
 {
     self->phase = phase;
     self->phase_timer = 0;
 }
 
-static uint32_t packed_scale(Object *self)
+static uint32_t packed_scale(Exe6Obj *self)
 {
-    struct ChaoslordControllerWork *work =
-        (struct ChaoslordControllerWork *)self->work;
+    struct Exe6ChaoslordControllerWork *work =
+        (struct Exe6ChaoslordControllerWork *)self->work;
     return work->scale_low
         | (work->scale_middle << 5)
         | (work->scale_high << 10);
@@ -158,23 +158,23 @@ static uint32_t integer_sqrt(uint32_t value)
     return result;
 }
 
-static void ball_request_destroy(Object *ball)
+static void ball_request_destroy(Exe6Obj *ball)
 {
     if (ball != NULL) {
         ball->state_word = DESTROY_STATE;
     }
 }
 
-static Object *spawn_ball(Object *controller)
+static Exe6Obj *spawn_ball(Exe6Obj *controller)
 {
-    Bn6ObjectSpawnParameters spawn_parameters = {
-        .variant = (uint8_t)BN6_SPRITE_GROUP(chaoslord_main_sprite),
-        .subvariant = (uint8_t)BN6_SPRITE_ID(chaoslord_main_sprite),
+    Exe6ObjSpawnParameters spawn_parameters = {
+        .variant = (uint8_t)EXE6_SPRITE_GROUP(chaoslord_main_sprite),
+        .subvariant = (uint8_t)EXE6_SPRITE_ID(chaoslord_main_sprite),
         .animation_state = 1,
         .removal_state = 0x10,
     };
-    Object *ball = bn6_spawn_type1(
-        BN6_OBJECT_ID(chaoslord_ball_main), spawn_parameters
+    Exe6Obj *ball = exe6_em_open(
+        EXE6_OBJ_ID(chaoslord_ball_main), spawn_parameters
     );
     if (ball == NULL) {
         return NULL;
@@ -184,78 +184,78 @@ static Object *spawn_ball(Object *controller)
     return ball;
 }
 
-static void ball_phase_active(Object *self)
+static void ball_phase_active(Exe6Obj *self)
 {
-    bn6_self_sprite_copy_visibility(self->parent);
-    bn6_self_object_update_dimming();
+    exe6_obj_bld_link_copy(self->parent);
+    exe6_battle_obj_char_move2();
 }
 
-static void ball_update(Object *self)
+static void ball_update(Exe6Obj *self)
 {
-    Object *controller = self->parent;
+    Exe6Obj *controller = self->parent;
     uint8_t animation = (uint8_t)(
         controller->animation + self->removal_state
     );
     self->animation = animation;
     if (animation != self->palette) {
-        bn6_self_sprite_set_animation(animation);
-        bn6_self_sprite_load_animation_data();
+        exe6_obj_dma_seq_set(animation);
+        exe6_obj_char_set();
     }
 
     self->x = controller->x;
     self->y = controller->y;
     self->z = controller->z;
     self->header_flags = (uint8_t)(
-        (self->header_flags & (uint8_t)~BN6_OBJECT_FLAG_VISIBLE)
-        | (controller->header_flags & BN6_OBJECT_FLAG_VISIBLE)
+        (self->header_flags & (uint8_t)~EXE6_OBJ_FLAG_VISIBLE)
+        | (controller->header_flags & EXE6_OBJ_FLAG_VISIBLE)
     );
-    bn6_self_sprite_set_scale(bn6_sprite_get_scale(controller));
-    bn6_self_sprite_copy_palette_bits(controller);
-    bn6_self_sprite_copy_special_bits(controller);
+    exe6_obj_col_efc_set(exe6_obj_col_efc_link_get(controller));
+    exe6_obj_flash_link_copy(controller);
+    exe6_obj_mosaic_link_copy(controller);
     self->owner_aux = controller->owner_aux;
-    bn6_self_sprite_set_flip(bn6_self_object_get_flip());
+    exe6_obj_flip_set(exe6_enemy_flip_check());
 
     ball_phase_active(self);
 }
 
-static void ball_init(Object *self)
+static void ball_init(Exe6Obj *self)
 {
-    bn6_self_sprite_load(0x80, self->variant, self->subvariant);
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_no_shadow();
-    bn6_self_sprite_set_palette(bn6_sprite_get_palette(self->parent));
+    exe6_obj_char_init(0x80, self->variant, self->subvariant);
+    exe6_obj_char_set();
+    exe6_obj_no_shadow();
+    exe6_obj_clt_set(exe6_obj_clt_link_get(self->parent));
     self->animation_word = (uint16_t)(
         self->parent->animation + self->removal_state
     );
-    bn6_self_sprite_set_animation(self->animation);
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_update();
+    exe6_obj_dma_seq_set(self->animation);
+    exe6_obj_char_set();
+    exe6_obj_char_move();
     set_phase(self, BALL_ACTIVE_PHASE);
     self->state_word = ACTIVE_STATE;
     ball_update(self);
 }
 
-BN6_OBJECT1(chaoslord_ball_main)
+EXE6_EM(chaoslord_ball_main)
 {
     if (self->state == 0) {
         ball_init(self);
     } else if (self->state == ACTIVE_STATE) {
         ball_update(self);
     } else {
-        bn6_self_object_free();
+        exe6_obj_move_delete();
     }
 }
 
-static Object *spawn_aura(
-    Object *controller,
+static Exe6Obj *spawn_aura(
+    Exe6Obj *controller,
     int32_t x,
     int32_t y,
     int32_t z,
-    Bn6ObjectSpawnParameters spawn_parameters
+    Exe6ObjSpawnParameters spawn_parameters
 )
 {
-    Object *aura = bn6_spawn_type4_at(
-        BN6_OBJECT_ID(chaoslord_aura_main),
+    Exe6Obj *aura = exe6_efc_open_at(
+        EXE6_OBJ_ID(chaoslord_aura_main),
         x,
         y,
         z,
@@ -269,16 +269,16 @@ static Object *spawn_aura(
     return aura;
 }
 
-static Object *spawn_burst(
-    Object *controller,
+static Exe6Obj *spawn_burst(
+    Exe6Obj *controller,
     int32_t x,
     int32_t y,
     uint32_t vector,
-    Bn6ObjectSpawnParameters spawn_parameters
+    Exe6ObjSpawnParameters spawn_parameters
 )
 {
-    Object *burst = bn6_spawn_type4_at(
-        BN6_OBJECT_ID(chaoslord_burst_main),
+    Exe6Obj *burst = exe6_efc_open_at(
+        EXE6_OBJ_ID(chaoslord_burst_main),
         x,
         y,
         0,
@@ -288,22 +288,22 @@ static Object *spawn_burst(
         return NULL;
     }
     burst->parent = controller;
-    struct ChaoslordBurstWork *work =
-        (struct ChaoslordBurstWork *)burst->work;
+    struct Exe6ChaoslordBurstWork *work =
+        (struct Exe6ChaoslordBurstWork *)burst->work;
     work->vector = vector;
     burst->owner_word = controller->owner_word;
-    burst->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
+    burst->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
     return burst;
 }
 
-static Object *spawn_teardown(Object *controller)
+static Exe6Obj *spawn_teardown(Exe6Obj *controller)
 {
-    Object *effect = bn6_spawn_type4_at(
-        BN6_OBJECT_ID(chaoslord_teardown_main),
+    Exe6Obj *effect = exe6_efc_open_at(
+        EXE6_OBJ_ID(chaoslord_teardown_main),
         controller->x,
         controller->y,
         controller->z + (16 << 16),
-        bn6_object_spawn_with_variant(0x12)
+        exe6_obj_spawn_with_variant(0x12)
     );
     if (effect == NULL) {
         return NULL;
@@ -312,35 +312,35 @@ static Object *spawn_teardown(Object *controller)
     return effect;
 }
 
-static Object *spawn_flash(void)
+static Exe6Obj *spawn_flash(void)
 {
-    Bn6ObjectSpawnParameters spawn_parameters = {
+    Exe6ObjSpawnParameters spawn_parameters = {
         .variant = 1,
         .subvariant = 4,
         .animation_state = 1,
     };
-    Object *flash = bn6_spawn_type4(
-        BN6_OBJECT_ID(chaoslord_flash_main), spawn_parameters
+    Exe6Obj *flash = exe6_efc_open(
+        EXE6_OBJ_ID(chaoslord_flash_main), spawn_parameters
     );
     if (flash == NULL) {
         return NULL;
     }
-    flash->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_PAUSE
-        | BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
+    flash->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_PAUSE
+        | EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
     return flash;
 }
 
-static Object *spawn_attack_object(
-    Object *controller,
+static Exe6Obj *spawn_attack_obj(
+    Exe6Obj *controller,
     uint8_t variant
 )
 {
-    Object *attack = bn6_spawn_type3(
-        BN6_OBJECT_ID(chaoslord_attack_object_main),
+    Exe6Obj *attack = exe6_shl_open(
+        EXE6_OBJ_ID(chaoslord_attack_obj_main),
         controller->x,
         controller->y,
         controller->z,
-        bn6_object_spawn_with_variant(variant)
+        exe6_obj_spawn_with_variant(variant)
     );
     if (attack == NULL) {
         return NULL;
@@ -349,23 +349,23 @@ static Object *spawn_attack_object(
     attack->attack = controller->attack;
     attack->parent = NULL;
     attack->owner_word = controller->owner_word;
-    attack->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
+    attack->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
     return attack;
 }
 
-static void delete_live_objects(void)
+static void delete_live_objs(void)
 {
-    Object **objects = bn6_battle_context()->live_objects;
+    Exe6Obj **objs = exe6_battle_context()->live_objs;
     for (uint32_t index = 0; index < 8; ++index) {
-        if (objects[index] != NULL) {
-            objects[index]->hp = 0;
+        if (objs[index] != NULL) {
+            objs[index]->hp = 0;
         }
     }
 }
 
-static void controller_update(Object *self);
+static void controller_update(Exe6Obj *self);
 
-static bool entrance_has_panel(
+static bool entrance_has_block(
     uint32_t center_x,
     uint32_t center_y,
     uint32_t area,
@@ -375,63 +375,63 @@ static bool entrance_has_panel(
     int32_t direction = 1 - (int32_t)(side * 2u);
     for (
         uint32_t index = 0;
-        index < sizeof(ENTRANCE_PANEL_PATTERN) / sizeof(ENTRANCE_PANEL_PATTERN[0]);
+        index < sizeof(ENTRANCE_BLOCK_PATTERN) / sizeof(ENTRANCE_BLOCK_PATTERN[0]);
         ++index
     ) {
-        uint32_t panel_x = (uint32_t)(
-            (int32_t)center_x + ENTRANCE_PANEL_PATTERN[index].x * direction
+        uint32_t block_x = (uint32_t)(
+            (int32_t)center_x + ENTRANCE_BLOCK_PATTERN[index].x * direction
         );
-        uint32_t panel_y = (uint32_t)(
-            (int32_t)center_y + ENTRANCE_PANEL_PATTERN[index].y
+        uint32_t block_y = (uint32_t)(
+            (int32_t)center_y + ENTRANCE_BLOCK_PATTERN[index].y
         );
-        if (bn6_panel_matches_flags(panel_x, panel_y, area, 0) != 0) {
+        if (exe6_block_move_check(block_x, block_y, area, 0) != 0) {
             return true;
         }
     }
     return false;
 }
 
-static void controller_init(Object *self)
+static void controller_init(Exe6Obj *self)
 {
-    bn6_play_sound(0x94);
-    delete_live_objects();
+    exe6_sound_req(0x94);
+    delete_live_objs();
 
     uint32_t side = self->owner ^ self->owner_aux;
     uint32_t search_x = side * 5u + 1u;
     uint32_t search_area = self->owner == 0
-        ? BN6_PANEL_FLAG_SIDE_1_COLLISION
-        : BN6_PANEL_FLAG_SIDE_0_COLLISION;
-    if (entrance_has_panel(search_x, 2, search_area, side)) {
+        ? EXE6_BLOCK_FLAG_SIDE_1_HIT
+        : EXE6_BLOCK_FLAG_SIDE_0_HIT;
+    if (entrance_has_block(search_x, 2, search_area, side)) {
         self->state_word = DESTROY_STATE;
         return;
     }
 
-    int32_t direction = (int32_t)bn6_object_front_direction_for(self);
-    uint32_t panel_x = (self->owner ^ self->owner_aux) * 5u + 1u;
-    uint64_t coordinates = bn6_panel_to_coords(panel_x, 2);
+    int32_t direction = (int32_t)exe6_calc_pl_em_dir_spd_for(self);
+    uint32_t block_x = (self->owner ^ self->owner_aux) * 5u + 1u;
+    uint64_t coordinates = exe6_get_block_pos(block_x, 2);
     int32_t x = (int32_t)(uint32_t)coordinates + direction * (8 << 16);
     int32_t y = (int32_t)(uint32_t)(coordinates >> 32);
-    (void)spawn_aura(self, x, y, 0, (Bn6ObjectSpawnParameters){
+    (void)spawn_aura(self, x, y, 0, (Exe6ObjSpawnParameters){
         .variant = 0x0A,
         .subvariant = 0x0A,
         .animation_state = 0x5A,
     });
-    (void)spawn_aura(self, x, y, 0, (Bn6ObjectSpawnParameters){
+    (void)spawn_aura(self, x, y, 0, (Exe6ObjSpawnParameters){
         .variant = 0x07,
         .subvariant = 0x0A,
         .animation_state = 0x5A,
     });
-    (void)spawn_aura(self, x, y, 0, (Bn6ObjectSpawnParameters){
+    (void)spawn_aura(self, x, y, 0, (Exe6ObjSpawnParameters){
         .variant = 0x04,
         .subvariant = 0x0A,
         .animation_state = 0x5A,
     });
-    (void)spawn_aura(self, x, y, 0, (Bn6ObjectSpawnParameters){
+    (void)spawn_aura(self, x, y, 0, (Exe6ObjSpawnParameters){
         .variant = 0x01,
         .subvariant = 0x0A,
         .animation_state = 0x5A,
     });
-    (void)spawn_aura(self, x, y, 0, (Bn6ObjectSpawnParameters){
+    (void)spawn_aura(self, x, y, 0, (Exe6ObjSpawnParameters){
         .variant = 0x0D,
         .subvariant = 0x0A,
         .animation_state = 0x7C,
@@ -440,14 +440,14 @@ static void controller_init(Object *self)
 
     self->timer = INTRO_FRAMES;
     self->velocity_x = direction * 0x00009D89;
-    struct ChaoslordControllerWork *work =
-        (struct ChaoslordControllerWork *)self->work;
+    struct Exe6ChaoslordControllerWork *work =
+        (struct Exe6ChaoslordControllerWork *)self->work;
     work->scale_low = 5;
     work->scale_middle = 1;
     work->scale_high = 0x17;
-    self->panel_x = (uint8_t)panel_x;
-    self->panel_y = 2;
-    bn6_self_object_set_coords();
+    self->block_x = (uint8_t)block_x;
+    self->block_y = 2;
+    exe6_block_to_pos();
     self->x += direction * (8 << 16);
     self->y += 28 << 16;
     self->z = 18 << 16;
@@ -455,25 +455,25 @@ static void controller_init(Object *self)
     controller_update(self);
 }
 
-static void controller_phase_intro(Object *self)
+static void controller_phase_intro(Exe6Obj *self)
 {
     if (timer_nonnegative_after_decrement(self)) {
         return;
     }
 
-    int32_t direction = (int32_t)bn6_object_front_direction_for(self);
-    uint32_t panel_x = (self->owner ^ self->owner_aux) * 5u + 1u;
-    uint64_t coordinates = bn6_panel_to_coords(panel_x, 2);
+    int32_t direction = (int32_t)exe6_calc_pl_em_dir_spd_for(self);
+    uint32_t block_x = (self->owner ^ self->owner_aux) * 5u + 1u;
+    uint64_t coordinates = exe6_get_block_pos(block_x, 2);
     int32_t x = (int32_t)(uint32_t)coordinates + direction * (8 << 16);
     int32_t y = (int32_t)(uint32_t)(coordinates >> 32) + (27 << 16);
 
     for (uint32_t index = 0; index < sizeof(BURST_TABLE) / sizeof(BURST_TABLE[0]); ++index) {
-        const struct BurstEntry *entry = &BURST_TABLE[index];
+        const struct Exe6BurstEntry *entry = &BURST_TABLE[index];
         int16_t vector_x = (int16_t)(entry->x * direction);
         int16_t vector_y = entry->y;
         uint32_t vector = ((uint32_t)(uint16_t)vector_x << 16)
             | (uint16_t)vector_y;
-        Bn6ObjectSpawnParameters spawn_parameters = {
+        Exe6ObjSpawnParameters spawn_parameters = {
             .variant = 0x1E,
             .subvariant = entry->palette,
             .removal_state = 1,
@@ -481,73 +481,73 @@ static void controller_phase_intro(Object *self)
         (void)spawn_burst(self, x, y, vector, spawn_parameters);
     }
 
-    bn6_play_sound(0x107);
+    exe6_sound_req(0x107);
     self->timer = APPARITION_FRAMES;
     set_phase(self, APPARITION_PHASE);
 }
 
-static void controller_phase_apparition(Object *self)
+static void controller_phase_apparition(Exe6Obj *self)
 {
     if (self->timer == 7) {
-        bn6_self_sprite_load(
+        exe6_obj_char_init(
             0x80,
-            BN6_SPRITE_GROUP(chaoslord_apparition_sprite),
-            BN6_SPRITE_ID(chaoslord_apparition_sprite)
+            EXE6_SPRITE_GROUP(chaoslord_apparition_sprite),
+            EXE6_SPRITE_ID(chaoslord_apparition_sprite)
         );
-        bn6_self_sprite_no_shadow();
+        exe6_obj_no_shadow();
         self->animation_word = 0x0101;
-        bn6_self_sprite_set_animation(1);
-        bn6_self_sprite_load_animation_data();
+        exe6_obj_dma_seq_set(1);
+        exe6_obj_char_set();
         self->z += 8 << 16;
-        self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+        self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     }
     if (timer_nonnegative_after_decrement(self)) {
         return;
     }
 
-    bn6_self_sprite_load(
+    exe6_obj_char_init(
         0x80,
-        BN6_SPRITE_GROUP(chaoslord_main_sprite),
-        BN6_SPRITE_ID(chaoslord_main_sprite)
+        EXE6_SPRITE_GROUP(chaoslord_main_sprite),
+        EXE6_SPRITE_ID(chaoslord_main_sprite)
     );
-    bn6_self_sprite_enable_shadow();
-    bn6_self_sprite_hide_piece(0);
-    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+    exe6_obj_shadow_set();
+    exe6_obj_no_trans_flag_num_set(0);
+    self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     self->animation_word = 0;
-    bn6_self_sprite_set_animation(0);
-    bn6_self_sprite_load_animation_data();
+    exe6_obj_dma_seq_set(0);
+    exe6_obj_char_set();
     self->z -= 8 << 16;
-    bn6_self_sprite_set_palette(0);
-    bn6_self_sprite_set_flip(bn6_self_object_get_flip());
+    exe6_obj_clt_set(0);
+    exe6_obj_flip_set(exe6_enemy_flip_check());
     self->parent = spawn_ball(self);
     self->timer = APPROACH_FRAMES;
-    bn6_self_sprite_set_scale(packed_scale(self));
+    exe6_obj_col_efc_set(packed_scale(self));
     set_phase(self, APPROACH_PHASE);
 }
 
-static void controller_phase_approach(Object *self)
+static void controller_phase_approach(Exe6Obj *self)
 {
     uint16_t timer = self->timer;
     if (timer >= 0x34) {
         if (timer == 0x34) {
-            bn6_play_sound(0x12A);
+            exe6_sound_req(0x12A);
         }
-        self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+        self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
         if ((timer & 2u) != 0) {
-            self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
+            self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
         } else if ((timer & 4u) != 0) {
-            bn6_self_sprite_set_scale(packed_scale(self));
+            exe6_obj_col_efc_set(packed_scale(self));
         } else {
-            bn6_self_sprite_set_scale(0x00007FFF);
+            exe6_obj_col_efc_set(0x00007FFF);
         }
     } else if (timer <= 0x24 && (timer & 3u) == 0) {
-        struct ChaoslordControllerWork *work =
-            (struct ChaoslordControllerWork *)self->work;
+        struct Exe6ChaoslordControllerWork *work =
+            (struct Exe6ChaoslordControllerWork *)self->work;
         work->scale_low = work->scale_low >= 2 ? work->scale_low - 2 : 0;
         work->scale_middle =
             work->scale_middle >= 2 ? work->scale_middle - 2 : 0;
         work->scale_high = work->scale_high >= 2 ? work->scale_high - 2 : 0;
-        bn6_self_sprite_set_scale(packed_scale(self));
+        exe6_obj_col_efc_set(packed_scale(self));
     }
 
     self->z += 0x0000C000;
@@ -559,12 +559,12 @@ static void controller_phase_approach(Object *self)
     set_phase(self, ATTACK_PHASE);
 }
 
-static void controller_phase_attack(Object *self)
+static void controller_phase_attack(Exe6Obj *self)
 {
     if (self->timer == ATTACK_SPAWN_TIMER) {
         self->animation = 0x0E;
-        bn6_play_sound(0x141);
-        (void)spawn_attack_object(self, 1);
+        exe6_sound_req(0x141);
+        (void)spawn_attack_obj(self, 1);
     }
     if (timer_nonnegative_after_decrement(self)) {
         return;
@@ -574,14 +574,14 @@ static void controller_phase_attack(Object *self)
     set_phase(self, OUTRO_PHASE);
 }
 
-static void controller_phase_outro(Object *self)
+static void controller_phase_outro(Exe6Obj *self)
 {
     if (!timer_nonnegative_after_decrement(self)) {
         self->state_word = DESTROY_STATE;
     }
 }
 
-static void controller_update(Object *self)
+static void controller_update(Exe6Obj *self)
 {
     switch (self->phase) {
     case 0:
@@ -602,15 +602,15 @@ static void controller_update(Object *self)
     }
 }
 
-static void controller_destroy(Object *self)
+static void controller_destroy(Exe6Obj *self)
 {
     (void)spawn_teardown(self);
     ball_request_destroy(self->parent);
     *self->completion = 0;
-    bn6_self_object_free();
+    exe6_obj_move_delete();
 }
 
-BN6_OBJECT1(chaoslord_controller_main)
+EXE6_EM(chaoslord_controller_main)
 {
     if (self->state == 0) {
         controller_init(self);
@@ -619,21 +619,21 @@ BN6_OBJECT1(chaoslord_controller_main)
     } else {
         controller_destroy(self);
     }
-    bn6_self_object_update_dimming();
+    exe6_battle_obj_char_move2();
 }
 
-BN6_SUMMON_ATTACK(0x12E, chaoslord_attack_main)
+EXE6_SUMMON_ATTACK(0x12E, chaoslord_attack_main)
 {
     (void)spawn_parameters;
-    Object *controller = bn6_spawn_type1(
-        BN6_OBJECT_ID(chaoslord_controller_main),
-        bn6_object_spawn_empty()
+    Exe6Obj *controller = exe6_em_open(
+        EXE6_OBJ_ID(chaoslord_controller_main),
+        exe6_obj_spawn_empty()
     );
     if (controller == NULL) {
         return;
     }
-    controller->panel_x = (uint8_t)panel_x;
-    controller->panel_y = (uint8_t)panel_y;
+    controller->block_x = (uint8_t)block_x;
+    controller->block_y = (uint8_t)block_y;
     controller->parameter = (uint8_t)parameter;
     controller->owner_word = owner->owner_word;
     controller->attack = attack;
@@ -641,35 +641,35 @@ BN6_SUMMON_ATTACK(0x12E, chaoslord_attack_main)
     *completion = 1;
 }
 
-static void attack_set_sprite(Object *self, uint32_t stage)
+static void attack_set_sprite(Exe6Obj *self, uint32_t stage)
 {
     uint32_t group;
     uint32_t index;
     uint32_t animation;
     uint32_t palette;
     if (stage < 2) {
-        const struct AttackSpriteEntry *entry = &ATTACK_SPRITE_TABLE[stage];
+        const struct Exe6AttackSpriteEntry *entry = &ATTACK_SPRITE_TABLE[stage];
         group = entry->group;
         index = entry->index;
         animation = entry->animation;
         palette = entry->palette;
     } else {
-        group = BN6_SPRITE_GROUP(chaoslord_main_sprite);
-        index = BN6_SPRITE_ID(chaoslord_main_sprite);
+        group = EXE6_SPRITE_GROUP(chaoslord_main_sprite);
+        index = EXE6_SPRITE_ID(chaoslord_main_sprite);
         animation = stage == 2 ? 0x27 : 0x28;
         palette = 0;
     }
-    bn6_self_sprite_load(0x80, group, index);
-    bn6_self_sprite_no_shadow();
+    exe6_obj_char_init(0x80, group, index);
+    exe6_obj_no_shadow();
     self->animation_word = (uint16_t)(
         animation | (animation << 8)
     );
-    bn6_self_sprite_set_animation(animation);
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_set_palette(palette);
+    exe6_obj_dma_seq_set(animation);
+    exe6_obj_char_set();
+    exe6_obj_clt_set(palette);
 }
 
-static void attack_flash_target(Object *self)
+static void attack_flash_target(Exe6Obj *self)
 {
     if (self->variant != 0) {
         return;
@@ -677,80 +677,80 @@ static void attack_flash_target(Object *self)
     uint16_t timer = self->aux_timer;
     self->aux_timer = (uint16_t)(timer - 1);
     if ((timer & 4u) == 0 && self->animation_state != 0) {
-        bn6_panel_set_flash(self->animation_state, self->removal_state);
+        exe6_block_flash(self->animation_state, self->removal_state);
     }
 }
 
-static void attack_apply_panels(Object *self)
+static void attack_apply_blocks(Exe6Obj *self)
 {
-    int32_t direction = (int32_t)bn6_object_front_direction_for(self);
+    int32_t direction = (int32_t)exe6_calc_pl_em_dir_spd_for(self);
     for (
         uint32_t index = 0;
-        index < sizeof(IMPACT_PANEL_PATTERN) / sizeof(IMPACT_PANEL_PATTERN[0]);
+        index < sizeof(IMPACT_BLOCK_PATTERN) / sizeof(IMPACT_BLOCK_PATTERN[0]);
         ++index
     ) {
-        uint32_t panel_x = (uint32_t)(
+        uint32_t block_x = (uint32_t)(
             (int32_t)self->animation_state
-            + IMPACT_PANEL_PATTERN[index].x * direction
+            + IMPACT_BLOCK_PATTERN[index].x * direction
         );
-        uint32_t panel_y = (uint32_t)(
-            (int32_t)self->removal_state + IMPACT_PANEL_PATTERN[index].y
+        uint32_t block_y = (uint32_t)(
+            (int32_t)self->removal_state + IMPACT_BLOCK_PATTERN[index].y
         );
-        uint32_t panel_flags = bn6_panel_get_flags(panel_x, panel_y);
+        uint32_t block_flags = exe6_block_status_get(block_x, block_y);
         if (self->variant == 0) {
-            if ((panel_flags & BN6_PANEL_FLAG_CRACKED) == 0) {
-                bn6_panel_crack_from_solid(panel_x, panel_y);
+            if ((block_flags & EXE6_BLOCK_FLAG_CRACKED) == 0) {
+                exe6_block_crack_set(block_x, block_y);
             }
-        } else if ((panel_flags & BN6_PANEL_FLAG_SOLID) != 0) {
-            bn6_panel_crack(panel_x, panel_y);
+        } else if ((block_flags & EXE6_BLOCK_FLAG_SOLID) != 0) {
+            exe6_block_out_set3(block_x, block_y);
         }
     }
 }
 
-static void spawn_impact_effect(Object *self)
+static void spawn_impact_effect(Exe6Obj *self)
 {
-    Object *effect = bn6_spawn_type4(
+    Exe6Obj *effect = exe6_efc_open(
         0x24,
-        bn6_object_spawn_with_variant((uint8_t)(self->variant + 5u))
+        exe6_obj_spawn_with_variant((uint8_t)(self->variant + 5u))
     );
     if (effect == NULL) {
         return;
     }
 
     effect->aux_timer = 1;
-    struct ChaoslordImpactWork *work =
-        (struct ChaoslordImpactWork *)effect->work;
-    uint8_t *panels = work->panels;
+    struct Exe6ChaoslordImpactWork *work =
+        (struct Exe6ChaoslordImpactWork *)effect->work;
+    uint8_t *blocks = work->blocks;
     uint8_t count = 0;
     int32_t direction = 1 - (int32_t)(self->owner * 2u);
     for (
         uint32_t index = 0;
-        index < sizeof(IMPACT_PANEL_PATTERN) / sizeof(IMPACT_PANEL_PATTERN[0]);
+        index < sizeof(IMPACT_BLOCK_PATTERN) / sizeof(IMPACT_BLOCK_PATTERN[0]);
         ++index
     ) {
-        uint32_t panel_x = (uint32_t)(
-            (int32_t)effect->panel_x
-            + IMPACT_PANEL_PATTERN[index].x * direction
+        uint32_t block_x = (uint32_t)(
+            (int32_t)effect->block_x
+            + IMPACT_BLOCK_PATTERN[index].x * direction
         );
-        uint32_t panel_y = (uint32_t)(
-            (int32_t)effect->panel_y + IMPACT_PANEL_PATTERN[index].y
+        uint32_t block_y = (uint32_t)(
+            (int32_t)effect->block_y + IMPACT_BLOCK_PATTERN[index].y
         );
-        if (bn6_panel_matches_flags(
-                panel_x,
-                panel_y,
-                BN6_PANEL_FLAG_VALID,
+        if (exe6_block_move_check(
+                block_x,
+                block_y,
+                EXE6_BLOCK_FLAG_VALID,
                 0
             ) != 0) {
-            panels[count++] = (uint8_t)(panel_x | (panel_y << 4));
+            blocks[count++] = (uint8_t)(block_x | (block_y << 4));
         }
     }
     effect->subvariant = count;
 }
 
-static void attack_impact(Object *self)
+static void attack_impact(Exe6Obj *self)
 {
     spawn_impact_effect(self);
-    Object *damage = bn6_spawn_panel_damage(
+    Exe6Obj *damage = exe6_set_shl03_ev(
         self->animation_state,
         self->removal_state,
         0,
@@ -762,20 +762,20 @@ static void attack_impact(Object *self)
     if (damage != NULL) {
         damage->header_flags = (uint8_t)(
             (damage->header_flags
-                & (uint8_t)~BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING)
+                & (uint8_t)~EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING)
             | (self->header_flags
-                & BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING)
+                & EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING)
         );
-        bn6_object_invoke(damage, PANEL_DAMAGE_MAIN);
+        exe6_obj_invoke(damage, BLOCK_DAMAGE_MAIN);
     }
-    attack_apply_panels(self);
-    bn6_screen_shake_set(3, 0x14);
-    bn6_play_sound(0x142);
+    attack_apply_blocks(self);
+    exe6_camera_quake_set(3, 0x14);
+    exe6_sound_req(0x142);
     (void)spawn_flash();
     self->state_word = DESTROY_STATE;
 }
 
-static void attack_fly(Object *self)
+static void attack_fly(Exe6Obj *self)
 {
     attack_flash_target(self);
     self->x += self->velocity_x;
@@ -786,7 +786,7 @@ static void attack_fly(Object *self)
     }
 }
 
-static void attack_form(Object *self)
+static void attack_form(Exe6Obj *self)
 {
     uint16_t timer = self->timer;
     uint16_t first = self->variant == 0 ? 0x3A : 0x58;
@@ -797,7 +797,7 @@ static void attack_form(Object *self)
         self->z += 18 << 16;
     } else if (timer == second) {
         attack_set_sprite(self, 2);
-        bn6_play_sound(0x12A);
+        exe6_sound_req(0x12A);
     } else if (timer == third) {
         attack_set_sprite(self, 3);
         self->z += 12 << 16;
@@ -810,8 +810,8 @@ static void attack_form(Object *self)
             );
             self->removal_state = 2;
         } else {
-            self->animation_state = self->parent->panel_x;
-            self->removal_state = self->parent->panel_y;
+            self->animation_state = self->parent->block_x;
+            self->removal_state = self->parent->block_y;
         }
     }
 
@@ -820,8 +820,8 @@ static void attack_form(Object *self)
         return;
     }
 
-    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
-    uint64_t coordinates = bn6_panel_to_coords(
+    self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
+    uint64_t coordinates = exe6_get_block_pos(
         self->animation_state,
         self->removal_state
     );
@@ -831,13 +831,13 @@ static void attack_form(Object *self)
     self->velocity_y = (target_y - self->y) / (int32_t)BALL_FLIGHT_FRAMES;
     self->velocity_z = self->z / (int32_t)BALL_FLIGHT_FRAMES;
     self->timer = BALL_FLIGHT_FRAMES;
-    bn6_play_sound(0x11F);
+    exe6_sound_req(0x11F);
     self->phase = BALL_ACTIVE_PHASE;
 }
 
-static void attack_update(Object *self)
+static void attack_update(Exe6Obj *self)
 {
-    if (bn6_battle_is_over() != 0) {
+    if (exe6_battle_end_check() != 0) {
         self->state_word = DESTROY_STATE;
     } else if (self->phase == 0) {
         attack_form(self);
@@ -846,42 +846,42 @@ static void attack_update(Object *self)
     }
 }
 
-static void attack_init(Object *self)
+static void attack_init(Exe6Obj *self)
 {
     attack_set_sprite(self, 0);
-    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
-    bn6_self_sprite_set_flip(bn6_self_object_get_flip());
+    self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
+    exe6_obj_flip_set(exe6_enemy_flip_check());
     self->timer = self->variant == 0 ? 0x4B : 0x69;
-    self->x += (int32_t)bn6_object_front_direction_for(self) * (46 << 16);
+    self->x += (int32_t)exe6_calc_pl_em_dir_spd_for(self) * (46 << 16);
     self->z += 50 << 16;
     self->y += 8 << 16;
     self->state_word = ACTIVE_STATE;
     attack_update(self);
 }
 
-BN6_OBJECT3(chaoslord_attack_object_main)
+EXE6_SHL(chaoslord_attack_obj_main)
 {
     if (self->state == 0) {
         attack_init(self);
     } else if (self->state == ACTIVE_STATE) {
         attack_update(self);
     } else {
-        bn6_self_object_free();
+        exe6_obj_move_delete();
     }
-    bn6_self_object_update();
+    exe6_battle_obj_char_move();
 }
 
-static void aura_appear_special(Object *self)
+static void aura_appear_special(Exe6Obj *self)
 {
     if (self->phase_timer_low == 0) {
         self->phase_timer_low = 1;
         self->timer = 0x1E;
-        self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+        self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     }
     if (self->phase_timer_low == 1) {
         uint32_t blend = self->timer >> 1;
-        bn6_self_sprite_set_blend(blend, blend);
-        bn6_self_sprite_set_blend_mode(0x10u - blend);
+        exe6_obj_mosaic_set(blend, blend);
+        exe6_obj_bld_set(0x10u - blend);
         int32_t timer = self->timer;
         if (timer > 0x10) {
             --timer;
@@ -899,7 +899,7 @@ static void aura_appear_special(Object *self)
     }
 }
 
-static void aura_appear_normal(Object *self)
+static void aura_appear_normal(Exe6Obj *self)
 {
     if (self->phase_timer_low == 0) {
         self->phase_timer_low = 1;
@@ -909,7 +909,7 @@ static void aura_appear_normal(Object *self)
         if (timer_nonnegative_after_decrement(self)) {
             return;
         }
-        self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+        self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
         self->timer = 0x0F;
         self->phase_timer_low = 2;
     }
@@ -918,13 +918,13 @@ static void aura_appear_normal(Object *self)
     uint32_t packed = (0x20u | scale);
     packed = (packed << 5) | scale;
     packed = (packed << 5) | scale;
-    bn6_self_sprite_set_scale(packed);
+    exe6_obj_col_efc_set(packed);
     if (!timer_nonnegative_after_decrement(self)) {
         self->phase = AURA_LIFESPAN_PHASE;
     }
 }
 
-static void aura_appear(Object *self)
+static void aura_appear(Exe6Obj *self)
 {
     if (self->animation == 0x0D) {
         aura_appear_special(self);
@@ -933,7 +933,7 @@ static void aura_appear(Object *self)
     }
 }
 
-static void aura_lifespan(Object *self)
+static void aura_lifespan(Exe6Obj *self)
 {
     --self->animation_state_word;
     if (self->animation_state_word == 0) {
@@ -941,11 +941,11 @@ static void aura_lifespan(Object *self)
     }
 }
 
-static void aura_fade(Object *self)
+static void aura_fade(Exe6Obj *self)
 {
-    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+    self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     if ((self->subvariant & 2u) == 0) {
-        self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
+        self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
     }
     --self->subvariant;
     if (self->subvariant == 0) {
@@ -953,7 +953,7 @@ static void aura_fade(Object *self)
     }
 }
 
-static void aura_update(Object *self)
+static void aura_update(Exe6Obj *self)
 {
     if (self->phase == 0) {
         aura_appear(self);
@@ -962,44 +962,44 @@ static void aura_update(Object *self)
     } else {
         aura_fade(self);
     }
-    bn6_self_sprite_update();
+    exe6_obj_char_move();
 }
 
-static void aura_init(Object *self)
+static void aura_init(Exe6Obj *self)
 {
-    bn6_self_sprite_load(
+    exe6_obj_char_init(
         0x80,
-        BN6_SPRITE_GROUP(chaoslord_aura_sprite),
-        BN6_SPRITE_ID(chaoslord_aura_sprite)
+        EXE6_SPRITE_GROUP(chaoslord_aura_sprite),
+        EXE6_SPRITE_ID(chaoslord_aura_sprite)
     );
     self->animation_word = (uint16_t)(self->variant | (self->variant << 8));
-    bn6_self_sprite_set_animation(self->variant);
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_update();
-    bn6_self_sprite_no_shadow();
-    bn6_self_sprite_set_flip(bn6_self_object_get_flip());
+    exe6_obj_dma_seq_set(self->variant);
+    exe6_obj_char_set();
+    exe6_obj_char_move();
+    exe6_obj_no_shadow();
+    exe6_obj_flip_set(exe6_enemy_flip_check());
     self->y += 26 << 16;
     self->z += 26 << 16;
     self->state_word = ACTIVE_STATE;
     aura_update(self);
 }
 
-BN6_OBJECT4(chaoslord_aura_main)
+EXE6_EFC(chaoslord_aura_main)
 {
     if (self->state == 0) {
         aura_init(self);
     } else if (self->state == ACTIVE_STATE) {
         aura_update(self);
     } else {
-        bn6_self_object_free();
+        exe6_obj_move_delete();
     }
 }
 
-static void burst_set_position(Object *self)
+static void burst_set_position(Exe6Obj *self)
 {
     const int16_t *sine = (const int16_t *)chaoslord_trig_table;
-    struct ChaoslordBurstWork *work =
-        (struct ChaoslordBurstWork *)self->work;
+    struct Exe6ChaoslordBurstWork *work =
+        (struct Exe6ChaoslordBurstWork *)self->work;
     uint8_t angle = self->animation_state;
     int32_t radius = work->radius;
     self->x = work->center_x
@@ -1010,22 +1010,22 @@ static void burst_set_position(Object *self)
     }
 }
 
-static void burst_update(Object *self)
+static void burst_update(Exe6Obj *self)
 {
-    struct ChaoslordBurstWork *work =
-        (struct ChaoslordBurstWork *)self->work;
-    int32_t direction = -bn6_self_object_side_direction();
+    struct Exe6ChaoslordBurstWork *work =
+        (struct Exe6ChaoslordBurstWork *)self->work;
+    int32_t direction = -exe6_calc_pl_em_spd();
     uint8_t lifetime = self->variant;
     if (lifetime == 0x14) {
-        self->owner_aux = (uint8_t)(((bn6_rng_next() & 7u) + 3u) * direction);
+        self->owner_aux = (uint8_t)(((exe6_rand() & 7u) + 3u) * direction);
     } else if (lifetime == 0x0A) {
         self->owner_aux = (uint8_t)(
-            self->owner_aux + ((bn6_rng_next() & 7u) + 0x0Au) * direction
+            self->owner_aux + ((exe6_rand() & 7u) + 0x0Au) * direction
         );
         work->radius -= work->radius_step;
     } else if (lifetime == 5) {
         self->owner_aux = (uint8_t)(
-            self->owner_aux + ((bn6_rng_next() & 7u) + 0x10u) * direction
+            self->owner_aux + ((exe6_rand() & 7u) + 0x10u) * direction
         );
         work->radius_step <<= 1;
         work->radius -= work->radius_step;
@@ -1045,20 +1045,20 @@ static void burst_update(Object *self)
     }
 }
 
-static void burst_init(Object *self)
+static void burst_init(Exe6Obj *self)
 {
-    struct ChaoslordBurstWork *work =
-        (struct ChaoslordBurstWork *)self->work;
-    bn6_self_sprite_load(
+    struct Exe6ChaoslordBurstWork *work =
+        (struct Exe6ChaoslordBurstWork *)self->work;
+    exe6_obj_char_init(
         0x80,
-        BN6_SPRITE_GROUP(chaoslord_aura_sprite),
-        BN6_SPRITE_ID(chaoslord_aura_sprite)
+        EXE6_SPRITE_GROUP(chaoslord_aura_sprite),
+        EXE6_SPRITE_ID(chaoslord_aura_sprite)
     );
     self->animation = 0x15;
-    bn6_self_sprite_set_animation(0x15);
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_no_shadow();
-    bn6_self_sprite_set_palette(self->subvariant);
+    exe6_obj_dma_seq_set(0x15);
+    exe6_obj_char_set();
+    exe6_obj_no_shadow();
+    exe6_obj_clt_set(self->subvariant);
     work->elevated = self->removal_state;
     work->center_x = self->x;
 
@@ -1071,97 +1071,97 @@ static void burst_init(Object *self)
     );
     work->radius = (int32_t)(integer_sqrt(magnitude) << 16);
     work->radius_step = work->radius / self->variant;
-    self->animation_state = (uint8_t)bn6_angle_from_vector(
+    self->animation_state = (uint8_t)exe6_calc_degree(
         vector_y * 0x10000,
         vector_x * 0x10000
     );
-    self->owner_aux = (uint8_t)-bn6_self_object_side_direction();
-    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+    self->owner_aux = (uint8_t)-exe6_calc_pl_em_spd();
+    self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     if (work->elevated != 0) {
         self->z += 27 << 16;
     }
     self->state_word = ACTIVE_STATE;
 }
 
-BN6_OBJECT4(chaoslord_burst_main)
+EXE6_EFC(chaoslord_burst_main)
 {
     if (self->state == 0) {
         burst_init(self);
     } else if (self->state == ACTIVE_STATE) {
         burst_update(self);
     } else {
-        bn6_self_object_free();
+        exe6_obj_move_delete();
     }
-    bn6_self_object_update();
+    exe6_battle_obj_char_move();
 }
 
-static void teardown_update(Object *self)
+static void teardown_update(Exe6Obj *self)
 {
     int32_t timer = (int32_t)self->timer - 1;
     self->timer = (uint16_t)timer;
     bool finished = timer == 0;
     if (!finished
-        && (bn6_self_sprite_get_frame_flags()
-            & BN6_ANIMATION_FRAME_FLAG_END) != 0) {
+        && (exe6_obj_seq_info_get()
+            & EXE6_ANIMATION_FRAME_FLAG_END) != 0) {
         finished = (int16_t)self->timer <= 0;
     }
     if (finished) {
-        self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
+        self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
         self->state_word = DESTROY_STATE;
     }
-    bn6_self_sprite_update();
+    exe6_obj_char_move();
 }
 
-static void teardown_init(Object *self)
+static void teardown_init(Exe6Obj *self)
 {
-    bn6_self_sprite_load(
+    exe6_obj_char_init(
         0x80,
-        BN6_SPRITE_GROUP(chaoslord_teardown_sprite),
-        BN6_SPRITE_ID(chaoslord_teardown_sprite)
+        EXE6_SPRITE_GROUP(chaoslord_teardown_sprite),
+        EXE6_SPRITE_ID(chaoslord_teardown_sprite)
     );
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_no_shadow();
+    exe6_obj_char_set();
+    exe6_obj_no_shadow();
     self->animation_word = 0;
-    bn6_self_sprite_set_animation(0);
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_update();
-    bn6_self_sprite_set_palette(self->animation_state);
-    bn6_self_sprite_set_flip(self->subvariant);
-    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+    exe6_obj_dma_seq_set(0);
+    exe6_obj_char_set();
+    exe6_obj_char_move();
+    exe6_obj_clt_set(self->animation_state);
+    exe6_obj_flip_set(self->subvariant);
+    self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     if (self->removal_state != 0) {
-        bn6_self_sprite_set_blend_mode(0);
+        exe6_obj_bld_set(0);
     }
     self->state_word = ACTIVE_STATE;
 }
 
-BN6_OBJECT4(chaoslord_teardown_main)
+EXE6_EFC(chaoslord_teardown_main)
 {
     if (self->state == 0) {
         teardown_init(self);
     } else if (self->state == ACTIVE_STATE) {
         teardown_update(self);
     } else {
-        bn6_self_object_free();
+        exe6_obj_move_delete();
     }
 }
 
-static void flash_update(Object *self)
+static void flash_update(Exe6Obj *self)
 {
     int32_t timer = (int32_t)self->aux_timer - 1;
     self->aux_timer = (uint16_t)timer;
     if (timer < 0) {
-        bn6_palette_restore(0x14);
-        bn6_palette_restore(0x15);
-        bn6_self_object_free();
+        exe6_col_fade_kill(0x14);
+        exe6_col_fade_kill(0x15);
+        exe6_obj_move_delete();
         return;
     }
 
     uint32_t color = self->removal_state == 0 ? 0x00007FFF : 0x1F;
-    bn6_palette_write(0, color, 0x0F, 0x14, BN6_PALETTE_OBJ_OUTPUT_00);
-    bn6_palette_write(0, color, 0x0F, 0x15, BN6_PALETTE_BG_OUTPUT_00);
+    exe6_col_fade_set(0, color, 0x0F, 0x14, EXE6_PALETTE_OBJ_OUTPUT_00);
+    exe6_col_fade_set(0, color, 0x0F, 0x15, EXE6_PALETTE_BG_OUTPUT_00);
 }
 
-BN6_OBJECT4(chaoslord_flash_main)
+EXE6_EFC(chaoslord_flash_main)
 {
     if (self->state == 0) {
         self->aux_timer = self->subvariant;
@@ -1170,6 +1170,6 @@ BN6_OBJECT4(chaoslord_flash_main)
     } else if (self->state == ACTIVE_STATE) {
         flash_update(self);
     } else {
-        bn6_self_object_free();
+        exe6_obj_move_delete();
     }
 }

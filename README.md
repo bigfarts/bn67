@@ -75,7 +75,7 @@ Replaces LifeSync with the complete BN5 Jealousy attack. It is a 60 MB,
 Null-element StandardChip in code J with 80 displayed power. For each chip
 loaded by the opponent, Jealousy produces one 80-damage full-field pulse, then
 runs BN5's chip-delete overlay and cleanup sequence. Every pulse fires through
-normal collision handling, while the separate deletion phase still runs through
+normal hit handling, while the separate deletion phase still runs through
 traps exactly as it does in BN5. Its icon, library art, palette, and delete-overlay graphics are imported
 from BN5 in both versions.
 
@@ -98,14 +98,14 @@ additional shot for every active battle-bug type it clears. It consumes the
 complete BN6 BugFix property set, including the Custom-screen bug, and resets
 BugFix's latched runtime bug state. The stationary Gospel uses BN5's 24-pixel
 forward offset and remains present through the full bug-scaled firing sequence;
-each moving head begins on the front panel with BN5's native collision timing.
+each moving head begins on the front block with BN5's native hit timing.
 Gregar uses the imported BugCharge menu art; Falzar retains the inaccessible
 BugRSword-slot art.
 
 ### SignlRed
 
 Replaces Navi+20 with the complete Blue Moon SignalRed behavior. The 100-HP
-traffic light appears on the panel in front of the user, disables the opposing
+traffic light appears on the block in front of the user, disables the opposing
 side's BattleChip use for 420 red frames, opens a 50-frame green window, and
 repeats until destroyed. It is a 61 MB Obstacle-element StandardChip in code
 S and keeps Navi+20's library position. Both versions import the Blue Moon menu
@@ -115,7 +115,7 @@ and the light is registered as a normal deployable so DustCross can suck it in
 with B+Left. Its 100-HP hurtbox remains active every frame, but only the opposing
 player's DustCross can suck it in. The placement cue plays during the activation
 freeze, and destroying the light produces its break effect. Its native
-owner-specific passive collision is enabled
+owner-specific passive hit is enabled
 after the cut-in ends, so it does not trigger Beat or traps. Its chip-activation
 flags also clear BN6's Image Invis classification bit, so playing it does not
 wake Rush. Dimming cut-ins also pause its red/green state transition without
@@ -169,16 +169,16 @@ hook locations.
 
 Gameplay implementations are flat `src/<name>.c` files. Each implementation
 registers its own attacks, objects, sprites, songs, dependencies, and pointer
-patches with `BN6_*` macros. No manifest or generated C header mirrors those
+patches with `EXE6_*` macros. No manifest or generated C header mirrors those
 declarations.
 
 `compile_c_metadata.py` compiles the gameplay package sources in target-specific
-metadata mode and extracts their ordered `__bn6_meta__...` symbols from the ELF
+metadata mode and extracts their ordered `__exe6_meta__...` symbols from the ELF
 objects with `arm-none-eabi-nm`. `compile_registry.py` consumes one config path
 per invocation, allocates that config's registry independently, and generates
 absolute linker symbols used by expressions such as
-`BN6_OBJECT_ID(searchman_actor_main)` and
-`BN6_SPRITE_ID(searchman_battle_sprite)`.
+`EXE6_OBJ_ID(searchman_actor_main)` and
+`EXE6_SPRITE_ID(searchman_battle_sprite)`.
 
 Optional `src/<name>.defs.toml` files keep declarative ROM-data edits separate:
 
@@ -208,8 +208,8 @@ Pass the five source ROM paths as Make variables:
 ```sh
 make \
   BN5_PROTOMAN_ROM=/path/to/bn5.srl \
-  BN6_GREGAR_ROM=/path/to/bn6-gregar.srl \
-  BN6_FALZAR_ROM=/path/to/bn6-falzar.srl \
+  EXE6_GREGAR_ROM=/path/to/bn6-gregar.srl \
+  EXE6_FALZAR_ROM=/path/to/bn6-falzar.srl \
   BN4_BLUE_MOON_ROM=/path/to/bn4-blue-moon.srl \
   BN3_BLUE_ROM=/path/to/bn3-blue.srl
 ```

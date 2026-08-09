@@ -217,28 +217,28 @@ class PackageCompilerTests(unittest.TestCase):
 
         self.assertNotIn('.include "packages/', assembly)
         self.assertIn(".dw searchman_reticle_main + 1", assembly)
-        self.assertIn("__bn6_object_id_searchman_reticle_main =", linker)
-        self.assertIn("__bn6_sprite_id_searchman_reticle_sprite =", linker)
-        self.assertIn("__bn6_sprite_group_searchman_reticle_sprite =", linker)
+        self.assertIn("__exe6_object_id_searchman_reticle_main =", linker)
+        self.assertIn("__exe6_sprite_id_searchman_reticle_sprite =", linker)
+        self.assertIn("__exe6_sprite_group_searchman_reticle_sprite =", linker)
         self.assertIn(".dw searchman_reticle_sprite", assembly)
         self.assertIn(
-            f"__bn6_song_id_common_navi_summon_song = "
+            f"__exe6_song_id_common_navi_summon_song = "
             f"0x{allocations.songs['common_navi_summon_song']:X};",
             linker,
         )
         self.assertIn(
-            f"__bn6_song_group_common_navi_summon_song = "
+            f"__exe6_song_group_common_navi_summon_song = "
             f"0x{allocations.song_players['common_navi_summon_song']:X};",
             linker,
         )
         self.assertNotIn("LASERMAN_SUMMON_SONG", assembly)
         self.assertNotIn("ROLLARROW_SUMMON_SONG", assembly)
         self.assertIn(
-            "bn6_play_sound(BN6_SONG_ID(common_navi_summon_song))",
+            "exe6_sound_req(EXE6_SONG_ID(common_navi_summon_song))",
             (ROOT / "src/laserman.c").read_text(),
         )
         self.assertIn(
-            "BN6_SONG_ID(common_navi_summon_song)",
+            "EXE6_SONG_ID(common_navi_summon_song)",
             (ROOT / "src/rollarrow.c").read_text(),
         )
         self.assertNotIn(".definelabel", assembly)
@@ -262,7 +262,7 @@ class PackageCompilerTests(unittest.TestCase):
         for source in ROOT.glob("src/*.c"):
             text = source.read_text()
             self.assertNotIn(".generated.h", text, source)
-            self.assertNotIn("BN6_PCM_SONG", text, source)
+            self.assertNotIn("EXE6_PCM_SONG", text, source)
 
     def test_chip_records_are_semantic_definition_resources(self) -> None:
         gregar_config, gregar_packages = self.packages("gregar")
@@ -499,9 +499,9 @@ class PackageCompilerTests(unittest.TestCase):
             f".org 0x{config.object_dispatch.hook_address:08X}", assembly
         )
         folderback = (ROOT / "src/folderback.c").read_text()
-        self.assertNotIn("BN6_POINTER_PATCH(0x08003224", folderback)
-        self.assertNotIn("__bn6_object_kind", folderback)
-        self.assertIn("__bn6_object_id_folderback_controller_main", folderback)
+        self.assertNotIn("EXE6_POINTER_PATCH(0x08003224", folderback)
+        self.assertNotIn("__exe6_object_kind", folderback)
+        self.assertIn("__exe6_object_id_folderback_controller_main", folderback)
         self.assertNotIn("0x08003C9C", folderback)
 
     def test_invalid_semantic_chip_code_is_rejected(self) -> None:
@@ -561,15 +561,15 @@ class PackageCompilerTests(unittest.TestCase):
         allocations = validate_and_allocate(config, packages)
         linker = generate_linker_values(packages, allocations)
         self.assertIn(
-            f"__bn6_object_id_signalred_controller_main = "
+            f"__exe6_object_id_signalred_controller_main = "
             f"0x{allocations.objects[4]['signalred_controller_main']:X};",
             linker,
         )
         group, sprite_id = allocations.sprites["signalred_battle_sprite"]
-        self.assertIn(f"__bn6_sprite_group_signalred_battle_sprite = 0x{group:X};", linker)
-        self.assertIn(f"__bn6_sprite_id_signalred_battle_sprite = 0x{sprite_id:X};", linker)
+        self.assertIn(f"__exe6_sprite_group_signalred_battle_sprite = 0x{group:X};", linker)
+        self.assertIn(f"__exe6_sprite_id_signalred_battle_sprite = 0x{sprite_id:X};", linker)
         self.assertIn(
-            f"__bn6_song_id_signalred_spawn_song = "
+            f"__exe6_song_id_signalred_spawn_song = "
             f"0x{allocations.songs['signalred_spawn_song']:X};",
             linker,
         )

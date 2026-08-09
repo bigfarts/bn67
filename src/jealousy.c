@@ -1,14 +1,14 @@
 #include "runtime.h"
 
-BN6_INCBIN(jealousy_icon, "build/jealousy-icon.bin");
-BN6_INCBIN(jealousy_image, "build/jealousy-image.bin");
-BN6_INCBIN(jealousy_palette, "build/jealousy-palette.bin");
+EXE6_INCBIN(jealousy_icon, "build/jealousy-icon.bin");
+EXE6_INCBIN(jealousy_image, "build/jealousy-image.bin");
+EXE6_INCBIN(jealousy_palette, "build/jealousy-palette.bin");
 
 extern const uint8_t jealousy_effect_tiles[0x100];
-BN6_INCBIN(jealousy_effect_tiles, "build/jealousy-effect-tiles.bin");
+EXE6_INCBIN(jealousy_effect_tiles, "build/jealousy-effect-tiles.bin");
 
 extern const uint8_t jealousy_effect_palette[0x20];
-BN6_INCBIN(jealousy_effect_palette, "build/jealousy-effect-palette.bin");
+EXE6_INCBIN(jealousy_effect_palette, "build/jealousy-effect-palette.bin");
 
 static const uintptr_t TILES_DESTINATION = 0x06017940u;
 static const uint16_t PULSE_DELAY = 10;
@@ -16,18 +16,18 @@ static const uint16_t DELETE_FRAMES = 90;
 static const uint16_t OVERLAY_LAST_FRAME = 20;
 static const uint32_t GAUGE_FULL = 0x4000;
 
-static const Bn6PanelDamageProperties DAMAGE_PROPERTIES = {
-    .region = BN6_COLLISION_REGION_CURRENT_PANEL,
-    .hit_effect = BN6_HIT_EFFECT_SMALL_IMPACT,
-    .target_collision_type = BN6_COLLISION_TYPE_STANDARD_TARGET,
-    .self_collision_type = BN6_COLLISION_TYPE_1A,
+static const Exe6BlockDamageProperties DAMAGE_PROPERTIES = {
+    .region = EXE6_HIT_REGION_CURRENT_BLOCK,
+    .hit_effect = EXE6_HIT_EFFECT_SMALL_IMPACT,
+    .target_hit_type = EXE6_HIT_TYPE_STANDARD_TARGET,
+    .self_hit_type = EXE6_HIT_TYPE_1A,
 };
 
-struct JealousyWork {
+struct Exe6JealousyWork {
     uint32_t remaining_attacks;          // +0x60
 };
 
-static uint32_t unit_loaded_chips(Object *unit)
+static uint32_t unit_loaded_chips(Exe6Obj *unit)
 {
     const uint8_t *runtime = (const uint8_t *)unit->runtime_data;
     if (runtime == NULL) {
@@ -37,7 +37,7 @@ static uint32_t unit_loaded_chips(Object *unit)
         return unit->loaded_chip_count;
     }
 
-    const uint8_t *list = bn6_chip_list(unit->owner);
+    const uint8_t *list = exe6_navi_select_chip_work_adrs_get(unit->owner);
     const uint16_t *entry =
         (const uint16_t *)(list + 2u + 2u * list[0]);
     uint32_t count = 0;
@@ -48,13 +48,13 @@ static uint32_t unit_loaded_chips(Object *unit)
     return count;
 }
 
-static uint32_t max_loaded_chips(Object *controller)
+static uint32_t max_loaded_chips(Exe6Obj *controller)
 {
-    Object *const *units =
-        bn6_battle_units_for_side(controller->owner ^ 1u);
+    Exe6Obj *const *units =
+        exe6_battle_units_for_side(controller->owner ^ 1u);
     uint32_t maximum = 0;
     for (size_t index = 0; index < 4; ++index) {
-        Object *unit = units[index];
+        Exe6Obj *unit = units[index];
         if (unit == NULL) {
             continue;
         }
@@ -66,25 +66,25 @@ static uint32_t max_loaded_chips(Object *controller)
     return maximum;
 }
 
-static uint32_t attack_field(Object *controller)
+static uint32_t attack_field(Exe6Obj *controller)
 {
     uint32_t opposing_navi_flag = controller->owner == 0
-        ? BN6_PANEL_FLAG_SIDE_1_NAVI
-        : BN6_PANEL_FLAG_SIDE_0_NAVI;
+        ? EXE6_BLOCK_FLAG_SIDE_1_NAVI
+        : EXE6_BLOCK_FLAG_SIDE_0_NAVI;
     uint32_t hits = 0;
-    for (uint32_t panel_x = 6; panel_x != 0; --panel_x) {
-        for (uint32_t panel_y = 3; panel_y != 0; --panel_y) {
-            if (bn6_panel_matches_flags(
-                    panel_x,
-                    panel_y,
+    for (uint32_t block_x = 6; block_x != 0; --block_x) {
+        for (uint32_t block_y = 3; block_y != 0; --block_y) {
+            if (exe6_block_move_check(
+                    block_x,
+                    block_y,
                     opposing_navi_flag,
                     0
                 ) == 0) {
                 continue;
             }
-            bn6_spawn_panel_damage(
-                panel_x,
-                panel_y,
+            exe6_set_shl03_ev(
+                block_x,
+                block_y,
                 controller->parameter,
                 0,
                 DAMAGE_PROPERTIES,
@@ -97,24 +97,24 @@ static uint32_t attack_field(Object *controller)
     return hits;
 }
 
-static void finish_delete(Object *controller)
+static void finish_delete(Exe6Obj *controller)
 {
-    if (bn6_link_battle_active() != 0) {
-        bn6_gauge_subtract(controller->owner ^ 1u, GAUGE_FULL);
+    if (exe6_real_operation_battle_check() != 0) {
+        exe6_operate_slot_in_gauge_sub(controller->owner ^ 1u, GAUGE_FULL);
     }
 }
 
-static void refresh_delete_overlay(Object *controller)
+static void refresh_delete_overlay(Exe6Obj *controller)
 {
     if (
-        bn6_link_battle_active() != 0
-        && bn6_compare_local_side(controller->owner) != 0
+        exe6_real_operation_battle_check() != 0
+        && exe6_battle_one_self_check(controller->owner) != 0
     ) {
-        bn6_draw_delete_overlay(120, 12);
+        exe6_yazirushi_trans(120, 12);
     }
 }
 
-static void delete_phase(Object *controller)
+static void delete_phase(Exe6Obj *controller)
 {
     if (controller->substate == 0) {
         controller->timer = DELETE_FRAMES;
@@ -135,10 +135,10 @@ static void delete_phase(Object *controller)
     controller->phase_timer = 0;
 }
 
-static void pulse_phase(Object *controller)
+static void pulse_phase(Exe6Obj *controller)
 {
-    struct JealousyWork *work =
-        (struct JealousyWork *)controller->work;
+    struct Exe6JealousyWork *work =
+        (struct Exe6JealousyWork *)controller->work;
     uint16_t timer = (uint16_t)(controller->timer - 1u);
     controller->timer = timer;
     if (timer != 0) {
@@ -151,18 +151,18 @@ static void pulse_phase(Object *controller)
     }
 }
 
-static void effect_init(Object *controller)
+static void effect_init(Exe6Obj *controller)
 {
-    struct JealousyWork *work =
-        (struct JealousyWork *)controller->work;
-    bn6_display_setup(
+    struct Exe6JealousyWork *work =
+        (struct Exe6JealousyWork *)controller->work;
+    exe6_mem_task_trans_set256(
         jealousy_effect_tiles,
         (void *)TILES_DESTINATION,
         sizeof(jealousy_effect_tiles)
     );
-    bn6_display_setup(
+    exe6_mem_task_trans_set256(
         jealousy_effect_palette,
-        (void *)BN6_PALETTE_BG_STAGING_0D,
+        (void *)EXE6_PALETTE_BG_STAGING_0D,
         sizeof(jealousy_effect_palette)
     );
 
@@ -175,7 +175,7 @@ static void effect_init(Object *controller)
     controller->phase_timer = 4;
 }
 
-static void effect_update(Object *controller)
+static void effect_update(Exe6Obj *controller)
 {
     switch (controller->phase_timer) {
     case 0:
@@ -190,49 +190,49 @@ static void effect_update(Object *controller)
     }
 }
 
-static void update(Object *controller)
+static void update(Exe6Obj *controller)
 {
     switch (controller->phase) {
     case 0:
-        bn6_self_type4_dimming_intro();
+        exe6_event_chip_common_fade();
         break;
     case 4:
-        bn6_self_type4_dimming_freeze();
+        exe6_event_chip_common_telop();
         break;
     case 8:
         effect_update(controller);
         break;
     default:
-        bn6_self_type4_dimming_outro();
+        exe6_event_chip_common_end();
         break;
     }
 }
 
-BN6_OBJECT4(jealousy_controller_main)
+EXE6_EFC(jealousy_controller_main)
 {
     switch (self->state) {
     case 0:
-        bn6_self_type4_dimming_init();
+        exe6_event_chip_common_init();
         break;
     case 4:
         update(self);
         break;
     default:
-        bn6_self_type4_dimming_free();
+        exe6_event_chip_common_exit();
         break;
     }
 }
 
-BN6_PERSISTENT_ATTACK(0x0BF, jealousy_attack_main)
+EXE6_PERSISTENT_ATTACK(0x0BF, jealousy_attack_main)
 {
-    Object *controller = bn6_spawn_type4(
-        BN6_OBJECT_ID(jealousy_controller_main), spawn_parameters
+    Exe6Obj *controller = exe6_efc_open(
+        EXE6_OBJ_ID(jealousy_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;
     }
-    controller->panel_x = (uint8_t)panel_x;
-    controller->panel_y = (uint8_t)panel_y;
+    controller->block_x = (uint8_t)block_x;
+    controller->block_y = (uint8_t)block_y;
     controller->parameter = (uint8_t)parameter;
     controller->parent = owner;
     controller->owner_word = owner->owner_word;

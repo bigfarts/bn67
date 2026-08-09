@@ -24,8 +24,8 @@ BN3_CHIP_RECORD_SIZE = 0x20
 BN3_FOLDERBACK_ID = 0x12F
 BN3_IMAGE_WIDTH = 64
 BN3_IMAGE_HEIGHT = 56
-BN6_IMAGE_WIDTH = 56
-BN6_IMAGE_HEIGHT = 48
+EXE6_IMAGE_WIDTH = 56
+EXE6_IMAGE_HEIGHT = 48
 
 
 def decompress_gba_lz77(data: bytes) -> bytes:
@@ -137,11 +137,11 @@ def extract_folderback_art(rom: bytes) -> tuple[bytes, bytes, bytes]:
         raise ValueError("BN3 FolderBack art is truncated")
 
     pixels = decode_4bpp_tiles(source_image, BN3_IMAGE_WIDTH, BN3_IMAGE_HEIGHT)
-    crop_x = (BN3_IMAGE_WIDTH - BN6_IMAGE_WIDTH) // 2
-    crop_y = (BN3_IMAGE_HEIGHT - BN6_IMAGE_HEIGHT) // 2
+    crop_x = (BN3_IMAGE_WIDTH - EXE6_IMAGE_WIDTH) // 2
+    crop_y = (BN3_IMAGE_HEIGHT - EXE6_IMAGE_HEIGHT) // 2
     cropped = [
-        row[crop_x:crop_x + BN6_IMAGE_WIDTH]
-        for row in pixels[crop_y:crop_y + BN6_IMAGE_HEIGHT]
+        row[crop_x:crop_x + EXE6_IMAGE_WIDTH]
+        for row in pixels[crop_y:crop_y + EXE6_IMAGE_HEIGHT]
     ]
     return icon, encode_4bpp_tiles(cropped), palette
 
@@ -222,35 +222,35 @@ ASSETS = (
 
     # Native BN6 attack dispatch prefixes. The registry relocates each one and
     # appends package attacks in the remaining 8-bit subfamily namespace.
-    Asset("bn6_gregar", "attack-family15-table-gregar.bin", 0x2CCB4, 0xA8),
-    Asset("bn6_gregar", "attack-family1B-table-gregar.bin", 0x2CD5C, 0x74),
-    Asset("bn6_gregar", "attack-family1C-table-gregar.bin", 0xED730, 0x5C),
-    Asset("bn6_falzar", "attack-family15-table-falzar.bin", 0x2CCB4, 0xA8),
-    Asset("bn6_falzar", "attack-family1B-table-falzar.bin", 0x2CD5C, 0x74),
-    Asset("bn6_falzar", "attack-family1C-table-falzar.bin", 0xEC3F0, 0x5C),
+    Asset("exe6_gregar", "attack-family15-table-gregar.bin", 0x2CCB4, 0xA8),
+    Asset("exe6_gregar", "attack-family1B-table-gregar.bin", 0x2CD5C, 0x74),
+    Asset("exe6_gregar", "attack-family1C-table-gregar.bin", 0xED730, 0x5C),
+    Asset("exe6_falzar", "attack-family15-table-falzar.bin", 0x2CCB4, 0xA8),
+    Asset("exe6_falzar", "attack-family1B-table-falzar.bin", 0x2CD5C, 0x74),
+    Asset("exe6_falzar", "attack-family1C-table-falzar.bin", 0xEC3F0, 0x5C),
 
     # Native BN6 object dispatch prefixes. The registry relocates each class
     # to a complete 256-entry object-ID table before appending package objects.
-    Asset("bn6_gregar", "object-class1-table-gregar.bin", 0x3C9C, 0x17C),
-    Asset("bn6_gregar", "object-class3-table-gregar.bin", 0x3EC4, 0x354),
-    Asset("bn6_gregar", "object-class4-table-gregar.bin", 0x42C8, 0x248),
-    Asset("bn6_falzar", "object-class1-table-falzar.bin", 0x3C9C, 0x17C),
-    Asset("bn6_falzar", "object-class3-table-falzar.bin", 0x3EC4, 0x354),
-    Asset("bn6_falzar", "object-class4-table-falzar.bin", 0x42C8, 0x248),
+    Asset("exe6_gregar", "object-class1-table-gregar.bin", 0x3C9C, 0x17C),
+    Asset("exe6_gregar", "object-class3-table-gregar.bin", 0x3EC4, 0x354),
+    Asset("exe6_gregar", "object-class4-table-gregar.bin", 0x42C8, 0x248),
+    Asset("exe6_falzar", "object-class1-table-falzar.bin", 0x3C9C, 0x17C),
+    Asset("exe6_falzar", "object-class3-table-falzar.bin", 0x3EC4, 0x354),
+    Asset("exe6_falzar", "object-class4-table-falzar.bin", 0x42C8, 0x248),
 
     # Native BN6 sprite pointer tables that receive appended archives.
-    Asset("bn6_gregar", "sprite-group08-table-gregar.bin", 0x31DA4, 0x5C),
-    Asset("bn6_gregar", "sprite-group0C-table-gregar.bin", 0x31E00, 0x1A4),
-    Asset("bn6_gregar", "sprite-group10-table-gregar.bin", 0x31FA4, 0x170),
-    Asset("bn6_gregar", "sprite-group14-table-gregar.bin", 0x32114, 0x80),
-    Asset("bn6_falzar", "sprite-group08-table-falzar.bin", 0x31DA4, 0x5C),
-    Asset("bn6_falzar", "sprite-group0C-table-falzar.bin", 0x31E00, 0x1A4),
-    Asset("bn6_falzar", "sprite-group10-table-falzar.bin", 0x31FA4, 0x170),
-    Asset("bn6_falzar", "sprite-group14-table-falzar.bin", 0x32114, 0x80),
+    Asset("exe6_gregar", "sprite-group08-table-gregar.bin", 0x31DA4, 0x5C),
+    Asset("exe6_gregar", "sprite-group0C-table-gregar.bin", 0x31E00, 0x1A4),
+    Asset("exe6_gregar", "sprite-group10-table-gregar.bin", 0x31FA4, 0x170),
+    Asset("exe6_gregar", "sprite-group14-table-gregar.bin", 0x32114, 0x80),
+    Asset("exe6_falzar", "sprite-group08-table-falzar.bin", 0x31DA4, 0x5C),
+    Asset("exe6_falzar", "sprite-group0C-table-falzar.bin", 0x31E00, 0x1A4),
+    Asset("exe6_falzar", "sprite-group10-table-falzar.bin", 0x31FA4, 0x170),
+    Asset("exe6_falzar", "sprite-group14-table-falzar.bin", 0x32114, 0x80),
 
     # Complete native BN6 song tables, relocated before imported cues append.
-    Asset("bn6_gregar", "song-table-gregar.bin", 0x159F48, 0xED0),
-    Asset("bn6_falzar", "song-table-falzar.bin", 0x1583F8, 0xED0),
+    Asset("exe6_gregar", "song-table-gregar.bin", 0x159F48, 0xED0),
+    Asset("exe6_falzar", "song-table-falzar.bin", 0x1583F8, 0xED0),
 
     # BN5 ProtoMan: DeathPhoenix menu art, Navi, and strike/flame archive.
     Asset("bn5_protoman", "deathphoenix-icon.bin", 0x749CB8, 0x80),
@@ -319,8 +319,8 @@ def main() -> None:
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--bn5-protoman", required=True, type=Path)
     parser.add_argument("--bn5-colonel", required=True, type=Path)
-    parser.add_argument("--bn6-gregar", required=True, type=Path)
-    parser.add_argument("--bn6-falzar", required=True, type=Path)
+    parser.add_argument("--exe6-gregar", required=True, type=Path)
+    parser.add_argument("--exe6-falzar", required=True, type=Path)
     parser.add_argument("--bn4-blue-moon", required=True, type=Path)
     parser.add_argument("--bn3-blue", required=True, type=Path)
     args = parser.parse_args()
@@ -328,8 +328,8 @@ def main() -> None:
     rom_paths = {
         "bn5_protoman": args.bn5_protoman,
         "bn5_colonel": args.bn5_colonel,
-        "bn6_gregar": args.bn6_gregar,
-        "bn6_falzar": args.bn6_falzar,
+        "exe6_gregar": args.exe6_gregar,
+        "exe6_falzar": args.exe6_falzar,
         "bn4_blue_moon": args.bn4_blue_moon,
         "bn3_blue": args.bn3_blue,
     }

@@ -8,26 +8,26 @@ class ExtractAssetsTests(unittest.TestCase):
         stream = bytes((0x10, 9, 0, 0, 0x10, ord("A"), ord("B"), ord("C"), 0x30, 0x02))
         self.assertEqual(decompress_gba_lz77(stream), b"ABCABCABC")
 
-    def test_bn6_summon_tables_include_delta_ray(self) -> None:
+    def test_exe6_summon_tables_include_delta_ray(self) -> None:
         summon_tables = {
             asset.source: asset
             for asset in ASSETS
             if asset.output.startswith("attack-family1B-table-")
         }
-        self.assertEqual(set(summon_tables), {"bn6_gregar", "bn6_falzar"})
+        self.assertEqual(set(summon_tables), {"exe6_gregar", "exe6_falzar"})
         for asset in summon_tables.values():
             self.assertEqual(asset.offset, 0x2CD5C)
             self.assertEqual(asset.length, 0x1D * 4)
 
-    def test_bn6_ephemeral_tables_include_every_native_entry(self) -> None:
+    def test_exe6_ephemeral_tables_include_every_native_entry(self) -> None:
         ephemeral_tables = {
             asset.source: asset
             for asset in ASSETS
             if asset.output.startswith("attack-family1C-table-")
         }
-        self.assertEqual(set(ephemeral_tables), {"bn6_gregar", "bn6_falzar"})
-        self.assertEqual(ephemeral_tables["bn6_gregar"].offset, 0xED730)
-        self.assertEqual(ephemeral_tables["bn6_falzar"].offset, 0xEC3F0)
+        self.assertEqual(set(ephemeral_tables), {"exe6_gregar", "exe6_falzar"})
+        self.assertEqual(ephemeral_tables["exe6_gregar"].offset, 0xED730)
+        self.assertEqual(ephemeral_tables["exe6_falzar"].offset, 0xEC3F0)
         for asset in ephemeral_tables.values():
             self.assertEqual(asset.length, 0x17 * 4)
 

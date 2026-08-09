@@ -3,31 +3,31 @@
 
 #include "abi.h"
 
-Object *const *bn6_battle_units_for_side(uint32_t side);
-Object *const *bn6_active_units_for_side(uint32_t side);
-BattleContext *bn6_battle_context(void);
-uint8_t *bn6_battle_state(void);
-uint8_t *bn6_chip_queue(void);
+Exe6Obj *const *exe6_battle_units_for_side(uint32_t side);
+Exe6Obj *const *exe6_active_units_for_side(uint32_t side);
+Exe6BattleContext *exe6_battle_context(void);
+uint8_t *exe6_battle_state(void);
+uint8_t *exe6_chip_queue(void);
 
-#define BN6_LINK_OBJECT_ID(main) BN6_JOIN(__bn6_object_id_, main)
-#define BN6_LINK_SPRITE_ID(archive) BN6_JOIN(__bn6_sprite_id_, archive)
-#define BN6_LINK_SPRITE_GROUP(archive) BN6_JOIN(__bn6_sprite_group_, archive)
-#define BN6_LINK_SONG_ID(archive) BN6_JOIN(__bn6_song_id_, archive)
-#define BN6_LINK_SONG_GROUP(archive) BN6_JOIN(__bn6_song_group_, archive)
+#define EXE6_LINK_OBJ_ID(main) EXE6_JOIN(__exe6_object_id_, main)
+#define EXE6_LINK_SPRITE_ID(archive) EXE6_JOIN(__exe6_sprite_id_, archive)
+#define EXE6_LINK_SPRITE_GROUP(archive) EXE6_JOIN(__exe6_sprite_group_, archive)
+#define EXE6_LINK_SONG_ID(archive) EXE6_JOIN(__exe6_song_id_, archive)
+#define EXE6_LINK_SONG_GROUP(archive) EXE6_JOIN(__exe6_song_group_, archive)
 
-#define BN6_OBJECT_ID(main) \
+#define EXE6_OBJ_ID(main) \
     __extension__ ({ \
-        extern const uint8_t BN6_LINK_OBJECT_ID(main)[]; \
-        (uint32_t)(uintptr_t)BN6_LINK_OBJECT_ID(main); \
+        extern const uint8_t EXE6_LINK_OBJ_ID(main)[]; \
+        (uint32_t)(uintptr_t)EXE6_LINK_OBJ_ID(main); \
     })
-#define BN6_SPRITE_ID(archive) \
-    ((uint32_t)(uintptr_t)BN6_LINK_SPRITE_ID(archive))
-#define BN6_SPRITE_GROUP(archive) \
-    ((uint32_t)(uintptr_t)BN6_LINK_SPRITE_GROUP(archive))
-#define BN6_SONG_ID(archive) \
-    ((uint32_t)(uintptr_t)BN6_LINK_SONG_ID(archive))
-#define BN6_SONG_GROUP(archive) \
-    ((uint32_t)(uintptr_t)BN6_LINK_SONG_GROUP(archive))
+#define EXE6_SPRITE_ID(archive) \
+    ((uint32_t)(uintptr_t)EXE6_LINK_SPRITE_ID(archive))
+#define EXE6_SPRITE_GROUP(archive) \
+    ((uint32_t)(uintptr_t)EXE6_LINK_SPRITE_GROUP(archive))
+#define EXE6_SONG_ID(archive) \
+    ((uint32_t)(uintptr_t)EXE6_LINK_SONG_ID(archive))
+#define EXE6_SONG_GROUP(archive) \
+    ((uint32_t)(uintptr_t)EXE6_LINK_SONG_GROUP(archive))
 
 /*
  * Package registries live in C.  The metadata build turns each declaration
@@ -35,172 +35,172 @@ uint8_t *bn6_chip_queue(void);
  * has the generated selectors, so the declarations intentionally emit no ROM
  * data there.
  */
-#ifdef BN6_METADATA_ONLY
-#define BN6_METADATA_RECORD(kind, payload) \
+#ifdef EXE6_METADATA_ONLY
+#define EXE6_METADATA_RECORD(kind, payload) \
     __asm__( \
-        ".section .bn6_metadata,\"a\",%progbits\n" \
-        ".global __bn6_meta__" kind "__" payload "\n" \
-        ".type __bn6_meta__" kind "__" payload ",%object\n" \
-        "__bn6_meta__" kind "__" payload ":\n" \
+        ".section .exe6_metadata,\"a\",%progbits\n" \
+        ".global __exe6_meta__" kind "__" payload "\n" \
+        ".type __exe6_meta__" kind "__" payload ",%object\n" \
+        "__exe6_meta__" kind "__" payload ":\n" \
         ".byte 0\n" \
-        ".size __bn6_meta__" kind "__" payload ",1\n" \
+        ".size __exe6_meta__" kind "__" payload ",1\n" \
         ".previous\n" \
     )
 #else
-#define BN6_METADATA_RECORD(kind, payload)
+#define EXE6_METADATA_RECORD(kind, payload)
 #endif
 
-#define BN6_OBJECT_BODY(object_class, main) \
-    BN6_METADATA_RECORD( \
+#define EXE6_OBJ_BODY(obj_class, main) \
+    EXE6_METADATA_RECORD( \
         "object", \
-        BN6_STRINGIFY(object_class) "__" BN6_STRINGIFY(main) \
+        EXE6_STRINGIFY(obj_class) "__" EXE6_STRINGIFY(main) \
     ); \
-    static USED void BN6_JOIN(main, _fn)( \
-        Object *self, \
-        Bn6ObjectSpawnParameters spawn_parameters __attribute__((unused)) \
+    static USED void EXE6_JOIN(main, _fn)( \
+        Exe6Obj *self, \
+        Exe6ObjSpawnParameters spawn_parameters __attribute__((unused)) \
     ); \
-    BN6_EXPORT_OBJECT(main, BN6_JOIN(main, _fn)) \
-    static USED void BN6_JOIN(main, _fn)( \
-        Object *self, \
-        Bn6ObjectSpawnParameters spawn_parameters __attribute__((unused)) \
+    EXE6_EXPORT_OBJ(main, EXE6_JOIN(main, _fn)) \
+    static USED void EXE6_JOIN(main, _fn)( \
+        Exe6Obj *self, \
+        Exe6ObjSpawnParameters spawn_parameters __attribute__((unused)) \
     )
 
-#define BN6_OBJECT1(main) BN6_OBJECT_BODY(1, main)
-#define BN6_OBJECT3(main) BN6_OBJECT_BODY(3, main)
-#define BN6_OBJECT4(main) BN6_OBJECT_BODY(4, main)
+#define EXE6_EM(main) EXE6_OBJ_BODY(1, main)
+#define EXE6_SHL(main) EXE6_OBJ_BODY(3, main)
+#define EXE6_EFC(main) EXE6_OBJ_BODY(4, main)
 
-#define BN6_USE_SONG(archive) \
-    extern const uint8_t BN6_LINK_SONG_ID(archive)[]; \
-    extern const uint8_t BN6_LINK_SONG_GROUP(archive)[]
+#define EXE6_USE_SONG(archive) \
+    extern const uint8_t EXE6_LINK_SONG_ID(archive)[]; \
+    extern const uint8_t EXE6_LINK_SONG_GROUP(archive)[]
 
-#define BN6_ATTACK_BODY( \
+#define EXE6_ATTACK_BODY( \
     kind, chip_id, main, export, return_type, context_type, context_name \
 ) \
-    BN6_METADATA_RECORD( \
+    EXE6_METADATA_RECORD( \
         kind, \
-        BN6_STRINGIFY(chip_id) "__" BN6_STRINGIFY(main) \
+        EXE6_STRINGIFY(chip_id) "__" EXE6_STRINGIFY(main) \
     ); \
-    static USED return_type BN6_JOIN(main, _fn)( \
-        uint32_t panel_x, \
-        uint32_t panel_y, \
+    static USED return_type EXE6_JOIN(main, _fn)( \
+        uint32_t block_x, \
+        uint32_t block_y, \
         uint32_t parameter, \
-        Object *owner, \
+        Exe6Obj *owner, \
         uint32_t attack, \
         context_type context_name, \
-        Bn6ObjectSpawnParameters spawn_parameters \
+        Exe6ObjSpawnParameters spawn_parameters \
     ); \
-    export(main, BN6_JOIN(main, _fn)) \
-    static USED return_type BN6_JOIN(main, _fn)( \
-        uint32_t panel_x, \
-        uint32_t panel_y, \
+    export(main, EXE6_JOIN(main, _fn)) \
+    static USED return_type EXE6_JOIN(main, _fn)( \
+        uint32_t block_x, \
+        uint32_t block_y, \
         uint32_t parameter, \
-        Object *owner, \
+        Exe6Obj *owner, \
         uint32_t attack, \
         context_type context_name, \
-        Bn6ObjectSpawnParameters spawn_parameters \
+        Exe6ObjSpawnParameters spawn_parameters \
     )
 
-#define BN6_PERSISTENT_ATTACK(chip_id, main) \
-    BN6_ATTACK_BODY( \
+#define EXE6_PERSISTENT_ATTACK(chip_id, main) \
+    EXE6_ATTACK_BODY( \
         "persistent_attack", \
         chip_id, \
         main, \
-        BN6_EXPORT_ATTACK, \
-        Object *, \
+        EXE6_EXPORT_ATTACK, \
+        Exe6Obj *, \
         uint32_t, \
         chip_data \
     )
 
-#define BN6_SUMMON_ATTACK(chip_id, main) \
-    BN6_ATTACK_BODY( \
+#define EXE6_SUMMON_ATTACK(chip_id, main) \
+    EXE6_ATTACK_BODY( \
         "summon_attack", \
         chip_id, \
         main, \
-        BN6_EXPORT_ATTACK, \
+        EXE6_EXPORT_ATTACK, \
         void, \
         uint8_t *, \
         completion \
     )
 
-#define BN6_EPHEMERAL_ATTACK(chip_id, main) \
-    BN6_ATTACK_BODY( \
+#define EXE6_EPHEMERAL_ATTACK(chip_id, main) \
+    EXE6_ATTACK_BODY( \
         "ephemeral_attack", \
         chip_id, \
         main, \
-        BN6_EXPORT_EPHEMERAL_ATTACK, \
+        EXE6_EXPORT_EPHEMERAL_ATTACK, \
         void, \
         int32_t, \
         z \
     )
 
 /* Source compatibility for packages written before the ABI names were split. */
-#define BN6_ATTACK(chip_id, main) BN6_PERSISTENT_ATTACK(chip_id, main)
+#define EXE6_ATTACK(chip_id, main) EXE6_PERSISTENT_ATTACK(chip_id, main)
 
-#define BN6_POINTER_PATCH(address, symbol) \
-    BN6_METADATA_RECORD( \
+#define EXE6_POINTER_PATCH(address, symbol) \
+    EXE6_METADATA_RECORD( \
         "pointer", \
-        BN6_STRINGIFY(address) "__" BN6_STRINGIFY(symbol) \
+        EXE6_STRINGIFY(address) "__" EXE6_STRINGIFY(symbol) \
     )
 
-#ifdef BN6_METADATA_ONLY
-#define BN6_ASM_RESOURCE(name, contents) extern const uint8_t name[]
-#define BN6_INCBIN(name, path) extern const uint8_t name[]
-#define BN6_RESOURCE_ALIAS(alias, target) extern const uint8_t alias[]
+#ifdef EXE6_METADATA_ONLY
+#define EXE6_ASM_RESOURCE(name, contents) extern const uint8_t name[]
+#define EXE6_INCBIN(name, path) extern const uint8_t name[]
+#define EXE6_RESOURCE_ALIAS(alias, target) extern const uint8_t alias[]
 #else
 /* Keep package-owned binary data next to the C code that uses it. */
-#define BN6_ASM_RESOURCE(name, contents) \
+#define EXE6_ASM_RESOURCE(name, contents) \
     extern const uint8_t name[]; \
     __asm__( \
-        ".section .rodata." BN6_STRINGIFY(name) ",\"a\",%progbits\n" \
+        ".section .rodata." EXE6_STRINGIFY(name) ",\"a\",%progbits\n" \
         ".balign 4\n" \
-        ".global " BN6_STRINGIFY(name) "\n" \
-        ".type " BN6_STRINGIFY(name) ",%object\n" \
-        BN6_STRINGIFY(name) ":\n" \
+        ".global " EXE6_STRINGIFY(name) "\n" \
+        ".type " EXE6_STRINGIFY(name) ",%object\n" \
+        EXE6_STRINGIFY(name) ":\n" \
         contents \
-        ".size " BN6_STRINGIFY(name) ",.-" BN6_STRINGIFY(name) "\n" \
+        ".size " EXE6_STRINGIFY(name) ",.-" EXE6_STRINGIFY(name) "\n" \
         ".previous\n" \
     )
 
-#define BN6_INCBIN(name, path) \
-    BN6_ASM_RESOURCE(name, ".incbin \"" path "\"\n")
+#define EXE6_INCBIN(name, path) \
+    EXE6_ASM_RESOURCE(name, ".incbin \"" path "\"\n")
 
-#define BN6_RESOURCE_ALIAS(alias, target) \
+#define EXE6_RESOURCE_ALIAS(alias, target) \
     extern const uint8_t alias[]; \
     __asm__( \
-        ".global " BN6_STRINGIFY(alias) "\n" \
-        ".type " BN6_STRINGIFY(alias) ",%object\n" \
-        ".set " BN6_STRINGIFY(alias) "," BN6_STRINGIFY(target) "\n" \
+        ".global " EXE6_STRINGIFY(alias) "\n" \
+        ".type " EXE6_STRINGIFY(alias) ",%object\n" \
+        ".set " EXE6_STRINGIFY(alias) "," EXE6_STRINGIFY(target) "\n" \
     )
 
 #endif
 
-#define BN6_PCM(prefix, priority, voice, track, sample_path) \
-    ".byte 1,0," BN6_STRINGIFY(priority) ",0\n" \
-    ".long " BN6_STRINGIFY(BN6_JOIN(prefix, _voicegroup)) "\n" \
-    ".long " BN6_STRINGIFY(BN6_JOIN(prefix, _track)) "\n" \
-    ".global " BN6_STRINGIFY(BN6_JOIN(prefix, _voicegroup)) "\n" \
-    BN6_STRINGIFY(BN6_JOIN(prefix, _voicegroup)) ":\n" \
-    ".byte " BN6_STRINGIFY(voice) ",0x3C,0,0\n" \
-    ".long " BN6_STRINGIFY(BN6_JOIN(prefix, _sample)) "\n" \
+#define EXE6_PCM(prefix, priority, voice, track, sample_path) \
+    ".byte 1,0," EXE6_STRINGIFY(priority) ",0\n" \
+    ".long " EXE6_STRINGIFY(EXE6_JOIN(prefix, _voicegroup)) "\n" \
+    ".long " EXE6_STRINGIFY(EXE6_JOIN(prefix, _track)) "\n" \
+    ".global " EXE6_STRINGIFY(EXE6_JOIN(prefix, _voicegroup)) "\n" \
+    EXE6_STRINGIFY(EXE6_JOIN(prefix, _voicegroup)) ":\n" \
+    ".byte " EXE6_STRINGIFY(voice) ",0x3C,0,0\n" \
+    ".long " EXE6_STRINGIFY(EXE6_JOIN(prefix, _sample)) "\n" \
     ".byte 0xFF,0,0xFF,0\n" \
-    ".global " BN6_STRINGIFY(BN6_JOIN(prefix, _track)) "\n" \
-    BN6_STRINGIFY(BN6_JOIN(prefix, _track)) ":\n" \
+    ".global " EXE6_STRINGIFY(EXE6_JOIN(prefix, _track)) "\n" \
+    EXE6_STRINGIFY(EXE6_JOIN(prefix, _track)) ":\n" \
     track \
     ".balign 4\n" \
-    ".global " BN6_STRINGIFY(BN6_JOIN(prefix, _sample)) "\n" \
-    BN6_STRINGIFY(BN6_JOIN(prefix, _sample)) ":\n" \
+    ".global " EXE6_STRINGIFY(EXE6_JOIN(prefix, _sample)) "\n" \
+    EXE6_STRINGIFY(EXE6_JOIN(prefix, _sample)) ":\n" \
     ".incbin \"" sample_path "\"\n"
 
-#define BN6_SONG(archive, contents) \
-    extern const uint8_t BN6_LINK_SONG_ID(archive)[]; \
-    extern const uint8_t BN6_LINK_SONG_GROUP(archive)[]; \
-    BN6_ASM_RESOURCE(archive, contents); \
-    BN6_METADATA_RECORD("song", BN6_STRINGIFY(archive))
+#define EXE6_SONG(archive, contents) \
+    extern const uint8_t EXE6_LINK_SONG_ID(archive)[]; \
+    extern const uint8_t EXE6_LINK_SONG_GROUP(archive)[]; \
+    EXE6_ASM_RESOURCE(archive, contents); \
+    EXE6_METADATA_RECORD("song", EXE6_STRINGIFY(archive))
 
-#define BN6_SPRITE(archive, path) \
-    extern const uint8_t BN6_LINK_SPRITE_ID(archive)[]; \
-    extern const uint8_t BN6_LINK_SPRITE_GROUP(archive)[]; \
-    BN6_INCBIN(archive, path); \
-    BN6_METADATA_RECORD("sprite", BN6_STRINGIFY(archive))
+#define EXE6_SPRITE(archive, path) \
+    extern const uint8_t EXE6_LINK_SPRITE_ID(archive)[]; \
+    extern const uint8_t EXE6_LINK_SPRITE_GROUP(archive)[]; \
+    EXE6_INCBIN(archive, path); \
+    EXE6_METADATA_RECORD("sprite", EXE6_STRINGIFY(archive))
 
 #endif

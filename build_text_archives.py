@@ -12,7 +12,7 @@ from pathlib import Path
 
 # The leading BN6 English charset entries cover the chip text used here.
 # Bracketed tokens are single glyphs in the ROM (for example EX and SP).
-BN6_EN_CHARSET = (
+EXE6_EN_CHARSET = (
     [" "]
     + list("0123456789")
     + list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -20,7 +20,7 @@ BN6_EN_CHARSET = (
     + list("abcdefghijklmnopqrstuvwxyz")
     + ["[RV]", "[BX]", "[EX]", "[SP]", "[FZ]"]
 )
-CHAR_TO_BYTE = {character: index for index, character in enumerate(BN6_EN_CHARSET)}
+CHAR_TO_BYTE = {character: index for index, character in enumerate(EXE6_EN_CHARSET)}
 # BN6's English ampersand glyph is at charset index 0xA3. The compact
 # leading-character table above intentionally omits the intervening Japanese
 # glyphs, so map the punctuation used by imported descriptions explicitly.

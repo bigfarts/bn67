@@ -1,11 +1,11 @@
 #include "runtime.h"
 
-BN6_INCBIN(folderback_icon, "build/folderback-icon.bin");
-BN6_INCBIN(folderback_image, "build/folderback-image.bin");
-BN6_INCBIN(folderback_palette, "build/folderback-palette.bin");
-BN6_SONG(
+EXE6_INCBIN(folderback_icon, "build/folderback-icon.bin");
+EXE6_INCBIN(folderback_image, "build/folderback-image.bin");
+EXE6_INCBIN(folderback_palette, "build/folderback-palette.bin");
+EXE6_SONG(
     folderback_rumble_song,
-    BN6_PCM(
+    EXE6_PCM(
         folderback_rumble,
         0x40,
         0x08,
@@ -21,12 +21,12 @@ static const uint32_t WHITE_FLASH = 0x00006318;
 static const uint16_t IMPACT_FRAMES = 0x46;
 static const uint16_t RESTORED_FRAMES = 0x14;
 
-struct FolderbackWork {
-    Object *locked_opponents[4];         // +0x60
+struct Exe6FolderbackWork {
+    Exe6Obj *locked_opponents[4];         // +0x60
     uint32_t reserved[3];                // +0x70
 };
 
-_Static_assert(sizeof(struct FolderbackWork) == 0x1C, "FolderBack work layout");
+_Static_assert(sizeof(struct Exe6FolderbackWork) == 0x1C, "FolderBack work layout");
 
 NAKED void folderback_type_1_main(void)
 {
@@ -37,11 +37,11 @@ NAKED void folderback_type_1_main(void)
         "movs r7,#32\n"
         "1:\n"
         "ldrb r0,[r6,#0]\n"
-        "movs r1,#" BN6_STRINGIFY(BN6_OBJECT_FLAG_ACTIVE) "\n"
+        "movs r1,#" EXE6_STRINGIFY(EXE6_OBJ_FLAG_ACTIVE) "\n"
         "tst r0,r1\n"
         "beq 3f\n"
         "ldrb r0,[r6,#1]\n"
-        "ldr r1,=__bn6_object_id_folderback_controller_main\n"
+        "ldr r1,=__exe6_object_id_folderback_controller_main\n"
         "cmp r0,r1\n"
         "bne 3f\n"
         "movs r4,#96\n"
@@ -65,78 +65,78 @@ NAKED void folderback_type_1_main(void)
         "4:\n"
         "pop {r0,r4,r6,r7,pc}\n"
         "5:\n"
-        "bl bn6_self_object_update_dimming\n"
+        "bl exe6_battle_obj_char_move2\n"
         "b 4b\n"
     );
 }
 
-static void lock_opponent(Object *self)
+static void lock_opponent(Exe6Obj *self)
 {
-    struct FolderbackWork *work = (struct FolderbackWork *)self->work;
-    Object *const *units = bn6_active_units_for_side(self->owner ^ 1u);
+    struct Exe6FolderbackWork *work = (struct Exe6FolderbackWork *)self->work;
+    Exe6Obj *const *units = exe6_active_units_for_side(self->owner ^ 1u);
     for (size_t index = 0; index < 4; ++index) {
         work->locked_opponents[index] = units[index];
     }
 }
 
-static void unlock_opponent(Object *self)
+static void unlock_opponent(Exe6Obj *self)
 {
-    struct FolderbackWork *work = (struct FolderbackWork *)self->work;
+    struct Exe6FolderbackWork *work = (struct Exe6FolderbackWork *)self->work;
     for (size_t index = 0; index < 4; ++index) {
         work->locked_opponents[index] = NULL;
     }
 }
 
-static void apply_white_flash(Object *self)
+static void apply_white_flash(Exe6Obj *self)
 {
     uint32_t color = (self->timer & 4u) != 0 ? PALE_FLASH : WHITE_FLASH;
-    bn6_palette_write(0, color, 0x0F, 0x14, BN6_PALETTE_OBJ_OUTPUT_00);
-    bn6_palette_write(0, color, 0x0F, 0x15, BN6_PALETTE_BG_OUTPUT_00);
+    exe6_col_fade_set(0, color, 0x0F, 0x14, EXE6_PALETTE_OBJ_OUTPUT_00);
+    exe6_col_fade_set(0, color, 0x0F, 0x15, EXE6_PALETTE_BG_OUTPUT_00);
 }
 
 static void restore_palette(void)
 {
-    bn6_palette_restore(0x14);
-    bn6_palette_restore(0x15);
+    exe6_col_fade_kill(0x14);
+    exe6_col_fade_kill(0x15);
 }
 
 static void impact(void)
 {
-    bn6_screen_shake_set(3, IMPACT_FRAMES);
-    bn6_play_sound(BN6_SONG_ID(folderback_rumble_song));
+    exe6_camera_quake_set(3, IMPACT_FRAMES);
+    exe6_sound_req(EXE6_SONG_ID(folderback_rumble_song));
 }
 
 static void fill_local_custom_gauge(void)
 {
-    BattleContext *context = bn6_battle_context();
-    uint8_t *player = bn6_player_data(context->local_side);
+    Exe6BattleContext *context = exe6_battle_context();
+    uint8_t *player = exe6_op_work_adrs_get(context->local_side);
     *(uint16_t *)(player + 0x28) = FULL_GAUGE;
-    bn6_set_hud_gauge(FULL_GAUGE);
-    bn6_play_sound(0x8F);
+    exe6_cockpit_set_custom_gauge_value(FULL_GAUGE);
+    exe6_sound_req(0x8F);
 }
 
-static void restore_local_folder(Object *self)
+static void restore_local_folder(Exe6Obj *self)
 {
-    if (bn6_compare_local_side(self->owner) != 0) {
+    if (exe6_battle_one_self_check(self->owner) != 0) {
         return;
     }
 
-    BattleContext *context = bn6_battle_context();
+    Exe6BattleContext *context = exe6_battle_context();
     uint8_t regular_available = context->regular_available;
-    bn6_rebuild_folder();
+    exe6_battle_chip_set();
     if (regular_available == 0) {
         context->regular_available = 0;
-        bn6_shuffle_chip_queue(
-            (void *)bn6_chip_queue(),
+        exe6_deck_shuffle_sub(
+            (void *)exe6_chip_queue(),
             0,
             context->work_44,
             0x44
         );
     }
-    bn6_clear_hand();
+    exe6_battle_select_chip_work_init();
 }
 
-static bool effect_update(Object *self)
+static bool effect_update(Exe6Obj *self)
 {
     switch (self->phase_timer_low) {
     case 0:
@@ -170,33 +170,33 @@ static bool effect_update(Object *self)
 
 static void open_custom(uint32_t owner)
 {
-    uint8_t *battle = bn6_battle_state();
+    uint8_t *battle = exe6_battle_state();
     uint32_t state = *(uint32_t *)battle;
     if (state == 4) {
         battle[5] = (uint8_t)owner;
-        bn6_lock_battle_state();
+        exe6_battle_pause_on();
         *(uint32_t *)battle = 0x18;
-        bn6_begin_local_custom();
+        exe6_cockpit_pause_set();
     } else if (state == 8) {
-        bn6_lock_battle_state();
+        exe6_battle_pause_on();
         *(uint32_t *)battle = 0x20;
     }
 }
 
-BN6_OBJECT4(folderback_controller_main)
+EXE6_EFC(folderback_controller_main)
 {
     if (self->state == 0) {
         self->state_word = 4;
         lock_opponent(self);
     } else if (self->state != 4) {
-        bn6_self_object_free();
+        exe6_obj_move_delete();
         return;
     }
 
-    if (bn6_battle_is_over() != 0) {
+    if (exe6_battle_end_check() != 0) {
         restore_palette();
         unlock_opponent(self);
-        bn6_self_object_free();
+        exe6_obj_move_delete();
         return;
     }
     if (!effect_update(self)) {
@@ -205,27 +205,27 @@ BN6_OBJECT4(folderback_controller_main)
 
     uint32_t owner = self->owner;
     unlock_opponent(self);
-    bn6_self_object_free();
+    exe6_obj_move_delete();
     open_custom(owner);
 }
 
-BN6_PERSISTENT_ATTACK(0x139, folderback_attack_main)
+EXE6_PERSISTENT_ATTACK(0x139, folderback_attack_main)
 {
-    Object *controller = bn6_spawn_type4(
-        BN6_OBJECT_ID(folderback_controller_main), spawn_parameters
+    Exe6Obj *controller = exe6_efc_open(
+        EXE6_OBJ_ID(folderback_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;
     }
-    controller->panel_x = (uint8_t)panel_x;
-    controller->panel_y = (uint8_t)panel_y;
+    controller->block_x = (uint8_t)block_x;
+    controller->block_y = (uint8_t)block_y;
     controller->parameter = (uint8_t)parameter;
     controller->parent = owner;
     controller->owner_word = owner->owner_word;
     controller->attack = attack;
     controller->chip_data = chip_data;
-    struct FolderbackWork *work =
-        (struct FolderbackWork *)controller->work;
+    struct Exe6FolderbackWork *work =
+        (struct Exe6FolderbackWork *)controller->work;
     for (size_t index = 0; index < 4; ++index) {
         work->locked_opponents[index] = NULL;
     }

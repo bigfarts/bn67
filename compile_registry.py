@@ -967,7 +967,7 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
     attack: AttackResource | None = None
     patches: list[PointerPatch] = []
     for symbol in symbols:
-        prefix = "__bn6_meta__"
+        prefix = "__exe6_meta__"
         if not symbol.startswith(prefix):
             raise PackageError(f"{package.name}: invalid metadata symbol {symbol}")
         body = symbol[len(prefix) :]
@@ -1183,16 +1183,16 @@ def generate_linker_values(packages: list[Package], allocations: Allocations) ->
     for package in packages:
         for item in package.objects:
             value = allocations.objects[item.object_class][item.main]
-            lines.append(f"__bn6_object_id_{item.main} = 0x{value:X};")
+            lines.append(f"__exe6_object_id_{item.main} = 0x{value:X};")
         for item in package.sprites:
             group, resource_id = allocations.sprites[item.archive]
-            lines.append(f"__bn6_sprite_group_{item.archive} = 0x{group:X};")
-            lines.append(f"__bn6_sprite_id_{item.archive} = 0x{resource_id:X};")
+            lines.append(f"__exe6_sprite_group_{item.archive} = 0x{group:X};")
+            lines.append(f"__exe6_sprite_id_{item.archive} = 0x{resource_id:X};")
         for item in package.songs:
             player = allocations.song_players[item.archive]
             song_id = allocations.songs[item.archive]
-            lines.append(f"__bn6_song_group_{item.archive} = 0x{player:X};")
-            lines.append(f"__bn6_song_id_{item.archive} = 0x{song_id:X};")
+            lines.append(f"__exe6_song_group_{item.archive} = 0x{player:X};")
+            lines.append(f"__exe6_song_id_{item.archive} = 0x{song_id:X};")
     return "\n".join(lines) + "\n"
 
 

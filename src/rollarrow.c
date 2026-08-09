@@ -1,20 +1,20 @@
 #include "abi.h"
 #include "runtime.h"
 
-BN6_USE_SONG(common_navi_summon_song);
-BN6_SPRITE(rollarrow_actor_sprite, "build/rollarrow-actor-sprite.bin");
-BN6_SPRITE(rollarrow_projectile_sprite, "build/rollarrow-projectile-sprite.bin");
+EXE6_USE_SONG(common_navi_summon_song);
+EXE6_SPRITE(rollarrow_actor_sprite, "build/rollarrow-actor-sprite.bin");
+EXE6_SPRITE(rollarrow_projectile_sprite, "build/rollarrow-projectile-sprite.bin");
 
-BN6_INCBIN(rollarrow1_icon, "build/rollarrow1-icon.bin");
-BN6_INCBIN(rollarrow2_icon, "build/rollarrow2-icon.bin");
-BN6_INCBIN(rollarrow3_icon, "build/rollarrow3-icon.bin");
-BN6_INCBIN(rollarrow_image, "build/rollarrow-image.bin");
-BN6_INCBIN(rollarrow1_palette, "build/rollarrow1-pal.bin");
-BN6_INCBIN(rollarrow2_palette, "build/rollarrow2-pal.bin");
-BN6_INCBIN(rollarrow3_palette, "build/rollarrow3-pal.bin");
-BN6_SONG(
+EXE6_INCBIN(rollarrow1_icon, "build/rollarrow1-icon.bin");
+EXE6_INCBIN(rollarrow2_icon, "build/rollarrow2-icon.bin");
+EXE6_INCBIN(rollarrow3_icon, "build/rollarrow3-icon.bin");
+EXE6_INCBIN(rollarrow_image, "build/rollarrow-image.bin");
+EXE6_INCBIN(rollarrow1_palette, "build/rollarrow1-pal.bin");
+EXE6_INCBIN(rollarrow2_palette, "build/rollarrow2-pal.bin");
+EXE6_INCBIN(rollarrow3_palette, "build/rollarrow3-pal.bin");
+EXE6_SONG(
     rollarrow_fire_song,
-    BN6_PCM(
+    EXE6_PCM(
         rollarrow_fire,
         0x40,
         0x08,
@@ -29,53 +29,53 @@ static const uint16_t FIRE_HOLD_FRAMES = 6;
 static const uint16_t POST_SHOT_FRAMES = 30;
 static const uint16_t EXIT_FRAMES = 5;
 static const int32_t PROJECTILE_SPEED = 0x00070000;
-static const uint8_t PROJECTILE_PANELS = 8;
-static const Bn6CollisionType PROJECTILE_COLLISION_TYPE =
-    BN6_COLLISION_TYPE_08;
+static const uint8_t PROJECTILE_BLOCKS = 8;
+static const Exe6HitType PROJECTILE_HIT_TYPE =
+    EXE6_HIT_TYPE_08;
 
-static bool timer_expired(Object *self)
+static bool timer_expired(Exe6Obj *self)
 {
     int32_t timer = (int32_t)self->timer - 1;
     self->timer = (uint16_t)timer;
     return timer < 0;
 }
 
-static void set_animation(Object *self, uint32_t animation)
+static void set_animation(Exe6Obj *self, uint32_t animation)
 {
     self->animation = (uint8_t)animation;
     self->palette = UINT8_MAX;
-    bn6_self_sprite_set_animation(animation);
-    bn6_self_sprite_load_animation_data();
+    exe6_obj_dma_seq_set(animation);
+    exe6_obj_char_set();
 }
 
-static void spawn_projectile(Object *actor)
+static void spawn_projectile(Exe6Obj *actor)
 {
-    Object *projectile = bn6_spawn_type3(
-        BN6_OBJECT_ID(rollarrow_arrow_main),
-        actor->panel_y,
+    Exe6Obj *projectile = exe6_shl_open(
+        EXE6_OBJ_ID(rollarrow_arrow_main),
+        actor->block_y,
         actor->parameter,
         0,
-        bn6_object_spawn_with_variant(PROJECTILE_COLLISION_TYPE)
+        exe6_obj_spawn_with_variant(PROJECTILE_HIT_TYPE)
     );
     if (projectile == NULL) {
         return;
     }
 
-    projectile->panel_x = actor->panel_x;
-    projectile->panel_y = actor->panel_y;
+    projectile->block_x = actor->block_x;
+    projectile->block_y = actor->block_y;
     projectile->parameter = actor->parameter;
     projectile->owner_word = actor->owner_word;
     projectile->attack = actor->attack;
     projectile->parent = actor;
 
-    int32_t direction = (int32_t)bn6_object_front_direction_for(actor);
+    int32_t direction = (int32_t)exe6_calc_pl_em_dir_spd_for(actor);
     projectile->x = actor->x + direction * (8 << 16);
     projectile->y = ((actor->y >> 16) - 1) << 16;
     projectile->z = 0x24 << 16;
-    projectile->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
+    projectile->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
 }
 
-static void actor_wait(Object *self)
+static void actor_wait(Exe6Obj *self)
 {
     if (self->substate == 0) {
         set_animation(self, 0);
@@ -88,11 +88,11 @@ static void actor_wait(Object *self)
     }
 }
 
-static void actor_fire(Object *self)
+static void actor_fire(Exe6Obj *self)
 {
     if (self->substate == 0) {
         set_animation(self, 7);
-        bn6_play_sound(BN6_SONG_ID(rollarrow_fire_song));
+        exe6_sound_req(EXE6_SONG_ID(rollarrow_fire_song));
         spawn_projectile(self);
         self->timer = FIRE_HOLD_FRAMES;
         self->substate = 4;
@@ -103,7 +103,7 @@ static void actor_fire(Object *self)
     }
 }
 
-static void actor_exit(Object *self)
+static void actor_exit(Exe6Obj *self)
 {
     if (self->substate == 0) {
         set_animation(self, 0);
@@ -120,12 +120,12 @@ static void actor_exit(Object *self)
         return;
     }
     if (timer_expired(self)) {
-        self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
+        self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
         self->state_word = 8;
     }
 }
 
-static void actor_update(Object *self)
+static void actor_update(Exe6Obj *self)
 {
     switch (self->phase) {
     case 0:
@@ -140,38 +140,38 @@ static void actor_update(Object *self)
     }
 }
 
-static void actor_init(Object *self)
+static void actor_init(Exe6Obj *self)
 {
-    bn6_self_sprite_load(
+    exe6_obj_char_init(
         0x80,
-        BN6_SPRITE_GROUP(rollarrow_actor_sprite),
-        BN6_SPRITE_ID(rollarrow_actor_sprite)
+        EXE6_SPRITE_GROUP(rollarrow_actor_sprite),
+        EXE6_SPRITE_ID(rollarrow_actor_sprite)
     );
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_enable_shadow();
+    exe6_obj_char_set();
+    exe6_obj_shadow_set();
     self->animation_word = 0;
-    bn6_self_sprite_set_animation(0);
-    bn6_self_sprite_load_animation_data();
-    bn6_self_object_set_coords();
+    exe6_obj_dma_seq_set(0);
+    exe6_obj_char_set();
+    exe6_block_to_pos();
     self->z = 0;
-    bn6_self_sprite_set_flip(bn6_self_object_get_flip());
-    bn6_self_sprite_set_palette(0);
-    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+    exe6_obj_flip_set(exe6_enemy_flip_check());
+    exe6_obj_clt_set(0);
+    self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     self->state_word = 4;
     self->substate = 0;
-    bn6_play_sound(BN6_SONG_ID(common_navi_summon_song));
+    exe6_sound_req(EXE6_SONG_ID(common_navi_summon_song));
 }
 
-static void actor_destroy(Object *self)
+static void actor_destroy(Exe6Obj *self)
 {
     uint8_t *completion = self->completion;
     if (completion != NULL) {
         *completion = 0;
     }
-    bn6_self_object_free();
+    exe6_obj_move_delete();
 }
 
-BN6_OBJECT1(rollarrow_actor_main)
+EXE6_EM(rollarrow_actor_main)
 {
     switch (self->state) {
     case 0:
@@ -184,104 +184,104 @@ BN6_OBJECT1(rollarrow_actor_main)
         actor_destroy(self);
         return;
     }
-    bn6_self_object_update_dimming();
+    exe6_battle_obj_char_move2();
 }
 
-static void projectile_free(Object *self)
+static void projectile_free(Exe6Obj *self)
 {
-    Collision *collision = self->collision;
-    bn6_collision_clear_region(collision);
-    bn6_collision_free(collision);
-    bn6_self_object_free();
+    Exe6Hit *hit = self->hit;
+    exe6_battle_hit_off(hit);
+    exe6_battle_hit_close(hit);
+    exe6_obj_move_delete();
 }
 
-static bool projectile_init(Object *self)
+static bool projectile_init(Exe6Obj *self)
 {
-    if (bn6_battle_is_over() != 0) {
-        bn6_self_object_free();
+    if (exe6_battle_end_check() != 0) {
+        exe6_obj_move_delete();
         return false;
     }
 
-    bn6_self_sprite_load(
+    exe6_obj_char_init(
         0x80,
-        BN6_SPRITE_GROUP(rollarrow_projectile_sprite),
-        BN6_SPRITE_ID(rollarrow_projectile_sprite)
+        EXE6_SPRITE_GROUP(rollarrow_projectile_sprite),
+        EXE6_SPRITE_ID(rollarrow_projectile_sprite)
     );
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_no_shadow();
+    exe6_obj_char_set();
+    exe6_obj_no_shadow();
     self->animation_word = 0;
-    bn6_self_sprite_set_animation(0);
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_update();
-    bn6_self_sprite_set_flip(bn6_self_object_get_flip());
-    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+    exe6_obj_dma_seq_set(0);
+    exe6_obj_char_set();
+    exe6_obj_char_move();
+    exe6_obj_flip_set(exe6_enemy_flip_check());
+    self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
 
-    Collision *collision = bn6_self_collision_create();
-    if (collision == NULL) {
-        bn6_self_object_free();
+    Exe6Hit *hit = exe6_battle_hit_open();
+    if (hit == NULL) {
+        exe6_obj_move_delete();
         return false;
     }
-    bn6_collision_setup(
-        collision,
-        PROJECTILE_COLLISION_TYPE,
-        BN6_COLLISION_TYPE_STANDARD_TARGET,
+    exe6_battle_hit_data_set(
+        hit,
+        PROJECTILE_HIT_TYPE,
+        EXE6_HIT_TYPE_STANDARD_TARGET,
         3
     );
-    bn6_self_collision_set_hit_effect(BN6_HIT_EFFECT_CHIP_DELETE);
-    bn6_self_collision_present(0, PROJECTILE_COLLISION_TYPE);
-    self->animation_state = PROJECTILE_PANELS;
-    self->target_panel_x = (uint8_t)(
-        self->panel_x + (int32_t)bn6_object_front_direction_for(self)
+    exe6_battle_hit_hit_mark_set(EXE6_HIT_EFFECT_CHIP_DELETE);
+    exe6_battle_hit_set(0, PROJECTILE_HIT_TYPE);
+    self->animation_state = PROJECTILE_BLOCKS;
+    self->target_block_x = (uint8_t)(
+        self->block_x + (int32_t)exe6_calc_pl_em_dir_spd_for(self)
     );
     self->state_word = 4;
     return true;
 }
 
-static bool projectile_update(Object *self)
+static bool projectile_update(Exe6Obj *self)
 {
-    if (bn6_battle_is_over() != 0) {
+    if (exe6_battle_end_check() != 0) {
         projectile_free(self);
         return false;
     }
 
-    Collision *collision = self->collision;
-    bn6_collision_remove(collision);
-    bn6_self_collision_spawn_effect();
-    if (collision->received_collision_flags != 0) {
+    Exe6Hit *hit = self->hit;
+    exe6_battle_hit_check(hit);
+    exe6_battle_hit_hit_mark_check();
+    if (hit->received_hit_flags != 0) {
         projectile_free(self);
         return false;
     }
 
-    int32_t direction = (int32_t)bn6_object_front_direction_for(self);
-    uint32_t panel_x = self->target_panel_x;
-    uint32_t panel_y = self->panel_y;
-    if (bn6_panel_is_valid_xy(panel_x, panel_y) == 0) {
+    int32_t direction = (int32_t)exe6_calc_pl_em_dir_spd_for(self);
+    uint32_t block_x = self->target_block_x;
+    uint32_t block_y = self->block_y;
+    if (exe6_block_in_screen_check_sub(block_x, block_y) == 0) {
         projectile_free(self);
         return false;
     }
 
-    int32_t target_x = (int32_t)(uint32_t)bn6_panel_to_coords(panel_x, panel_y);
+    int32_t target_x = (int32_t)(uint32_t)exe6_get_block_pos(block_x, block_y);
     int32_t next_x = self->x + direction * PROJECTILE_SPEED;
     self->x = next_x;
     bool entered = direction < 0 ? next_x <= target_x : next_x >= target_x;
     if (entered) {
         self->x = target_x;
-        self->panel_x = self->target_panel_x;
-        bn6_self_object_update_panel();
-        bn6_self_collision_update_panel();
+        self->block_x = self->target_block_x;
+        exe6_pos_to_block();
+        exe6_battle_hit_block_pos_set();
         if (self->animation_state <= 1) {
             self->animation_state = 0;
             projectile_free(self);
             return false;
         }
         --self->animation_state;
-        self->target_panel_x = (uint8_t)(self->target_panel_x + direction);
+        self->target_block_x = (uint8_t)(self->target_block_x + direction);
     }
-    bn6_self_collision_present(0, PROJECTILE_COLLISION_TYPE);
+    exe6_battle_hit_set(0, PROJECTILE_HIT_TYPE);
     return true;
 }
 
-BN6_OBJECT3(rollarrow_arrow_main)
+EXE6_SHL(rollarrow_arrow_main)
 {
     switch (self->state) {
     case 0:
@@ -295,22 +295,22 @@ BN6_OBJECT3(rollarrow_arrow_main)
         }
         break;
     default:
-        bn6_self_object_free();
+        exe6_obj_move_delete();
         return;
     }
-    bn6_self_object_update_dimming();
+    exe6_battle_obj_char_move2();
 }
 
-BN6_SUMMON_ATTACK(0x018, rollarrow_attack_main)
+EXE6_SUMMON_ATTACK(0x018, rollarrow_attack_main)
 {
-    Object *actor = bn6_spawn_type1(
-        BN6_OBJECT_ID(rollarrow_actor_main), spawn_parameters
+    Exe6Obj *actor = exe6_em_open(
+        EXE6_OBJ_ID(rollarrow_actor_main), spawn_parameters
     );
     if (actor == NULL) {
         return;
     }
-    actor->panel_x = (uint8_t)panel_x;
-    actor->panel_y = (uint8_t)panel_y;
+    actor->block_x = (uint8_t)block_x;
+    actor->block_y = (uint8_t)block_y;
     actor->parameter = (uint8_t)parameter;
     actor->owner_word = owner->owner_word;
     actor->parent = owner;

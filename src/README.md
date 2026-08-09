@@ -12,37 +12,41 @@ pointer patches.
 The shared native-call ABI veneers are in `abi.c`; direct runtime helpers are
 in `runtime.c`. The linker layout is `link.ld`, and public
 ABI/runtime declarations are `abi.h` and `runtime.h` here too.
+Native veneer names follow the recovered
+[`MEGAMAN6_GXX_BR5E00.sym`](https://github.com/StraDaMa/Mega-Man-Battle-Network-6-Symbols/blob/main/MEGAMAN6_GXX_BR5E00.sym)
+labels, with source-file prefixes removed and CamelCase normalized to the
+project's `exe6_lower_snake_case` convention.
 
-## Collision hit-effect visuals
+## Hit-effect visuals
 
-`bn6_self_collision_set_hit_effect()` writes the one-byte visual selector at
-`CollisionFields.hit_effect` (`+0x09`). On contact,
-`bn6_self_collision_spawn_effect()` reads it and creates the corresponding
+`exe6_battle_hit_hit_mark_set()` writes the one-byte visual selector at
+`Exe6HitFields.hit_effect` (`+0x09`). On contact,
+`exe6_battle_hit_hit_mark_check()` reads it and creates the corresponding
 impact animation. The selector does **not** define damage, element, status, or
-special collision behavior such as SearchMan's trap deletion; those properties
-come from the collision setup and the attack object's other fields.
+special hit behavior such as SearchMan's trap deletion; those properties
+come from the hit setup and the attack object's other fields.
 
 The native BN6 hit-effect table contains these selectors in both editions:
 
 | ID | ABI name | Impact animation |
 | ---: | --- | --- |
-| `0x00` | `BN6_HIT_EFFECT_NORMAL` | normal white impact |
-| `0x01` | `BN6_HIT_EFFECT_FIRE` | fire impact |
-| `0x02` | `BN6_HIT_EFFECT_AQUA` | aqua impact |
-| `0x03` | `BN6_HIT_EFFECT_ELEC` | electric impact |
-| `0x04` | `BN6_HIT_EFFECT_WOOD` | wood impact |
-| `0x05` | `BN6_HIT_EFFECT_CHARGE_SHOT` | charge-shot spark |
-| `0x06` | `BN6_HIT_EFFECT_SMALL_IMPACT` | small orange/yellow impact |
-| `0x07` | `BN6_HIT_EFFECT_EXPLOSION` | explosion with debris |
-| `0x08` | `BN6_HIT_EFFECT_PING` | cyan ring/bubble |
-| `0x09` | `BN6_HIT_EFFECT_CHIP_DELETE` | chip-delete ping/slash |
-| `0x0A` | `BN6_HIT_EFFECT_BREAK` | break impact |
-| `0x0B` | `BN6_HIT_EFFECT_LARGE_EXPLOSION` | large explosion |
-| `0x0C` | `BN6_HIT_EFFECT_CHARGE_SHOT_PRIORITY_2` | charge-shot spark at native priority/layer 2 |
-| `0x0D` | `BN6_HIT_EFFECT_BAT` | bat burst |
-| `0x0E` | `BN6_HIT_EFFECT_UNINSTALL` | Uninstall shatter |
-| `0x0F` | `BN6_HIT_EFFECT_UNINSTALL_ALT` | native visual alias of `0x0E` |
-| `0xFF` | `BN6_HIT_EFFECT_NONE` | no contact animation |
+| `0x00` | `EXE6_HIT_EFFECT_NORMAL` | normal white impact |
+| `0x01` | `EXE6_HIT_EFFECT_FIRE` | fire impact |
+| `0x02` | `EXE6_HIT_EFFECT_AQUA` | aqua impact |
+| `0x03` | `EXE6_HIT_EFFECT_ELEC` | electric impact |
+| `0x04` | `EXE6_HIT_EFFECT_WOOD` | wood impact |
+| `0x05` | `EXE6_HIT_EFFECT_CHARGE_SHOT` | charge-shot spark |
+| `0x06` | `EXE6_HIT_EFFECT_SMALL_IMPACT` | small orange/yellow impact |
+| `0x07` | `EXE6_HIT_EFFECT_EXPLOSION` | explosion with debris |
+| `0x08` | `EXE6_HIT_EFFECT_PING` | cyan ring/bubble |
+| `0x09` | `EXE6_HIT_EFFECT_CHIP_DELETE` | chip-delete ping/slash |
+| `0x0A` | `EXE6_HIT_EFFECT_BREAK` | break impact |
+| `0x0B` | `EXE6_HIT_EFFECT_LARGE_EXPLOSION` | large explosion |
+| `0x0C` | `EXE6_HIT_EFFECT_CHARGE_SHOT_PRIORITY_2` | charge-shot spark at native priority/layer 2 |
+| `0x0D` | `EXE6_HIT_EFFECT_BAT` | bat burst |
+| `0x0E` | `EXE6_HIT_EFFECT_UNINSTALL` | Uninstall shatter |
+| `0x0F` | `EXE6_HIT_EFFECT_UNINSTALL_ALT` | native visual alias of `0x0E` |
+| `0xFF` | `EXE6_HIT_EFFECT_NONE` | no contact animation |
 
 ## C declarations
 
@@ -51,11 +55,11 @@ Put declarations beside the implementation they register:
 ```c
 #include "runtime.h"
 
-BN6_USE_SONG(common_navi_summon_song);
-BN6_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
-BN6_SONG(
+EXE6_USE_SONG(common_navi_summon_song);
+EXE6_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
+EXE6_SONG(
     searchman_fire_song,
-    BN6_PCM(
+    EXE6_PCM(
         searchman_fire,
         0x40,
         0x08,
@@ -63,14 +67,14 @@ BN6_SONG(
         "build/searchman-fire-sample.bin"
     )
 );
-BN6_POINTER_PATCH(0x08012010, searchman_data);
+EXE6_POINTER_PATCH(0x08012010, searchman_data);
 
-BN6_OBJECT1(searchman_actor_main)
+EXE6_EM(searchman_actor_main)
 {
     /* `self` is the current object. */
 }
 
-BN6_SUMMON_ATTACK(0x107, searchman_attack_main)
+EXE6_SUMMON_ATTACK(0x107, searchman_attack_main)
 {
     /* Native attack arguments are available by name here. */
 }
@@ -82,25 +86,25 @@ build:
 
 ```c
 #if FALZAR
-BN6_POINTER_PATCH(0x080E9990, signalred_dust_sprite_table);
+EXE6_POINTER_PATCH(0x080E9990, signalred_dust_sprite_table);
 #else
-BN6_POINTER_PATCH(0x080EACD0, signalred_dust_sprite_table);
+EXE6_POINTER_PATCH(0x080EACD0, signalred_dust_sprite_table);
 #endif
 ```
 
 The attack macros name the native family lifecycle they register:
 
-- `BN6_PERSISTENT_ATTACK` uses family `0x15`. Its C function returns the
+- `EXE6_PERSISTENT_ATTACK` uses family `0x15`. Its C function returns the
   spawned controller/effect object (or `NULL`), which the native wrapper can
   track after the callback. Its sixth argument is packed `chip_data`.
-- `BN6_SUMMON_ATTACK` uses family `0x1B` and receives the summon manager's
+- `EXE6_SUMMON_ATTACK` uses family `0x1B` and receives the summon manager's
   completion pointer as its sixth argument.
-- `BN6_EPHEMERAL_ATTACK` uses family `0x1C`. Its callback return is ignored,
+- `EXE6_EPHEMERAL_ATTACK` uses family `0x1C`. Its callback return is ignored,
   its `attack` argument is already resolved with the activation bonus, and its
   sixth argument is the owner's signed 16.16 `z` coordinate.
 
-`BN6_ATTACK` remains a source-compatible alias for
-`BN6_PERSISTENT_ATTACK`. Here, persistent and ephemeral describe the native
+`EXE6_ATTACK` remains a source-compatible alias for
+`EXE6_PERSISTENT_ATTACK`. Here, persistent and ephemeral describe the native
 wrapper lifecycle; an ephemeral callback may still spawn an independently
 managed object.
 
@@ -116,36 +120,36 @@ follow `<package>_<name>_sprite`; and songs follow `<package>_<name>_song`. The
 compiler rejects labels that do not match those conventions. Object and attack
 macros combine registration, the native ABI veneer, and the C implementation.
 Every object and attack macro exposes the native `r4` value by value as
-`Bn6ObjectSpawnParameters spawn_parameters`. It is a four-byte struct, not a
+`Exe6ObjSpawnParameters spawn_parameters`. It is a four-byte struct, not a
 pointer: its `variant`, `subvariant`, `animation_state`, and `removal_state`
 fields are copied to new-object offsets `+0x04` through `+0x07`.
-`BN6_SPRITE` and `BN6_SONG` likewise combine registration with the resource
-definition; `BN6_PCM` supplies the standard PCM song body.
+`EXE6_SPRITE` and `EXE6_SONG` likewise combine registration with the resource
+definition; `EXE6_PCM` supplies the standard PCM song body.
 
 Use the allocated values in ordinary C expressions:
 
 ```c
-Object *reticle = bn6_spawn_type4(
-    BN6_OBJECT_ID(searchman_reticle_main),
-    bn6_object_spawn_with_variant(actor->variant)
+Exe6Obj *reticle = exe6_efc_open(
+    EXE6_OBJ_ID(searchman_reticle_main),
+    exe6_obj_spawn_with_variant(actor->variant)
 );
-bn6_self_sprite_load(
+exe6_obj_char_init(
     0x80,
-    BN6_SPRITE_GROUP(searchman_battle_sprite),
-    BN6_SPRITE_ID(searchman_battle_sprite)
+    EXE6_SPRITE_GROUP(searchman_battle_sprite),
+    EXE6_SPRITE_ID(searchman_battle_sprite)
 );
-bn6_play_sound(BN6_SONG_ID(searchman_fire_song));
+exe6_sound_req(EXE6_SONG_ID(searchman_fire_song));
 ```
 
 Shared resources are registered by their implementation source.
-`BN6_USE_SONG(common_navi_summon_song)` declares the link-time selector in a
+`EXE6_USE_SONG(common_navi_summon_song)` declares the link-time selector in a
 consumer without adding another song-table entry.
 
 ## ELF metadata and link-time values
 
 `compile_c_metadata.py` compiles every gameplay package source with
-`BN6_METADATA_ONLY` and the target's normal preprocessor definitions. The
-registration and definition macros emit ordered `__bn6_meta__...` symbols into
+`EXE6_METADATA_ONLY` and the target's normal preprocessor definitions. The
+registration and definition macros emit ordered `__exe6_meta__...` symbols into
 each ELF object. The script reads those symbols with `arm-none-eabi-nm`; it does
 not parse C source text.
 
@@ -160,11 +164,11 @@ allocates that config's registry slots, and writes separate target artifacts:
 
 An object's class selects its native allocator and lifecycle table; its ID is
 the 8-bit index within that table. The compiler relocates configured class
-tables to 256 entries and resolves `BN6_OBJECT_ID` directly, so custom objects
+tables to 256 entries and resolves `EXE6_OBJ_ID` directly, so custom objects
 do not need an extra runtime discriminator field.
 
-The final C link resolves `BN6_OBJECT_ID`, `BN6_SPRITE_ID`,
-`BN6_SPRITE_GROUP`, `BN6_SONG_ID`, and `BN6_SONG_GROUP` from that linker file.
+The final C link resolves `EXE6_OBJ_ID`, `EXE6_SPRITE_ID`,
+`EXE6_SPRITE_GROUP`, `EXE6_SONG_ID`, and `EXE6_SONG_GROUP` from that linker file.
 Metadata records are not included in the final gameplay binary.
 
 ## Chip definitions
@@ -190,7 +194,7 @@ falzar = { behavior = { effect_flags = 0x01 } }
 ```
 
 `behavior.object_spawn` uses the same named fields as
-`Bn6ObjectSpawnParameters`. Missing fields inside the table are zero, so
+`Exe6ObjSpawnParameters`. Missing fields inside the table are zero, so
 `object_spawn = { variant = 3 }` initializes only `variant`. Omitting the
 `object_spawn` table entirely preserves the native chip record's four bytes.
 

@@ -15,10 +15,10 @@ The actor creates two cooperating native objects:
 | Role | BN5 class/id | Main | Init | Spawn helper |
 | --- | --- | ---: | ---: | ---: |
 | moving scope | type 4 / `0x43` | `0x080E5208` | `0x080E5228` | `0x080E547C` |
-| shot collision | type 3 / `0x57` | `0x080D0D78` | `0x080D0D98` | `0x080D0E1E` |
+| shot hit | type 3 / `0x57` | `0x080D0D78` | `0x080D0D98` | `0x080D0E1E` |
 
 The reticle uses group `0x10`, index `0x23` normally and index `0x22` for its
-alternate form. It scans the opponent's panel region, accepts A to lock, and
+alternate form. It scans the opponent's block region, accepts A to lock, and
 sets the actor's delete-command byte when B accompanies A or is pressed during
 the short window after the lock.
 
@@ -26,18 +26,18 @@ The firing loop at `0x080C136C`-`0x080C13CC` initializes a count of five. Each
 shot is spawned when its ten-frame timer reaches seven. The special flag is
 set only when both the delete-command byte is nonzero and the remaining-shot
 count is one. Therefore the **fifth spawned shot** is the only possible delete
-shot. Normal shots use passive collision type `25`; the special shot uses type
-`29`. In BN6's collision-type table, type `25` resolves to flags `0x8000008C`
+shot. Normal shots use passive hit type `25`; the special shot uses type
+`29`. In BN6's hit-type table, type `25` resolves to flags `0x8000008C`
 or `0x4000008C` according to owner side, while type `29` resolves to
-`0x8000009C` or `0x4000009C`. The additional `0x10` collision-property bit is
+`0x8000009C` or `0x4000009C`. The additional `0x10` hit-property bit is
 what carries the delete-shot behavior.
 
-Separately, hit init maps collision type `25` to hit-effect visual `0` (normal
+Separately, hit init maps hit type `25` to hit-effect visual `0` (normal
 impact) and type `29` to visual `9` (the chip-delete ping/slash). Despite that
 semantic name, hit effect `9` does not itself delete traps: it chooses the
-matching contact animation, while collision type `29` supplies the extra
-`0x10` delete-property bit. The hit object removes collision, spawns that
-visual after contact or creates the miss visual, clears/frees its collision
+matching contact animation, while hit type `29` supplies the extra
+`0x10` delete-property bit. The hit object removes hit, spawns that
+visual after contact or creates the miss visual, clears/frees its hit
 data, and frees itself in that same update. The full BN6 hit-effect visual
 table is documented in `src/README.md`.
 
@@ -55,20 +55,20 @@ contain a usable SearchMan actor/reticle/hit set.
 
 Every imported object keeps its native BN6 class and receives a real 8-bit ID
 in that class's relocated table. IDs are assigned from dependency and
-declaration order; package code passes `BN6_OBJECT_ID(...)` to the native spawn
+declaration order; package code passes `EXE6_OBJ_ID(...)` to the native spawn
 helper rather than storing a second discriminator in object memory. The native
 prefixes, including released HeatMan `0x30` and LifeSync `0x5C`, remain intact.
 FolderBack hooks the shared dispatcher after it resolves an entry, substitutes
 its freeze wrapper only for class 1, and otherwise invokes that resolved entry
 directly; it does not duplicate a class table full of wrapper pointers.
 
-Runtime code and imported assets are allocated from file offset `0x800000`
+Exe6Runtime code and imported assets are allocated from file offset `0x800000`
 onward in an expanded 16 MiB image; exact addresses are selected by Armips.
 The object state machine, timers, reticle movement/input, five-shot loop, and
 hit-effect selection follow BN5 state for state. The intentional engine
 adaptations are:
 
-- BN5 collision result flags are at collision data `+0x68`; BN6 uses `+0x70`.
+- BN5 hit result flags are at hit data `+0x68`; BN6 uses `+0x70`.
 - Calls from the expanded ROM are outside Thumb `BL` range and go through a
   long-call macro. The macro restores `r4` before entering BN6 because object
   spawners consume `r4` as an implicit argument.
@@ -77,13 +77,13 @@ adaptations are:
   always frees the shot rather than the effect.
 - After using `r2` as the normal/final-shot selector, the actor copies its
   translated one-hot Cursor value (`0x40`, originating from chip-table element
-  `6`) into every hit object's `+0x0E` byte. The runtime collision test confirms
+  `6`) into every hit object's `+0x0E` byte. The runtime hit test confirms
   that all five 20-damage base pulses still resolve with this value; writing
   numeric table element `6` here is the invalid form.
 - Base, EX, and SP all select actor palette `0`, giving every summoned
   SearchMan the same in-battle colors while leaving menu-art palettes distinct.
 
-The last point is what prevents a missed collision object from surviving time
+The last point is what prevents a missed hit object from surviving time
 freeze and damaging something later.
 
 ## Imported assets
@@ -199,9 +199,9 @@ BN5 Jealousy is chip ID `0xD4`. Its family-`0x15`/subfamily-`0x13` wrapper at
 sprite archive to import.
 
 The controller scans the opposing side's four unit pointers and preserves the
-largest loaded-chip count. Every ten frames it scans all 18 panels, passes the
-opposing ownership flag in the panel predicate's required-flags `r2` argument, creates an
-80-damage collision object on each valid opposing panel, and decrements that
+largest loaded-chip count. Every ten frames it scans all 18 blocks, passes the
+opposing ownership flag in the block predicate's required-flags `r2` argument, creates an
+80-damage hit object on each valid opposing block, and decrements that
 count once. Its final 90-frame state refreshes the native chip-delete overlay
 and runs the original link-battle cleanup calls before entering the generic
 type-4 outro.
@@ -217,14 +217,14 @@ native prefix, while Jealousy's controller receives a new class-4 ID:
 LifeSync's released object entry `0x5C` remains native and unmodified.
 
 BN6 retains direct equivalents of all five generic type-4 lifecycle states and
-of Jealousy's side comparison, chip-list lookup, panel predicate, overlay,
+of Jealousy's side comparison, chip-list lookup, block predicate, overlay,
 gauge, and damage-object helpers. Gregar's damage-object wrapper is at
 `0x080C6C16`; Falzar's is at `0x080C53A6`, so that one call is selected in the
 version assembly rather than shared as a fixed address.
 
 Jealousy's pulse loop remains the normal BN6 full-field damage-object path; it
 does not inspect the opponent's hand or trap table. Every pulse resolves through
-ordinary collision and damage prevention. As in BN5, the later chip-deletion
+ordinary hit and damage prevention. As in BN5, the later chip-deletion
 phase is separate from those hits and runs whenever the link battle is active,
 even if AntiDamage or another trap intercepted the complete pulse train.
 
@@ -295,15 +295,15 @@ forward through HubBatch's launcher. Their controllers and BugCharge's
 charge-head visual likewise receive distinct class-4 IDs. Native attack and
 object entries are copied unchanged into the relocated table prefixes.
 
-Runtime tracing of Colonel BugCharge identifies group `0x0C`/index `0x43` as
+Exe6Runtime tracing of Colonel BugCharge identifies group `0x0C`/index `0x43` as
 both the stationary and moving Gospel archive. The stationary object is 24
 pixels forward of the user at Z `0x17`. BN5's object code gives this visual a
 fixed 60-tick active state and a 30-tick teardown, so with a high bug count the
 apparition can disappear before the controller finishes launching heads. The
 port instead assigns `55 + 15 * shot_count` to its hold timer, matching the
 controller's 40-frame charge, 15-frame shot cadence, and 30-frame recovery.
-The moving object begins on the front panel at Z `0x14`, advances 10 pixels per
-frame, and changes its collision panel at the midpoint between panel centers.
+The moving object begins on the front block at Z `0x14`, advances 10 pixels per
+frame, and changes its hit block at the midpoint between block centers.
 The translated counter consumes BN5's nine property types plus BN6 field
 `0x63`; after clearing it calls BugFix's native `0x0801E658` runtime-state reset
 so an already-latched Custom bug is removed too. Every nonzero BN6 severity
@@ -316,7 +316,7 @@ wrapper at `0x080E8404` creates the short-lived type-4 controller whose effect
 begins at `0x080E8448`. That controller calls `0x080DD772` to create the real
 persistent traffic light, type 3 / ID `0x81`, controlled by `0x080DD544`.
 
-The native object is placed one panel in front of its owner, has 100 HP, and
+The native object is placed one block in front of its owner, has 100 HP, and
 loads sprite group/index `0x0C/0x33`. It spends 420 frames in animation 0
 (red), with the opposing chip-enable flag cleared, followed by 50 frames in
 animation 1 (green), with that flag restored. Blue Moon uses mask `0x08` for
@@ -347,15 +347,15 @@ Blue Moon also registers the light in its per-owner deployable list through
 `0x0800B230` and unregisters it through `0x0800B272`. Their structurally
 identical BN6 counterparts are `0x0800F614` and `0x0800F656`. Retaining that
 registration is what exposes the object to DustCross's B+Left suction path;
-collision targetability alone is not sufficient. SignalRed registers in the
+hit targetability alone is not sufficient. SignalRed registers in the
 one-object deployable slot for its owner, while DustCross scans all eight
 deployable pointers and marks a target with the suction bit belonging to the
 DustCross user. SignalRed accepts only the bit for the side opposite its owner,
 so a player cannot vacuum their own light.
 
-BN6 collision setup keeps a matched obstacle mask pair on SignalRed, just as
+BN6 hit setup keeps a matched obstacle mask pair on SignalRed, just as
 Blue Moon does; clearing either complete word prevents incoming attacks from
-resolving against the light. BN6 retains Blue Moon's owner-specific collision
+resolving against the light. BN6 retains Blue Moon's owner-specific hit
 pair at regions `19/20`: the active masks remain `0x02010000/0x01010000` and
 `0x55800000/0xAA800000`, with only BN6's standard passive bit `0x80` added to
 region 19. Using that pair prevents the chip owner's attacks from damaging the
@@ -366,10 +366,10 @@ tests bit `0x02` of chip-record byte `0x16`. SignalRed clears only that bit
 allocates the record at object initialization but defers
 setup/presentation until time stop ends, so the persistent hurtbox begins in
 normal battle time. Its three-frame placement startup and imported cue still
-run during the activating chip's time freeze; only collision and the subsequent
+run during the activating chip's time freeze; only hit and the subsequent
 red/green timer are deferred. Each active frame then clears prior hit presentation,
 collects the five element-specific
-collision damage slots, runs deployable lifetime maintenance, and applies the
+hit damage slots, runs deployable lifetime maintenance, and applies the
 total through BN6's saturating object-HP subtractor at `0x0800E2D8`. The broader
 Navi damage state controller is not used because it requires a secondary status
 object this passive obstacle does not own. Incoming damage sets the same
@@ -390,8 +390,8 @@ into DustCross's stored-ammo path. SignalRed checks only the opponent's suction
 bit before calling that helper and uses the otherwise-free four-bit
 kind 15 and redirects DustCross's suction/firing sprite tables to a 16-entry
 copy whose final entry is SignalRed's group `0x10`, index `0x61` archive. It
-then restores the chip flag, cleans up collision state, unregisters, and frees
-the field object. Collision event `0x40000` is a separate timed wind-removal
+then restores the chip flag, cleans up hit state, unregisters, and frees
+the field object. Hit event `0x40000` is a separate timed wind-removal
 path handled by `0x0800F8CE`; its 20-frame visibility timer owns object byte
 `+0x0B`, so SignalRed leaves that byte clear during normal operation.
 
@@ -416,7 +416,7 @@ menu-art fields to the imported SignalRed assets.
 ## DeathPhoenix port
 
 BN5 DeathPhoenix's time-freeze wrapper creates type-1 object `0x28`, whose
-controller at `0x080BFD98` builds three shuffled panel rows and schedules
+controller at `0x080BFD98` builds three shuffled block rows and schedules
 twelve strikes. Each strike creates type-4 object `0x89` through the wrapper at
 `0x080EA71C`. Its main function is `0x080EA5E4`; the adjacent type-4 `0x8A`
 main at `0x080EA740` is unrelated MegaBuster behavior and must not be ported.
@@ -431,7 +431,7 @@ archive occupies BN5 ROM `0x36F074`-`0x36F7BC`; group `0x10`/index `0x48` at
 The port translates type-4 `0x89` and `0x71` into distinct compiler-assigned
 class-4 IDs. Both use the imported archive
 through released BN6 sprite group `0x14`/index `0x21`. The damage contacts
-remain separate native BN6 objects, matching BN5's split between collision and
+remain separate native BN6 objects, matching BN5's split between hit and
 visible flame actors. The main DeathPhoenix controller likewise receives its
 own class-1 ID.
 
@@ -454,7 +454,7 @@ DeathPhoenix is installed at chip ID `0x134` in both versions. Falzar repoints
 the three menu-art fields to BN5's assets; Gregar leaves those fields
 byte-for-byte equal to the original CrossDiv record.
 
-## Runtime QA
+## Exe6Runtime QA
 
 The exact emulator procedure for selecting BN5 DeathPhoenix (`0x13A`) and
 the patched BN6 replacement slot (`0x134`) without editing a folder is kept in
@@ -463,15 +463,15 @@ ownership-validator exception, matching-save requirement, and stale card-art
 caveat so this setup does not need to be rediscovered.
 
 The SignalRed runtime probe uses a deterministic clear field, with no rock on
-the spawn panel. In both versions it observes the light on the panel directly
+the spawn block. In both versions it observes the light on the block directly
 in front of the user, flag `0x08` cleared throughout red, restored during
 green, an opponent Cannon held during red and released only after green opens,
 then the flag cleared again when the cycle returns to red.
 
-The emulator collision probe additionally exercises both contact and miss
+The emulator hit probe additionally exercises both contact and miss
 paths. On contact it observes five one-update shot objects, effect `0` on
 shots one through four, effect `9` only on shot five, one delete only after
-that fifth contact, and a zero counter timer. On a miss, all five collision
+that fifth contact, and a zero counter timer. On a miss, all five hit
 results stay zero, neither HP nor delete state changes, and every shot still
 receives exactly one update in both Gregar and Falzar.
 
@@ -487,12 +487,12 @@ projectile is the generic type-3 object spawned through `0x080CE81A`; its init l
 heart-arrow archive is at ROM `0x35E5C0` and is `0x160` bytes. The native fire
 routine starts that arrow at Roll's bow origin: eight pixels forward in X,
 one pixel above her actor Y origin, and 36 pixels in Z. After firing, Roll stays
-on her panel for the native animation-0 and animation-4 holds, then disappears;
+on her block for the native animation-0 and animation-4 holds, then disappears;
 there is no horizontal retreat.
 
 The port keeps the heart-arrow in type-3, matching Blue Moon and BN6's
 counter-hit ownership path, and gives it a direct class-3 ID. Hosting the
-collision-bearing arrow in type 1 works
+hit-bearing arrow in type 1 works
 for ordinary damage but corrupts the native counter response.
 
 The earlier `0x080C8644` group-`0x08`/index-`0x0D` trace was KendoMan, and
@@ -502,12 +502,12 @@ this port.
 The BN6 port keeps TrainArrow's IDs `0x18`-`0x1A`; the compiler gives the Roll
 attack a new Navi-family subfamily. Roll receives a direct class-1 ID and the
 straight-moving arrow receives a direct class-3 ID. The arrow uses BN6's native
-collision lifecycle with BN4's `8/5/3` setup and hit-effect `9`, so it travels
-at seven pixels per frame and stops on the first real contact. Collision type
+hit lifecycle with BN4's `8/5/3` setup and hit-effect `9`, so it travels
+at seven pixels per frame and stops on the first real contact. Hit type
 `8` resolves to `0x80000090` or `0x40000090`, including the same `0x10`
-delete-property bit used by SearchMan's collision type `29`; hit effect `9`
+delete-property bit used by SearchMan's hit type `29`; hit effect `9`
 supplies the matching chip-delete VFX. This invokes BN6's built-in loaded-chip
-deletion response rather than manufacturing a damage hit on every panel.
+deletion response rather than manufacturing a damage hit on every block.
 Generated selector pairs `ROLLARROW_ACTOR_SPRITE_GROUP` /
 `ROLLARROW_ACTOR_SPRITE` and `ROLLARROW_PROJECTILE_SPRITE_GROUP` /
 `ROLLARROW_PROJECTILE_SPRITE` point at the runtime-confirmed Blue Moon Roll
@@ -524,7 +524,7 @@ selector. RollArrow calls the common selector directly.
 
 Blue Moon's LaserMan chip creates type-1 object `0x4D` through the wrapper at
 `0x080CABC4`. Its main, init, and update routines are at `0x080CABF0`,
-`0x080CAC34`, and `0x080CAC96`. Runtime tracing of the real chip confirms that
+`0x080CAC34`, and `0x080CAC96`. Exe6Runtime tracing of the real chip confirms that
 the actor loads sprite group `0x08`, index `0x16`, plays summon SFX `0xB0`, and
 uses animations `0`, `2`, `3`, and `4` for its idle, raised-arms, firing, and
 recovery poses.
@@ -565,17 +565,17 @@ The BN6 port retains HeatMan's IDs `0xE3`-`0xE5` and uses a compiler-assigned
 family-`0x1B` subfamily. The actor and visible beam receive separate class-1 IDs. Both use foreground
 OAM priority 1, which places the beam in front of targets and field objects;
 the earlier-allocated actor still wins their same-priority overlap at the
-muzzle. LaserMan's row-hit objects receive their own class-3 ID. Blue Moon's collision region `0x0B` is not a
+muzzle. LaserMan's row-hit objects receive their own class-3 ID. Blue Moon's hit region `0x0B` is not a
 compatible attack mask in BN6, so the port seeds each hit with BN6's proven
-normal attack region 25 before using the native collision helpers. The final
-`FD` event uses SearchMan's exact working region-25 collision initialization
+normal attack region 25 before using the native hit helpers. The final
+`FD` event uses SearchMan's exact working region-25 hit initialization
 but LaserMan's quiet cleanup, avoiding the
 six random miss-impact sparkles that SearchMan's own cleanup would create for
-the six panel hits. Only the final `FD` damage event creates six panel-contact
+the six block hits. Only the final `FD` damage event creates six block-contact
 objects. The chosen direction is latched outside the event halfword, and its
-entire property stream is translated exactly once only when BN6's collision
+entire property stream is translated exactly once only when BN6's hit
 result at `+0x70` reports contact and that row object occupies the opposing
-Navi's current panel. A trap or obstacle elsewhere in the beam cannot authorize
+Navi's current block. A trap or obstacle elsewhere in the beam cannot authorize
 the effect, and missed beams have no command effect. The property words are not
 passed through BN6's incompatible extended-effect IDs. Thus no direction has
 no extra effect, while a held direction applies only its documented stat or
@@ -585,7 +585,7 @@ at the expanded shared archive. The reused BN6 object tails still require the
 beam Z word to be cleared explicitly for the native actor and laser to render
 in game.
 
-Blue Moon creates the laser one panel in front of the actor and then offsets
+Blue Moon creates the laser one block in front of the actor and then offsets
 its sprite origin another 64 pixels in the owning side's direction. The port
 reproduces both operations, which keeps the beam emitter aligned with
 LaserMan's hand. It also samples and latches commands during the raised-arms
@@ -603,7 +603,7 @@ Cross or other-form override, so Right changes the underlying default Buster
 properties without replacing the active form's charge shot.
 Effect events retain the original six-frame
 cadence. Because the imported full-width beam is stationary in the BN6 object
-model, the sole `FD` damage event is represented on all six panels; only one
+model, the sole `FD` damage event is represented on all six blocks; only one
 six-object damage event is alive at a time.
 
 Blue Moon provides Base, SP, and DS chip records. As with SearchMan, the BN6

@@ -1,18 +1,18 @@
 #include "abi.h"
 #include "runtime.h"
 
-BN6_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
-BN6_SPRITE(searchman_reticle_alt_sprite, "build/searchman-reticle-alt.bin");
-BN6_SPRITE(searchman_reticle_sprite, "build/searchman-reticle.bin");
+EXE6_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
+EXE6_SPRITE(searchman_reticle_alt_sprite, "build/searchman-reticle-alt.bin");
+EXE6_SPRITE(searchman_reticle_sprite, "build/searchman-reticle.bin");
 
-BN6_INCBIN(searchman_image, "build/searchman-image.bin");
-BN6_INCBIN(searchman_palette_base, "build/searchman-pal-base.bin");
-BN6_ASM_RESOURCE(
+EXE6_INCBIN(searchman_image, "build/searchman-image.bin");
+EXE6_INCBIN(searchman_palette_base, "build/searchman-pal-base.bin");
+EXE6_ASM_RESOURCE(
     searchman_palette_ex,
     ".incbin \"build/searchman-pal-base.bin\",0,0x1A\n"
     ".short 0x03FF,0x0299,0x0190\n"
 );
-BN6_INCBIN(searchman_palette_sp, "build/searchman-pal-sp.bin");
+EXE6_INCBIN(searchman_palette_sp, "build/searchman-pal-sp.bin");
 
 static const uint8_t ACTOR_ACTIVE_STATE = 4;
 static const uint8_t ACTOR_DESTROY_STATE = 8;
@@ -21,12 +21,12 @@ static const uint8_t ATTACK_PHASE = 4;
 static const uint8_t EXIT_PHASE = 8;
 static const uint8_t RETICLE_SCAN_PHASE = 4;
 static const uint8_t RETICLE_LOCKED_PHASE = 8;
-static const Bn6CollisionType NORMAL_COLLISION_TYPE =
-    BN6_COLLISION_TYPE_19;
-static const Bn6CollisionType DELETE_COLLISION_TYPE =
-    BN6_COLLISION_TYPE_1D;
+static const Exe6HitType NORMAL_HIT_TYPE =
+    EXE6_HIT_TYPE_19;
+static const Exe6HitType DELETE_HIT_TYPE =
+    EXE6_HIT_TYPE_1D;
 static const uint8_t SHOT_COUNT = 5;
-static const uint16_t PANEL_WAIT_FRAMES = 20;
+static const uint16_t BLOCK_WAIT_FRAMES = 20;
 static const uint16_t SHOT_FRAMES = 10;
 static const uint16_t SHOT_COOLDOWN_FRAMES = 30;
 static const uint16_t EXIT_FRAMES = 5;
@@ -38,73 +38,73 @@ static const uint8_t RETICLE_SCAN_FRAMES_SP = 4;
 static const uint8_t SEARCHMAN_VARIANT_EX = 3;
 static const uint8_t SEARCHMAN_VARIANT_SP = 4;
 static const uint32_t IMPACT_RANDOM_MASK = 0x0F;
-static const Bn6CollisionType HIT_COLLISION_SELECTOR =
-    BN6_COLLISION_TYPE_STANDARD_TARGET;
-static const uint32_t PRESENT_COLLISION_REGION = HIT_COLLISION_SELECTOR << 3;
+static const Exe6HitType HIT_SELECTOR =
+    EXE6_HIT_TYPE_STANDARD_TARGET;
+static const uint32_t PRESENT_HIT_REGION = HIT_SELECTOR << 3;
 
-struct SearchmanActorWork {
+struct Exe6SearchmanActorWork {
     uint32_t scale;                      // +0x60
 };
 
-struct SearchmanReticleWork {
-    Object *player;                      // +0x60
+struct Exe6SearchmanReticleWork {
+    Exe6Obj *player;                      // +0x60
     uint32_t alternate;                  // +0x64
 };
 
-static bool timer_positive_after_decrement(Object *self)
+static bool timer_positive_after_decrement(Exe6Obj *self)
 {
     int32_t timer = (int32_t)self->timer - 1;
     self->timer = (uint16_t)timer;
     return timer > 0;
 }
 
-static void set_animation(Object *self, uint8_t animation)
+static void set_animation(Exe6Obj *self, uint8_t animation)
 {
     self->animation = animation;
     self->palette = 0;
-    bn6_self_sprite_set_animation(animation);
-    bn6_self_sprite_load_animation_data();
+    exe6_obj_dma_seq_set(animation);
+    exe6_obj_char_set();
 }
 
-static void pulse_scale(Object *self)
+static void pulse_scale(Exe6Obj *self)
 {
-    struct SearchmanActorWork *work =
-        (struct SearchmanActorWork *)self->work;
-    bn6_self_sprite_set_scale(work->scale * 1057u);
+    struct Exe6SearchmanActorWork *work =
+        (struct Exe6SearchmanActorWork *)self->work;
+    exe6_obj_col_efc_set(work->scale * 1057u);
 }
 
-static void actor_animate(Object *self)
+static void actor_animate(Exe6Obj *self)
 {
     (void)self;
-    bn6_self_object_update_dimming();
+    exe6_battle_obj_char_move2();
     pulse_scale(self);
 }
 
-static void actor_destroy(Object *self)
+static void actor_destroy(Exe6Obj *self)
 {
     uint8_t *completion = self->completion;
     if (completion != NULL) {
         *completion = 0;
     }
-    bn6_self_object_free();
+    exe6_obj_move_delete();
 }
 
-static void appear(Object *self)
+static void appear(Exe6Obj *self)
 {
-    struct SearchmanActorWork *work =
-        (struct SearchmanActorWork *)self->work;
+    struct Exe6SearchmanActorWork *work =
+        (struct Exe6SearchmanActorWork *)self->work;
     if (self->substate == 0) {
         work->scale = 0x1F;
-        bn6_play_sound(0x94);
+        exe6_sound_req(0x94);
         self->timer = 0;
         self->substate = 4;
         return;
     }
 
-    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+    self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     ++self->timer;
     if ((self->timer & 2u) != 0) {
-        self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
+        self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
     }
 
     int32_t scale = (int32_t)work->scale - 2;
@@ -113,25 +113,25 @@ static void appear(Object *self)
         return;
     }
 
-    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+    self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     work->scale = 0;
     self->phase_timer = 4;
 }
 
-static void wait_for_panel(Object *self)
+static void wait_for_block(Exe6Obj *self)
 {
     if (self->substate == 0) {
-        self->timer = PANEL_WAIT_FRAMES;
+        self->timer = BLOCK_WAIT_FRAMES;
         self->substate = 4;
         return;
     }
     if (timer_positive_after_decrement(self)) {
         return;
     }
-    if (bn6_panel_matches_flags(
-            self->panel_x,
-            self->panel_y,
-            BN6_PANEL_FLAG_SOLID,
+    if (exe6_block_move_check(
+            self->block_x,
+            self->block_y,
+            EXE6_BLOCK_FLAG_SOLID,
             0
         ) == 0) {
         self->state_word = ACTOR_DESTROY_STATE;
@@ -141,81 +141,81 @@ static void wait_for_panel(Object *self)
     self->phase_timer = 0;
 }
 
-static void appear_phase(Object *self)
+static void appear_phase(Exe6Obj *self)
 {
     if (self->phase_timer_low == 0) {
         appear(self);
     } else {
-        wait_for_panel(self);
+        wait_for_block(self);
     }
 }
 
-static void spawn_reticle(Object *actor, Object *player, uint32_t alternate)
+static void spawn_reticle(Exe6Obj *actor, Exe6Obj *player, uint32_t alternate)
 {
-    Object *reticle = bn6_spawn_type4(
-        BN6_OBJECT_ID(searchman_reticle_main),
-        bn6_object_spawn_with_variant(actor->variant)
+    Exe6Obj *reticle = exe6_efc_open(
+        EXE6_OBJ_ID(searchman_reticle_main),
+        exe6_obj_spawn_with_variant(actor->variant)
     );
     if (reticle == NULL) {
         return;
     }
-    struct SearchmanReticleWork *work =
-        (struct SearchmanReticleWork *)reticle->work;
+    struct Exe6SearchmanReticleWork *work =
+        (struct Exe6SearchmanReticleWork *)reticle->work;
     work->player = player;
     reticle->owner_word = actor->owner_word;
     work->alternate = alternate;
     reticle->parent = actor;
 }
 
-static void start_reticle(Object *self)
+static void start_reticle(Exe6Obj *self)
 {
     if (self->substate == 0) {
         self->animation = 0x10;
         self->subvariant = 0;
-        self->target_panel_x = 0;
-        self->target_panel_y = 0;
+        self->target_block_x = 0;
+        self->target_block_y = 0;
         spawn_reticle(self, self->parent, 0);
         self->substate = 4;
         return;
     }
-    if (self->target_panel_x != 0) {
+    if (self->target_block_x != 0) {
         self->phase_timer = 4;
     }
 }
 
-static void spawn_hit(Object *actor, bool delete_shot)
+static void spawn_hit(Exe6Obj *actor, bool delete_shot)
 {
-    Bn6CollisionType collision_type = delete_shot
-        ? DELETE_COLLISION_TYPE
-        : NORMAL_COLLISION_TYPE;
-    Object *hit = bn6_spawn_type3(
-        BN6_OBJECT_ID(searchman_hit_main),
+    Exe6HitType hit_type = delete_shot
+        ? DELETE_HIT_TYPE
+        : NORMAL_HIT_TYPE;
+    Exe6Obj *hit = exe6_shl_open(
+        EXE6_OBJ_ID(searchman_hit_main),
         0,
         0,
         0,
-        bn6_object_spawn_with_variant((uint8_t)collision_type)
+        exe6_obj_spawn_with_variant((uint8_t)hit_type)
     );
     if (hit == NULL) {
         return;
     }
-    hit->panel_x = actor->target_panel_x;
-    hit->panel_y = actor->target_panel_y;
+    hit->block_x = actor->target_block_x;
+    hit->block_y = actor->target_block_y;
     hit->parameter = actor->parameter;
     hit->attack = actor->attack;
     hit->owner_word = actor->owner_word;
-    hit->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
+    hit->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
 }
 
-static void next_shot(Object *self)
+static void next_shot(Exe6Obj *self)
 {
     self->palette = 0x12;
     self->timer = SHOT_FRAMES;
-    bn6_play_sound(0xB9);
+    exe6_sound_req(0xB9);
     self->removal_state = 0;
     self->substate = 4;
 }
 
-static void fire_tick(Object *self)
+static void fire_tick(Exe6Obj *self)
 {
     if (self->timer == 7 && self->removal_state == 0) {
         self->removal_state = 1;
@@ -235,7 +235,7 @@ static void fire_tick(Object *self)
     }
 }
 
-static void fire_shots(Object *self)
+static void fire_shots(Exe6Obj *self)
 {
     if (self->substate == 0) {
         self->animation_state = SHOT_COUNT;
@@ -246,7 +246,7 @@ static void fire_shots(Object *self)
     }
 }
 
-static void shot_cooldown(Object *self)
+static void shot_cooldown(Exe6Obj *self)
 {
     if (self->substate == 0) {
         self->animation = 0;
@@ -260,7 +260,7 @@ static void shot_cooldown(Object *self)
     }
 }
 
-static void attack_phase(Object *self)
+static void attack_phase(Exe6Obj *self)
 {
     if (self->phase_timer_low == 0) {
         start_reticle(self);
@@ -271,7 +271,7 @@ static void attack_phase(Object *self)
     }
 }
 
-static void exit_phase(Object *self)
+static void exit_phase(Exe6Obj *self)
 {
     if (self->phase_timer_low == 0) {
         self->animation_word = 4;
@@ -280,12 +280,12 @@ static void exit_phase(Object *self)
         return;
     }
     if (!timer_positive_after_decrement(self)) {
-        self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
+        self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
         self->state_word = ACTOR_DESTROY_STATE;
     }
 }
 
-static void actor_update(Object *self)
+static void actor_update(Exe6Obj *self)
 {
     if (self->phase == APPEAR_PHASE) {
         appear_phase(self);
@@ -297,88 +297,88 @@ static void actor_update(Object *self)
     actor_animate(self);
 }
 
-static void actor_init(Object *self)
+static void actor_init(Exe6Obj *self)
 {
-    bn6_self_sprite_load(
+    exe6_obj_char_init(
         0x80,
-        BN6_SPRITE_GROUP(searchman_battle_sprite),
-        BN6_SPRITE_ID(searchman_battle_sprite)
+        EXE6_SPRITE_GROUP(searchman_battle_sprite),
+        EXE6_SPRITE_ID(searchman_battle_sprite)
     );
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_enable_shadow();
+    exe6_obj_char_set();
+    exe6_obj_shadow_set();
     set_animation(self, 0);
-    bn6_self_object_set_coords();
+    exe6_block_to_pos();
     self->z = 0;
-    bn6_self_sprite_set_flip(bn6_self_object_get_flip());
-    bn6_self_sprite_set_palette(0);
-    bn6_self_sprite_set_scale(0x7FFF);
-    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+    exe6_obj_flip_set(exe6_enemy_flip_check());
+    exe6_obj_clt_set(0);
+    exe6_obj_col_efc_set(0x7FFF);
+    self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     self->state_word = ACTOR_ACTIVE_STATE;
     actor_update(self);
 }
 
-static bool reticle_key_pressed(const Object *self, uint16_t mask)
+static bool reticle_key_pressed(const Exe6Obj *self, uint16_t mask)
 {
     const uint16_t *input = self->runtime_data;
     return (*input & mask) == mask;
 }
 
-static void reticle_commit_target(Object *self)
+static void reticle_commit_target(Exe6Obj *self)
 {
-    Object *actor = self->parent;
-    actor->target_panel_x = self->panel_x;
-    actor->target_panel_y = self->panel_y;
+    Exe6Obj *actor = self->parent;
+    actor->target_block_x = self->block_x;
+    actor->target_block_y = self->block_y;
 }
 
-static void reticle_find_bounds(Object *self, int32_t *enemy, int32_t *own)
+static void reticle_find_bounds(Exe6Obj *self, int32_t *enemy, int32_t *own)
 {
-    int32_t direction = -(int32_t)bn6_object_front_direction_for(self);
-    int32_t panel = 6 - 5 * (int32_t)(self->owner ^ self->owner_aux);
+    int32_t direction = -(int32_t)exe6_calc_pl_em_dir_spd_for(self);
+    int32_t block = 6 - 5 * (int32_t)(self->owner ^ self->owner_aux);
 
-    while (panel >= 1 && panel <= 6) {
-        if (bn6_panel_get_parameters((uint32_t)panel, self->owner) != 0) {
+    while (block >= 1 && block <= 6) {
+        if (exe6_another_block_exist_check((uint32_t)block, self->owner) != 0) {
             break;
         }
-        panel += direction;
+        block += direction;
     }
-    *own = panel;
+    *own = block;
 
-    while (panel >= 1 && panel <= 6) {
-        if (bn6_panel_get_parameters((uint32_t)panel, self->owner ^ 1u) == 3) {
+    while (block >= 1 && block <= 6) {
+        if (exe6_another_block_exist_check((uint32_t)block, self->owner ^ 1u) == 3) {
             break;
         }
-        panel += direction;
+        block += direction;
     }
-    *enemy = panel - direction;
+    *enemy = block - direction;
 }
 
-static void reticle_set_initial_panel(Object *self)
+static void reticle_set_initial_block(Exe6Obj *self)
 {
     int32_t enemy;
     int32_t own;
     reticle_find_bounds(self, &enemy, &own);
-    self->panel_x = (uint8_t)enemy;
+    self->block_x = (uint8_t)enemy;
 
-    int32_t front = (int32_t)bn6_object_front_direction_for(self);
-    self->target_panel_y = (uint8_t)(own + front);
-    self->target_panel_x = (uint8_t)(enemy - front);
-    self->panel_y = 1;
+    int32_t front = (int32_t)exe6_calc_pl_em_dir_spd_for(self);
+    self->target_block_y = (uint8_t)(own + front);
+    self->target_block_x = (uint8_t)(enemy - front);
+    self->block_y = 1;
 }
 
-static bool reticle_change_row(Object *self)
+static bool reticle_change_row(Exe6Obj *self)
 {
-    int32_t row = self->panel_y;
+    int32_t row = self->block_y;
     if (self->subvariant != 0) {
         ++row;
         if (row <= 3) {
-            self->panel_y = (uint8_t)row;
+            self->block_y = (uint8_t)row;
             return false;
         }
         self->subvariant = 0;
     } else {
         --row;
         if (row >= 1) {
-            self->panel_y = (uint8_t)row;
+            self->block_y = (uint8_t)row;
             return false;
         }
         self->subvariant = 1;
@@ -386,23 +386,23 @@ static bool reticle_change_row(Object *self)
     return true;
 }
 
-static void reticle_change_column(Object *self)
+static void reticle_change_column(Exe6Obj *self)
 {
     for (uint32_t attempt = 0; attempt < 2; ++attempt) {
-        int32_t direction = (int32_t)bn6_object_front_direction_for(self);
+        int32_t direction = (int32_t)exe6_calc_pl_em_dir_spd_for(self);
         if (self->removal_state == 0) {
             direction = -direction;
         }
-        int32_t column = (int32_t)self->panel_x + direction;
-        if (column != self->target_panel_x && column != self->target_panel_y) {
-            self->panel_x = (uint8_t)column;
+        int32_t column = (int32_t)self->block_x + direction;
+        if (column != self->target_block_x && column != self->target_block_y) {
+            self->block_x = (uint8_t)column;
             return;
         }
         self->removal_state ^= 1u;
     }
 }
 
-static void reticle_scan(Object *self)
+static void reticle_scan(Exe6Obj *self)
 {
     if (self->phase_timer_low == 0) {
         uint8_t frames = RETICLE_SCAN_FRAMES_BASE;
@@ -417,7 +417,7 @@ static void reticle_scan(Object *self)
 
     if (reticle_key_pressed(self, 1)) {
         if (!reticle_key_pressed(self, 2)) {
-            bn6_play_sound(0x8B);
+            exe6_sound_req(0x8B);
             self->parent->subvariant = 1;
         }
         self->animation_state = 5;
@@ -434,22 +434,22 @@ static void reticle_scan(Object *self)
     }
 }
 
-static void reticle_step(Object *self)
+static void reticle_step(Exe6Obj *self)
 {
     if (reticle_change_row(self)) {
         reticle_change_column(self);
     }
-    bn6_self_object_set_coords();
-    bn6_play_sound(0x10E);
+    exe6_block_to_pos();
+    exe6_sound_req(0x10E);
     self->phase = RETICLE_SCAN_PHASE;
     reticle_scan(self);
 }
 
-static void reticle_locked(Object *self)
+static void reticle_locked(Exe6Obj *self)
 {
     if (self->phase_timer_low == 0) {
         self->animation = 1;
-        bn6_play_sound(0xBD);
+        exe6_sound_req(0xBD);
         reticle_commit_target(self);
         self->timer = RETICLE_LOCK_FRAMES;
         self->phase_timer_low = RETICLE_LOCK_FRAMES;
@@ -466,7 +466,7 @@ static void reticle_locked(Object *self)
     }
 }
 
-static void reticle_update(Object *self)
+static void reticle_update(Exe6Obj *self)
 {
     if (self->phase == 0) {
         reticle_step(self);
@@ -478,34 +478,34 @@ static void reticle_update(Object *self)
     if (self->aux_timer != 0) {
         --self->aux_timer;
     }
-    bn6_self_object_update_dimming();
+    exe6_battle_obj_char_move2();
 }
 
-static void reticle_init(Object *self)
+static void reticle_init(Exe6Obj *self)
 {
-    struct SearchmanReticleWork *work =
-        (struct SearchmanReticleWork *)self->work;
-    uint32_t group = BN6_SPRITE_GROUP(searchman_reticle_sprite);
-    uint32_t sprite = BN6_SPRITE_ID(searchman_reticle_sprite);
+    struct Exe6SearchmanReticleWork *work =
+        (struct Exe6SearchmanReticleWork *)self->work;
+    uint32_t group = EXE6_SPRITE_GROUP(searchman_reticle_sprite);
+    uint32_t sprite = EXE6_SPRITE_ID(searchman_reticle_sprite);
     if (work->alternate != 0) {
-        group = BN6_SPRITE_GROUP(searchman_reticle_alt_sprite);
-        sprite = BN6_SPRITE_ID(searchman_reticle_alt_sprite);
+        group = EXE6_SPRITE_GROUP(searchman_reticle_alt_sprite);
+        sprite = EXE6_SPRITE_ID(searchman_reticle_alt_sprite);
     }
-    bn6_self_sprite_load(0x80, group, sprite);
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_no_shadow();
+    exe6_obj_char_init(0x80, group, sprite);
+    exe6_obj_char_set();
+    exe6_obj_no_shadow();
     set_animation(self, 0);
-    bn6_self_sprite_set_palette(0);
-    reticle_set_initial_panel(self);
-    bn6_self_object_set_coords();
+    exe6_obj_clt_set(0);
+    reticle_set_initial_block(self);
+    exe6_block_to_pos();
     self->subvariant = 1;
     self->removal_state = 1;
     self->aux_timer = RETICLE_LIFETIME;
 
-    Object *player = work->player;
+    Exe6Obj *player = work->player;
     self->runtime_data = (void *)((uintptr_t)player->runtime_data + 0x2Cu);
     self->animation_state = 0;
-    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+    self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     self->z = 0;
     self->state_word = ACTOR_ACTIVE_STATE;
     self->phase = RETICLE_SCAN_PHASE;
@@ -514,22 +514,22 @@ static void reticle_init(Object *self)
 
 static void randomize_impact(int32_t *x, int32_t *z)
 {
-    uint32_t random = bn6_rng_next();
+    uint32_t random = exe6_rand();
     int32_t x_offset = (int32_t)(random & IMPACT_RANDOM_MASK) - 7;
     int32_t z_offset = (int32_t)((random >> 16) & IMPACT_RANDOM_MASK) - 7;
     *x += x_offset << 16;
     *z += z_offset << 16;
 }
 
-static void hit_update(Object *self)
+static void hit_update(Exe6Obj *self)
 {
-    Collision *collision = self->collision;
-    bn6_collision_remove(collision);
-    bn6_self_collision_spawn_effect();
+    Exe6Hit *hit = self->hit;
+    exe6_battle_hit_check(hit);
+    exe6_battle_hit_hit_mark_check();
 
-    if (collision->received_collision_flags == 0) {
-        uint32_t random = bn6_rng_next();
-        Bn6ObjectSpawnParameters effect_parameters = {
+    if (hit->received_hit_flags == 0) {
+        uint32_t random = exe6_rand();
+        Exe6ObjSpawnParameters effect_parameters = {
             .variant = 7,
             .subvariant = (uint8_t)(random & 2u),
         };
@@ -537,65 +537,65 @@ static void hit_update(Object *self)
         int32_t y = self->y;
         int32_t z = self->z;
         randomize_impact(&x, &z);
-        (void)bn6_spawn_type4_at(0, x, y, z, effect_parameters);
+        (void)exe6_efc_open_at(0, x, y, z, effect_parameters);
     }
 
-    bn6_collision_clear_region(collision);
-    bn6_collision_free(self->collision);
-    bn6_self_object_free();
+    exe6_battle_hit_off(hit);
+    exe6_battle_hit_close(self->hit);
+    exe6_obj_move_delete();
 }
 
-static void hit_init(Object *self)
+static void hit_init(Exe6Obj *self)
 {
-    if (bn6_self_panel_is_valid_object() == 0) {
-        bn6_self_object_free();
+    if (exe6_block_in_screen_check() == 0) {
+        exe6_obj_move_delete();
         return;
     }
-    bn6_self_object_set_coords();
+    exe6_block_to_pos();
     self->z = 0x00100000;
-    Collision *collision = bn6_self_collision_create();
-    if (collision == NULL) {
-        bn6_self_object_free();
+    Exe6Hit *hit = exe6_battle_hit_open();
+    if (hit == NULL) {
+        exe6_obj_move_delete();
         return;
     }
-    bn6_collision_setup(
-        collision,
-        (Bn6CollisionType)self->variant,
-        HIT_COLLISION_SELECTOR,
+    exe6_battle_hit_data_set(
+        hit,
+        (Exe6HitType)self->variant,
+        HIT_SELECTOR,
         3
     );
     /* Type 29 carries the delete property; effect 9 supplies its contact VFX. */
-    Bn6HitEffect hit_effect = self->variant == NORMAL_COLLISION_TYPE
-        ? BN6_HIT_EFFECT_NORMAL
-        : BN6_HIT_EFFECT_CHIP_DELETE;
-    bn6_self_collision_set_hit_effect(hit_effect);
-    bn6_self_collision_present(0, PRESENT_COLLISION_REGION);
+    Exe6HitEffect hit_effect = self->variant == NORMAL_HIT_TYPE
+        ? EXE6_HIT_EFFECT_NORMAL
+        : EXE6_HIT_EFFECT_CHIP_DELETE;
+    exe6_battle_hit_hit_mark_set(hit_effect);
+    exe6_battle_hit_set(0, PRESENT_HIT_REGION);
     self->state_word = ACTOR_ACTIVE_STATE;
 }
 
-BN6_OBJECT3(searchman_hit_main)
+EXE6_SHL(searchman_hit_main)
 {
     if (self->state == 0) {
         hit_init(self);
     } else if (self->state == ACTOR_ACTIVE_STATE) {
         hit_update(self);
     } else {
-        bn6_self_object_free();
+        exe6_obj_move_delete();
     }
 }
 
-BN6_OBJECT4(searchman_reticle_main)
+EXE6_EFC(searchman_reticle_main)
 {
     if (self->state == 0) {
         reticle_init(self);
     } else if (self->state == ACTOR_ACTIVE_STATE) {
         reticle_update(self);
     } else {
-        bn6_self_object_free();
+        exe6_obj_move_delete();
     }
 }
 
-BN6_OBJECT1(searchman_actor_main)
+EXE6_EM(searchman_actor_main)
 {
     if (self->state == 0) {
         actor_init(self);
@@ -606,16 +606,16 @@ BN6_OBJECT1(searchman_actor_main)
     }
 }
 
-BN6_SUMMON_ATTACK(0x107, searchman_attack_main)
+EXE6_SUMMON_ATTACK(0x107, searchman_attack_main)
 {
-    Object *actor = bn6_spawn_type1(
-        BN6_OBJECT_ID(searchman_actor_main), spawn_parameters
+    Exe6Obj *actor = exe6_em_open(
+        EXE6_OBJ_ID(searchman_actor_main), spawn_parameters
     );
     if (actor == NULL) {
         return;
     }
-    actor->panel_x = (uint8_t)panel_x;
-    actor->panel_y = (uint8_t)panel_y;
+    actor->block_x = (uint8_t)block_x;
+    actor->block_y = (uint8_t)block_y;
     actor->parameter = (uint8_t)parameter;
     actor->owner_word = owner->owner_word;
     actor->parent = owner;

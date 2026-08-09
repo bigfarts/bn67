@@ -55,7 +55,7 @@ keeps the original art for that slot.
 Replaces LifeSync with BN5 Jealousy. The chip is a 60 MB, Null-element
 StandardChip in code J with 80 displayed power. It deals 80 damage for each
 chip loaded by the opponent and then deletes those loaded chips. All pulses run
-through normal collision handling, while the separate deletion phase still runs
+through normal hit handling, while the separate deletion phase still runs
 through traps exactly as in BN5. Both versions use
 Jealousy's BN5 icon, library art, palette, and chip-delete overlay graphics.
 
@@ -88,7 +88,7 @@ battle sprite. Its 100-HP hurtbox remains active throughout the cycle, and
 only the opposing player's DustCross can suck it in with B+Left. Its placement
 cue plays during the activation freeze, and destruction produces a visible
 break effect. Its activation flags do
-not advertise Image Invis to Rush, and its passive field collision does not
+not advertise Image Invis to Rush, and its passive field hit does not
 trigger Beat or traps. Dimming cut-ins do not stall either peer.
 
 ## DethPhnx

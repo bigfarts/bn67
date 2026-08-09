@@ -1,12 +1,12 @@
 #include "runtime.h"
 
-BN6_SPRITE(deathphoenix_battle_sprite, "build/deathphoenix-battle-sprite.bin");
-BN6_SPRITE(deathphoenix_strike_sprite, "build/deathphoenix-strike-sprite.bin");
+EXE6_SPRITE(deathphoenix_battle_sprite, "build/deathphoenix-battle-sprite.bin");
+EXE6_SPRITE(deathphoenix_strike_sprite, "build/deathphoenix-strike-sprite.bin");
 
 #if FALZAR
-BN6_INCBIN(deathphoenix_icon, "build/deathphoenix-icon.bin");
-BN6_INCBIN(deathphoenix_image, "build/deathphoenix-image.bin");
-BN6_INCBIN(deathphoenix_palette, "build/deathphoenix-palette.bin");
+EXE6_INCBIN(deathphoenix_icon, "build/deathphoenix-icon.bin");
+EXE6_INCBIN(deathphoenix_image, "build/deathphoenix-image.bin");
+EXE6_INCBIN(deathphoenix_palette, "build/deathphoenix-palette.bin");
 #endif
 
 static const uint8_t ACTIVE_STATE = 4;
@@ -34,17 +34,17 @@ static const uint16_t FLAME_DELAY_FRAMES = 10;
 static const uint16_t FLAME_MOTION_FRAMES = 16;
 static const uint16_t FIRST_CONTACT_VISUAL = 0x19;
 static const uint16_t SECOND_CONTACT_VISUAL = 0x1F;
-static const Bn6PanelDamageProperties CONTACT_PROPERTIES = {
-    .region = BN6_COLLISION_REGION_CURRENT_PANEL,
-    .hit_effect = BN6_HIT_EFFECT_NORMAL,
-    .target_collision_type = BN6_COLLISION_TYPE_STANDARD_TARGET,
-    .self_collision_type = BN6_COLLISION_TYPE_0A,
+static const Exe6BlockDamageProperties CONTACT_PROPERTIES = {
+    .region = EXE6_HIT_REGION_CURRENT_BLOCK,
+    .hit_effect = EXE6_HIT_EFFECT_NORMAL,
+    .target_hit_type = EXE6_HIT_TYPE_STANDARD_TARGET,
+    .self_hit_type = EXE6_HIT_TYPE_0A,
 };
-static const Bn6PanelDamageProperties INTRO_PROPERTIES = {
-    .region = BN6_COLLISION_REGION_ALL_VALID_PANELS,
-    .hit_effect = BN6_HIT_EFFECT_NONE,
-    .target_collision_type = BN6_COLLISION_TYPE_STANDARD_TARGET,
-    .self_collision_type = BN6_COLLISION_TYPE_27,
+static const Exe6BlockDamageProperties INTRO_PROPERTIES = {
+    .region = EXE6_HIT_REGION_ALL_VALID_BLOCKS,
+    .hit_effect = EXE6_HIT_EFFECT_NONE,
+    .target_hit_type = EXE6_HIT_TYPE_STANDARD_TARGET,
+    .self_hit_type = EXE6_HIT_TYPE_27,
 };
 static const uintptr_t SAVED_NAVI_ADDRESS = 0x0203C960;
 static const uintptr_t SAVED_NAVI_DISPATCH_REFERENCE = 0x08017BBC;
@@ -57,7 +57,7 @@ static const uint8_t STRIKE_PATTERNS[] = {
     2, 1, 2,
 };
 
-struct SavedNaviFields {
+struct Exe6SavedNaviFields {
     uint8_t id;
     uint8_t parameter;
     uint16_t offset;
@@ -65,114 +65,114 @@ struct SavedNaviFields {
     uint32_t properties;
 };
 
-struct DeathphoenixWork {
+struct Exe6DeathphoenixWork {
     uint32_t pattern_row;                // +0x60
     uint8_t recycle_completion;          // +0x64
     uint8_t reserved_65[3];
     const uint8_t *pattern;              // +0x68
-    uint8_t panels[3][4];                // +0x6C
+    uint8_t blocks[3][4];                // +0x6C
     uint32_t pattern_column;             // +0x78
 };
 
 _Static_assert(
-    offsetof(struct DeathphoenixWork, pattern_column) == 0x18,
+    offsetof(struct Exe6DeathphoenixWork, pattern_column) == 0x18,
     "DeathPhoenix work layout"
 );
 
-static bool timer_positive_after_decrement(Object *self)
+static bool timer_positive_after_decrement(Exe6Obj *self)
 {
     int32_t timer = (int32_t)self->timer - 1;
     self->timer = (uint16_t)timer;
     return timer > 0;
 }
 
-static bool timer_nonnegative_after_decrement(Object *self)
+static bool timer_nonnegative_after_decrement(Exe6Obj *self)
 {
     int32_t timer = (int32_t)self->timer - 1;
     self->timer = (uint16_t)timer;
     return timer >= 0;
 }
 
-static void set_phase(Object *self, uint8_t phase)
+static void set_phase(Exe6Obj *self, uint8_t phase)
 {
     self->phase = phase;
     self->phase_timer = 0;
 }
 
-static void finish(Object *self)
+static void finish(Exe6Obj *self)
 {
     *self->completion = 0;
     self->state_word = DESTROY_STATE;
 }
 
-static void build_panel_list(
-    Object *self,
-    uint32_t panel_y,
+static void build_block_list(
+    Exe6Obj *self,
+    uint32_t block_y,
     uint8_t *output
 )
 {
     uint8_t candidates[8];
     uint8_t shuffled[16];
-    bn6_memory_clear(candidates, sizeof(candidates));
-    bn6_memory_clear(shuffled, sizeof(shuffled));
+    exe6_mem_clear8(candidates, sizeof(candidates));
+    exe6_mem_clear8(shuffled, sizeof(shuffled));
 
-    int32_t direction = (int32_t)bn6_object_front_direction_for(self);
-    int32_t panel_x = (int32_t)self->panel_x + direction;
+    int32_t direction = (int32_t)exe6_calc_pl_em_dir_spd_for(self);
+    int32_t block_x = (int32_t)self->block_x + direction;
     uint32_t count = 0;
-    while (bn6_panel_is_valid_xy((uint32_t)panel_x, panel_y) != 0) {
-        if (bn6_panel_matches_flags(
-                (uint32_t)panel_x,
-                panel_y,
-                BN6_PANEL_FLAG_SOLID,
+    while (exe6_block_in_screen_check_sub((uint32_t)block_x, block_y) != 0) {
+        if (exe6_block_move_check(
+                (uint32_t)block_x,
+                block_y,
+                EXE6_BLOCK_FLAG_SOLID,
                 0
             ) != 0) {
-            candidates[count++] = (uint8_t)(panel_x | (panel_y << 4));
+            candidates[count++] = (uint8_t)(block_x | (block_y << 4));
         }
-        panel_x += direction;
+        block_x += direction;
     }
 
     for (uint32_t written = 0; count != 0 && written < 4; written += count) {
-        bn6_memory_copy(candidates, shuffled + written, count);
-        bn6_shuffle_bytes(shuffled + written, count, count);
+        exe6_mem_trans8(candidates, shuffled + written, count);
+        exe6_shuffle_sub(shuffled + written, count, count);
     }
-    bn6_memory_copy(shuffled, (void *)output, 4);
+    exe6_mem_trans8(shuffled, (void *)output, 4);
 }
 
-static void actor_init(Object *self)
+static void actor_init(Exe6Obj *self)
 {
-    struct DeathphoenixWork *work =
-        (struct DeathphoenixWork *)self->work;
-    bn6_self_object_load_navi_sprite(
+    struct Exe6DeathphoenixWork *work =
+        (struct Exe6DeathphoenixWork *)self->work;
+    exe6_battle_obj_char_init(
         0x00010000u
-        | (BN6_SPRITE_GROUP(deathphoenix_battle_sprite) << 8)
-        | BN6_SPRITE_ID(deathphoenix_battle_sprite)
+        | (EXE6_SPRITE_GROUP(deathphoenix_battle_sprite) << 8)
+        | EXE6_SPRITE_ID(deathphoenix_battle_sprite)
     );
-    bn6_self_sprite_set_flip(bn6_self_object_get_flip());
+    exe6_obj_flip_set(exe6_enemy_flip_check());
 
-    self->panel_x = (uint8_t)((self->owner ^ self->owner_aux) * 5u + 1u);
-    self->panel_y = 3;
-    bn6_self_object_set_coords();
+    self->block_x = (uint8_t)((self->owner ^ self->owner_aux) * 5u + 1u);
+    self->block_y = 3;
+    exe6_block_to_pos();
     self->z = 0;
     self->y += 3 << 16;
     self->z += 3 << 16;
 
-    build_panel_list(self, 1, work->panels[0]);
-    build_panel_list(self, 2, work->panels[1]);
-    build_panel_list(self, 3, work->panels[2]);
+    build_block_list(self, 1, work->blocks[0]);
+    build_block_list(self, 2, work->blocks[1]);
+    build_block_list(self, 3, work->blocks[2]);
     self->state_word = ACTIVE_STATE;
 }
 
-static void begin(Object *self)
+static void begin(Exe6Obj *self)
 {
-    (void)bn6_spawn_panel_damage(1, 1, 0, 0, INTRO_PROPERTIES, 0, 0);
+    (void)exe6_set_shl03_ev(1, 1, 0, 0, INTRO_PROPERTIES, 0, 0);
     set_phase(self, APPEAR_PHASE);
 }
 
-static void appear(Object *self)
+static void appear(Exe6Obj *self)
 {
     if (self->substate == 0) {
-        self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
-        bn6_play_sound(0x94);
+        self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
+        exe6_sound_req(0x94);
         self->timer = 0;
         self->substate = 4;
     }
@@ -180,14 +180,14 @@ static void appear(Object *self)
     uint32_t blend = (uint32_t)self->timer + 1u;
     self->timer = (uint16_t)blend;
     if (blend < APPEAR_FRAMES) {
-        bn6_self_sprite_set_blend_mode(blend);
+        exe6_obj_bld_set(blend);
         return;
     }
-    bn6_self_sprite_property_2cce();
+    exe6_obj_bld_reset();
     set_phase(self, WAIT_BEFORE_PHASE);
 }
 
-static void wait_before_strikes(Object *self)
+static void wait_before_strikes(Exe6Obj *self)
 {
     if (self->substate == 0) {
         self->timer = BEFORE_STRIKES_FRAMES;
@@ -198,70 +198,70 @@ static void wait_before_strikes(Object *self)
     }
     self->timer = 0;
     self->aux_timer = 0;
-    struct DeathphoenixWork *work =
-        (struct DeathphoenixWork *)self->work;
+    struct Exe6DeathphoenixWork *work =
+        (struct Exe6DeathphoenixWork *)self->work;
     work->pattern_row = 0;
     work->pattern_column = 0;
     set_phase(self, STRIKES_PHASE);
 }
 
 static void strike_spawn(
-    Object *actor,
-    uint32_t panel_x,
-    uint32_t panel_y,
+    Exe6Obj *actor,
+    uint32_t block_x,
+    uint32_t block_y,
     uint32_t alternate
 )
 {
-    Object *strike = bn6_spawn_type4(
-        BN6_OBJECT_ID(deathphoenix_strike_main),
-        bn6_object_spawn_with_variant((uint8_t)alternate)
+    Exe6Obj *strike = exe6_efc_open(
+        EXE6_OBJ_ID(deathphoenix_strike_main),
+        exe6_obj_spawn_with_variant((uint8_t)alternate)
     );
     if (strike == NULL) {
         return;
     }
-    strike->panel_x = (uint8_t)panel_x;
-    strike->panel_y = (uint8_t)panel_y;
+    strike->block_x = (uint8_t)block_x;
+    strike->block_y = (uint8_t)block_y;
     strike->attack = actor->attack;
     strike->owner_word = actor->owner_word;
     strike->parent = actor;
 }
 
-static void spawn_strike_for_panel(
-    Object *self,
-    uint32_t panel_x,
-    uint32_t panel_y
+static void spawn_strike_for_block(
+    Exe6Obj *self,
+    uint32_t block_x,
+    uint32_t block_y
 )
 {
-    if (panel_x == 0) {
+    if (block_x == 0) {
         return;
     }
-    uint32_t distance = self->panel_x > panel_x
-        ? self->panel_x - panel_x
-        : panel_x - self->panel_x;
+    uint32_t distance = self->block_x > block_x
+        ? self->block_x - block_x
+        : block_x - self->block_x;
     uint32_t alternate = distance > 2;
-    if (distance == 3 && (bn6_battle_rng() & 0x10u) != 0) {
+    if (distance == 3 && (exe6_rand2() & 0x10u) != 0) {
         alternate = 0;
     }
-    strike_spawn(self, panel_x, panel_y, alternate);
+    strike_spawn(self, block_x, block_y, alternate);
 }
 
-static void strikes(Object *self)
+static void strikes(Exe6Obj *self)
 {
-    struct DeathphoenixWork *work =
-        (struct DeathphoenixWork *)self->work;
+    struct Exe6DeathphoenixWork *work =
+        (struct Exe6DeathphoenixWork *)self->work;
     if (timer_positive_after_decrement(self)) {
         return;
     }
     self->timer = STRIKE_INTERVAL;
 
     if (work->pattern_row == 0) {
-        uint32_t pattern = bn6_battle_rng() % 3u;
+        uint32_t pattern = exe6_rand2() % 3u;
         work->pattern = &STRIKE_PATTERNS[pattern * 3u];
     }
     const uint8_t *pattern = work->pattern;
     uint32_t row = pattern[work->pattern_row] - 1u;
-    uint8_t packed = work->panels[row][work->pattern_column];
-    spawn_strike_for_panel(self, packed & 7u, packed >> 4);
+    uint8_t packed = work->blocks[row][work->pattern_column];
+    spawn_strike_for_block(self, packed & 7u, packed >> 4);
 
     ++work->pattern_row;
     if (work->pattern_row >= 3) {
@@ -273,7 +273,7 @@ static void strikes(Object *self)
     }
 }
 
-static void wait_after_strikes(Object *self)
+static void wait_after_strikes(Exe6Obj *self)
 {
     if (self->substate == 0) {
         self->timer = AFTER_STRIKES_FRAMES;
@@ -286,25 +286,25 @@ static void wait_after_strikes(Object *self)
 
 static bool saved_navi_is_available(void)
 {
-    const struct SavedNaviFields *saved =
-        (const struct SavedNaviFields *)SAVED_NAVI_ADDRESS;
+    const struct Exe6SavedNaviFields *saved =
+        (const struct Exe6SavedNaviFields *)SAVED_NAVI_ADDRESS;
     return saved->data != 0 && saved->id != UINT8_MAX;
 }
 
-static void disappear(Object *self)
+static void disappear(Exe6Obj *self)
 {
     if (self->substate == 0) {
-        self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+        self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
         self->timer = APPEAR_FRAMES;
         self->substate = 4;
     }
     if (timer_nonnegative_after_decrement(self)) {
-        bn6_self_sprite_set_blend_mode(self->timer);
+        exe6_obj_bld_set(self->timer);
         return;
     }
 
-    self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
-    bn6_self_sprite_property_2cce();
+    self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
+    exe6_obj_bld_reset();
     if (self->parent->hp != 0 && saved_navi_is_available()) {
         set_phase(self, RECYCLE_PHASE);
     } else {
@@ -312,10 +312,10 @@ static void disappear(Object *self)
     }
 }
 
-static void recycle_intro(Object *self)
+static void recycle_intro(Exe6Obj *self)
 {
     if (self->substate == 0) {
-        bn6_saved_navi_intro(self->parent, 1);
+        exe6_set_efc0c(self->parent, 1);
         self->timer = RECYCLE_WAIT_FRAMES;
         self->substate = 4;
     }
@@ -324,22 +324,22 @@ static void recycle_intro(Object *self)
     }
 }
 
-static void recycle_invoke(Object *self)
+static void recycle_invoke(Exe6Obj *self)
 {
-    struct DeathphoenixWork *work =
-        (struct DeathphoenixWork *)self->work;
+    struct Exe6DeathphoenixWork *work =
+        (struct Exe6DeathphoenixWork *)self->work;
     uint8_t *completion = &work->recycle_completion;
     if (self->substate == 0) {
-        const struct SavedNaviFields *saved =
-            (const struct SavedNaviFields *)SAVED_NAVI_ADDRESS;
+        const struct Exe6SavedNaviFields *saved =
+            (const struct Exe6SavedNaviFields *)SAVED_NAVI_ADDRESS;
         const uintptr_t *dispatch = *(const uintptr_t *const *)
             SAVED_NAVI_DISPATCH_REFERENCE;
-        Object *owner = self->parent;
-        bn6_saved_navi_dispatch(
+        Exe6Obj *owner = self->parent;
+        exe6_saved_navi_dispatch(
             dispatch[saved->id],
             owner,
-            owner->panel_x,
-            owner->panel_y,
+            owner->block_x,
+            owner->block_y,
             saved->parameter,
             saved->data + saved->offset,
             saved->properties,
@@ -352,7 +352,7 @@ static void recycle_invoke(Object *self)
     }
 }
 
-static void recycle_wait(Object *self)
+static void recycle_wait(Exe6Obj *self)
 {
     if (self->substate == 0) {
         self->timer = RECYCLE_WAIT_FRAMES;
@@ -363,7 +363,7 @@ static void recycle_wait(Object *self)
     }
 }
 
-static void recycle_update(Object *self)
+static void recycle_update(Exe6Obj *self)
 {
     if (self->phase_timer_low == 0) {
         recycle_intro(self);
@@ -376,7 +376,7 @@ static void recycle_update(Object *self)
     }
 }
 
-static void actor_update(Object *self)
+static void actor_update(Exe6Obj *self)
 {
     switch (self->phase) {
     case 0:
@@ -403,34 +403,34 @@ static void actor_update(Object *self)
     }
 }
 
-static void flame_spawn(Object *strike, uint32_t alternate)
+static void flame_spawn(Exe6Obj *strike, uint32_t alternate)
 {
-    Object *flame = bn6_spawn_type4(
-        BN6_OBJECT_ID(deathphoenix_flame_main),
-        bn6_object_spawn_with_variant((uint8_t)alternate)
+    Exe6Obj *flame = exe6_efc_open(
+        EXE6_OBJ_ID(deathphoenix_flame_main),
+        exe6_obj_spawn_with_variant((uint8_t)alternate)
     );
     if (flame == NULL) {
         return;
     }
-    flame->panel_x = strike->panel_x;
-    flame->panel_y = strike->panel_y;
+    flame->block_x = strike->block_x;
+    flame->block_y = strike->block_y;
     flame->owner_word = strike->owner_word;
-    flame->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
+    flame->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
     if (alternate != 0) {
         flame->owner_aux ^= 1u;
     }
 }
 
 static void spawn_contact(
-    Object *self,
-    uint32_t panel_x,
-    uint32_t panel_y,
+    Exe6Obj *self,
+    uint32_t block_x,
+    uint32_t block_y,
     uint16_t visual
 )
 {
-    Object *contact = bn6_spawn_panel_damage(
-        panel_x,
-        panel_y,
+    Exe6Obj *contact = exe6_set_shl03_ev(
+        block_x,
+        block_y,
         0,
         0x00100000,
         CONTACT_PROPERTIES,
@@ -442,22 +442,22 @@ static void spawn_contact(
     }
 }
 
-static void strike_attack(Object *self)
+static void strike_attack(Exe6Obj *self)
 {
     uint32_t frame = self->aux_timer++;
     if (frame == 0) {
         spawn_contact(
             self,
-            self->panel_x,
-            self->panel_y,
+            self->block_x,
+            self->block_y,
             FIRST_CONTACT_VISUAL
         );
     } else if (frame == 16) {
         int32_t direction = (self->owner ^ self->variant) == 0 ? 1 : -1;
         spawn_contact(
             self,
-            (uint32_t)((int32_t)self->panel_x + direction),
-            self->panel_y,
+            (uint32_t)((int32_t)self->block_x + direction),
+            self->block_y,
             SECOND_CONTACT_VISUAL
         );
     }
@@ -472,16 +472,16 @@ static void strike_attack(Object *self)
     }
     self->phase_timer_low = 0;
     if (++self->substate >= PULSES_PER_STRIKE) {
-        self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
+        self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
         self->state_word = DESTROY_STATE;
     }
 }
 
-static void strike_lead_in(Object *self)
+static void strike_lead_in(Exe6Obj *self)
 {
     if (self->animation == 0) {
-        if ((bn6_self_sprite_get_frame_flags()
-                & BN6_ANIMATION_FRAME_FLAG_END) == 0) {
+        if ((exe6_obj_seq_info_get()
+                & EXE6_ANIMATION_FRAME_FLAG_END) == 0) {
             return;
         }
         self->animation = 1;
@@ -491,10 +491,10 @@ static void strike_lead_in(Object *self)
     }
     self->aux_timer = 0;
     set_phase(self, STRIKE_ATTACK_PHASE);
-    bn6_play_sound(0x145);
+    exe6_sound_req(0x145);
 }
 
-static void strike_update(Object *self)
+static void strike_update(Exe6Obj *self)
 {
     if (self->phase == 0) {
         self->timer = STRIKE_LEAD_FRAMES;
@@ -506,23 +506,23 @@ static void strike_update(Object *self)
     }
 }
 
-static void strike_init(Object *self)
+static void strike_init(Exe6Obj *self)
 {
-    bn6_self_object_load_navi_sprite(
+    exe6_battle_obj_char_init(
         0x01000000u
-        | (BN6_SPRITE_GROUP(deathphoenix_strike_sprite) << 8)
-        | BN6_SPRITE_ID(deathphoenix_strike_sprite)
+        | (EXE6_SPRITE_GROUP(deathphoenix_strike_sprite) << 8)
+        | EXE6_SPRITE_ID(deathphoenix_strike_sprite)
     );
-    bn6_self_death_sprite_special();
-    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
-    bn6_self_object_set_coords();
+    exe6_obj_shadow_all_set();
+    self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
+    exe6_block_to_pos();
     self->z = 0;
-    bn6_play_sound(0x144);
+    exe6_sound_req(0x144);
     self->state_word = ACTIVE_STATE;
     strike_update(self);
 }
 
-static void flame_motion(Object *self)
+static void flame_motion(Exe6Obj *self)
 {
     if (self->phase_timer_low == 0) {
         self->phase_timer_low = 1;
@@ -530,7 +530,7 @@ static void flame_motion(Object *self)
         self->timer = FLAME_MOTION_FRAMES;
         self->animation_state_word = 0x0800;
         self->velocity_x =
-            (int32_t)bn6_object_front_direction_for(self) * 0x00028000;
+            (int32_t)exe6_calc_pl_em_dir_spd_for(self) * 0x00028000;
     }
     self->x += self->velocity_x;
 
@@ -552,7 +552,7 @@ static void flame_motion(Object *self)
     }
 }
 
-static void flame_update(Object *self)
+static void flame_update(Exe6Obj *self)
 {
     if (self->phase == 0) {
         if (self->phase_timer_low == 0) {
@@ -567,71 +567,71 @@ static void flame_update(Object *self)
     }
 }
 
-static void flame_init(Object *self)
+static void flame_init(Exe6Obj *self)
 {
-    bn6_self_object_set_coords();
+    exe6_block_to_pos();
     self->y -= 1 << 16;
-    bn6_self_sprite_load(
+    exe6_obj_char_init(
         0x80,
-        BN6_SPRITE_GROUP(deathphoenix_strike_sprite),
-        BN6_SPRITE_ID(deathphoenix_strike_sprite)
+        EXE6_SPRITE_GROUP(deathphoenix_strike_sprite),
+        EXE6_SPRITE_ID(deathphoenix_strike_sprite)
     );
     self->animation = 2;
-    bn6_self_sprite_set_animation(2);
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_no_shadow();
-    bn6_self_sprite_set_palette(0);
-    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+    exe6_obj_dma_seq_set(2);
+    exe6_obj_char_set();
+    exe6_obj_no_shadow();
+    exe6_obj_clt_set(0);
+    self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     self->state_word = ACTIVE_STATE;
 }
 
-BN6_OBJECT4(deathphoenix_flame_main)
+EXE6_EFC(deathphoenix_flame_main)
 {
     if (self->state == 0) {
         flame_init(self);
     } else if (self->state == ACTIVE_STATE) {
         flame_update(self);
     } else {
-        bn6_self_object_free();
+        exe6_obj_move_delete();
     }
-    bn6_self_object_update();
+    exe6_battle_obj_char_move();
 }
 
-BN6_OBJECT4(deathphoenix_strike_main)
+EXE6_EFC(deathphoenix_strike_main)
 {
     if (self->state == 0) {
         strike_init(self);
     } else if (self->state == ACTIVE_STATE) {
         strike_update(self);
     } else {
-        bn6_self_object_free();
+        exe6_obj_move_delete();
     }
-    bn6_self_object_update();
+    exe6_battle_obj_char_move();
 }
 
-BN6_OBJECT1(deathphoenix_actor_main)
+EXE6_EM(deathphoenix_actor_main)
 {
     if (self->state == 0) {
         actor_init(self);
     } else if (self->state == ACTIVE_STATE) {
         actor_update(self);
     } else {
-        bn6_self_object_free();
+        exe6_obj_move_delete();
         return;
     }
-    bn6_self_object_update_dimming();
+    exe6_battle_obj_char_move2();
 }
 
-BN6_SUMMON_ATTACK(0x134, deathphoenix_attack_main)
+EXE6_SUMMON_ATTACK(0x134, deathphoenix_attack_main)
 {
-    Object *actor = bn6_spawn_type1(
-        BN6_OBJECT_ID(deathphoenix_actor_main), spawn_parameters
+    Exe6Obj *actor = exe6_em_open(
+        EXE6_OBJ_ID(deathphoenix_actor_main), spawn_parameters
     );
     if (actor == NULL) {
         return;
     }
-    actor->panel_x = (uint8_t)panel_x;
-    actor->panel_y = (uint8_t)panel_y;
+    actor->block_x = (uint8_t)block_x;
+    actor->block_y = (uint8_t)block_y;
     actor->parameter = (uint8_t)parameter;
     actor->parent = owner;
     actor->owner_word = owner->owner_word;

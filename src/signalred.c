@@ -1,17 +1,17 @@
 #include "runtime.h"
 
-BN6_SPRITE(signalred_battle_sprite, "build/signalred-battle-sprite.bin");
-BN6_ASM_RESOURCE(
+EXE6_SPRITE(signalred_battle_sprite, "build/signalred-battle-sprite.bin");
+EXE6_ASM_RESOURCE(
     signalred_dust_sprite_table,
     ".short 0x0904,0x240C,0x230C,0x300C,0x0010\n"
     ".short 0x0810,0x1804,0x0A04,0x340C,0x350C\n"
     ".short 0x0D04,0x0010,0x410C,0x0504,0x410C\n"
-    ".byte __bn6_sprite_group_signalred_battle_sprite\n"
-    ".byte __bn6_sprite_id_signalred_battle_sprite\n"
+    ".byte __exe6_sprite_group_signalred_battle_sprite\n"
+    ".byte __exe6_sprite_id_signalred_battle_sprite\n"
 );
-BN6_SONG(
+EXE6_SONG(
     signalred_spawn_song,
-    BN6_PCM(
+    EXE6_PCM(
         signalred_spawn,
         0x40,
         0x08,
@@ -20,294 +20,294 @@ BN6_SONG(
         "build/signalred-spawn-sample.bin"
     )
 );
-BN6_POINTER_PATCH(0x08012010, signalred_dust_sprite_table);
-BN6_POINTER_PATCH(0x08012014, signalred_dust_sprite_table);
+EXE6_POINTER_PATCH(0x08012010, signalred_dust_sprite_table);
+EXE6_POINTER_PATCH(0x08012014, signalred_dust_sprite_table);
 #if FALZAR
-BN6_POINTER_PATCH(0x080E9990, signalred_dust_sprite_table);
+EXE6_POINTER_PATCH(0x080E9990, signalred_dust_sprite_table);
 #else
-BN6_POINTER_PATCH(0x080EACD0, signalred_dust_sprite_table);
+EXE6_POINTER_PATCH(0x080EACD0, signalred_dust_sprite_table);
 #endif
-BN6_INCBIN(signalred_icon, "build/signalred-icon.bin");
-BN6_INCBIN(signalred_image, "build/signalred-image.bin");
-BN6_INCBIN(signalred_palette, "build/signalred-palette.bin");
+EXE6_INCBIN(signalred_icon, "build/signalred-icon.bin");
+EXE6_INCBIN(signalred_image, "build/signalred-image.bin");
+EXE6_INCBIN(signalred_palette, "build/signalred-palette.bin");
 
 static const uint32_t GREEN_SFX = 0x00D1;
 static const uint16_t STARTUP_TICKS = 3;
 static const uint16_t RED_TICKS = 420;
 static const uint16_t GREEN_TICKS = 50;
-static const uint16_t OBJECT_HP = 100;
-static const Bn6CollisionType PASSIVE_COLLISION_TYPE =
-    BN6_COLLISION_TYPE_13;
-static const Bn6CollisionType TARGET_COLLISION_TYPE =
-    BN6_COLLISION_TYPE_14;
+static const uint16_t OBJ_HP = 100;
+static const Exe6HitType PASSIVE_HIT_TYPE =
+    EXE6_HIT_TYPE_13;
+static const Exe6HitType TARGET_HIT_TYPE =
+    EXE6_HIT_TYPE_14;
 static const uint32_t DUST_AMMO_KIND = 15;
 static const uint8_t STARTUP_PENDING_FLAG = 0x01;
-static const uint8_t COLLISION_DEFERRED_FLAG = 0x80;
+static const uint8_t HIT_DEFERRED_FLAG = 0x80;
 static const uint8_t INITIAL_REMOVAL_FLAGS =
-    STARTUP_PENDING_FLAG | COLLISION_DEFERRED_FLAG;
+    STARTUP_PENDING_FLAG | HIT_DEFERRED_FLAG;
 static const uint32_t DESTROY_EFFECT = 0x00;
 static const int32_t DESTROY_EFFECT_HEIGHT = 0x00100000;
 static const uint32_t DESTROY_SFX = 0x70;
 
-static uint32_t opponent_chip_enable_flag(const Object *object)
+static uint32_t opponent_chip_enable_flag(const Exe6Obj *obj)
 {
-    return object->owner == 0
-        ? BN6_BATTLE_CONTROL_FLAG_SIDE_1_CHIPS_ENABLED
-        : BN6_BATTLE_CONTROL_FLAG_SIDE_0_CHIPS_ENABLED;
+    return obj->owner == 0
+        ? EXE6_BATTLE_CONTROL_FLAG_SIDE_1_CHIPS_ENABLED
+        : EXE6_BATTLE_CONTROL_FLAG_SIDE_0_CHIPS_ENABLED;
 }
 
-static void enable_opponent_chips(Object *object)
+static void enable_opponent_chips(Exe6Obj *obj)
 {
-    bn6_battle_set_control_flags(opponent_chip_enable_flag(object));
+    exe6_battle_report_flag_on(opponent_chip_enable_flag(obj));
 }
 
-static void disable_opponent_chips(Object *object)
+static void disable_opponent_chips(Exe6Obj *obj)
 {
-    bn6_battle_clear_control_flags(opponent_chip_enable_flag(object));
+    exe6_battle_report_flag_off(opponent_chip_enable_flag(obj));
 }
 
-static void object_animate(Object *object)
+static void obj_animate(Exe6Obj *obj)
 {
-    (void)object;
-    bn6_self_collision_present(0, PASSIVE_COLLISION_TYPE);
-    bn6_self_object_update();
+    (void)obj;
+    exe6_battle_hit_set(0, PASSIVE_HIT_TYPE);
+    exe6_battle_obj_char_move();
 }
 
-static void object_begin_destroy(Object *object)
+static void obj_begin_destroy(Exe6Obj *obj)
 {
-    object->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
-    object->state_word = 8;
+    obj->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
+    obj->state_word = 8;
 }
 
-static void object_begin_damage_destroy(Object *object)
+static void obj_begin_damage_destroy(Exe6Obj *obj)
 {
-    (void)bn6_spawn_battle_effect(
+    (void)exe6_set_efc00(
         0,
-        object->x,
-        object->y,
-        object->z + DESTROY_EFFECT_HEIGHT,
+        obj->x,
+        obj->y,
+        obj->z + DESTROY_EFFECT_HEIGHT,
         DESTROY_EFFECT
     );
-    bn6_play_sound(DESTROY_SFX);
-    object_begin_destroy(object);
+    exe6_sound_req(DESTROY_SFX);
+    obj_begin_destroy(obj);
 }
 
-static void object_destroy(Object *object)
+static void obj_destroy(Exe6Obj *obj)
 {
-    enable_opponent_chips(object);
-    bn6_self_object_unregister_deployable();
-    Collision *collision = object->collision;
-    if (collision != NULL) {
-        bn6_collision_remove(collision);
-        bn6_collision_clear_region(collision);
-        collision = object->collision;
-        bn6_collision_free(collision);
+    enable_opponent_chips(obj);
+    exe6_cube_delete();
+    Exe6Hit *hit = obj->hit;
+    if (hit != NULL) {
+        exe6_battle_hit_check(hit);
+        exe6_battle_hit_off(hit);
+        hit = obj->hit;
+        exe6_battle_hit_close(hit);
     }
-    bn6_self_object_free();
+    exe6_obj_move_delete();
 }
 
-static void play_spawn_sound(Object *object)
+static void play_spawn_sound(Exe6Obj *obj)
 {
-    bn6_play_sound(BN6_SONG_ID(signalred_spawn_song));
-    object->aux_timer = RED_TICKS;
-    disable_opponent_chips(object);
+    exe6_sound_req(EXE6_SONG_ID(signalred_spawn_song));
+    obj->aux_timer = RED_TICKS;
+    disable_opponent_chips(obj);
 }
 
-static void play_green_sound(Object *object)
+static void play_green_sound(Exe6Obj *obj)
 {
-    (void)object;
-    bn6_play_sound(GREEN_SFX);
+    (void)obj;
+    exe6_sound_req(GREEN_SFX);
 }
 
-static void object_turn_green(Object *object)
+static void obj_turn_green(Exe6Obj *obj)
 {
-    object->animation_state = 4;
-    object->animation = 1;
-    bn6_self_sprite_set_animation(1);
-    bn6_self_sprite_load_animation_data();
-    object->aux_timer = GREEN_TICKS;
-    enable_opponent_chips(object);
-    play_green_sound(object);
+    obj->animation_state = 4;
+    obj->animation = 1;
+    exe6_obj_dma_seq_set(1);
+    exe6_obj_char_set();
+    obj->aux_timer = GREEN_TICKS;
+    enable_opponent_chips(obj);
+    play_green_sound(obj);
 }
 
-static void object_cycle_update(Object *object)
+static void obj_cycle_update(Exe6Obj *obj)
 {
-    uint16_t timer = (uint16_t)(object->aux_timer - 1u);
-    object->aux_timer = timer;
+    uint16_t timer = (uint16_t)(obj->aux_timer - 1u);
+    obj->aux_timer = timer;
     if ((int16_t)timer >= 0) {
-        object_animate(object);
+        obj_animate(obj);
         return;
     }
-    if (object->animation_state == 0) {
-        object_turn_green(object);
-        object_animate(object);
+    if (obj->animation_state == 0) {
+        obj_turn_green(obj);
+        obj_animate(obj);
         return;
     }
 
-    object->animation_state = 0;
-    object->animation = 0;
-    bn6_self_sprite_set_animation(0);
-    bn6_self_sprite_load_animation_data();
-    object->aux_timer = RED_TICKS;
-    disable_opponent_chips(object);
-    object_animate(object);
+    obj->animation_state = 0;
+    obj->animation = 0;
+    exe6_obj_dma_seq_set(0);
+    exe6_obj_char_set();
+    obj->aux_timer = RED_TICKS;
+    disable_opponent_chips(obj);
+    obj_animate(obj);
 }
 
-static void object_normal_update(Object *object)
+static void obj_normal_update(Exe6Obj *obj)
 {
-    if ((object->removal_state & STARTUP_PENDING_FLAG) == 0) {
-        object_cycle_update(object);
+    if ((obj->removal_state & STARTUP_PENDING_FLAG) == 0) {
+        obj_cycle_update(obj);
         return;
     }
 
-    uint16_t timer = (uint16_t)(object->aux_timer - 1u);
-    object->aux_timer = timer;
+    uint16_t timer = (uint16_t)(obj->aux_timer - 1u);
+    obj->aux_timer = timer;
     if (timer != 0) {
-        object_animate(object);
+        obj_animate(obj);
         return;
     }
-    object->removal_state &= (uint8_t)~STARTUP_PENDING_FLAG;
-    play_spawn_sound(object);
-    object_animate(object);
+    obj->removal_state &= (uint8_t)~STARTUP_PENDING_FLAG;
+    play_spawn_sound(obj);
+    obj_animate(obj);
 }
 
-static void object_store_dust_ammo(Object *object)
+static void obj_store_dust_ammo(Exe6Obj *obj)
 {
-    bn6_self_object_store_dust_ammo(DUST_AMMO_KIND);
-    object_destroy(object);
+    exe6_cube_set_dust_suikomi_efc(DUST_AMMO_KIND);
+    obj_destroy(obj);
 }
 
-static void object_update(Object *object)
+static void obj_update(Exe6Obj *obj)
 {
-    uint8_t removal = object->removal_state;
-    if ((removal & COLLISION_DEFERRED_FLAG) != 0) {
-        if (bn6_battle_is_dimmed() != 0) {
+    uint8_t removal = obj->removal_state;
+    if ((removal & HIT_DEFERRED_FLAG) != 0) {
+        if (exe6_battle_event_busy_check() != 0) {
             if ((removal & STARTUP_PENDING_FLAG) != 0) {
-                object_normal_update(object);
+                obj_normal_update(obj);
             } else {
-                object_animate(object);
+                obj_animate(obj);
             }
             return;
         }
-        Collision *collision = object->collision;
-        bn6_collision_setup(
-            collision,
-            PASSIVE_COLLISION_TYPE,
-            TARGET_COLLISION_TYPE,
+        Exe6Hit *hit = obj->hit;
+        exe6_battle_hit_data_set(
+            hit,
+            PASSIVE_HIT_TYPE,
+            TARGET_HIT_TYPE,
             3
         );
-        bn6_self_collision_present(0, PASSIVE_COLLISION_TYPE);
-        object->removal_state = (uint8_t)(
-            removal & (uint8_t)~COLLISION_DEFERRED_FLAG
+        exe6_battle_hit_set(0, PASSIVE_HIT_TYPE);
+        obj->removal_state = (uint8_t)(
+            removal & (uint8_t)~HIT_DEFERRED_FLAG
         );
     }
 
-    bn6_self_field_collision_update();
-    bn6_self_deployable_lifetime_update();
-    Collision *collision = object->collision;
-    uint32_t damage = collision->final_damage;
+    exe6_cube_hit_check();
+    exe6_cube_life_span_check();
+    Exe6Hit *hit = obj->hit;
+    uint32_t damage = hit->final_damage;
     if (damage != 0) {
-        bn6_self_sprite_flash_white();
-        bn6_self_object_apply_damage(damage);
+        exe6_obj_flash_set();
+        exe6_enemy_life_sub(damage);
     }
-    if (bn6_battle_is_over() != 0) {
-        object_begin_destroy(object);
+    if (exe6_battle_end_check() != 0) {
+        obj_begin_destroy(obj);
         return;
     }
-    if (object->hp == 0) {
-        object_begin_damage_destroy(object);
+    if (obj->hp == 0) {
+        obj_begin_damage_destroy(obj);
         return;
     }
-    if (bn6_battle_is_dimmed() != 0) {
-        object_animate(object);
+    if (exe6_battle_event_busy_check() != 0) {
+        obj_animate(obj);
         return;
     }
 
-    uint32_t secondary_flags = bn6_self_collision_get_secondary_flags();
-    if ((secondary_flags & (BN6_COLLISION_SECONDARY_FLAG_DUST_SUCTION_SIDE_0 | BN6_COLLISION_SECONDARY_FLAG_DUST_SUCTION_SIDE_1)) != 0) {
-        object_store_dust_ammo(object);
+    uint32_t secondary_flags = exe6_battle_hit_req_flag_get();
+    if ((secondary_flags & (EXE6_HIT_SECONDARY_FLAG_DUST_SUCTION_SIDE_0 | EXE6_HIT_SECONDARY_FLAG_DUST_SUCTION_SIDE_1)) != 0) {
+        obj_store_dust_ammo(obj);
         return;
     }
-    if ((secondary_flags & BN6_COLLISION_SECONDARY_FLAG_TIMED_BLINK_REMOVAL) != 0) {
-        if (bn6_self_object_update_timed_removal() == 1) {
-            object_begin_destroy(object);
+    if ((secondary_flags & EXE6_HIT_SECONDARY_FLAG_TIMED_BLINK_REMOVAL) != 0) {
+        if (exe6_cube_erase2() == 1) {
+            obj_begin_destroy(obj);
         }
         return;
     }
-    object_normal_update(object);
+    obj_normal_update(obj);
 }
 
-static void object_init(Object *object)
+static void obj_init(Exe6Obj *obj)
 {
-    if (bn6_self_panel_is_valid_object() == 0) {
-        object_destroy(object);
+    if (exe6_block_in_screen_check() == 0) {
+        obj_destroy(obj);
         return;
     }
 
-    bn6_self_sprite_load(
+    exe6_obj_char_init(
         0x80,
-        BN6_SPRITE_GROUP(signalred_battle_sprite),
-        BN6_SPRITE_ID(signalred_battle_sprite)
+        EXE6_SPRITE_GROUP(signalred_battle_sprite),
+        EXE6_SPRITE_ID(signalred_battle_sprite)
     );
-    bn6_self_sprite_enable_shadow();
-    object->animation_word = 0;
-    bn6_self_sprite_set_animation(0);
-    bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_update();
-    bn6_self_sprite_set_flip(object->owner);
-    bn6_self_object_set_coords();
-    object->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
+    exe6_obj_shadow_set();
+    obj->animation_word = 0;
+    exe6_obj_dma_seq_set(0);
+    exe6_obj_char_set();
+    exe6_obj_char_move();
+    exe6_obj_flip_set(obj->owner);
+    exe6_block_to_pos();
+    obj->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
 
-    object->hp = OBJECT_HP;
-    object->max_hp = OBJECT_HP;
-    object->aux_timer = STARTUP_TICKS;
-    object->timer = 0x0960;
-    if (bn6_self_collision_create() == NULL) {
-        object_destroy(object);
+    obj->hp = OBJ_HP;
+    obj->max_hp = OBJ_HP;
+    obj->aux_timer = STARTUP_TICKS;
+    obj->timer = 0x0960;
+    if (exe6_battle_hit_open() == NULL) {
+        obj_destroy(obj);
         return;
     }
 
-    object->animation_state = 0;
-    object->substate = 0;
-    object->removal_state = INITIAL_REMOVAL_FLAGS;
-    object->state_word = 4;
-    bn6_self_object_update();
+    obj->animation_state = 0;
+    obj->substate = 0;
+    obj->removal_state = INITIAL_REMOVAL_FLAGS;
+    obj->state_word = 4;
+    exe6_battle_obj_char_move();
 }
 
-static Object *spawn_persistent(Object *controller)
+static Exe6Obj *spawn_persistent(Exe6Obj *controller)
 {
-    Object *owner = controller->parent;
-    uint32_t panel_x = owner->panel_x;
-    uint32_t panel_y = owner->panel_y;
-    panel_x += bn6_object_front_direction_for(owner);
-    if (bn6_panel_is_valid_xy(panel_x, panel_y) == 0) {
+    Exe6Obj *owner = controller->parent;
+    uint32_t block_x = owner->block_x;
+    uint32_t block_y = owner->block_y;
+    block_x += exe6_calc_pl_em_dir_spd_for(owner);
+    if (exe6_block_in_screen_check_sub(block_x, block_y) == 0) {
         return NULL;
     }
 
-    uint64_t coordinates = bn6_panel_to_coords(panel_x, panel_y);
-    Object *object = bn6_spawn_type3(
-        BN6_OBJECT_ID(signalred_object_main),
+    uint64_t coordinates = exe6_get_block_pos(block_x, block_y);
+    Exe6Obj *obj = exe6_shl_open(
+        EXE6_OBJ_ID(signalred_obj_main),
         (int32_t)(uint32_t)coordinates,
         (int32_t)(uint32_t)(coordinates >> 32),
         0,
-        bn6_object_spawn_empty()
+        exe6_obj_spawn_empty()
     );
-    if (object == NULL) {
+    if (obj == NULL) {
         return NULL;
     }
 
-    object->panel_x = (uint8_t)panel_x;
-    object->panel_y = (uint8_t)panel_y;
+    obj->block_x = (uint8_t)block_x;
+    obj->block_y = (uint8_t)block_y;
     uint8_t owner_side = owner->owner;
-    object->owner = owner_side;
-    object->parent = owner;
-    object->attack = controller->attack;
-    object->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
-    bn6_object_register_deployable(object, owner_side, 1);
-    return object;
+    obj->owner = owner_side;
+    obj->parent = owner;
+    obj->attack = controller->attack;
+    obj->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
+    exe6_cube_entry(obj, owner_side, 1);
+    return obj;
 }
 
-static void launch_effect(Object *controller)
+static void launch_effect(Exe6Obj *controller)
 {
     if (controller->substate == 0) {
         (void)spawn_persistent(controller);
@@ -323,64 +323,64 @@ static void launch_effect(Object *controller)
     }
 }
 
-static void update(Object *controller)
+static void update(Exe6Obj *controller)
 {
     switch (controller->phase) {
     case 0:
-        bn6_self_type4_dimming_intro();
+        exe6_event_chip_common_fade();
         break;
     case 4:
-        bn6_self_type4_dimming_freeze();
+        exe6_event_chip_common_telop();
         break;
     case 8:
         launch_effect(controller);
         break;
     default:
-        bn6_self_type4_dimming_outro();
+        exe6_event_chip_common_end();
         break;
     }
 }
 
-BN6_OBJECT4(signalred_controller_main)
+EXE6_EFC(signalred_controller_main)
 {
     switch (self->state) {
     case 0:
-        bn6_self_type4_dimming_init();
+        exe6_event_chip_common_init();
         break;
     case 4:
         update(self);
         break;
     default:
-        bn6_self_type4_dimming_free();
+        exe6_event_chip_common_exit();
         break;
     }
 }
 
-BN6_OBJECT3(signalred_object_main)
+EXE6_SHL(signalred_obj_main)
 {
     switch (self->state) {
     case 0:
-        object_init(self);
+        obj_init(self);
         break;
     case 4:
-        object_update(self);
+        obj_update(self);
         break;
     default:
-        object_destroy(self);
+        obj_destroy(self);
         break;
     }
 }
 
-BN6_PERSISTENT_ATTACK(0x0C1, signalred_attack_main)
+EXE6_PERSISTENT_ATTACK(0x0C1, signalred_attack_main)
 {
-    Object *controller = bn6_spawn_type4(
-        BN6_OBJECT_ID(signalred_controller_main), spawn_parameters
+    Exe6Obj *controller = exe6_efc_open(
+        EXE6_OBJ_ID(signalred_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;
     }
-    controller->panel_x = (uint8_t)panel_x;
-    controller->panel_y = (uint8_t)panel_y;
+    controller->block_x = (uint8_t)block_x;
+    controller->block_y = (uint8_t)block_y;
     controller->parameter = (uint8_t)parameter;
     controller->parent = owner;
     controller->owner_word = owner->owner_word;
