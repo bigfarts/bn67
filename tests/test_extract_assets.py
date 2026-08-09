@@ -31,6 +31,20 @@ class ExtractAssetsTests(unittest.TestCase):
         for asset in ephemeral_tables.values():
             self.assertEqual(asset.length, 0x17 * 4)
 
+    def test_rollarrow_variant_precedes_asset_kind(self) -> None:
+        rollarrow_assets = {
+            asset.output for asset in ASSETS if asset.output.startswith("rollarrow")
+        }
+        for variant in range(1, 4):
+            self.assertIn(f"rollarrow{variant}-icon.bin", rollarrow_assets)
+            self.assertIn(f"rollarrow{variant}-pal.bin", rollarrow_assets)
+        self.assertFalse(
+            any(
+                output.startswith(("rollarrow-icon-", "rollarrow-pal-"))
+                for output in rollarrow_assets
+            )
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

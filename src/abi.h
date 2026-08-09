@@ -350,8 +350,8 @@ typedef struct __attribute__((aligned(4))) Bn6PanelDamageProperties {
     }
 
 /*
- * Family 0x1C enters with z in r3, object spawn parameters in r4, owner in r5, and
- * resolved attack in r6.  Preserve z before putting owner in the fourth C
+ * Family 0x1C enters with z in r3, object spawn parameters in r4, owner in r5,
+ * and resolved attack in r6.  Preserve z before putting owner in the fourth C
  * argument, then arrange attack/z/spawn_parameters as stacked arguments 5-7.
  * Saving r7 alongside r4/lr keeps the C call's stack 8-byte aligned.
  */
@@ -521,6 +521,13 @@ struct RuntimeFields {
 _Static_assert(
     sizeof(Bn6ObjectSpawnParameters) == sizeof(uint32_t),
     "object spawn parameters must occupy one native register"
+);
+_Static_assert(
+    offsetof(Bn6ObjectSpawnParameters, variant) == 0
+        && offsetof(Bn6ObjectSpawnParameters, subvariant) == 1
+        && offsetof(Bn6ObjectSpawnParameters, animation_state) == 2
+        && offsetof(Bn6ObjectSpawnParameters, removal_state) == 3,
+    "object spawn parameter byte layout"
 );
 _Static_assert(
     offsetof(struct ObjectFields, spawn_parameters) == 0x04,

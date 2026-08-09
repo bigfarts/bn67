@@ -6,13 +6,13 @@ BN6_USE_SONG(common_navi_summon_song);
 BN6_SPRITE(rollarrow_actor_sprite, "build/rollarrow-actor-sprite.bin");
 BN6_SPRITE(rollarrow_projectile_sprite, "build/rollarrow-projectile-sprite.bin");
 
-BN6_INCBIN(rollarrow_icon_1, "build/rollarrow-icon-1.bin");
-BN6_INCBIN(rollarrow_icon_2, "build/rollarrow-icon-2.bin");
-BN6_INCBIN(rollarrow_icon_3, "build/rollarrow-icon-3.bin");
+BN6_INCBIN(rollarrow1_icon, "build/rollarrow1-icon.bin");
+BN6_INCBIN(rollarrow2_icon, "build/rollarrow2-icon.bin");
+BN6_INCBIN(rollarrow3_icon, "build/rollarrow3-icon.bin");
 BN6_INCBIN(rollarrow_image, "build/rollarrow-image.bin");
-BN6_INCBIN(rollarrow_palette_1, "build/rollarrow-pal-1.bin");
-BN6_INCBIN(rollarrow_palette_2, "build/rollarrow-pal-2.bin");
-BN6_INCBIN(rollarrow_palette_3, "build/rollarrow-pal-3.bin");
+BN6_INCBIN(rollarrow1_palette, "build/rollarrow1-pal.bin");
+BN6_INCBIN(rollarrow2_palette, "build/rollarrow2-pal.bin");
+BN6_INCBIN(rollarrow3_palette, "build/rollarrow3-pal.bin");
 BN6_SONG(
     rollarrow_fire_song,
     BN6_PCM(

@@ -319,6 +319,21 @@ class PackageCompilerTests(unittest.TestCase):
             f".db 0x{bugcharge_attack.subfamily:02X} // behavior.subfamily",
             assembly,
         )
+        searchman_ex = next(
+            chip
+            for package in gregar_packages
+            if package.name == "searchman"
+            for chip in package.chips
+            if chip.chip_id == 0x108
+        )
+        self.assertEqual(
+            dict(searchman_ex.common)["behavior.object_spawn"],
+            (3, 0, 0, 0),
+        )
+        self.assertIn(
+            ".db 0x03,0x00,0x00,0x00 // behavior.object_spawn",
+            assembly,
+        )
         self.assertIn(".dw bugcharge_icon // artwork.icon", assembly)
         self.assertNotIn(".dw 0x0872C594 // artwork.icon", assembly)
         for path in ROOT.glob("src/*.c"):
