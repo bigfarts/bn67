@@ -19,10 +19,30 @@ BN6_INCBIN(bugchain_palette, "build/bugchain-palette.bin");
 static const uint16_t EFFECT_FRAMES = 60;
 static const uint16_t VISUAL_FRAMES = 50;
 static const uint16_t SOUND_FRAME = 42;
-static const size_t HALFWORD_PROPERTY_OFFSET = 0x54;
+
+enum BugPropertyOffset {
+    MOVEMENT_BUG_PROPERTY_OFFSET = 0x31,
+    PANEL_BUG_PROPERTY_OFFSET = 0x13,
+    BUSTER_BUG_PROPERTY_OFFSET = 0x14,
+    DAMAGE_HP_BUG_PROPERTY_OFFSET = 0x16,
+    CUSTOM_DAMAGE_BUG_PROPERTY_OFFSET = 0x54,
+    EMOTION_BUG_PROPERTY_OFFSET = 0x24,
+    CUSTOM_HP_BUG_PROPERTY_OFFSET = 0x19,
+    BATTLE_HP_BUG_PROPERTY_OFFSET = 0x18,
+    COLOR_BUG_PROPERTY_OFFSET = 0x1A,
+    CUSTOM_BUG_PROPERTY_OFFSET = 0x63,
+};
 
 static const uint8_t BYTE_PROPERTIES[] = {
-    0x31, 0x13, 0x14, 0x16, 0x24, 0x19, 0x18, 0x1A, 0x63,
+    MOVEMENT_BUG_PROPERTY_OFFSET,
+    PANEL_BUG_PROPERTY_OFFSET,
+    BUSTER_BUG_PROPERTY_OFFSET,
+    DAMAGE_HP_BUG_PROPERTY_OFFSET,
+    EMOTION_BUG_PROPERTY_OFFSET,
+    CUSTOM_HP_BUG_PROPERTY_OFFSET,
+    BATTLE_HP_BUG_PROPERTY_OFFSET,
+    COLOR_BUG_PROPERTY_OFFSET,
+    CUSTOM_BUG_PROPERTY_OFFSET,
 };
 
 static void transfer_bugs(Object *controller)
@@ -41,9 +61,14 @@ static void transfer_bugs(Object *controller)
         }
     }
 
-    uint16_t source_value = *(uint16_t *)(source + HALFWORD_PROPERTY_OFFSET);
+    /*
+     * Custom Damage stores an HP-loss amount; the other bugs store byte
+     * severities.
+     */
+    uint16_t source_value =
+        *(uint16_t *)(source + CUSTOM_DAMAGE_BUG_PROPERTY_OFFSET);
     uint16_t *target_value =
-        (uint16_t *)(target + HALFWORD_PROPERTY_OFFSET);
+        (uint16_t *)(target + CUSTOM_DAMAGE_BUG_PROPERTY_OFFSET);
     if (source_value != 0 && source_value > *target_value) {
         *target_value = source_value;
     }
