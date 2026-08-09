@@ -13,15 +13,12 @@ ARM_NM ?= arm-none-eabi-nm
 FLIPS ?= flips
 TANGO_PATCH ?= tango-patch
 
+BN5_COLONEL_ROM ?=
 BN5_PROTOMAN_ROM ?=
 BN6_GREGAR_ROM ?=
 BN6_FALZAR_ROM ?=
 BN4_BLUE_MOON_ROM ?=
 BN3_BLUE_ROM ?=
-
-ifeq ($(strip $(BN5_COLONEL_ROM)),)
-BN5_COLONEL_ROM := $(dir $(BN5_PROTOMAN_ROM))exe5k_rom_k_e.srl
-endif
 
 PACKAGE_DEFS := $(wildcard $(PATCH_DIR)/src/*.defs.toml)
 RUNTIME_SOURCES := $(PATCH_DIR)/src/abi.c $(PATCH_DIR)/src/runtime.c
@@ -30,35 +27,19 @@ ASM_SOURCES := $(wildcard $(PATCH_DIR)/src/*.asm)
 C_SOURCES := $(wildcard $(PATCH_DIR)/src/*.c)
 C_HEADERS := $(wildcard $(PATCH_DIR)/src/*.h)
 C_LINKER_SCRIPT := $(PATCH_DIR)/src/link.ld
-GREGAR_REGISTRY_METADATA := $(BUILD_DIR)/registry-metadata-gregar.generated.json
-FALZAR_REGISTRY_METADATA := $(BUILD_DIR)/registry-metadata-falzar.generated.json
-GREGAR_REGISTRY_ASSEMBLY := $(BUILD_DIR)/registry-gregar.generated.asm
-FALZAR_REGISTRY_ASSEMBLY := $(BUILD_DIR)/registry-falzar.generated.asm
-GREGAR_REGISTRY_LINKER_VALUES := $(BUILD_DIR)/registry-values-gregar.generated.ld
-FALZAR_REGISTRY_LINKER_VALUES := $(BUILD_DIR)/registry-values-falzar.generated.ld
-GREGAR_TEXT_REPLACEMENTS := $(BUILD_DIR)/text-replacements-gregar.generated.json
-FALZAR_TEXT_REPLACEMENTS := $(BUILD_DIR)/text-replacements-falzar.generated.json
-GREGAR_REGISTRY_STAMP := $(BUILD_DIR)/.registry-gregar.stamp
-FALZAR_REGISTRY_STAMP := $(BUILD_DIR)/.registry-falzar.stamp
-GREGAR_C_STAMP := $(BUILD_DIR)/.c-gregar.stamp
-FALZAR_C_STAMP := $(BUILD_DIR)/.c-falzar.stamp
 ASSET_STAMP := $(BUILD_DIR)/.assets.stamp
-GREGAR_TITLE_STAMP := $(BUILD_DIR)/.title-gregar.stamp
-FALZAR_TITLE_STAMP := $(BUILD_DIR)/.title-falzar.stamp
-GREGAR_TEXT_STAMP := $(BUILD_DIR)/.text-gregar.stamp
-FALZAR_TEXT_STAMP := $(BUILD_DIR)/.text-falzar.stamp
-GREGAR_BUILD_STAMP := $(BUILD_DIR)/.gregar.stamp
-FALZAR_BUILD_STAMP := $(BUILD_DIR)/.falzar.stamp
+
+CFLAGS := -std=c11 -Os -mthumb -march=armv4t -mthumb-interwork \
+	-ffreestanding -fno-builtin -fno-common -fno-pic -fno-pie \
+	-fomit-frame-pointer -ffixed-r5 -ffunction-sections -fdata-sections \
+	-fno-unwind-tables -fno-asynchronous-unwind-tables \
+	-Wall -Wextra -Werror -I"$(PATCH_DIR)/src" -I"$(BUILD_DIR)"
+CLDFLAGS := -nostdlib -nostartfiles -Wl,-T,"$(C_LINKER_SCRIPT)" \
+	-Wl,--build-id=none
 
 .DEFAULT_GOAL := all
 
 .PHONY: all build patches compile-commands check-roms clean help
-
-all: patches
-
-build: $(GREGAR_BUILD_STAMP) $(FALZAR_BUILD_STAMP)
-
-compile-commands: $(PATCH_DIR)/compile_commands.json
 
 # ROM validation is order-only so it runs on every invocation without forcing
 # every generated target to be rebuilt.
@@ -97,70 +78,10 @@ check-roms:
 $(BUILD_DIR) $(DIST_DIR):
 	@mkdir -p "$@"
 
-$(GREGAR_REGISTRY_METADATA): $(PATCH_DIR)/compile_c_metadata.py $(PACKAGE_SOURCES) $(C_HEADERS) | $(BUILD_DIR)
-	$(PYTHON) "$(PATCH_DIR)/compile_c_metadata.py" \
-		--cc "$(ARM_GCC)" --nm "$(ARM_NM)" --define FALZAR=0 --output "$@"
-
-$(FALZAR_REGISTRY_METADATA): $(PATCH_DIR)/compile_c_metadata.py $(PACKAGE_SOURCES) $(C_HEADERS) | $(BUILD_DIR)
-	$(PYTHON) "$(PATCH_DIR)/compile_c_metadata.py" \
-		--cc "$(ARM_GCC)" --nm "$(ARM_NM)" --define FALZAR=1 --output "$@"
-
-$(GREGAR_REGISTRY_STAMP): $(PATCH_DIR)/compile_registry.py $(PATCH_DIR)/config.gregar.toml $(PACKAGE_DEFS) $(GREGAR_REGISTRY_METADATA) | $(BUILD_DIR)
-	$(PYTHON) "$(PATCH_DIR)/compile_registry.py" \
-		"$(PATCH_DIR)/config.gregar.toml" \
-		--metadata "$(GREGAR_REGISTRY_METADATA)" \
-		--output "$(GREGAR_REGISTRY_ASSEMBLY)" \
-		--linker-output "$(GREGAR_REGISTRY_LINKER_VALUES)" \
-		--text-output "$(GREGAR_TEXT_REPLACEMENTS)"
-	@touch "$@"
-
-$(FALZAR_REGISTRY_STAMP): $(PATCH_DIR)/compile_registry.py $(PATCH_DIR)/config.falzar.toml $(PACKAGE_DEFS) $(FALZAR_REGISTRY_METADATA) | $(BUILD_DIR)
-	$(PYTHON) "$(PATCH_DIR)/compile_registry.py" \
-		"$(PATCH_DIR)/config.falzar.toml" \
-		--metadata "$(FALZAR_REGISTRY_METADATA)" \
-		--output "$(FALZAR_REGISTRY_ASSEMBLY)" \
-		--linker-output "$(FALZAR_REGISTRY_LINKER_VALUES)" \
-		--text-output "$(FALZAR_TEXT_REPLACEMENTS)"
-	@touch "$@"
-
-CFLAGS := -std=c11 -Os -mthumb -march=armv4t -mthumb-interwork \
-	-ffreestanding -fno-builtin -fno-common -fno-pic -fno-pie \
-	-fomit-frame-pointer -ffixed-r5 -ffunction-sections -fdata-sections \
-	-fno-unwind-tables -fno-asynchronous-unwind-tables \
-	-Wall -Wextra -Werror -I"$(PATCH_DIR)/src" -I"$(BUILD_DIR)"
-CLDFLAGS := -nostdlib -nostartfiles -Wl,-T,"$(C_LINKER_SCRIPT)" \
-	-Wl,--build-id=none
-
 $(PATCH_DIR)/compile_commands.json: $(PATCH_DIR)/generate_compile_commands.py Makefile $(C_SOURCES) $(C_HEADERS)
 	$(PYTHON) "$(PATCH_DIR)/generate_compile_commands.py" \
 		--cc "$(ARM_GCC)" --cflags='$(CFLAGS)' \
 		--directory "$(PATCH_DIR)" --output "$@" $(C_SOURCES)
-
-$(GREGAR_C_STAMP): $(GREGAR_REGISTRY_STAMP) $(ASSET_STAMP) $(C_SOURCES) $(C_HEADERS) $(C_LINKER_SCRIPT) $(PATCH_DIR)/export_c_symbols.py | $(BUILD_DIR)
-	$(ARM_GCC) $(CFLAGS) -DFALZAR=0 $(C_SOURCES) $(CLDFLAGS) -Wl,-T,"$(GREGAR_REGISTRY_LINKER_VALUES)" -lgcc -o "$(BUILD_DIR)/gameplay-gregar.elf"
-	$(ARM_OBJCOPY) -O binary "$(BUILD_DIR)/gameplay-gregar.elf" "$(BUILD_DIR)/gameplay-gregar.bin"
-	$(PYTHON) "$(PATCH_DIR)/export_c_symbols.py" --nm "$(ARM_NM)" \
-		"$(BUILD_DIR)/gameplay-gregar.elf" "$(BUILD_DIR)/c-symbols-gregar.generated.asm"
-	@touch "$@"
-
-$(FALZAR_C_STAMP): $(FALZAR_REGISTRY_STAMP) $(ASSET_STAMP) $(C_SOURCES) $(C_HEADERS) $(C_LINKER_SCRIPT) $(PATCH_DIR)/export_c_symbols.py | $(BUILD_DIR)
-	$(ARM_GCC) $(CFLAGS) -DFALZAR=1 $(C_SOURCES) $(CLDFLAGS) -Wl,-T,"$(FALZAR_REGISTRY_LINKER_VALUES)" -lgcc -o "$(BUILD_DIR)/gameplay-falzar.elf"
-	$(ARM_OBJCOPY) -O binary "$(BUILD_DIR)/gameplay-falzar.elf" "$(BUILD_DIR)/gameplay-falzar.bin"
-	$(PYTHON) "$(PATCH_DIR)/export_c_symbols.py" --nm "$(ARM_NM)" \
-		"$(BUILD_DIR)/gameplay-falzar.elf" "$(BUILD_DIR)/c-symbols-falzar.generated.asm"
-	@touch "$@"
-
-$(GREGAR_TITLE_STAMP): $(PATCH_DIR)/build_title_screen.py $(PATCH_DIR)/assets/title-screen-overlay.png | check-roms $(BUILD_DIR)
-	$(PYTHON) "$(PATCH_DIR)/build_title_screen.py" \
-		gregar "$(BN6_GREGAR_ROM)" "$(BUILD_DIR)/title-67-gregar.bin" \
-		"$(BUILD_DIR)/title-map-gregar.bin"
-	@touch "$@"
-
-$(FALZAR_TITLE_STAMP): $(PATCH_DIR)/build_title_screen.py $(PATCH_DIR)/assets/title-screen-overlay.png | check-roms $(BUILD_DIR)
-	$(PYTHON) "$(PATCH_DIR)/build_title_screen.py" \
-		falzar "$(BN6_FALZAR_ROM)" "$(BUILD_DIR)/title-67-falzar.bin" \
-		"$(BUILD_DIR)/title-map-falzar.bin"
-	@touch "$@"
 
 $(ASSET_STAMP): $(PATCH_DIR)/extract_assets.py | check-roms $(BUILD_DIR)
 	$(PYTHON) "$(PATCH_DIR)/extract_assets.py" \
@@ -173,38 +94,82 @@ $(ASSET_STAMP): $(PATCH_DIR)/extract_assets.py | check-roms $(BUILD_DIR)
 		--bn3-blue "$(BN3_BLUE_ROM)"
 	@touch "$@"
 
-$(GREGAR_TEXT_STAMP): $(PATCH_DIR)/build_text_archives.py $(GREGAR_REGISTRY_STAMP) | $(BUILD_DIR)
+EDITIONS := gregar falzar
+EDITION_ROM_gregar = $(BN6_GREGAR_ROM)
+EDITION_ROM_falzar = $(BN6_FALZAR_ROM)
+EDITION_DEFINE_gregar := 0
+EDITION_DEFINE_falzar := 1
+EDITION_TEXT_OFFSET_gregar := 0x42038
+EDITION_TEXT_OFFSET_falzar := 0x42068
+
+edition_targets = $(foreach edition,$(EDITIONS),$(BUILD_DIR)/$(1)$(edition)$(2))
+EDITION_REGISTRY_METADATA := $(call edition_targets,registry-metadata-,.generated.json)
+EDITION_REGISTRY_STAMPS := $(call edition_targets,.registry-,.stamp)
+EDITION_C_STAMPS := $(call edition_targets,.c-,.stamp)
+EDITION_TITLE_STAMPS := $(call edition_targets,.title-,.stamp)
+EDITION_TEXT_STAMPS := $(call edition_targets,.text-,.stamp)
+EDITION_BUILD_STAMPS := $(call edition_targets,.,.stamp)
+
+$(EDITION_REGISTRY_METADATA): $(BUILD_DIR)/registry-metadata-%.generated.json: \
+	$(PATCH_DIR)/compile_c_metadata.py $(PACKAGE_SOURCES) $(C_HEADERS) | $(BUILD_DIR)
+	$(PYTHON) "$(PATCH_DIR)/compile_c_metadata.py" \
+		--cc "$(ARM_GCC)" --nm "$(ARM_NM)" --define FALZAR=$(EDITION_DEFINE_$*) --output "$@"
+
+$(EDITION_REGISTRY_STAMPS): $(BUILD_DIR)/.registry-%.stamp: \
+	$(PATCH_DIR)/compile_registry.py $(PATCH_DIR)/config.%.toml $(PACKAGE_DEFS) \
+	$(BUILD_DIR)/registry-metadata-%.generated.json | $(BUILD_DIR)
+	$(PYTHON) "$(PATCH_DIR)/compile_registry.py" \
+		"$(PATCH_DIR)/config.$*.toml" \
+		--metadata "$(BUILD_DIR)/registry-metadata-$*.generated.json" \
+		--output "$(BUILD_DIR)/registry-$*.generated.asm" \
+		--linker-output "$(BUILD_DIR)/registry-values-$*.generated.ld" \
+		--text-output "$(BUILD_DIR)/text-replacements-$*.generated.json"
+	@touch "$@"
+
+$(EDITION_C_STAMPS): $(BUILD_DIR)/.c-%.stamp: \
+	$(BUILD_DIR)/.registry-%.stamp $(ASSET_STAMP) $(C_SOURCES) $(C_HEADERS) \
+	$(C_LINKER_SCRIPT) $(PATCH_DIR)/export_c_symbols.py | $(BUILD_DIR)
+	$(ARM_GCC) $(CFLAGS) -DFALZAR=$(EDITION_DEFINE_$*) $(C_SOURCES) $(CLDFLAGS) -Wl,-T,"$(BUILD_DIR)/registry-values-$*.generated.ld" -lgcc -o "$(BUILD_DIR)/gameplay-$*.elf"
+	$(ARM_OBJCOPY) -O binary "$(BUILD_DIR)/gameplay-$*.elf" "$(BUILD_DIR)/gameplay-$*.bin"
+	$(PYTHON) "$(PATCH_DIR)/export_c_symbols.py" --nm "$(ARM_NM)" \
+		"$(BUILD_DIR)/gameplay-$*.elf" "$(BUILD_DIR)/c-symbols-$*.generated.asm"
+	@touch "$@"
+
+$(EDITION_TITLE_STAMPS): $(BUILD_DIR)/.title-%.stamp: \
+	$(PATCH_DIR)/build_title_screen.py $(PATCH_DIR)/assets/title-screen-overlay.png \
+	| check-roms $(BUILD_DIR)
+	$(PYTHON) "$(PATCH_DIR)/build_title_screen.py" \
+		$* "$(EDITION_ROM_$*)" "$(BUILD_DIR)/title-67-$*.bin" \
+		"$(BUILD_DIR)/title-map-$*.bin"
+	@touch "$@"
+
+$(EDITION_TEXT_STAMPS): $(BUILD_DIR)/.text-%.stamp: \
+	$(PATCH_DIR)/build_text_archives.py $(BUILD_DIR)/.registry-%.stamp | $(BUILD_DIR)
 	$(PYTHON) "$(PATCH_DIR)/build_text_archives.py" \
-		"$(BN6_GREGAR_ROM)" 0x42038 0x27D50 \
-		"$(BUILD_DIR)/chip-names-0-gregar.bin" "$(BUILD_DIR)/chip-names-1-gregar.bin" \
-		"$(BUILD_DIR)/chip-descriptions-0-gregar.bin" "$(BUILD_DIR)/chip-descriptions-1-gregar.bin" \
-		--package-text "$(GREGAR_TEXT_REPLACEMENTS)"
+		"$(EDITION_ROM_$*)" $(EDITION_TEXT_OFFSET_$*) 0x27D50 \
+		"$(BUILD_DIR)/chip-names-0-$*.bin" "$(BUILD_DIR)/chip-names-1-$*.bin" \
+		"$(BUILD_DIR)/chip-descriptions-0-$*.bin" "$(BUILD_DIR)/chip-descriptions-1-$*.bin" \
+		--package-text "$(BUILD_DIR)/text-replacements-$*.generated.json"
 	@touch "$@"
 
-$(FALZAR_TEXT_STAMP): $(PATCH_DIR)/build_text_archives.py $(FALZAR_REGISTRY_STAMP) | $(BUILD_DIR)
-	$(PYTHON) "$(PATCH_DIR)/build_text_archives.py" \
-		"$(BN6_FALZAR_ROM)" 0x42068 0x27D50 \
-		"$(BUILD_DIR)/chip-names-0-falzar.bin" "$(BUILD_DIR)/chip-names-1-falzar.bin" \
-		"$(BUILD_DIR)/chip-descriptions-0-falzar.bin" "$(BUILD_DIR)/chip-descriptions-1-falzar.bin" \
-		--package-text "$(FALZAR_TEXT_REPLACEMENTS)"
-	@touch "$@"
-
-$(GREGAR_BUILD_STAMP): $(GREGAR_TITLE_STAMP) $(ASSET_STAMP) $(GREGAR_TEXT_STAMP) $(GREGAR_C_STAMP) $(ASM_SOURCES) $(PATCH_DIR)/config.gregar.toml $(PATCH_DIR)/reorder_chip_sort.py | $(BUILD_DIR)
-	cp "$(BN6_GREGAR_ROM)" "$(BUILD_DIR)/bn67-gregar.gba"
-	cd "$(PATCH_DIR)" && "$(ARMIPS)" -root "$(PATCH_DIR)" -erroronwarning -sym "$(BUILD_DIR)/gregar.sym" src/gregar.asm
+$(EDITION_BUILD_STAMPS): $(BUILD_DIR)/.%.stamp: \
+	$(BUILD_DIR)/.title-%.stamp $(ASSET_STAMP) $(BUILD_DIR)/.text-%.stamp \
+	$(BUILD_DIR)/.c-%.stamp $(ASM_SOURCES) $(PATCH_DIR)/config.%.toml \
+	$(PATCH_DIR)/reorder_chip_sort.py | $(BUILD_DIR)
+	cp "$(EDITION_ROM_$*)" "$(BUILD_DIR)/bn67-$*.gba"
+	cd "$(PATCH_DIR)" && "$(ARMIPS)" -root "$(PATCH_DIR)" -erroronwarning -sym "$(BUILD_DIR)/$*.sym" src/$*.asm
 	$(PYTHON) "$(PATCH_DIR)/reorder_chip_sort.py" \
-		"$(BUILD_DIR)/bn67-gregar.gba" "$(BUILD_DIR)/gregar.sym" "$(BN6_GREGAR_ROM)"
+		"$(BUILD_DIR)/bn67-$*.gba" "$(BUILD_DIR)/$*.sym" "$(EDITION_ROM_$*)"
 	@touch "$@"
 
-$(FALZAR_BUILD_STAMP): $(FALZAR_TITLE_STAMP) $(ASSET_STAMP) $(FALZAR_TEXT_STAMP) $(FALZAR_C_STAMP) $(ASM_SOURCES) $(PATCH_DIR)/config.falzar.toml $(PATCH_DIR)/reorder_chip_sort.py | $(BUILD_DIR)
-	cp "$(BN6_FALZAR_ROM)" "$(BUILD_DIR)/bn67-falzar.gba"
-	cd "$(PATCH_DIR)" && "$(ARMIPS)" -root "$(PATCH_DIR)" -erroronwarning -sym "$(BUILD_DIR)/falzar.sym" src/falzar.asm
-	$(PYTHON) "$(PATCH_DIR)/reorder_chip_sort.py" \
-		"$(BUILD_DIR)/bn67-falzar.gba" "$(BUILD_DIR)/falzar.sym" "$(BN6_FALZAR_ROM)"
-	@touch "$@"
+all: patches
+
+build: $(EDITION_BUILD_STAMPS)
 	@echo "Patched ROMs written to $(BUILD_DIR)"
 
-patches: $(GREGAR_BUILD_STAMP) $(FALZAR_BUILD_STAMP) | $(DIST_DIR)
+compile-commands: $(PATCH_DIR)/compile_commands.json
+
+patches: build | $(DIST_DIR)
 	@set -eu; \
 	if command -v "$(FLIPS)" >/dev/null 2>&1; then \
 		"$(FLIPS)" --create --bps "$(BN6_GREGAR_ROM)" "$(BUILD_DIR)/bn67-gregar.gba" "$(DIST_DIR)/bn67-gregar.bps"; \
