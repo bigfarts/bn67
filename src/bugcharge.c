@@ -250,7 +250,7 @@ static bool hit_init(Exe6Obj *self)
     }
     exe6_battle_hit_data_set(
         hit,
-        EXE6_HIT_TYPE_0A,
+        EXE6_HIT_TYPE_OBJECT_HITTING_ATTACK,
         HIT_SELECTOR,
         3
     );

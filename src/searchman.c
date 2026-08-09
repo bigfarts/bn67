@@ -22,9 +22,9 @@ static const uint8_t EXIT_PHASE = 8;
 static const uint8_t RETICLE_SCAN_PHASE = 4;
 static const uint8_t RETICLE_LOCKED_PHASE = 8;
 static const Exe6HitType NORMAL_HIT_TYPE =
-    EXE6_HIT_TYPE_19;
+    EXE6_HIT_TYPE_INVIS_PIERCING_OBJECT_HITTING_ATTACK;
 static const Exe6HitType DELETE_HIT_TYPE =
-    EXE6_HIT_TYPE_1D;
+    EXE6_HIT_TYPE_INVIS_PIERCING_OBJECT_HITTING_DELETE_ACTIVE_CHIP_ATTACK;
 static const uint8_t SHOT_COUNT = 5;
 static const uint16_t BLOCK_WAIT_FRAMES = 20;
 static const uint16_t SHOT_FRAMES = 10;

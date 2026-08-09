@@ -38,7 +38,7 @@ static const Exe6BlockDamageProperties CONTACT_PROPERTIES = {
     .region = EXE6_HIT_REGION_CURRENT_BLOCK,
     .hit_effect = EXE6_HIT_EFFECT_NORMAL,
     .target_hit_type = EXE6_HIT_TYPE_STANDARD_TARGET,
-    .self_hit_type = EXE6_HIT_TYPE_0A,
+    .self_hit_type = EXE6_HIT_TYPE_OBJECT_HITTING_ATTACK,
 };
 static const Exe6BlockDamageProperties INTRO_PROPERTIES = {
     .region = EXE6_HIT_REGION_ALL_VALID_BLOCKS,

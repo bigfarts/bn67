@@ -31,7 +31,7 @@ static const uint16_t EXIT_FRAMES = 5;
 static const int32_t PROJECTILE_SPEED = 0x00070000;
 static const uint8_t PROJECTILE_BLOCKS = 8;
 static const Exe6HitType PROJECTILE_HIT_TYPE =
-    EXE6_HIT_TYPE_08;
+    EXE6_HIT_TYPE_DELETE_ACTIVE_CHIP_ATTACK;
 
 static bool timer_expired(Exe6Obj *self)
 {
