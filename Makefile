@@ -112,6 +112,7 @@ EDITION_ELFS := $(call edition_targets,gameplay-,.elf)
 EDITION_BINARIES := $(call edition_targets,gameplay-,.bin)
 EDITION_C_SYMBOLS := $(call edition_targets,c-symbols-,.generated.asm)
 EDITION_TITLE_STAMPS := $(call edition_targets,.title-,.stamp)
+EDITION_NATIVE_TEXT_STAMPS := $(call edition_targets,.native-text-,.stamp)
 EDITION_TEXT_STAMPS := $(call edition_targets,.text-,.stamp)
 EDITION_ROMS := $(call edition_targets,bn67-,.gba)
 
@@ -122,13 +123,22 @@ $(EDITION_REGISTRY_METADATA): $(BUILD_DIR)/registry-metadata-%.generated.json: \
 
 $(EDITION_REGISTRY_STAMPS): $(BUILD_DIR)/.registry-%.stamp: \
 	$(PATCH_DIR)/compile_registry.py $(PATCH_DIR)/config.%.toml $(PACKAGE_DEFS) \
-	$(BUILD_DIR)/registry-metadata-%.generated.json | $(BUILD_DIR)
+	$(BUILD_DIR)/registry-metadata-%.generated.json \
+	$(BUILD_DIR)/.native-text-%.stamp | $(BUILD_DIR)
 	$(PYTHON) "$(PATCH_DIR)/compile_registry.py" \
 		"$(PATCH_DIR)/config.$*.toml" \
 		--metadata "$(BUILD_DIR)/registry-metadata-$*.generated.json" \
 		--output "$(BUILD_DIR)/registry-$*.generated.asm" \
 		--linker-output "$(BUILD_DIR)/registry-values-$*.generated.ld" \
 		--text-output "$(BUILD_DIR)/text-replacements-$*.generated.json"
+	@touch "$@"
+
+$(EDITION_NATIVE_TEXT_STAMPS): $(BUILD_DIR)/.native-text-%.stamp: \
+	$(PATCH_DIR)/build_text_archives.py $(ASSET_STAMP) | $(BUILD_DIR)
+	$(PYTHON) "$(PATCH_DIR)/build_text_archives.py" \
+		"$(EDITION_ROM_$*)" $(EDITION_TEXT_OFFSET_$*) 0x27D50 \
+		"$(BUILD_DIR)/chip-names-0-$*.bin" "$(BUILD_DIR)/chip-names-1-$*.bin" \
+		"$(BUILD_DIR)/chip-descriptions-0-$*.bin" "$(BUILD_DIR)/chip-descriptions-1-$*.bin"
 	@touch "$@"
 
 $(EDITION_ELFS): $(BUILD_DIR)/gameplay-%.elf: \

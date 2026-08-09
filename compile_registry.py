@@ -260,8 +260,57 @@ def require_table_array(
     return value
 
 
+def fixed_width_entry_count(
+    root: Path,
+    binary: str,
+    entry_size: int,
+    maximum: int,
+    context: str,
+) -> int:
+    """Derive a native table's entry count from its extracted binary."""
+    path = root / binary
+    try:
+        size = path.stat().st_size
+    except OSError as exc:
+        raise PackageError(f"{context}: cannot read {path}: {exc}") from exc
+    if size == 0 or size % entry_size:
+        raise PackageError(
+            f"{context}: {path} must be a non-empty multiple of "
+            f"{entry_size} bytes, got {size}"
+        )
+    entries = size // entry_size
+    if entries > maximum:
+        raise PackageError(
+            f"{context}: {path} contains {entries} entries, maximum is {maximum}"
+        )
+    return entries
+
+
+def text_archive_entry_count(root: Path, binary: str, context: str) -> int:
+    """Read the entry count encoded by a BN6 text archive's offset table."""
+    path = root / binary
+    try:
+        data = path.read_bytes()
+    except OSError as exc:
+        raise PackageError(f"{context}: cannot read {path}: {exc}") from exc
+    if len(data) < 2:
+        raise PackageError(f"{context}: {path} is too short for an offset table")
+    table_size = int.from_bytes(data[:2], "little")
+    if table_size == 0 or table_size & 1 or table_size > len(data):
+        raise PackageError(
+            f"{context}: {path} has invalid offset-table size 0x{table_size:X}"
+        )
+    entries = table_size // 2
+    if entries > 0x100:
+        raise PackageError(
+            f"{context}: {path} contains {entries} entries, maximum is 256"
+        )
+    return entries
+
+
 def load_config(path: Path) -> Config:
     context = str(path)
+    root = path.resolve().parent
     try:
         raw = tomllib.loads(path.read_text())
     except (OSError, tomllib.TOMLDecodeError) as exc:
@@ -289,7 +338,6 @@ def load_config(path: Path) -> Config:
             item,
             {
                 "number",
-                "native_entries",
                 "native_table",
                 "references",
                 "interceptor",
@@ -299,11 +347,13 @@ def load_config(path: Path) -> Config:
         number = require_int(item, "number", item_context)
         if number in object_classes:
             raise PackageError(f"{item_context}: duplicate object class {number}")
-        native_entries = checked_int(
-            require_int(item, "native_entries", item_context),
-            1,
-            0xFF,
-            f"{item_context}: native_entries",
+        native_table = require_str(item, "native_table", item_context)
+        native_entries = fixed_width_entry_count(
+            root,
+            native_table,
+            4,
+            0x100,
+            f"{item_context}: native_table",
         )
         references = require_int_array(item, "references", item_context)
         if not references:
@@ -320,7 +370,7 @@ def load_config(path: Path) -> Config:
         object_classes[number] = ObjectClass(
             number,
             native_entries,
-            require_str(item, "native_table", item_context),
+            native_table,
             references,
             interceptor,
         )
@@ -346,7 +396,7 @@ def load_config(path: Path) -> Config:
         item_context = f"{path}: sprite_groups[{index}]"
         check_keys(
             item,
-            {"number", "references", "native_table", "native_entries"},
+            {"number", "references", "native_table"},
             item_context,
         )
         number = require_int(item, "number", item_context)
@@ -357,20 +407,32 @@ def load_config(path: Path) -> Config:
             raise PackageError(f"{item_context}: references must not be empty")
         if any(address % 4 for address in references):
             raise PackageError(f"{item_context}: references must be word-aligned")
+        native_table = require_str(item, "native_table", item_context)
         sprite_groups[number] = SpriteGroup(
             number,
             references,
-            require_str(item, "native_table", item_context),
-            require_int(item, "native_entries", item_context),
+            native_table,
+            fixed_width_entry_count(
+                root,
+                native_table,
+                4,
+                0x100,
+                f"{item_context}: native_table",
+            ),
         )
 
     songs_raw = require_table(raw, "songs", context)
-    check_keys(
-        songs_raw, {"native_table", "native_entries", "references"}, f"{path}: songs"
-    )
+    check_keys(songs_raw, {"native_table", "references"}, f"{path}: songs")
+    song_table = require_str(songs_raw, "native_table", f"{path}: songs")
     songs = SongConfig(
-        require_str(songs_raw, "native_table", f"{path}: songs"),
-        require_int(songs_raw, "native_entries", f"{path}: songs"),
+        song_table,
+        fixed_width_entry_count(
+            root,
+            song_table,
+            8,
+            0x10000,
+            f"{path}: songs.native_table",
+        ),
         require_int_array(songs_raw, "references", f"{path}: songs"),
     )
 
@@ -393,7 +455,7 @@ def load_config(path: Path) -> Config:
             raise PackageError(f"{item_context}: must be a table")
         check_keys(
             item,
-            {"family", "native_entries", "native_table", "references"},
+            {"family", "native_table", "references"},
             item_context,
         )
         family = checked_int(
@@ -402,11 +464,13 @@ def load_config(path: Path) -> Config:
             0xFF,
             f"{item_context}: family",
         )
-        native_entries = checked_int(
-            require_int(item, "native_entries", item_context),
-            1,
-            0xFF,
-            f"{item_context}: native_entries",
+        native_table = require_str(item, "native_table", item_context)
+        native_entries = fixed_width_entry_count(
+            root,
+            native_table,
+            4,
+            0x100,
+            f"{item_context}: native_table",
         )
         references = require_int_array(item, "references", item_context)
         if not references:
@@ -416,7 +480,7 @@ def load_config(path: Path) -> Config:
         attack_pools[kind] = AttackPool(
             family,
             native_entries,
-            require_str(item, "native_table", item_context),
+            native_table,
             references,
         )
 
@@ -440,7 +504,6 @@ def load_config(path: Path) -> Config:
                 "source",
                 "source_index",
                 "encoding",
-                "native_entries",
                 "symbol",
                 "binary",
                 "references",
@@ -463,6 +526,7 @@ def load_config(path: Path) -> Config:
             raise PackageError(f"{item_context}: unknown source {source!r}")
         if encoding not in {"name", "description"}:
             raise PackageError(f"{item_context}: unknown encoding {encoding!r}")
+        binary = require_str(item, "binary", item_context)
         archives.append(
             TextArchive(
                 name,
@@ -470,9 +534,9 @@ def load_config(path: Path) -> Config:
                 source,
                 require_int(item, "source_index", item_context),
                 encoding,
-                require_int(item, "native_entries", item_context),
+                text_archive_entry_count(root, binary, f"{item_context}: binary"),
                 symbol,
-                require_str(item, "binary", item_context),
+                binary,
                 require_int_array(item, "references", item_context),
             )
         )
@@ -490,7 +554,7 @@ def load_config(path: Path) -> Config:
         groups,
     )
     return Config(
-        path.resolve().parent,
+        root,
         variant,
         object_classes,
         object_dispatch,

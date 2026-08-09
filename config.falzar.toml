@@ -2,20 +2,17 @@ variant = "falzar"
 
 [[object_classes]]
 number = 1
-native_entries = 0x5F
 native_table = "build/object-class1-table-falzar.bin"
 references = [0x08003224]
 interceptor = "folderback_type_1_main"
 
 [[object_classes]]
 number = 3
-native_entries = 0xD5
 native_table = "build/object-class3-table-falzar.bin"
 references = [0x0800322C]
 
 [[object_classes]]
 number = 4
-native_entries = 0x92
 native_table = "build/object-class4-table-falzar.bin"
 references = [0x08003230]
 
@@ -28,47 +25,39 @@ continuation_address = 0x08003206
 number = 0x08
 references = [0x08031CCC]
 native_table = "build/sprite-group08-table-falzar.bin"
-native_entries = 23
 
 [[sprite_groups]]
 number = 0x0C
 references = [0x08031CD0]
 native_table = "build/sprite-group0C-table-falzar.bin"
-native_entries = 105
 
 [[sprite_groups]]
 number = 0x10
 references = [0x08031CD4]
 native_table = "build/sprite-group10-table-falzar.bin"
-native_entries = 92
 
 [[sprite_groups]]
 number = 0x14
 references = [0x08031CD8]
 native_table = "build/sprite-group14-table-falzar.bin"
-native_entries = 32
 
 [attack_pools.persistent_attack]
 family = 0x15
-native_entries = 0x2A
 native_table = "build/attack-family15-table-falzar.bin"
 references = [0x08017BB8, 0x080EBDF8]
 
 [attack_pools.summon_attack]
 family = 0x1B
-native_entries = 0x1D
 native_table = "build/attack-family1B-table-falzar.bin"
 references = [0x08017BBC, 0x080E19B0]
 
 [attack_pools.ephemeral_attack]
 family = 0x1C
-native_entries = 0x17
 native_table = "build/attack-family1C-table-falzar.bin"
 references = [0x080EC3EC]
 
 [songs]
 native_table = "build/song-table-falzar.bin"
-native_entries = 0x1DA
 references = [0x0814E94C, 0x0814E980, 0x0814E9CC, 0x0814EA20, 0x0814EA54]
 
 [chips]
@@ -86,7 +75,6 @@ region = 0
 source = "names"
 source_index = 0
 encoding = "name"
-native_entries = 0x100
 symbol = "chip_name_archive_0"
 binary = "build/chip-names-0-falzar.bin"
 references = [0x08027D2C, 0x0802C7C4, 0x08042068, 0x08042080, 0x080476E4, 0x08120178, 0x08120218, 0x08120270, 0x081263B8]
@@ -97,7 +85,6 @@ region = 0
 source = "names"
 source_index = 1
 encoding = "name"
-native_entries = 0x3A
 symbol = "chip_name_archive_1"
 binary = "build/chip-names-1-falzar.bin"
 references = [0x08027D30, 0x0802C7C8, 0x0804206C, 0x080476E8, 0x0812017C, 0x0812021C, 0x08120274, 0x081263BC]
@@ -108,7 +95,6 @@ region = 1
 source = "descriptions"
 source_index = 0
 encoding = "description"
-native_entries = 0x100
 symbol = "chip_description_archive_0"
 binary = "build/chip-descriptions-0-falzar.bin"
 references = [0x08027D50, 0x0811968C, 0x0811A08C]
@@ -119,7 +105,6 @@ region = 1
 source = "descriptions"
 source_index = 1
 encoding = "description"
-native_entries = 0x3A
 symbol = "chip_description_archive_1"
 binary = "build/chip-descriptions-1-falzar.bin"
 references = [0x08027D54, 0x08119690, 0x0811A090]

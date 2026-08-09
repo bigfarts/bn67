@@ -226,7 +226,7 @@ def main() -> None:
     parser.add_argument("name_output_1", type=Path)
     parser.add_argument("description_output_0", type=Path)
     parser.add_argument("description_output_1", type=Path)
-    parser.add_argument("--package-text", type=Path, required=True)
+    parser.add_argument("--package-text", type=Path)
     args = parser.parse_args()
 
     rom = args.rom.read_bytes()
@@ -245,21 +245,22 @@ def main() -> None:
     name_archives = [read_archive(rom, offset) for offset in name_offsets]
     description_archives = [read_archive(rom, offset) for offset in description_offsets]
 
-    package_text = load_package_text(args.package_text)
-    source_archives = {
-        "names": name_archives,
-        "descriptions": description_archives,
-    }
-    archives: dict[str, list[bytes]] = {}
-    for archive in package_text.archives.values():
-        source = source_archives[archive.source]
-        if archive.source_index >= len(source):
-            raise ValueError(
-                f"text archive {archive.name!r} selects missing "
-                f"{archive.source}[{archive.source_index}]"
-            )
-        archives[archive.name] = source[archive.source_index]
-    apply_changes(archives, package_text.changes)
+    if args.package_text is not None:
+        package_text = load_package_text(args.package_text)
+        source_archives = {
+            "names": name_archives,
+            "descriptions": description_archives,
+        }
+        archives: dict[str, list[bytes]] = {}
+        for archive in package_text.archives.values():
+            source = source_archives[archive.source]
+            if archive.source_index >= len(source):
+                raise ValueError(
+                    f"text archive {archive.name!r} selects missing "
+                    f"{archive.source}[{archive.source_index}]"
+                )
+            archives[archive.name] = source[archive.source_index]
+        apply_changes(archives, package_text.changes)
 
     outputs = [
         (args.name_output_0, name_archives[0]),

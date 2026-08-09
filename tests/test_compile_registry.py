@@ -15,11 +15,13 @@ from compile_registry import (
     emit_chip_records,
     emit_object_tables,
     emit_text_archives,
+    fixed_width_entry_count,
     generate,
     generate_linker_values,
     generate_text_manifest,
     load_config,
     load_metadata,
+    text_archive_entry_count,
     validate_and_allocate,
 )
 
@@ -76,15 +78,58 @@ class PackageCompilerTests(unittest.TestCase):
                 ),
             )
             self.assertEqual(config.chips.table_address, raw["chips"]["table_address"])
+            for item in raw["object_classes"]:
+                self.assertNotIn("native_entries", item)
+                self.assertEqual(
+                    config.object_classes[item["number"]].native_entries,
+                    (ROOT / item["native_table"]).stat().st_size // 4,
+                )
             for group in raw["sprite_groups"]:
                 self.assertIn("references", group)
                 self.assertNotIn("pointer_address", group)
+                self.assertNotIn("native_entries", group)
+                self.assertEqual(
+                    config.sprite_groups[group["number"]].native_entries,
+                    (ROOT / group["native_table"]).stat().st_size // 4,
+                )
+            self.assertNotIn("native_entries", raw["songs"])
+            self.assertEqual(
+                config.songs.native_entries,
+                (ROOT / raw["songs"]["native_table"]).stat().st_size // 8,
+            )
             for kind, pool in config.attack_pools.items():
                 self.assertEqual(pool.family, raw["attack_pools"][kind]["family"])
+                self.assertNotIn("native_entries", raw["attack_pools"][kind])
                 self.assertEqual(
                     pool.native_entries,
-                    raw["attack_pools"][kind]["native_entries"],
+                    (ROOT / raw["attack_pools"][kind]["native_table"]).stat().st_size
+                    // 4,
                 )
+            archives = {
+                archive.name: archive
+                for group in config.text.groups
+                for archive in group.archives
+            }
+            for item in raw["text"]["archives"]:
+                self.assertNotIn("native_entries", item)
+                binary = (ROOT / item["binary"]).read_bytes()
+                self.assertEqual(
+                    archives[item["name"]].native_entries,
+                    int.from_bytes(binary[:2], "little") // 2,
+                )
+            self.assertEqual(archives["chip-names-1"].native_entries, 0xA8)
+            self.assertEqual(archives["chip-descriptions-1"].native_entries, 0xA8)
+
+    def test_binary_entry_counts_reject_malformed_tables(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "fixed.bin").write_bytes(b"12345")
+            with self.assertRaisesRegex(PackageError, "multiple of 4 bytes"):
+                fixed_width_entry_count(root, "fixed.bin", 4, 0x100, "table")
+
+            (root / "text.bin").write_bytes(b"\x05\x00payload")
+            with self.assertRaisesRegex(PackageError, "invalid offset-table size"):
+                text_archive_entry_count(root, "text.bin", "archive")
 
     def test_registry_compiler_is_target_agnostic(self) -> None:
         compiler = (ROOT / "compile_registry.py").read_text().lower()

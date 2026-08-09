@@ -2,20 +2,17 @@ variant = "gregar"
 
 [[object_classes]]
 number = 1
-native_entries = 0x5F
 native_table = "build/object-class1-table-gregar.bin"
 references = [0x08003224]
 interceptor = "folderback_type_1_main"
 
 [[object_classes]]
 number = 3
-native_entries = 0xD5
 native_table = "build/object-class3-table-gregar.bin"
 references = [0x0800322C]
 
 [[object_classes]]
 number = 4
-native_entries = 0x92
 native_table = "build/object-class4-table-gregar.bin"
 references = [0x08003230]
 
@@ -28,47 +25,39 @@ continuation_address = 0x08003206
 number = 0x08
 references = [0x08031CCC]
 native_table = "build/sprite-group08-table-gregar.bin"
-native_entries = 23
 
 [[sprite_groups]]
 number = 0x0C
 references = [0x08031CD0]
 native_table = "build/sprite-group0C-table-gregar.bin"
-native_entries = 105
 
 [[sprite_groups]]
 number = 0x10
 references = [0x08031CD4]
 native_table = "build/sprite-group10-table-gregar.bin"
-native_entries = 92
 
 [[sprite_groups]]
 number = 0x14
 references = [0x08031CD8]
 native_table = "build/sprite-group14-table-gregar.bin"
-native_entries = 32
 
 [attack_pools.persistent_attack]
 family = 0x15
-native_entries = 0x2A
 native_table = "build/attack-family15-table-gregar.bin"
 references = [0x08017BB8, 0x080ED138]
 
 [attack_pools.summon_attack]
 family = 0x1B
-native_entries = 0x1D
 native_table = "build/attack-family1B-table-gregar.bin"
 references = [0x08017BBC, 0x080E2CF0]
 
 [attack_pools.ephemeral_attack]
 family = 0x1C
-native_entries = 0x17
 native_table = "build/attack-family1C-table-gregar.bin"
 references = [0x080ED72C]
 
 [songs]
 native_table = "build/song-table-gregar.bin"
-native_entries = 0x1DA
 references = [0x0815049C, 0x081504D0, 0x0815051C, 0x08150570, 0x081505A4]
 
 [chips]
@@ -86,7 +75,6 @@ region = 0
 source = "names"
 source_index = 0
 encoding = "name"
-native_entries = 0x100
 symbol = "chip_name_archive_0"
 binary = "build/chip-names-0-gregar.bin"
 references = [0x08027D2C, 0x0802C7C4, 0x08042038, 0x08042050, 0x080476B4, 0x08121F54, 0x08121FF4, 0x0812204C, 0x08128194]
@@ -97,7 +85,6 @@ region = 0
 source = "names"
 source_index = 1
 encoding = "name"
-native_entries = 0x3A
 symbol = "chip_name_archive_1"
 binary = "build/chip-names-1-gregar.bin"
 references = [0x08027D30, 0x0802C7C8, 0x0804203C, 0x080476B8, 0x08121F58, 0x08121FF8, 0x08122050, 0x08128198]
@@ -108,7 +95,6 @@ region = 1
 source = "descriptions"
 source_index = 0
 encoding = "description"
-native_entries = 0x100
 symbol = "chip_description_archive_0"
 binary = "build/chip-descriptions-0-gregar.bin"
 references = [0x08027D50, 0x0811A9BC, 0x0811B3BC]
@@ -119,7 +105,6 @@ region = 1
 source = "descriptions"
 source_index = 1
 encoding = "description"
-native_entries = 0x3A
 symbol = "chip_description_archive_1"
 binary = "build/chip-descriptions-1-gregar.bin"
 references = [0x08027D54, 0x0811A9C0, 0x0811B3C0]
