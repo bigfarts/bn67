@@ -33,6 +33,11 @@ static const uint16_t SHOT_COOLDOWN_FRAMES = 30;
 static const uint16_t EXIT_FRAMES = 5;
 static const uint16_t RETICLE_LIFETIME = 300;
 static const uint16_t RETICLE_LOCK_FRAMES = 50;
+static const uint8_t RETICLE_SCAN_FRAMES_BASE = 6;
+static const uint8_t RETICLE_SCAN_FRAMES_EX = 5;
+static const uint8_t RETICLE_SCAN_FRAMES_SP = 4;
+static const uint8_t SEARCHMAN_VARIANT_EX = 3;
+static const uint8_t SEARCHMAN_VARIANT_SP = 4;
 static const uint32_t IMPACT_RANDOM_MASK = 0x0F;
 static const Bn6CollisionType HIT_COLLISION_SELECTOR =
     BN6_COLLISION_TYPE_STANDARD_TARGET;
@@ -396,7 +401,12 @@ static void reticle_change_column(Object *self)
 static void reticle_scan(Object *self)
 {
     if (self->phase_timer_low == 0) {
-        uint8_t frames = self->variant == 0 ? 6 : 4;
+        uint8_t frames = RETICLE_SCAN_FRAMES_BASE;
+        if (self->variant == SEARCHMAN_VARIANT_EX) {
+            frames = RETICLE_SCAN_FRAMES_EX;
+        } else if (self->variant == SEARCHMAN_VARIANT_SP) {
+            frames = RETICLE_SCAN_FRAMES_SP;
+        }
         self->timer = frames;
         self->phase_timer_low = frames;
     }
