@@ -249,7 +249,7 @@ static void object_init(Object *object)
         BN6_SPRITE_GROUP(signalred_battle_sprite),
         BN6_SPRITE_ID(signalred_battle_sprite)
     );
-    bn6_self_sprite_property_2e3c();
+    bn6_self_sprite_enable_shadow();
     object->animation_word = 0;
     bn6_self_sprite_set_animation(0);
     bn6_self_sprite_load_animation_data();

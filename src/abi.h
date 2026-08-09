@@ -566,7 +566,7 @@ _Static_assert(
 );
 void bn6_play_sound(uint32_t sound);
 void bn6_self_sprite_load(uint32_t mode, uint32_t group, uint32_t index);
-void bn6_self_sprite_property_2e3c(void);
+void bn6_self_sprite_enable_shadow(void);
 void bn6_self_sprite_load_animation_data(void);
 void bn6_self_sprite_update(void);
 void bn6_self_sprite_no_shadow(void);

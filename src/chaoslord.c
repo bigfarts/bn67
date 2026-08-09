@@ -478,7 +478,7 @@ static void controller_phase_apparition(Object *self)
         BN6_SPRITE_GROUP(chaoslord_main_sprite),
         BN6_SPRITE_ID(chaoslord_main_sprite)
     );
-    bn6_self_sprite_property_2e3c();
+    bn6_self_sprite_enable_shadow();
     bn6_self_sprite_hide_piece(0);
     self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     self->animation_word = 0;

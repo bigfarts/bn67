@@ -296,7 +296,7 @@ static void actor_init(Object *self)
         BN6_SPRITE_ID(searchman_battle_sprite)
     );
     bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_property_2e3c();
+    bn6_self_sprite_enable_shadow();
     set_animation(self, 0);
     bn6_self_object_set_coords();
     self->z = 0;

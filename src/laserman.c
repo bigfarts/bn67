@@ -226,7 +226,7 @@ static void actor_init(Object *self)
         BN6_SPRITE_ID(laserman_battle_sprite)
     );
     bn6_self_sprite_load_animation_data();
-    bn6_self_sprite_property_2e3c();
+    bn6_self_sprite_enable_shadow();
     self->animation = 0;
     self->palette = 0;
     bn6_self_sprite_set_animation(0);
