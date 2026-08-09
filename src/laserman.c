@@ -34,7 +34,8 @@ static const uint16_t WAIT_FRAMES = 20;
 static const uint16_t RAISE_FRAMES = 30;
 static const uint16_t LASER_FRAMES = 80;
 static const uint16_t BEAM_FRAMES = 60;
-static const uint32_t COLLISION_SELECTOR = 5;
+static const Bn6CollisionType COLLISION_SELECTOR =
+    BN6_COLLISION_TYPE_STANDARD_TARGET;
 
 struct LasermanHitWork {
     uint32_t reserved[5];
@@ -483,7 +484,12 @@ static bool hit_init(Object *self)
         bn6_self_object_free();
         return false;
     }
-    bn6_collision_setup(collision, self->variant, COLLISION_SELECTOR, 3);
+    bn6_collision_setup(
+        collision,
+        (Bn6CollisionType)self->variant,
+        COLLISION_SELECTOR,
+        3
+    );
     bn6_self_collision_set_hit_effect(BN6_HIT_EFFECT_NORMAL);
     bn6_self_collision_present(0, self->variant);
     self->state_word = ACTIVE_STATE;

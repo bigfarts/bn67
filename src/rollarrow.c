@@ -31,7 +31,8 @@ static const uint16_t POST_SHOT_FRAMES = 30;
 static const uint16_t EXIT_FRAMES = 5;
 static const int32_t PROJECTILE_SPEED = 0x00070000;
 static const uint8_t PROJECTILE_PANELS = 8;
-static const uint32_t PROJECTILE_COLLISION_REGION = 8;
+static const Bn6CollisionType PROJECTILE_COLLISION_TYPE =
+    BN6_COLLISION_TYPE_08;
 
 static bool timer_expired(Object *self)
 {
@@ -55,7 +56,7 @@ static void spawn_projectile(Object *actor)
         actor->panel_y,
         actor->parameter,
         0,
-        PROJECTILE_COLLISION_REGION
+        PROJECTILE_COLLISION_TYPE
     );
     if (projectile == NULL) {
         return;
@@ -221,9 +222,14 @@ static bool projectile_init(Object *self)
         bn6_self_object_free();
         return false;
     }
-    bn6_collision_setup(collision, PROJECTILE_COLLISION_REGION, 5, 3);
+    bn6_collision_setup(
+        collision,
+        PROJECTILE_COLLISION_TYPE,
+        BN6_COLLISION_TYPE_STANDARD_TARGET,
+        3
+    );
     bn6_self_collision_set_hit_effect(BN6_HIT_EFFECT_CHIP_DELETE);
-    bn6_self_collision_present(0, PROJECTILE_COLLISION_REGION);
+    bn6_self_collision_present(0, PROJECTILE_COLLISION_TYPE);
     self->animation_state = PROJECTILE_PANELS;
     self->target_panel_x = (uint8_t)(
         self->panel_x + (int32_t)bn6_object_front_direction_for(self)
@@ -272,7 +278,7 @@ static bool projectile_update(Object *self)
         --self->animation_state;
         self->target_panel_x = (uint8_t)(self->target_panel_x + direction);
     }
-    bn6_self_collision_present(0, PROJECTILE_COLLISION_REGION);
+    bn6_self_collision_present(0, PROJECTILE_COLLISION_TYPE);
     return true;
 }
 

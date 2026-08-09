@@ -22,8 +22,10 @@ static const uint8_t ATTACK_PHASE = 4;
 static const uint8_t EXIT_PHASE = 8;
 static const uint8_t RETICLE_SCAN_PHASE = 4;
 static const uint8_t RETICLE_LOCKED_PHASE = 8;
-static const uint8_t NORMAL_COLLISION_TYPE = 25;
-static const uint8_t DELETE_COLLISION_TYPE = 29;
+static const Bn6CollisionType NORMAL_COLLISION_TYPE =
+    BN6_COLLISION_TYPE_19;
+static const Bn6CollisionType DELETE_COLLISION_TYPE =
+    BN6_COLLISION_TYPE_1D;
 static const uint8_t SHOT_COUNT = 5;
 static const uint16_t PANEL_WAIT_FRAMES = 20;
 static const uint16_t SHOT_FRAMES = 10;
@@ -32,7 +34,8 @@ static const uint16_t EXIT_FRAMES = 5;
 static const uint16_t RETICLE_LIFETIME = 300;
 static const uint16_t RETICLE_LOCK_FRAMES = 50;
 static const uint32_t IMPACT_RANDOM_MASK = 0x0F;
-static const uint32_t HIT_COLLISION_SELECTOR = 5;
+static const Bn6CollisionType HIT_COLLISION_SELECTOR =
+    BN6_COLLISION_TYPE_STANDARD_TARGET;
 static const uint32_t PRESENT_COLLISION_REGION = HIT_COLLISION_SELECTOR << 3;
 
 struct SearchmanActorWork {
@@ -540,7 +543,7 @@ static void hit_init(Object *self)
     }
     bn6_collision_setup(
         collision,
-        self->variant,
+        (Bn6CollisionType)self->variant,
         HIT_COLLISION_SELECTOR,
         3
     );

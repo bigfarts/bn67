@@ -36,8 +36,10 @@ static const uint16_t STARTUP_TICKS = 3;
 static const uint16_t RED_TICKS = 420;
 static const uint16_t GREEN_TICKS = 50;
 static const uint16_t OBJECT_HP = 100;
-static const uint32_t PASSIVE_COLLISION_REGION = 19;
-static const uint32_t HIT_COLLISION_REGION = 20;
+static const Bn6CollisionType PASSIVE_COLLISION_TYPE =
+    BN6_COLLISION_TYPE_13;
+static const Bn6CollisionType TARGET_COLLISION_TYPE =
+    BN6_COLLISION_TYPE_14;
 static const uint32_t DUST_AMMO_KIND = 15;
 static const uint8_t STARTUP_PENDING_FLAG = 0x01;
 static const uint8_t COLLISION_DEFERRED_FLAG = 0x80;
@@ -67,7 +69,7 @@ static void disable_opponent_chips(Object *object)
 static void object_animate(Object *object)
 {
     (void)object;
-    bn6_self_collision_present(0, PASSIVE_COLLISION_REGION);
+    bn6_self_collision_present(0, PASSIVE_COLLISION_TYPE);
     bn6_self_object_update();
 }
 
@@ -190,11 +192,11 @@ static void object_update(Object *object)
         Collision *collision = object->collision;
         bn6_collision_setup(
             collision,
-            PASSIVE_COLLISION_REGION,
-            HIT_COLLISION_REGION,
+            PASSIVE_COLLISION_TYPE,
+            TARGET_COLLISION_TYPE,
             3
         );
-        bn6_self_collision_present(0, PASSIVE_COLLISION_REGION);
+        bn6_self_collision_present(0, PASSIVE_COLLISION_TYPE);
         object->removal_state = (uint8_t)(
             removal & (uint8_t)~COLLISION_DEFERRED_FLAG
         );

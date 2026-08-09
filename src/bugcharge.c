@@ -42,7 +42,8 @@ static const uint8_t GOSPEL_VISUAL = 25;
 static const uint16_t CHARGE_FRAMES = 39;
 static const uint16_t SHOT_INTERVAL = 14;
 static const uint16_t FINAL_COOLDOWN = 29;
-static const uint32_t COLLISION_SELECTOR = 5;
+static const Bn6CollisionType COLLISION_SELECTOR =
+    BN6_COLLISION_TYPE_STANDARD_TARGET;
 static const uint32_t PRESENT_COLLISION_VALUE = COLLISION_SELECTOR << 3;
 static const uint32_t EXTENDED_COLLISION_VALUE =
     PRESENT_COLLISION_VALUE << 8;
@@ -241,7 +242,12 @@ static bool hit_init(Object *self)
         bn6_self_object_free();
         return false;
     }
-    bn6_collision_setup(collision, 0x0A, COLLISION_SELECTOR, 3);
+    bn6_collision_setup(
+        collision,
+        BN6_COLLISION_TYPE_0A,
+        COLLISION_SELECTOR,
+        3
+    );
     collision->region = 1;
     bn6_self_collision_set_hit_effect(BN6_HIT_EFFECT_FIRE);
     bn6_self_collision_present(0, PRESENT_COLLISION_VALUE);
@@ -323,7 +329,12 @@ static bool gospel_init(Object *self)
         bn6_self_object_free();
         return false;
     }
-    bn6_collision_setup(collision, 4, COLLISION_SELECTOR, 3);
+    bn6_collision_setup(
+        collision,
+        BN6_COLLISION_TYPE_STANDARD_ATTACK,
+        COLLISION_SELECTOR,
+        3
+    );
     bn6_self_collision_set_hit_effect(BN6_HIT_EFFECT_SMALL_IMPACT);
     bn6_self_collision_set_extended_effect(0, PRESENT_COLLISION_VALUE);
     bn6_self_collision_present(0, EXTENDED_COLLISION_VALUE);
