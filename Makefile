@@ -38,6 +38,7 @@ CLDFLAGS := -nostdlib -nostartfiles -Wl,-T,"$(C_LINKER_SCRIPT)" \
 	-Wl,--build-id=none
 
 .DEFAULT_GOAL := all
+.DELETE_ON_ERROR:
 
 .PHONY: all build patches compile-commands check-roms clean help
 
@@ -105,10 +106,12 @@ EDITION_TEXT_OFFSET_falzar := 0x42068
 edition_targets = $(foreach edition,$(EDITIONS),$(BUILD_DIR)/$(1)$(edition)$(2))
 EDITION_REGISTRY_METADATA := $(call edition_targets,registry-metadata-,.generated.json)
 EDITION_REGISTRY_STAMPS := $(call edition_targets,.registry-,.stamp)
-EDITION_C_STAMPS := $(call edition_targets,.c-,.stamp)
+EDITION_ELFS := $(call edition_targets,gameplay-,.elf)
+EDITION_BINARIES := $(call edition_targets,gameplay-,.bin)
+EDITION_C_SYMBOLS := $(call edition_targets,c-symbols-,.generated.asm)
 EDITION_TITLE_STAMPS := $(call edition_targets,.title-,.stamp)
 EDITION_TEXT_STAMPS := $(call edition_targets,.text-,.stamp)
-EDITION_BUILD_STAMPS := $(call edition_targets,.,.stamp)
+EDITION_ROMS := $(call edition_targets,bn67-,.gba)
 
 $(EDITION_REGISTRY_METADATA): $(BUILD_DIR)/registry-metadata-%.generated.json: \
 	$(PATCH_DIR)/compile_c_metadata.py $(PACKAGE_SOURCES) $(C_HEADERS) | $(BUILD_DIR)
@@ -126,14 +129,18 @@ $(EDITION_REGISTRY_STAMPS): $(BUILD_DIR)/.registry-%.stamp: \
 		--text-output "$(BUILD_DIR)/text-replacements-$*.generated.json"
 	@touch "$@"
 
-$(EDITION_C_STAMPS): $(BUILD_DIR)/.c-%.stamp: \
+$(EDITION_ELFS): $(BUILD_DIR)/gameplay-%.elf: \
 	$(BUILD_DIR)/.registry-%.stamp $(ASSET_STAMP) $(C_SOURCES) $(C_HEADERS) \
-	$(C_LINKER_SCRIPT) $(PATCH_DIR)/export_c_symbols.py | $(BUILD_DIR)
-	$(ARM_GCC) $(CFLAGS) -DFALZAR=$(EDITION_DEFINE_$*) $(C_SOURCES) $(CLDFLAGS) -Wl,-T,"$(BUILD_DIR)/registry-values-$*.generated.ld" -lgcc -o "$(BUILD_DIR)/gameplay-$*.elf"
-	$(ARM_OBJCOPY) -O binary "$(BUILD_DIR)/gameplay-$*.elf" "$(BUILD_DIR)/gameplay-$*.bin"
+	$(C_LINKER_SCRIPT) | $(BUILD_DIR)
+	$(ARM_GCC) $(CFLAGS) -DFALZAR=$(EDITION_DEFINE_$*) $(C_SOURCES) $(CLDFLAGS) -Wl,-T,"$(BUILD_DIR)/registry-values-$*.generated.ld" -lgcc -o "$@"
+
+$(EDITION_BINARIES): $(BUILD_DIR)/gameplay-%.bin: $(BUILD_DIR)/gameplay-%.elf
+	$(ARM_OBJCOPY) -O binary "$<" "$@"
+
+$(EDITION_C_SYMBOLS): $(BUILD_DIR)/c-symbols-%.generated.asm: \
+	$(BUILD_DIR)/gameplay-%.elf $(PATCH_DIR)/export_c_symbols.py
 	$(PYTHON) "$(PATCH_DIR)/export_c_symbols.py" --nm "$(ARM_NM)" \
-		"$(BUILD_DIR)/gameplay-$*.elf" "$(BUILD_DIR)/c-symbols-$*.generated.asm"
-	@touch "$@"
+		"$<" "$@"
 
 $(EDITION_TITLE_STAMPS): $(BUILD_DIR)/.title-%.stamp: \
 	$(PATCH_DIR)/build_title_screen.py $(PATCH_DIR)/assets/title-screen-overlay.png \
@@ -152,19 +159,19 @@ $(EDITION_TEXT_STAMPS): $(BUILD_DIR)/.text-%.stamp: \
 		--package-text "$(BUILD_DIR)/text-replacements-$*.generated.json"
 	@touch "$@"
 
-$(EDITION_BUILD_STAMPS): $(BUILD_DIR)/.%.stamp: \
+$(EDITION_ROMS): $(BUILD_DIR)/bn67-%.gba: \
 	$(BUILD_DIR)/.title-%.stamp $(ASSET_STAMP) $(BUILD_DIR)/.text-%.stamp \
-	$(BUILD_DIR)/.c-%.stamp $(ASM_SOURCES) $(PATCH_DIR)/config.%.toml \
+	$(BUILD_DIR)/gameplay-%.bin $(BUILD_DIR)/c-symbols-%.generated.asm \
+	$(ASM_SOURCES) $(PATCH_DIR)/config.%.toml \
 	$(PATCH_DIR)/reorder_chip_sort.py | $(BUILD_DIR)
-	cp "$(EDITION_ROM_$*)" "$(BUILD_DIR)/bn67-$*.gba"
+	cp "$(EDITION_ROM_$*)" "$@"
 	cd "$(PATCH_DIR)" && "$(ARMIPS)" -root "$(PATCH_DIR)" -erroronwarning -sym "$(BUILD_DIR)/$*.sym" src/$*.asm
 	$(PYTHON) "$(PATCH_DIR)/reorder_chip_sort.py" \
-		"$(BUILD_DIR)/bn67-$*.gba" "$(BUILD_DIR)/$*.sym" "$(EDITION_ROM_$*)"
-	@touch "$@"
+		"$@" "$(BUILD_DIR)/$*.sym" "$(EDITION_ROM_$*)"
 
 all: patches
 
-build: $(EDITION_BUILD_STAMPS)
+build: $(EDITION_ROMS)
 	@echo "Patched ROMs written to $(BUILD_DIR)"
 
 compile-commands: $(PATCH_DIR)/compile_commands.json
@@ -192,7 +199,7 @@ clean:
 	rm -rf "$(BUILD_DIR)" "$(DIST_DIR)" "$(TANGOPATCH_SRC)/roms"
 
 help:
-	@echo "make BN5_PROTOMAN_ROM=... BN6_GREGAR_ROM=... BN6_FALZAR_ROM=... BN4_BLUE_MOON_ROM=... BN3_BLUE_ROM=..."
+	@echo "make BN5_PROTOMAN_ROM=... BN5_COLONEL_ROM=... BN6_GREGAR_ROM=... BN6_FALZAR_ROM=... BN4_BLUE_MOON_ROM=... BN3_BLUE_ROM=..."
 	@echo ""
 	@echo "Targets:"
 	@echo "  all      Build and create optional patch packages (default)"
