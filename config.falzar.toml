@@ -56,7 +56,7 @@ references = [0x08017BB8, 0x080EBDF8]
 
 [attack_pools.summon_attack]
 family = 0x1B
-native_entries = 0x1C
+native_entries = 0x1D
 native_table = "build/attack-family1B-table-falzar.bin"
 references = [0x08017BBC, 0x080E19B0]
 

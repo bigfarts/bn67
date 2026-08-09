@@ -225,9 +225,9 @@ ASSETS = (
     # Native BN6 attack dispatch prefixes. The registry relocates each one to
     # a complete 256-entry subfamily table before appending package attacks.
     Asset("bn6_gregar", "attack-family15-table-gregar.bin", 0x2CCB4, 0xA8),
-    Asset("bn6_gregar", "attack-family1B-table-gregar.bin", 0x2CD5C, 0x70),
+    Asset("bn6_gregar", "attack-family1B-table-gregar.bin", 0x2CD5C, 0x74),
     Asset("bn6_falzar", "attack-family15-table-falzar.bin", 0x2CCB4, 0xA8),
-    Asset("bn6_falzar", "attack-family1B-table-falzar.bin", 0x2CD5C, 0x70),
+    Asset("bn6_falzar", "attack-family1B-table-falzar.bin", 0x2CD5C, 0x74),
 
     # Native BN6 object dispatch prefixes. The registry relocates each class
     # to a complete 256-entry object-ID table before appending package objects.

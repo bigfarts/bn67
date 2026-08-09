@@ -310,6 +310,18 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIsNotNone(signalred.attack)
         self.assertEqual(signalred.attack.kind, "attack")
 
+    def test_custom_summons_follow_delta_ray(self) -> None:
+        for variant in ("gregar", "falzar"):
+            config, packages = self.packages(variant)
+            allocations = validate_and_allocate(config, packages)
+            summon_pool = config.attack_pools["summon_attack"]
+            self.assertEqual(summon_pool.family, 0x1B)
+            self.assertEqual(summon_pool.native_entries, 0x1D)
+            self.assertEqual(
+                allocations.attacks["rollarrow_attack_main"].subfamily,
+                0x1D,
+            )
+
     def test_object_ids_are_compiler_allocated(self) -> None:
         config, packages = self.packages()
         allocations = validate_and_allocate(config, packages)

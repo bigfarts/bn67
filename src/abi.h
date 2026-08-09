@@ -115,7 +115,7 @@ typedef struct RuntimeFields Runtime;
 #define BN6_COLLISION_STATUS_FLAG_UNDERSHIRT 0x00040000
 
 /* CollisionData.ObjectFlags2 (+0x40). */
-#define BN6_COLLISION_SECONDARY_FLAG_WIND_REMOVAL 0x00040000
+#define BN6_COLLISION_SECONDARY_FLAG_TIMED_BLINK_REMOVAL 0x00040000
 #define BN6_COLLISION_SECONDARY_FLAG_DUST_SUCTION_SIDE_0 0x00100000
 #define BN6_COLLISION_SECONDARY_FLAG_DUST_SUCTION_SIDE_1 0x00200000
 
@@ -649,7 +649,7 @@ uint32_t bn6_angle_from_vector(int32_t y, int32_t x);
 
 void bn6_object_register_deployable(Object *object, uint32_t owner, uint32_t slot);
 void bn6_self_object_unregister_deployable(void);
-uint32_t bn6_self_object_update_suction(void);
+uint32_t bn6_self_object_update_timed_removal(void);
 void bn6_self_object_store_dust_ammo(uint32_t kind);
 void bn6_self_deployable_lifetime_update(void);
 

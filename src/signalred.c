@@ -224,15 +224,12 @@ static void object_update(Object *object)
     }
 
     uint32_t secondary_flags = bn6_self_collision_get_secondary_flags();
-    uint32_t opponent_dust_suction_flag = object->owner == 0
-        ? BN6_COLLISION_SECONDARY_FLAG_DUST_SUCTION_SIDE_1
-        : BN6_COLLISION_SECONDARY_FLAG_DUST_SUCTION_SIDE_0;
-    if ((secondary_flags & opponent_dust_suction_flag) != 0) {
+    if ((secondary_flags & (BN6_COLLISION_SECONDARY_FLAG_DUST_SUCTION_SIDE_0 | BN6_COLLISION_SECONDARY_FLAG_DUST_SUCTION_SIDE_1)) != 0) {
         object_store_dust_ammo(object);
         return;
     }
-    if ((secondary_flags & BN6_COLLISION_SECONDARY_FLAG_WIND_REMOVAL) != 0) {
-        if (bn6_self_object_update_suction() == 1) {
+    if ((secondary_flags & BN6_COLLISION_SECONDARY_FLAG_TIMED_BLINK_REMOVAL) != 0) {
+        if (bn6_self_object_update_timed_removal() == 1) {
             object_begin_destroy(object);
         }
         return;
