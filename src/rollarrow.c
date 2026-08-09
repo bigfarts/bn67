@@ -1,7 +1,6 @@
 #include "abi.h"
 #include "runtime.h"
 
-BN6_INCLUDE(common);
 BN6_USE_SONG(common_navi_summon_song);
 BN6_SPRITE(rollarrow_actor_sprite, "build/rollarrow-actor-sprite.bin");
 BN6_SPRITE(rollarrow_projectile_sprite, "build/rollarrow-projectile-sprite.bin");

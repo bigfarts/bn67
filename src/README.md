@@ -51,7 +51,6 @@ Put declarations beside the implementation they register:
 ```c
 #include "runtime.h"
 
-BN6_INCLUDE(common);
 BN6_USE_SONG(common_navi_summon_song);
 BN6_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
 BN6_SONG(
@@ -138,9 +137,9 @@ bn6_self_sprite_load(
 bn6_play_sound(BN6_SONG_ID(searchman_fire_song));
 ```
 
-Shared resources are registered once. `BN6_INCLUDE(common)` orders the shared
-implementation first, while `BN6_USE_SONG(common_navi_summon_song)` declares the
-link-time selector without adding another song-table entry.
+Shared resources are registered by their implementation source.
+`BN6_USE_SONG(common_navi_summon_song)` declares the link-time selector in a
+consumer without adding another song-table entry.
 
 ## ELF metadata and link-time values
 
@@ -151,7 +150,7 @@ each ELF object. The script reads those symbols with `arm-none-eabi-nm`; it does
 not parse C source text.
 
 `compile_registry.py` receives one config file and one extracted symbol list.
-It does not know target or edition names. Each invocation checks dependencies,
+It does not know target or edition names. Each invocation validates declarations,
 allocates that config's registry slots, and writes separate target artifacts:
 
 - `build/registry-<target>.generated.asm` for ROM hooks and tables;
@@ -211,10 +210,9 @@ generic `variants` table override common fields when their key matches the
 config's opaque `variant` value. Omitted values preserve the native chip record.
 
 Allocation is deterministic: attacks are ordered by their explicit
-representative chip IDs, while other resources visit included sources first,
-sort source paths, and retain ELF declaration order. Capacity overflow,
-duplicate registrations, missing definitions, exhausted tables, and include
-cycles are build errors.
+representative chip IDs, while other resources sort source paths and retain ELF
+declaration order. Capacity overflow, duplicate registrations, missing
+definitions, and exhausted tables are build errors.
 
 Run both compiler stages directly with:
 

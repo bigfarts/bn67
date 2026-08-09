@@ -209,16 +209,13 @@ class PackageCompilerTests(unittest.TestCase):
             self.assertEqual(set(entry), {"package", "archive", "index", "value"})
             self.assertIn(entry["archive"], configured_names)
 
-    def test_conventions_and_included_package_deduplication(self) -> None:
+    def test_conventions_and_shared_resource_deduplication(self) -> None:
         config, packages = self.packages()
         allocations = validate_and_allocate(config, packages)
         assembly = generate(config, packages, allocations)
         linker = generate_linker_values(packages, allocations)
 
         self.assertNotIn('.include "packages/', assembly)
-        package_includes = {package.name: package.includes for package in packages}
-        self.assertEqual(package_includes["rollarrow"], ("common",))
-        self.assertEqual(package_includes["laserman"], ("common",))
         self.assertIn(".dw searchman_reticle_main + 1", assembly)
         self.assertIn("__bn6_object_id_searchman_reticle_main =", linker)
         self.assertIn("__bn6_sprite_id_searchman_reticle_sprite =", linker)
@@ -244,8 +241,6 @@ class PackageCompilerTests(unittest.TestCase):
             "BN6_SONG_ID(common_navi_summon_song)",
             (ROOT / "src/rollarrow.c").read_text(),
         )
-        self.assertIn("BN6_INCLUDE(common);", (ROOT / "src/rollarrow.c").read_text())
-        self.assertIn("BN6_INCLUDE(common);", (ROOT / "src/laserman.c").read_text())
         self.assertNotIn(".definelabel", assembly)
 
     def test_flat_sources_and_chip_definition_files(self) -> None:
@@ -586,26 +581,6 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertTrue(labels)
         for label in labels:
             self.assertRegex(label, r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
-
-    def test_include_cycles_are_rejected(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            for name, dependency in (("a", "b"), ("b", "a")):
-                source = root / "src" / f"{name}.c"
-                source.parent.mkdir(parents=True, exist_ok=True)
-                source.write_text("")
-            metadata = {
-                "a": ["__bn6_meta__include__b"],
-                "b": ["__bn6_meta__include__a"],
-            }
-            with self.assertRaisesRegex(PackageError, "source include cycle"):
-                discover_packages(
-                    replace(
-                        self.config(),
-                        root=root.resolve(),
-                    ),
-                    metadata,
-                )
 
 if __name__ == "__main__":
     unittest.main()

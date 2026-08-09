@@ -1,6 +1,5 @@
 #include "runtime.h"
 
-BN6_INCLUDE(common);
 BN6_USE_SONG(common_navi_summon_song);
 BN6_SPRITE(laserman_battle_sprite, "build/laserman-battle-sprite.bin");
 

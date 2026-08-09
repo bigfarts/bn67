@@ -136,9 +136,6 @@ uint8_t *bn6_chip_queue(void);
 /* Source compatibility for packages written before the ABI names were split. */
 #define BN6_ATTACK(chip_id, main) BN6_PERSISTENT_ATTACK(chip_id, main)
 
-#define BN6_INCLUDE(package) \
-    BN6_METADATA_RECORD("include", BN6_STRINGIFY(package))
-
 #define BN6_POINTER_PATCH(address, symbol) \
     BN6_METADATA_RECORD( \
         "pointer", \
