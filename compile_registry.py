@@ -919,9 +919,13 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         elif kind == "song" and len(parts) == 2:
             check_snake_resource_label(package.name, parts[1], "_song")
             songs.append(SongResource(parts[1]))
-        elif kind in {"attack", "summon_attack"} and len(parts) == 3:
+        elif kind in {
+            "persistent_attack",
+            "summon_attack",
+            "ephemeral_attack",
+        } and len(parts) == 3:
             if attack is not None:
-                raise PackageError(f"{package.name}: duplicate BN6_ATTACK declaration")
+                raise PackageError(f"{package.name}: duplicate BN6 attack declaration")
             chip_id = checked_int(int(parts[1], 0), 0, 0xFFFF, symbol)
             check_snake_resource_label(package.name, parts[2], "_main")
             attack = AttackResource(package.name, chip_id, kind, parts[2])
@@ -1085,7 +1089,7 @@ def allocate_attacks(
             continue
         if package.attack.chip_id not in {chip.chip_id for chip in package.chips}:
             raise PackageError(
-                f"{package.source}: BN6_ATTACK refers to chip "
+                f"{package.source}: BN6 attack declaration refers to chip "
                 f"0x{package.attack.chip_id:03X}, but {package.definitions} "
                 "does not declare it"
             )

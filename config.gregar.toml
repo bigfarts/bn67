@@ -48,7 +48,7 @@ references = [0x08031CD8]
 native_table = "build/sprite-group14-table-gregar.bin"
 native_entries = 32
 
-[attack_pools.attack]
+[attack_pools.persistent_attack]
 family = 0x15
 native_entries = 0x2A
 native_table = "build/attack-family15-table-gregar.bin"
@@ -59,6 +59,12 @@ family = 0x1B
 native_entries = 0x1D
 native_table = "build/attack-family1B-table-gregar.bin"
 references = [0x08017BBC, 0x080E2CF0]
+
+[attack_pools.ephemeral_attack]
+family = 0x1C
+native_entries = 0x17
+native_table = "build/attack-family1C-table-gregar.bin"
+references = [0x080ED72C]
 
 [songs]
 native_table = "build/song-table-gregar.bin"

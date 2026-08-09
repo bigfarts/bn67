@@ -73,12 +73,14 @@ uint8_t *bn6_chip_queue(void);
     extern const uint8_t BN6_LINK_SONG_ID(archive)[]; \
     extern const uint8_t BN6_LINK_SONG_GROUP(archive)[]
 
-#define BN6_ATTACK_BODY(kind, chip_id, main, context_type, context_name) \
+#define BN6_ATTACK_BODY( \
+    kind, chip_id, main, export, return_type, context_type, context_name \
+) \
     BN6_METADATA_RECORD( \
         kind, \
         BN6_STRINGIFY(chip_id) "__" BN6_STRINGIFY(main) \
     ); \
-    static USED void BN6_JOIN(main, _fn)( \
+    static USED return_type BN6_JOIN(main, _fn)( \
         uint32_t panel_x, \
         uint32_t panel_y, \
         uint32_t parameter, \
@@ -87,8 +89,8 @@ uint8_t *bn6_chip_queue(void);
         context_type context_name, \
         uint32_t spawn_argument \
     ); \
-    BN6_EXPORT_ATTACK(main, BN6_JOIN(main, _fn)) \
-    static USED void BN6_JOIN(main, _fn)( \
+    export(main, BN6_JOIN(main, _fn)) \
+    static USED return_type BN6_JOIN(main, _fn)( \
         uint32_t panel_x, \
         uint32_t panel_y, \
         uint32_t parameter, \
@@ -98,11 +100,41 @@ uint8_t *bn6_chip_queue(void);
         uint32_t spawn_argument \
     )
 
-#define BN6_ATTACK(chip_id, main) \
-    BN6_ATTACK_BODY("attack", chip_id, main, uint32_t, chip_data)
+#define BN6_PERSISTENT_ATTACK(chip_id, main) \
+    BN6_ATTACK_BODY( \
+        "persistent_attack", \
+        chip_id, \
+        main, \
+        BN6_EXPORT_ATTACK, \
+        Object *, \
+        uint32_t, \
+        chip_data \
+    )
 
 #define BN6_SUMMON_ATTACK(chip_id, main) \
-    BN6_ATTACK_BODY("summon_attack", chip_id, main, uint8_t *, completion)
+    BN6_ATTACK_BODY( \
+        "summon_attack", \
+        chip_id, \
+        main, \
+        BN6_EXPORT_ATTACK, \
+        void, \
+        uint8_t *, \
+        completion \
+    )
+
+#define BN6_EPHEMERAL_ATTACK(chip_id, main) \
+    BN6_ATTACK_BODY( \
+        "ephemeral_attack", \
+        chip_id, \
+        main, \
+        BN6_EXPORT_EPHEMERAL_ATTACK, \
+        void, \
+        int32_t, \
+        z \
+    )
+
+/* Source compatibility for packages written before the ABI names were split. */
+#define BN6_ATTACK(chip_id, main) BN6_PERSISTENT_ATTACK(chip_id, main)
 
 #define BN6_INCLUDE(package) \
     BN6_METADATA_RECORD("include", BN6_STRINGIFY(package))

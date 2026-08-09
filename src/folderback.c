@@ -65,7 +65,7 @@ NAKED void folderback_type_1_main(void)
         "4:\n"
         "pop {r0,r4,r6,r7,pc}\n"
         "5:\n"
-        "bl bn6_self_object_update_timestop\n"
+        "bl bn6_self_object_update_dimming\n"
         "b 4b\n"
     );
 }
@@ -209,13 +209,13 @@ BN6_OBJECT4(folderback_controller_main)
     open_custom(owner);
 }
 
-BN6_ATTACK(0x139, folderback_attack_main)
+BN6_PERSISTENT_ATTACK(0x139, folderback_attack_main)
 {
     Object *controller = bn6_spawn_type4(
         BN6_OBJECT_ID(folderback_controller_main), spawn_argument
     );
     if (controller == NULL) {
-        return;
+        return NULL;
     }
     controller->panel_x = (uint8_t)panel_x;
     controller->panel_y = (uint8_t)panel_y;
@@ -232,4 +232,5 @@ BN6_ATTACK(0x139, folderback_attack_main)
     for (size_t index = 0; index < 3; ++index) {
         work->reserved[index] = 0;
     }
+    return controller;
 }

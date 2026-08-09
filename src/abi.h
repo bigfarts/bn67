@@ -92,7 +92,7 @@ typedef struct RuntimeFields Runtime;
 #define BN6_OBJECT_FLAG_VISIBLE 0x02
 #define BN6_OBJECT_FLAG_UPDATE_DURING_PAUSE 0x04
 #define BN6_OBJECT_FLAG_STOP_SPRITE_UPDATE 0x08
-#define BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP 0x10
+#define BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING 0x10
 
 /* Flags returned for the current sprite-animation frame. */
 #define BN6_ANIMATION_FRAME_FLAG_END 0x80
@@ -349,6 +349,28 @@ typedef struct __attribute__((aligned(4))) Bn6PanelDamageProperties {
         ); \
     }
 
+/*
+ * Family 0x1C enters with z in r3, spawn_argument in r4, owner in r5, and
+ * resolved attack in r6.  Preserve z before putting owner in the fourth C
+ * argument, then arrange attack/z/spawn_argument as stacked arguments 5-7.
+ * Saving r7 alongside r4/lr keeps the C call's stack 8-byte aligned.
+ */
+#define BN6_EXPORT_EPHEMERAL_ATTACK(name, target) \
+    NAKED void name(void) \
+    { \
+        __asm__( \
+            ".syntax unified\n" \
+            "push {r4,r7,lr}\n" \
+            "push {r4}\n" \
+            "push {r3}\n" \
+            "push {r6}\n" \
+            "adds r3,r5,#0\n" \
+            "bl " BN6_STRINGIFY(target) "\n" \
+            "add sp,#12\n" \
+            "pop {r4,r7,pc}\n" \
+        ); \
+    }
+
 struct ObjectFields {
     uint8_t header_flags;                // +0x00, BN6_OBJECT_FLAG_*
     uint8_t unknown_01[3];
@@ -590,7 +612,7 @@ void bn6_self_death_sprite_special(void);
 void bn6_self_object_set_coords(void);
 void bn6_self_object_load_navi_sprite(uint32_t selector);
 void bn6_self_object_update(void);
-void bn6_self_object_update_timestop(void);
+void bn6_self_object_update_dimming(void);
 void bn6_self_object_update_panel(void);
 void bn6_self_object_free(void);
 void bn6_object_invoke(Object *object, uintptr_t entry);
@@ -675,7 +697,7 @@ uint32_t bn6_rng_next(void);
 void bn6_bugfix_clear_runtime_state(void);
 
 uint32_t bn6_battle_is_over(void);
-uint32_t bn6_battle_is_time_stopped(void);
+uint32_t bn6_battle_is_dimmed(void);
 uint32_t bn6_battle_get_config_flags(void);
 uint32_t bn6_link_battle_active(void);
 uint32_t bn6_compare_local_side(uint32_t side);
@@ -731,10 +753,10 @@ void bn6_saved_navi_dispatch(
     uint8_t *completion
 );
 
-void bn6_self_type4_timestop_init(void);
-void bn6_self_type4_timestop_intro(void);
-void bn6_self_type4_timestop_freeze(void);
-void bn6_self_type4_timestop_outro(void);
-void bn6_self_type4_timestop_free(void);
+void bn6_self_type4_dimming_init(void);
+void bn6_self_type4_dimming_intro(void);
+void bn6_self_type4_dimming_freeze(void);
+void bn6_self_type4_dimming_outro(void);
+void bn6_self_type4_dimming_free(void);
 
 #endif

@@ -413,7 +413,7 @@ static void flame_spawn(Object *strike, uint32_t alternate)
     flame->panel_x = strike->panel_x;
     flame->panel_y = strike->panel_y;
     flame->owner_word = strike->owner_word;
-    flame->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
+    flame->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
     if (alternate != 0) {
         flame->owner_aux ^= 1u;
     }
@@ -617,7 +617,7 @@ BN6_OBJECT1(deathphoenix_actor_main)
         bn6_self_object_free();
         return;
     }
-    bn6_self_object_update_timestop();
+    bn6_self_object_update_dimming();
 }
 
 BN6_SUMMON_ATTACK(0x134, deathphoenix_attack_main)

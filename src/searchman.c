@@ -72,7 +72,7 @@ static void pulse_scale(Object *self)
 static void actor_animate(Object *self)
 {
     (void)self;
-    bn6_self_object_update_timestop();
+    bn6_self_object_update_dimming();
     pulse_scale(self);
 }
 
@@ -194,7 +194,7 @@ static void spawn_hit(Object *actor, bool delete_shot)
     hit->parameter = actor->parameter;
     hit->attack = actor->attack;
     hit->owner_word = actor->owner_word;
-    hit->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
+    hit->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
 }
 
 static void next_shot(Object *self)
@@ -464,7 +464,7 @@ static void reticle_update(Object *self)
     if (self->aux_timer != 0) {
         --self->aux_timer;
     }
-    bn6_self_object_update_timestop();
+    bn6_self_object_update_dimming();
 }
 
 static void reticle_init(Object *self)

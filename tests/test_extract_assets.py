@@ -19,6 +19,18 @@ class ExtractAssetsTests(unittest.TestCase):
             self.assertEqual(asset.offset, 0x2CD5C)
             self.assertEqual(asset.length, 0x1D * 4)
 
+    def test_bn6_ephemeral_tables_include_every_native_entry(self) -> None:
+        ephemeral_tables = {
+            asset.source: asset
+            for asset in ASSETS
+            if asset.output.startswith("attack-family1C-table-")
+        }
+        self.assertEqual(set(ephemeral_tables), {"bn6_gregar", "bn6_falzar"})
+        self.assertEqual(ephemeral_tables["bn6_gregar"].offset, 0xED730)
+        self.assertEqual(ephemeral_tables["bn6_falzar"].offset, 0xEC3F0)
+        for asset in ephemeral_tables.values():
+            self.assertEqual(asset.length, 0x17 * 4)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -185,7 +185,7 @@ static Object *spawn_ball(Object *controller)
 static void ball_phase_active(Object *self)
 {
     bn6_self_sprite_copy_visibility(self->parent);
-    bn6_self_object_update_timestop();
+    bn6_self_object_update_dimming();
 }
 
 static void ball_update(Object *self)
@@ -290,7 +290,7 @@ static Object *spawn_burst(
         (struct ChaoslordBurstWork *)burst->work;
     work->vector = vector;
     burst->owner_word = controller->owner_word;
-    burst->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
+    burst->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
     return burst;
 }
 
@@ -319,7 +319,7 @@ static Object *spawn_flash(void)
         return NULL;
     }
     flash->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_PAUSE
-        | BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
+        | BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
     return flash;
 }
 
@@ -342,7 +342,7 @@ static Object *spawn_attack_object(
     attack->attack = controller->attack;
     attack->parent = NULL;
     attack->owner_word = controller->owner_word;
-    attack->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
+    attack->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
     return attack;
 }
 
@@ -587,7 +587,7 @@ BN6_OBJECT1(chaoslord_controller_main)
     } else {
         controller_destroy(self);
     }
-    bn6_self_object_update_timestop();
+    bn6_self_object_update_dimming();
 }
 
 BN6_SUMMON_ATTACK(0x12E, chaoslord_attack_main)
@@ -726,9 +726,9 @@ static void attack_impact(Object *self)
     if (damage != NULL) {
         damage->header_flags = (uint8_t)(
             (damage->header_flags
-                & (uint8_t)~BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP)
+                & (uint8_t)~BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING)
             | (self->header_flags
-                & BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP)
+                & BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING)
         );
         bn6_object_invoke(damage, PANEL_DAMAGE_MAIN);
     }

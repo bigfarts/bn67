@@ -98,7 +98,7 @@ NATIVE_CHAIN(bn6_self_sprite_copy_visibility, 0x08002CE0, 0x08002C7E)
 NATIVE_CHAIN(bn6_self_sprite_copy_palette_bits, 0x08002DC8, 0x08002DB4)
 NATIVE_CHAIN(bn6_self_sprite_copy_special_bits, 0x08002F3E, 0x08002F02)
 NATIVE_WRAPPER(bn6_self_object_free, 0x08003458, void, (void))
-NATIVE_WRAPPER(bn6_battle_is_time_stopped, 0x0800A098, uint32_t, (void))
+NATIVE_WRAPPER(bn6_battle_is_dimmed, 0x0800A098, uint32_t, (void))
 NATIVE_WRAPPER(bn6_battle_is_over, 0x0800A18E, uint32_t, (void))
 NATIVE_WRAPPER(bn6_lock_battle_state, 0x0800A028, void, (void))
 NATIVE_WRAPPER(bn6_rebuild_folder, 0x0800A318, void, (void))
@@ -164,7 +164,7 @@ NATIVE_WRAPPER(bn6_self_collision_set_extended_effect, 0x0801A4D0, void, (uint32
 NATIVE_WRAPPER(bn6_self_collision_get_secondary_flags, 0x0801A180, uint32_t, (void))
 NATIVE_WRAPPER(bn6_self_field_collision_update, 0x0801AD12, void, (void))
 NATIVE_WRAPPER(bn6_self_object_update, 0x0801BBAC, void, (void))
-NATIVE_WRAPPER(bn6_self_object_update_timestop, 0x0801BBF4, void, (void))
+NATIVE_WRAPPER(bn6_self_object_update_dimming, 0x0801BBF4, void, (void))
 NATIVE_WRAPPER(bn6_rng_next, 0x0800151C, uint32_t, (void))
 NATIVE_WRAPPER(bn6_battle_rng, 0x08001532, uint32_t, (void))
 NATIVE_WRAPPER(bn6_memory_clear, 0x080008B4, void, (void *destination, uint32_t size))
@@ -317,11 +317,11 @@ NAKED void bn6_saved_navi_dispatch(
     );
 }
 
-NATIVE_WRAPPER(bn6_self_type4_timestop_init, 0x0800B916, void, (void))
-NATIVE_WRAPPER(bn6_self_type4_timestop_intro, 0x0800B94C, void, (void))
-NATIVE_WRAPPER(bn6_self_type4_timestop_freeze, 0x0800B9B0, void, (void))
-NATIVE_WRAPPER(bn6_self_type4_timestop_outro, 0x0800BC88, void, (void))
-NATIVE_WRAPPER(bn6_self_type4_timestop_free, 0x0800BD34, void, (void))
+NATIVE_WRAPPER(bn6_self_type4_dimming_init, 0x0800B916, void, (void))
+NATIVE_WRAPPER(bn6_self_type4_dimming_intro, 0x0800B94C, void, (void))
+NATIVE_WRAPPER(bn6_self_type4_dimming_freeze, 0x0800B9B0, void, (void))
+NATIVE_WRAPPER(bn6_self_type4_dimming_outro, 0x0800BC88, void, (void))
+    NATIVE_WRAPPER(bn6_self_type4_dimming_free, 0x0800BD34, void, (void))
 
 NAKED Object *bn6_spawn_type3(
     uint32_t type,

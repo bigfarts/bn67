@@ -181,7 +181,7 @@ static void object_update(Object *object)
 {
     uint8_t removal = object->removal_state;
     if ((removal & COLLISION_DEFERRED_FLAG) != 0) {
-        if (bn6_battle_is_time_stopped() != 0) {
+        if (bn6_battle_is_dimmed() != 0) {
             if ((removal & STARTUP_PENDING_FLAG) != 0) {
                 object_normal_update(object);
             } else {
@@ -218,7 +218,7 @@ static void object_update(Object *object)
         object_begin_damage_destroy(object);
         return;
     }
-    if (bn6_battle_is_time_stopped() != 0) {
+    if (bn6_battle_is_dimmed() != 0) {
         object_animate(object);
         return;
     }
@@ -302,7 +302,7 @@ static Object *spawn_persistent(Object *controller)
     object->owner = owner_side;
     object->parent = owner;
     object->attack = controller->attack;
-    object->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
+    object->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
     bn6_object_register_deployable(object, owner_side, 1);
     return object;
 }
@@ -327,16 +327,16 @@ static void update(Object *controller)
 {
     switch (controller->phase) {
     case 0:
-        bn6_self_type4_timestop_intro();
+        bn6_self_type4_dimming_intro();
         break;
     case 4:
-        bn6_self_type4_timestop_freeze();
+        bn6_self_type4_dimming_freeze();
         break;
     case 8:
         launch_effect(controller);
         break;
     default:
-        bn6_self_type4_timestop_outro();
+        bn6_self_type4_dimming_outro();
         break;
     }
 }
@@ -345,13 +345,13 @@ BN6_OBJECT4(signalred_controller_main)
 {
     switch (self->state) {
     case 0:
-        bn6_self_type4_timestop_init();
+        bn6_self_type4_dimming_init();
         break;
     case 4:
         update(self);
         break;
     default:
-        bn6_self_type4_timestop_free();
+        bn6_self_type4_dimming_free();
         break;
     }
 }
@@ -371,13 +371,13 @@ BN6_OBJECT3(signalred_object_main)
     }
 }
 
-BN6_ATTACK(0x0C1, signalred_attack_main)
+BN6_PERSISTENT_ATTACK(0x0C1, signalred_attack_main)
 {
     Object *controller = bn6_spawn_type4(
         BN6_OBJECT_ID(signalred_controller_main), spawn_argument
     );
     if (controller == NULL) {
-        return;
+        return NULL;
     }
     controller->panel_x = (uint8_t)panel_x;
     controller->panel_y = (uint8_t)panel_y;
@@ -386,4 +386,5 @@ BN6_ATTACK(0x0C1, signalred_attack_main)
     controller->owner_word = owner->owner_word;
     controller->attack = attack;
     controller->chip_data = chip_data;
+    return controller;
 }

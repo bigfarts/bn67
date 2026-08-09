@@ -194,16 +194,16 @@ static void update(Object *controller)
 {
     switch (controller->phase) {
     case 0:
-        bn6_self_type4_timestop_intro();
+        bn6_self_type4_dimming_intro();
         break;
     case 4:
-        bn6_self_type4_timestop_freeze();
+        bn6_self_type4_dimming_freeze();
         break;
     case 8:
         effect_update(controller);
         break;
     default:
-        bn6_self_type4_timestop_outro();
+        bn6_self_type4_dimming_outro();
         break;
     }
 }
@@ -212,24 +212,24 @@ BN6_OBJECT4(jealousy_controller_main)
 {
     switch (self->state) {
     case 0:
-        bn6_self_type4_timestop_init();
+        bn6_self_type4_dimming_init();
         break;
     case 4:
         update(self);
         break;
     default:
-        bn6_self_type4_timestop_free();
+        bn6_self_type4_dimming_free();
         break;
     }
 }
 
-BN6_ATTACK(0x0BF, jealousy_attack_main)
+BN6_PERSISTENT_ATTACK(0x0BF, jealousy_attack_main)
 {
     Object *controller = bn6_spawn_type4(
         BN6_OBJECT_ID(jealousy_controller_main), spawn_argument
     );
     if (controller == NULL) {
-        return;
+        return NULL;
     }
     controller->panel_x = (uint8_t)panel_x;
     controller->panel_y = (uint8_t)panel_y;
@@ -238,4 +238,5 @@ BN6_ATTACK(0x0BF, jealousy_attack_main)
     controller->owner_word = owner->owner_word;
     controller->attack = attack;
     controller->chip_data = chip_data;
+    return controller;
 }

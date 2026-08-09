@@ -222,12 +222,14 @@ ASSETS = (
     Asset("bn4_blue_moon", "laserman-battle-sprite.bin", 0x339B6C, 0x395C, lz77=True),
     Asset("bn4_blue_moon", "laserman-fire-sample.bin", 0x1BCFF8, 0x144E),
 
-    # Native BN6 attack dispatch prefixes. The registry relocates each one to
-    # a complete 256-entry subfamily table before appending package attacks.
+    # Native BN6 attack dispatch prefixes. The registry relocates each one and
+    # appends package attacks in the remaining 8-bit subfamily namespace.
     Asset("bn6_gregar", "attack-family15-table-gregar.bin", 0x2CCB4, 0xA8),
     Asset("bn6_gregar", "attack-family1B-table-gregar.bin", 0x2CD5C, 0x74),
+    Asset("bn6_gregar", "attack-family1C-table-gregar.bin", 0xED730, 0x5C),
     Asset("bn6_falzar", "attack-family15-table-falzar.bin", 0x2CCB4, 0xA8),
     Asset("bn6_falzar", "attack-family1B-table-falzar.bin", 0x2CD5C, 0x74),
+    Asset("bn6_falzar", "attack-family1C-table-falzar.bin", 0xEC3F0, 0x5C),
 
     # Native BN6 object dispatch prefixes. The registry relocates each class
     # to a complete 256-entry object-ID table before appending package objects.

@@ -308,7 +308,50 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertEqual(searchman.attack.kind, "summon_attack")
         signalred = next(package for package in packages if package.name == "signalred")
         self.assertIsNotNone(signalred.attack)
-        self.assertEqual(signalred.attack.kind, "attack")
+        self.assertEqual(signalred.attack.kind, "persistent_attack")
+
+    def test_ephemeral_attack_pool_follows_the_native_table(self) -> None:
+        expected_references = {
+            "gregar": (0x080ED72C,),
+            "falzar": (0x080EC3EC,),
+        }
+        for variant in ("gregar", "falzar"):
+            config, packages = self.packages(variant)
+            ephemeral_pool = config.attack_pools["ephemeral_attack"]
+            self.assertEqual(ephemeral_pool.family, 0x1C)
+            self.assertEqual(ephemeral_pool.native_entries, 0x17)
+            self.assertEqual(
+                ephemeral_pool.references,
+                expected_references[variant],
+            )
+            signalred = next(
+                package for package in packages if package.name == "signalred"
+            )
+            self.assertIsNotNone(signalred.attack)
+            ephemeral_signalred = replace(
+                signalred,
+                attack=replace(signalred.attack, kind="ephemeral_attack"),
+            )
+            packages = [
+                ephemeral_signalred if package.name == "signalred" else package
+                for package in packages
+            ]
+            allocations = validate_and_allocate(config, packages)
+            slot = allocations.attacks["signalred_attack_main"]
+            self.assertEqual(slot.family, 0x1C)
+            self.assertEqual(slot.subfamily, 0x17)
+            assembly = "\n".join(
+                emit_attack_tables(config, packages, allocations)
+            )
+            self.assertIn("attack_family_1c_table:", assembly)
+            self.assertIn(
+                f'.incbin "{ephemeral_pool.native_table}"',
+                assembly,
+            )
+            self.assertIn(
+                ".dw signalred_attack_main + 1 // 0x17 signalred",
+                assembly,
+            )
 
     def test_custom_summons_follow_delta_ray(self) -> None:
         for variant in ("gregar", "falzar"):

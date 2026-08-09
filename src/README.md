@@ -89,11 +89,25 @@ BN6_POINTER_PATCH(0x080EACD0, signalred_dust_sprite_table);
 #endif
 ```
 
-`BN6_ATTACK` registers a normal time-freeze attack, while
-`BN6_SUMMON_ATTACK` registers the Navi-summon lifecycle. In BN6, the family
-selects one of these native ABIs and the subfamily is an 8-bit index into that
-family's function table. The compiler relocates each configured native table
-to 256 entries, appends the registered attacks, and writes the resulting
+The attack macros name the native family lifecycle they register:
+
+- `BN6_PERSISTENT_ATTACK` uses family `0x15`. Its C function returns the
+  spawned controller/effect object (or `NULL`), which the native wrapper can
+  track after the callback. Its sixth argument is packed `chip_data`.
+- `BN6_SUMMON_ATTACK` uses family `0x1B` and receives the summon manager's
+  completion pointer as its sixth argument.
+- `BN6_EPHEMERAL_ATTACK` uses family `0x1C`. Its callback return is ignored,
+  its `attack` argument is already resolved with the activation bonus, and its
+  sixth argument is the owner's signed 16.16 `z` coordinate.
+
+`BN6_ATTACK` remains a source-compatible alias for
+`BN6_PERSISTENT_ATTACK`. Here, persistent and ephemeral describe the native
+wrapper lifecycle; an ephemeral callback may still spawn an independently
+managed object.
+
+The family selects one of these native ABIs and the subfamily is an 8-bit
+index into that family's function table. The compiler relocates each
+configured native prefix, appends registered attacks, and writes the resulting
 family/subfamily selectors into every chip owned by the package. The first
 macro argument is a representative chip ID that explicitly connects the C
 attack to the matching package definitions; the compiler rejects a missing ID.

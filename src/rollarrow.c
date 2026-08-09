@@ -73,7 +73,7 @@ static void spawn_projectile(Object *actor)
     projectile->x = actor->x + direction * (8 << 16);
     projectile->y = ((actor->y >> 16) - 1) << 16;
     projectile->z = 0x24 << 16;
-    projectile->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
+    projectile->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
 }
 
 static void actor_wait(Object *self)
@@ -185,7 +185,7 @@ BN6_OBJECT1(rollarrow_actor_main)
         actor_destroy(self);
         return;
     }
-    bn6_self_object_update_timestop();
+    bn6_self_object_update_dimming();
 }
 
 static void projectile_free(Object *self)
@@ -299,7 +299,7 @@ BN6_OBJECT3(rollarrow_arrow_main)
         bn6_self_object_free();
         return;
     }
-    bn6_self_object_update_timestop();
+    bn6_self_object_update_dimming();
 }
 
 BN6_SUMMON_ATTACK(0x018, rollarrow_attack_main)

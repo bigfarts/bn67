@@ -161,7 +161,7 @@ static void spawn_laser(Object *actor)
     beam->owner_word = actor->owner_word;
     beam->attack = actor->attack;
     beam->parent = actor;
-    beam->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
+    beam->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
 }
 
 static void actor_attack(Object *self)
@@ -268,7 +268,7 @@ static void spawn_hit(
     if (command != COMMAND_MARKER) {
         hit->phase_timer_low = 0;
     }
-    hit->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
+    hit->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
 }
 
 static void spawn_row_event(Object *beam, uint16_t command)

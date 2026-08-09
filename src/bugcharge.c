@@ -169,7 +169,7 @@ static void spawn_gospel(Object *controller)
     gospel->owner_word = controller->owner_word;
     gospel->attack = controller->attack;
     gospel->parent = controller;
-    gospel->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
+    gospel->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
 }
 
 static void effect_update(Object *self, uint32_t spawn_argument)
@@ -209,13 +209,13 @@ static void effect_update(Object *self, uint32_t spawn_argument)
 static void controller_update(Object *self, uint32_t spawn_argument)
 {
     if (self->phase == 0) {
-        bn6_self_type4_timestop_intro();
+        bn6_self_type4_dimming_intro();
     } else if (self->phase == 4) {
-        bn6_self_type4_timestop_freeze();
+        bn6_self_type4_dimming_freeze();
     } else if (self->phase == EFFECT_PHASE) {
         effect_update(self, spawn_argument);
     } else {
-        bn6_self_type4_timestop_outro();
+        bn6_self_type4_dimming_outro();
     }
 }
 
@@ -282,7 +282,7 @@ static void spawn_hit(Object *source, uint32_t panel_x, uint32_t panel_y)
     hit->owner_word = source->owner_word;
     hit->attack = source->attack;
     hit->parent = source;
-    hit->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
+    hit->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_DIMMING;
 }
 
 static USED void attack_row(Object *source)
@@ -391,7 +391,7 @@ BN6_OBJECT3(bugcharge_hit_main)
         bn6_self_object_free();
         return;
     }
-    bn6_self_object_update_timestop();
+    bn6_self_object_update_dimming();
 }
 
 BN6_OBJECT3(bugcharge_gospel_main)
@@ -408,7 +408,7 @@ BN6_OBJECT3(bugcharge_gospel_main)
         bn6_self_object_free();
         return;
     }
-    bn6_self_object_update_timestop();
+    bn6_self_object_update_dimming();
 }
 
 BN6_OBJECT4(bugcharge_head_main)
@@ -423,27 +423,27 @@ BN6_OBJECT4(bugcharge_head_main)
         bn6_self_object_free();
         return;
     }
-    bn6_self_object_update_timestop();
+    bn6_self_object_update_dimming();
 }
 
 BN6_OBJECT4(bugcharge_controller_main)
 {
     if (self->state == 0) {
-        bn6_self_type4_timestop_init();
+        bn6_self_type4_dimming_init();
     } else if (self->state == ACTIVE_STATE) {
         controller_update(self, spawn_argument);
     } else {
-        bn6_self_type4_timestop_free();
+        bn6_self_type4_dimming_free();
     }
 }
 
-BN6_ATTACK(0x131, bugcharge_attack_main)
+BN6_PERSISTENT_ATTACK(0x131, bugcharge_attack_main)
 {
     Object *controller = bn6_spawn_type4(
         BN6_OBJECT_ID(bugcharge_controller_main), spawn_argument
     );
     if (controller == NULL) {
-        return;
+        return NULL;
     }
     controller->panel_x = (uint8_t)panel_x;
     controller->panel_y = (uint8_t)panel_y;
@@ -452,4 +452,5 @@ BN6_ATTACK(0x131, bugcharge_attack_main)
     controller->owner_word = owner->owner_word;
     controller->attack = attack;
     controller->chip_data = chip_data;
+    return controller;
 }
