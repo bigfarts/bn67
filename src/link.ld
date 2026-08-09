@@ -1,7 +1,5 @@
 OUTPUT_ARCH(arm)
 
-INCLUDE build/registry-values.generated.ld
-
 MEMORY
 {
     /* The wholesale title map occupies 0x08800000-0x088004FF. Keep compiled
@@ -14,13 +12,13 @@ SECTIONS
 {
     .text : ALIGN(4)
     {
-        CCodeStart = .;
+        c_code_start = .;
         *(.text .text.*)
         . = ALIGN(4);
-        CCodeTextEnd = .;
+        c_code_text_end = .;
         *(.rodata .rodata.*)
         . = ALIGN(4);
-        CCodeEnd = .;
+        c_code_end = .;
     } > ROM
 
     .data : ALIGN(4)

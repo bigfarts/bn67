@@ -21,63 +21,102 @@ Put declarations beside the implementation they register:
 #include "runtime.h"
 
 BN6_INCLUDE(common);
-BN6_USE_SONG(CommonNaviSummonSong);
+BN6_USE_SONG(common_navi_summon_song);
 BN6_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
-BN6_SONG(SearchmanFireSong);
-BN6_POINTER_PATCH(0x08012010, SearchmanData);
+BN6_SONG(
+    searchman_fire_song,
+    BN6_PCM(
+        searchman_fire,
+        0x40,
+        0x08,
+        ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xB1\n",
+        "build/searchman-fire-sample.bin"
+    )
+);
+BN6_POINTER_PATCH(0x08012010, searchman_data);
 
 BN6_OBJECT1(searchman_actor_main)
 {
     /* `self` is the current object. */
 }
 
-BN6_ATTACK(0x107, searchman_attack_main)
+BN6_SUMMON_ATTACK(0x107, searchman_attack_main)
 {
     /* Native attack arguments are available by name here. */
 }
 ```
 
-`BN6_ATTACK` names the representative chip whose family, subfamily, and
-counter marker select the attack route. Other versions of the same attack can
-share that route without being repeated in C.
+Target-specific pointer addresses use the same macro behind the normal C
+preprocessor; the metadata pass receives the same definition as the final C
+build:
+
+```c
+#if FALZAR
+BN6_POINTER_PATCH(0x080E9990, signalred_dust_sprite_table);
+#else
+BN6_POINTER_PATCH(0x080EACD0, signalred_dust_sprite_table);
+#endif
+```
+
+`BN6_ATTACK` registers a normal time-freeze attack, while
+`BN6_SUMMON_ATTACK` registers the Navi-summon lifecycle. In BN6, the family
+selects one of these native ABIs and the subfamily is an 8-bit index into that
+family's function table. The compiler relocates each configured native table
+to 256 entries, appends the registered attacks, and writes the resulting
+family/subfamily selectors into every chip owned by the package. The first
+macro argument is a representative chip ID that explicitly connects the C
+attack to the matching package definitions; the compiler rejects a missing ID.
 
 Object and attack entry points follow `<package>_<name>_main`; sprite archives
-follow `<package>_<name>_sprite`; and songs follow `<Package><Name>Song`. The
+follow `<package>_<name>_sprite`; and songs follow `<package>_<name>_song`. The
 compiler rejects labels that do not match those conventions. Object and attack
 macros combine registration, the native ABI veneer, and the C implementation.
 Every object macro exposes the native `r4` value as `spawn_argument`.
+`BN6_SPRITE` and `BN6_SONG` likewise combine registration with the resource
+definition; `BN6_PCM` supplies the standard PCM song body.
 
 Use the allocated values in ordinary C expressions:
 
 ```c
-self->kind = BN6_OBJECT_KIND(searchman_reticle_main);
+Object *reticle = bn6_spawn_type4(
+    BN6_OBJECT_ID(searchman_reticle_main),
+    spawn_argument
+);
 bn6_self_sprite_load(
     0x80,
     BN6_SPRITE_GROUP(searchman_battle_sprite),
     BN6_SPRITE_ID(searchman_battle_sprite)
 );
-bn6_play_sound(BN6_SONG_ID(SearchmanFireSong));
+bn6_play_sound(BN6_SONG_ID(searchman_fire_song));
 ```
 
 Shared resources are registered once. `BN6_INCLUDE(common)` orders the shared
-implementation first, while `BN6_USE_SONG(CommonNaviSummonSong)` declares the
+implementation first, while `BN6_USE_SONG(common_navi_summon_song)` declares the
 link-time selector without adding another song-table entry.
 
 ## ELF metadata and link-time values
 
 `compile_c_metadata.py` compiles every gameplay package source with
-`BN6_METADATA_ONLY`. The registration and definition macros emit ordered
-`__bn6_meta__...` symbols into each ELF object. The script reads those symbols
-with `arm-none-eabi-nm`; it does not parse C source text.
+`BN6_METADATA_ONLY` and the target's normal preprocessor definitions. The
+registration and definition macros emit ordered `__bn6_meta__...` symbols into
+each ELF object. The script reads those symbols with `arm-none-eabi-nm`; it does
+not parse C source text.
 
-`compile_registry.py` consumes the extracted symbol list, checks dependencies,
-allocates registry slots, and writes:
+`compile_registry.py` receives one config file and one extracted symbol list.
+It does not know target or edition names. Each invocation checks dependencies,
+allocates that config's registry slots, and writes separate target artifacts:
 
-- `build/registry.generated.asm` for ROM hooks and tables;
-- `build/text-replacements.generated.json` for text edits;
-- `build/registry-values.generated.ld` for C-visible absolute selector symbols.
+- `build/registry-<target>.generated.asm` for ROM hooks and tables;
+- `build/text-replacements-<target>.generated.json` for text edits;
+- `build/registry-values-<target>.generated.ld` for C-visible absolute selector
+  symbols.
 
-The final C link resolves `BN6_OBJECT_KIND`, `BN6_SPRITE_ID`,
+An object's class selects its native allocator and lifecycle table; its ID is
+the 8-bit index within that table. The compiler relocates configured class
+tables to 256 entries and resolves `BN6_OBJECT_ID` directly, so custom objects
+do not need an extra runtime discriminator field.
+
+The final C link resolves `BN6_OBJECT_ID`, `BN6_SPRITE_ID`,
 `BN6_SPRITE_GROUP`, `BN6_SONG_ID`, and `BN6_SONG_GROUP` from that linker file.
 Metadata records are not included in the final gameplay binary.
 
@@ -96,7 +135,9 @@ element = "null"
 class = "giga"
 mb = 77
 power = 200
-behavior = { counter_settings = 0x8B, family = 0x15, subfamily = 0x26, parameters = [0, 0, 0, 0] }
+behavior = { counter_settings = 0x8B, parameters = [0, 0, 0, 0] }
+
+[chips."0x131".variants]
 gregar = { behavior = { effect_flags = 0x41 } }
 falzar = { behavior = { effect_flags = 0x01 } }
 ```
@@ -112,20 +153,23 @@ Unrelated text replacements use a separate archive/index namespace:
 ```
 
 Supported common fields are `codes`, `attack_element`, `rarity`, `element`,
-`class`, `mb`, `power`, `behavior`, `library`, and `artwork`. The `gregar` and
-`falzar` tables override only edition-specific values. Omitted values preserve
-the native chip record.
+`class`, `mb`, `power`, `behavior`, `library`, and `artwork`. Entries under the
+generic `variants` table override common fields when their key matches the
+config's opaque `variant` value. Omitted values preserve the native chip record.
 
-Allocation is deterministic: included sources are visited first, source paths
-are sorted, and declarations retain their ELF symbol order. Capacity overflow,
-duplicate registrations, missing definitions, invalid routes, and include
+Allocation is deterministic: attacks are ordered by their explicit
+representative chip IDs, while other resources visit included sources first,
+sort source paths, and retain ELF declaration order. Capacity overflow,
+duplicate registrations, missing definitions, exhausted tables, and include
 cycles are build errors.
 
 Run both compiler stages directly with:
 
 ```sh
-python3 compile_c_metadata.py
-python3 compile_registry.py
+python3 compile_c_metadata.py --define FALZAR=0 \
+  --output build/registry-metadata-gregar.generated.json
+python3 compile_registry.py config.gregar.toml \
+  --metadata build/registry-metadata-gregar.generated.json
 ```
 
 The normal Make pipeline runs them automatically.

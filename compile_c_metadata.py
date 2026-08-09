@@ -20,6 +20,7 @@ RUNTIME_SOURCE_NAMES = {"abi.c", "runtime.c"}
 def package_symbols(
     cc: str,
     nm: str,
+    defines: tuple[str, ...],
     include_dir: Path,
     source: Path,
     object_path: Path,
@@ -35,6 +36,7 @@ def package_symbols(
             "-fno-builtin",
             "-ffixed-r5",
             "-DBN6_METADATA_ONLY",
+            *(f"-D{define}" for define in defines),
             f"-I{include_dir}",
             "-c",
             str(source),
@@ -69,6 +71,7 @@ def main() -> int:
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent)
     parser.add_argument("--cc", default="arm-none-eabi-gcc")
     parser.add_argument("--nm", default="arm-none-eabi-nm")
+    parser.add_argument("--define", action="append", default=[])
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
 
@@ -89,6 +92,7 @@ def main() -> int:
             symbols = package_symbols(
                 args.cc,
                 args.nm,
+                tuple(args.define),
                 include_dir,
                 source,
                 temporary / f"{package}.o",

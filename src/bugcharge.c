@@ -1,40 +1,38 @@
 #include "runtime.h"
 
 BN6_SPRITE(bugcharge_gospel_sprite, "build/bugcharge-gospel-sprite.bin");
-BN6_SONG(BugchargeChargeSong);
-BN6_SONG(BugchargeFireSong);
 
-BN6_INCBIN(BugchargeIcon, "build/bugcharge-icon.bin");
-BN6_INCBIN(BugchargeImage, "build/bugcharge-image.bin");
-BN6_INCBIN(BugchargePalette, "build/bugcharge-palette.bin");
-BN6_PCM_SONG(
-    BugchargeChargeSong,
-    BugchargeCharge,
-    0x80,
-    0x08,
-    ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
-    ".byte 0xBE,0x70,0xD9,0x3C,0x7F,0x8A,0xB1\n",
-    "build/bugcharge-charge-sample.bin"
+BN6_INCBIN(bugcharge_icon, "build/bugcharge-icon.bin");
+BN6_INCBIN(bugcharge_image, "build/bugcharge-image.bin");
+BN6_INCBIN(bugcharge_palette, "build/bugcharge-palette.bin");
+BN6_SONG(
+    bugcharge_charge_song,
+    BN6_PCM(
+        bugcharge_charge,
+        0x80,
+        0x08,
+        ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
+        ".byte 0xBE,0x70,0xD9,0x3C,0x7F,0x8A,0xB1\n",
+        "build/bugcharge-charge-sample.bin"
+    )
 );
-BN6_ASM_RESOURCE(
-    BugchargeFireSong,
+BN6_SONG(
+    bugcharge_fire_song,
     ".byte 1,0,0x80,0\n"
-    ".long BugchargeFireVoicegroup\n"
-    ".long BugchargeFireTrack\n"
-    ".global BugchargeFireVoicegroup\n"
-    "BugchargeFireVoicegroup:\n"
+    ".long bugcharge_fire_voicegroup\n"
+    ".long bugcharge_fire_track\n"
+    ".global bugcharge_fire_voicegroup\n"
+    "bugcharge_fire_voicegroup:\n"
     ".byte 0x0C,0x3C,0,0\n"
     ".long 0\n"
     ".byte 0,3,0,0\n"
-    ".global BugchargeFireTrack\n"
-    "BugchargeFireTrack:\n"
+    ".global bugcharge_fire_track\n"
+    "bugcharge_fire_track:\n"
     ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
     ".byte 0xBE,0x60,0xD2,0x3C,0x7F,0x83,0xEA,0x48\n"
     ".byte 0x9B,0x81,0xB1\n"
 );
 
-static const uint8_t VISIBLE_FLAG = 2;
-static const uint8_t COLLISION_FLAG = 0x10;
 static const uint8_t ACTIVE_STATE = 4;
 static const uint8_t EFFECT_PHASE = 8;
 static const uint8_t OUTRO_PHASE = 0x0C;
@@ -48,8 +46,6 @@ static const uint32_t COLLISION_SELECTOR = 5;
 static const uint32_t PRESENT_COLLISION_VALUE = COLLISION_SELECTOR << 3;
 static const uint32_t EXTENDED_COLLISION_VALUE =
     PRESENT_COLLISION_VALUE << 8;
-static const uint32_t LEFT_PANEL_MASK = 0x00200000;
-static const uint32_t RIGHT_PANEL_MASK = 0x00400000;
 
 static const uint8_t BYTE_PROPERTIES[] = {
     0x13, 0x14, 0x16, 0x19, 0x18, 0x1A, 0x63,
@@ -74,7 +70,7 @@ static uint16_t count_and_clear_bugs(Object *controller)
         }
     }
 
-    volatile uint16_t *halfword = (volatile uint16_t *)(properties + 0x54);
+    uint16_t *halfword = (uint16_t *)(properties + 0x54);
     if (*halfword != 0) {
         ++count;
         *halfword = 0;
@@ -112,7 +108,7 @@ static void head_init(Object *self)
     bn6_self_sprite_load_animation_data();
     bn6_self_sprite_update();
     bn6_self_sprite_set_flip(bn6_self_object_get_flip());
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     self->state_word = ACTIVE_STATE;
     head_set_position(self);
 }
@@ -142,14 +138,15 @@ static void spawn_charge_head(
     if (player == NULL) {
         return;
     }
-    Object *head = bn6_spawn_type4(CUSTOM_TYPE4_ID, spawn_argument);
+    Object *head = bn6_spawn_type4(
+        BN6_OBJECT_ID(bugcharge_head_main), spawn_argument
+    );
     if (head == NULL) {
         return;
     }
     head->aux_timer = (uint16_t)(controller->timer * 15u + 55u);
     head->owner_word = controller->owner_word;
     head->parent = player;
-    head->kind = BN6_OBJECT_KIND(bugcharge_head_main);
 }
 
 static void spawn_gospel(Object *controller)
@@ -157,7 +154,7 @@ static void spawn_gospel(Object *controller)
     int32_t direction =
         (int32_t)bn6_object_front_direction_for(controller);
     Object *gospel = bn6_spawn_type3(
-        CUSTOM_TYPE3_ID,
+        BN6_OBJECT_ID(bugcharge_gospel_main),
         0,
         0,
         0,
@@ -171,8 +168,7 @@ static void spawn_gospel(Object *controller)
     gospel->owner_word = controller->owner_word;
     gospel->attack = controller->attack;
     gospel->parent = controller;
-    gospel->kind = BN6_OBJECT_KIND(bugcharge_gospel_main);
-    gospel->flags |= COLLISION_FLAG;
+    gospel->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
 }
 
 static void effect_update(Object *self, uint32_t spawn_argument)
@@ -180,7 +176,7 @@ static void effect_update(Object *self, uint32_t spawn_argument)
     if (self->substate == 0) {
         self->timer = count_and_clear_bugs(self);
         spawn_charge_head(self, spawn_argument);
-        bn6_play_sound(BN6_SONG_ID(BugchargeChargeSong));
+        bn6_play_sound(BN6_SONG_ID(bugcharge_charge_song));
         self->aux_timer = CHARGE_FRAMES;
         self->substate = FIRE_SUBSTATE;
         return;
@@ -193,7 +189,7 @@ static void effect_update(Object *self, uint32_t spawn_argument)
     }
 
     if (self->substate == FIRE_SUBSTATE) {
-        bn6_play_sound(BN6_SONG_ID(BugchargeFireSong));
+        bn6_play_sound(BN6_SONG_ID(bugcharge_fire_song));
         spawn_gospel(self);
         bn6_screen_shake_set(2, 20);
         if (--self->timer != 0) {
@@ -246,7 +242,7 @@ static bool hit_init(Object *self)
         return false;
     }
     bn6_collision_setup(collision, 0x0A, COLLISION_SELECTOR, 3);
-    collision->active = 1;
+    collision->region = 1;
     bn6_self_collision_set_hit_effect(1);
     bn6_self_collision_present(0, PRESENT_COLLISION_VALUE);
     self->state_word = ACTIVE_STATE;
@@ -266,7 +262,7 @@ static void hit_update(Object *self)
 static void spawn_hit(Object *source, uint32_t panel_x, uint32_t panel_y)
 {
     Object *hit = bn6_spawn_type3(
-        CUSTOM_TYPE3_ID,
+        BN6_OBJECT_ID(bugcharge_hit_main),
         0,
         0,
         0,
@@ -280,20 +276,19 @@ static void spawn_hit(Object *source, uint32_t panel_x, uint32_t panel_y)
     hit->owner_word = source->owner_word;
     hit->attack = source->attack;
     hit->parent = source;
-    hit->kind = BN6_OBJECT_KIND(bugcharge_hit_main);
-    hit->flags |= COLLISION_FLAG;
+    hit->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
 }
 
 static USED void attack_row(Object *source)
 {
-    uint32_t panel_mask = source->owner == 0
-        ? LEFT_PANEL_MASK
-        : RIGHT_PANEL_MASK;
+    uint32_t opposing_navi_flag = source->owner == 0
+        ? BN6_PANEL_FLAG_SIDE_1_NAVI
+        : BN6_PANEL_FLAG_SIDE_0_NAVI;
     for (uint32_t panel_x = 6; panel_x != 0; --panel_x) {
-        if (bn6_panel_has_flags(
+        if (bn6_panel_matches_flags(
                 panel_x,
                 source->panel_y,
-                panel_mask,
+                opposing_navi_flag,
                 0
             ) != 0) {
             spawn_hit(source, panel_x, source->panel_y);
@@ -321,7 +316,7 @@ static bool gospel_init(Object *self)
     bn6_self_sprite_set_animation(0);
     bn6_self_sprite_load_animation_data();
     bn6_self_sprite_set_flip(bn6_self_object_get_flip());
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
 
     Collision *collision = bn6_self_collision_create();
     if (collision == NULL) {
@@ -347,7 +342,7 @@ static bool gospel_update(Object *self)
     Collision *collision = self->collision;
     bn6_collision_remove(collision);
     bn6_self_collision_spawn_effect();
-    if (collision->hit_flags != 0) {
+    if (collision->received_collision_type_flags != 0) {
         free_collision(self);
         return false;
     }
@@ -433,7 +428,9 @@ BN6_OBJECT4(bugcharge_controller_main)
 
 BN6_ATTACK(0x131, bugcharge_attack_main)
 {
-    Object *controller = bn6_spawn_type4(CUSTOM_TYPE4_ID, spawn_argument);
+    Object *controller = bn6_spawn_type4(
+        BN6_OBJECT_ID(bugcharge_controller_main), spawn_argument
+    );
     if (controller == NULL) {
         return;
     }
@@ -444,5 +441,4 @@ BN6_ATTACK(0x131, bugcharge_attack_main)
     controller->owner_word = owner->owner_word;
     controller->attack = attack;
     controller->chip_data = chip_data;
-    controller->kind = BN6_OBJECT_KIND(bugcharge_controller_main);
 }

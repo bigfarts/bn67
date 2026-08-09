@@ -222,6 +222,22 @@ ASSETS = (
     Asset("bn4_blue_moon", "laserman-battle-sprite.bin", 0x339B6C, 0x395C, lz77=True),
     Asset("bn4_blue_moon", "laserman-fire-sample.bin", 0x1BCFF8, 0x144E),
 
+    # Native BN6 attack dispatch prefixes. The registry relocates each one to
+    # a complete 256-entry subfamily table before appending package attacks.
+    Asset("bn6_gregar", "attack-family15-table-gregar.bin", 0x2CCB4, 0xA8),
+    Asset("bn6_gregar", "attack-family1B-table-gregar.bin", 0x2CD5C, 0x70),
+    Asset("bn6_falzar", "attack-family15-table-falzar.bin", 0x2CCB4, 0xA8),
+    Asset("bn6_falzar", "attack-family1B-table-falzar.bin", 0x2CD5C, 0x70),
+
+    # Native BN6 object dispatch prefixes. The registry relocates each class
+    # to a complete 256-entry object-ID table before appending package objects.
+    Asset("bn6_gregar", "object-class1-table-gregar.bin", 0x3C9C, 0x17C),
+    Asset("bn6_gregar", "object-class3-table-gregar.bin", 0x3EC4, 0x354),
+    Asset("bn6_gregar", "object-class4-table-gregar.bin", 0x42C8, 0x248),
+    Asset("bn6_falzar", "object-class1-table-falzar.bin", 0x3C9C, 0x17C),
+    Asset("bn6_falzar", "object-class3-table-falzar.bin", 0x3EC4, 0x354),
+    Asset("bn6_falzar", "object-class4-table-falzar.bin", 0x42C8, 0x248),
+
     # Native BN6 sprite pointer tables that receive appended archives.
     Asset("bn6_gregar", "sprite-group08-table-gregar.bin", 0x31DA4, 0x5C),
     Asset("bn6_gregar", "sprite-group0C-table-gregar.bin", 0x31E00, 0x1A4),

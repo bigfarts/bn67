@@ -8,11 +8,11 @@
 #define NAKED __attribute__((naked, noinline, used))
 #define USED __attribute__((used))
 
-typedef volatile struct ObjectFields Object;
-typedef volatile struct PlayerRuntimeFields PlayerRuntime;
-typedef volatile struct CollisionFields Collision;
-typedef volatile struct BattleContextFields BattleContext;
-typedef volatile struct RuntimeFields Runtime;
+typedef struct ObjectFields Object;
+typedef struct PlayerRuntimeFields PlayerRuntime;
+typedef struct CollisionFields Collision;
+typedef struct BattleContextFields BattleContext;
+typedef struct RuntimeFields Runtime;
 
 #define BN6_PALETTE_BG_STAGING_00 ((uintptr_t)0x03001550u)
 #define BN6_PALETTE_BG_STAGING_01 ((uintptr_t)0x03001570u)
@@ -87,6 +87,51 @@ typedef volatile struct RuntimeFields Runtime;
 #define BN6_STRINGIFY_INNER(value) #value
 #define BN6_STRINGIFY(value) BN6_STRINGIFY_INNER(value)
 
+/* ObjectHeader.Flags (+0x00). */
+#define BN6_OBJECT_FLAG_ACTIVE 0x01
+#define BN6_OBJECT_FLAG_VISIBLE 0x02
+#define BN6_OBJECT_FLAG_UPDATE_DURING_PAUSE 0x04
+#define BN6_OBJECT_FLAG_STOP_SPRITE_UPDATE 0x08
+#define BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP 0x10
+
+/* Flags returned for the current sprite-animation frame. */
+#define BN6_ANIMATION_FRAME_FLAG_END 0x80
+
+/* PanelData.Flags (+0x14). */
+#define BN6_PANEL_FLAG_SOLID 0x00000010
+#define BN6_PANEL_FLAG_CRACKED 0x00000040
+#define BN6_PANEL_FLAG_VALID 0x00010000
+/* Live Navi collision records contribute these flags to their panel. */
+#define BN6_PANEL_FLAG_SIDE_1_NAVI 0x00200000
+#define BN6_PANEL_FLAG_SIDE_0_NAVI 0x00400000
+/* Generic live collision records contribute these alliance flags. */
+#define BN6_PANEL_FLAG_SIDE_1_COLLISION 0x04000000
+#define BN6_PANEL_FLAG_SIDE_0_COLLISION 0x08000000
+
+/* CollisionData.ObjectFlags1 (+0x3C). */
+#define BN6_COLLISION_STATUS_FLAG_AIR_SHOES 0x00000010
+#define BN6_COLLISION_STATUS_FLAG_FLOAT_SHOES 0x00000020
+#define BN6_COLLISION_STATUS_FLAG_SUPER_ARMOR 0x00020000
+#define BN6_COLLISION_STATUS_FLAG_UNDERSHIRT 0x00040000
+
+/* CollisionData.ObjectFlags2 (+0x40). */
+#define BN6_COLLISION_SECONDARY_FLAG_WIND_REMOVAL 0x00040000
+#define BN6_COLLISION_SECONDARY_FLAG_DUST_SUCTION_SIDE_0 0x00100000
+#define BN6_COLLISION_SECONDARY_FLAG_DUST_SUCTION_SIDE_1 0x00200000
+
+/* BattleState control flags at +0x5C. */
+#define BN6_BATTLE_CONTROL_FLAG_SIDE_0_CHIPS_ENABLED 0x04
+#define BN6_BATTLE_CONTROL_FLAG_SIDE_1_CHIPS_ENABLED 0x08
+
+/* Battle configuration flags. */
+#define BN6_BATTLE_CONFIG_FLAG_LINK 0x08
+
+/* Joypad state bits. */
+#define BN6_KEY_RIGHT 0x10
+#define BN6_KEY_LEFT 0x20
+#define BN6_KEY_UP 0x40
+#define BN6_KEY_DOWN 0x80
+
 /*
  * Convert BN6's native register conventions to the C ABI.  These veneers
  * must use BL so the C helper receives an odd Thumb return address.
@@ -119,7 +164,7 @@ typedef volatile struct RuntimeFields Runtime;
     }
 
 struct ObjectFields {
-    uint8_t flags;                       // +0x00
+    uint8_t header_flags;                // +0x00, BN6_OBJECT_FLAG_*
     uint8_t unknown_01[3];
     union {
         uint16_t variant_word;            // +0x04
@@ -181,7 +226,7 @@ struct ObjectFields {
     uint32_t attack;                     // +0x2C
     union {
         uint32_t chip_data;              // +0x30
-        volatile uint8_t *completion;    // +0x30
+        uint8_t *completion;             // +0x30
         struct {
             uint16_t chip_id;
             uint16_t attack_bonus;       // +0x32
@@ -198,8 +243,7 @@ struct ObjectFields {
     Collision *collision;                // +0x54
     void *runtime_data;                  // +0x58
     uint32_t engine_reserved;            // +0x5C
-    uint8_t work[0x1C];                  // +0x60 through +0x78
-    uint32_t kind;                       // +0x7C
+    uint8_t work[0x20];                  // +0x60 through +0x7C
 };
 
 struct PlayerRuntimeFields {
@@ -209,12 +253,12 @@ struct PlayerRuntimeFields {
 };
 
 struct CollisionFields {
-    uint8_t unknown_00;
-    uint8_t active;                      // +0x01
+    uint8_t enabled;                     // +0x00
+    uint8_t region;                      // +0x01
     uint8_t unknown_02[0x6E];
-    uint32_t hit_flags;                  // +0x70
+    uint32_t received_collision_type_flags; // +0x70
     uint8_t unknown_74[0x0C];
-    uint16_t accumulated_damage;         // +0x80
+    uint16_t final_damage;               // +0x80
 };
 
 struct BattleContextFields {
@@ -256,7 +300,6 @@ _Static_assert(
 );
 _Static_assert(offsetof(struct ObjectFields, work) == 0x60, "object work offset");
 _Static_assert(offsetof(struct ObjectFields, completion) == 0x30, "object completion offset");
-_Static_assert(offsetof(struct ObjectFields, kind) == 0x7C, "object kind offset");
 _Static_assert(
     offsetof(struct PlayerRuntimeFields, active_power_attack) == 0x07,
     "player runtime active power attack offset"
@@ -266,12 +309,16 @@ _Static_assert(
     "player runtime B-Left offset"
 );
 _Static_assert(
-    offsetof(struct CollisionFields, hit_flags) == 0x70,
-    "collision hit flags offset"
+    offsetof(struct CollisionFields, region) == 0x01,
+    "collision region offset"
 );
 _Static_assert(
-    offsetof(struct CollisionFields, accumulated_damage) == 0x80,
-    "collision damage offset"
+    offsetof(struct CollisionFields, received_collision_type_flags) == 0x70,
+    "received collision type flags offset"
+);
+_Static_assert(
+    offsetof(struct CollisionFields, final_damage) == 0x80,
+    "final collision damage offset"
 );
 _Static_assert(
     offsetof(struct BattleContextFields, local_side) == 0x0D,
@@ -317,12 +364,11 @@ void bn6_self_sprite_set_palette(uint32_t palette);
 void bn6_self_sprite_flash_white(void);
 void bn6_self_sprite_set_scale(uint32_t scale);
 void bn6_self_sprite_set_priority(uint32_t priority);
-uint32_t bn6_self_sprite_get_animation_flags(void);
-uint32_t bn6_self_sprite_get_animation_status(void);
+uint32_t bn6_self_sprite_get_frame_flags(void);
 uint32_t bn6_sprite_get_palette(Object *object);
 uint32_t bn6_sprite_get_scale(Object *object);
 void bn6_self_sprite_set_blend(uint32_t low, uint32_t high);
-void bn6_self_sprite_set_flag(uint32_t flag);
+void bn6_self_sprite_hide_piece(uint32_t piece_index);
 void bn6_self_sprite_copy_visibility(Object *source);
 void bn6_self_sprite_copy_palette_bits(Object *source);
 void bn6_self_sprite_copy_special_bits(Object *source);
@@ -374,7 +420,12 @@ uint32_t bn6_object_front_direction_for(Object *object);
 int32_t bn6_self_object_side_direction(void);
 uint32_t bn6_self_object_get_flip(void);
 uint32_t bn6_panel_is_valid_xy(uint32_t x, uint32_t y);
-uint32_t bn6_panel_has_flags(uint32_t x, uint32_t y, uint32_t flags, uint32_t unused);
+uint32_t bn6_panel_matches_flags(
+    uint32_t x,
+    uint32_t y,
+    uint32_t required_flags,
+    uint32_t excluded_flags
+);
 uint32_t bn6_panel_get_parameters(uint32_t x, uint32_t owner);
 uint32_t bn6_panel_get_flags(uint32_t x, uint32_t y);
 void bn6_panel_set_flash(uint32_t x, uint32_t y);
@@ -393,7 +444,7 @@ void bn6_self_deployable_lifetime_update(void);
 Collision *bn6_self_collision_create(void);
 void bn6_collision_setup(Collision *collision, uint32_t passive_region, uint32_t hit_region, uint32_t mode);
 void bn6_self_collision_present(uint32_t unused, uint32_t region);
-uint32_t bn6_self_collision_get_flags(void);
+uint32_t bn6_self_collision_get_secondary_flags(void);
 void bn6_collision_remove(Collision *collision);
 void bn6_collision_clear_region(Collision *collision);
 void bn6_self_collision_update_panel(void);
@@ -408,13 +459,13 @@ void bn6_bugfix_clear_runtime_state(void);
 
 uint32_t bn6_battle_is_over(void);
 uint32_t bn6_battle_is_time_stopped(void);
-uint32_t bn6_battle_config_flags(void);
+uint32_t bn6_battle_get_config_flags(void);
 uint32_t bn6_link_battle_active(void);
 uint32_t bn6_compare_local_side(uint32_t side);
 void bn6_lock_battle_state(void);
 void bn6_begin_local_custom(void);
-void bn6_battle_flags_set(uint32_t flags);
-void bn6_battle_flags_clear(uint32_t flags);
+void bn6_battle_set_control_flags(uint32_t control_flags);
+void bn6_battle_clear_control_flags(uint32_t control_flags);
 
 Object *bn6_player_object_for_side(uint32_t side);
 uint8_t *bn6_player_properties_for_side(uint32_t side);
@@ -424,10 +475,13 @@ void bn6_player_property_set_for_side(
     uint32_t property,
     uint32_t value
 );
-volatile uint8_t *bn6_input_state_for_side(uint32_t side);
-void bn6_player_clear_status_flags(Object *player, uint32_t flags);
-volatile uint8_t *bn6_chip_list(uint32_t side);
-volatile uint8_t *bn6_player_data(uint32_t side);
+const uint8_t *bn6_input_state_for_side(uint32_t side);
+void bn6_player_clear_collision_status_flags(
+    Object *player,
+    uint32_t status_flags
+);
+const uint8_t *bn6_chip_list(uint32_t side);
+uint8_t *bn6_player_data(uint32_t side);
 void bn6_rebuild_folder(void);
 void bn6_clear_hand(void);
 void bn6_shuffle_chip_queue(void *queue, uint32_t reserved, uint32_t regular, uint32_t size);
@@ -457,7 +511,7 @@ void bn6_saved_navi_dispatch(
     uint32_t parameter,
     uintptr_t data,
     uint32_t properties,
-    volatile uint8_t *completion
+    uint8_t *completion
 );
 
 void bn6_self_type4_timestop_init(void);

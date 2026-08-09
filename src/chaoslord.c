@@ -6,16 +6,12 @@ BN6_SPRITE(chaoslord_teardown_sprite, "build/chaoslord-teardown-sprite.bin");
 BN6_SPRITE(chaoslord_apparition_sprite, "build/chaoslord-apparition-sprite.bin");
 
 #if !FALZAR
-BN6_INCBIN(ChaoslordIcon, "build/chaoslord-icon.bin");
-BN6_INCBIN(ChaoslordLordImage, "build/chaoslord-image.bin");
-BN6_INCBIN(ChaoslordLordPalette, "build/chaoslord-palette.bin");
+BN6_INCBIN(chaoslord_icon, "build/chaoslord-icon.bin");
+BN6_INCBIN(chaoslord_image, "build/chaoslord-image.bin");
+BN6_INCBIN(chaoslord_palette, "build/chaoslord-palette.bin");
 #endif
-BN6_INCBIN(ChaoslordTrigTable, "build/chaoslord-trig.bin");
+BN6_INCBIN(chaoslord_trig_table, "build/chaoslord-trig.bin");
 
-static const uint8_t VISIBLE_FLAG = 0x02;
-static const uint8_t TIMESTOP_FLAG = 0x04;
-static const uint8_t ATTACK_FLAG = 0x10;
-static const uint8_t FLASH_FLAGS = 0x14;
 static const uint8_t ACTIVE_STATE = 4;
 static const uint8_t DESTROY_STATE = 8;
 static const uint8_t BALL_ACTIVE_PHASE = 4;
@@ -131,8 +127,8 @@ static void set_phase(Object *self, uint8_t phase)
 
 static uint32_t packed_scale(Object *self)
 {
-    volatile struct ChaoslordControllerWork *work =
-        (volatile struct ChaoslordControllerWork *)self->work;
+    struct ChaoslordControllerWork *work =
+        (struct ChaoslordControllerWork *)self->work;
     return work->scale_low
         | (work->scale_middle << 5)
         | (work->scale_high << 10);
@@ -170,14 +166,14 @@ static Object *spawn_ball(Object *controller)
         0x10010000u
         | BN6_SPRITE_GROUP(chaoslord_main_sprite)
         | (BN6_SPRITE_ID(chaoslord_main_sprite) << 8);
-    Object *ball = bn6_spawn_type1(CUSTOM_TYPE1_ID, spawn_argument);
+    Object *ball = bn6_spawn_type1(
+        BN6_OBJECT_ID(chaoslord_ball_main), spawn_argument
+    );
     if (ball == NULL) {
         return NULL;
     }
     ball->parent = controller;
-    ball->kind = BN6_OBJECT_KIND(chaoslord_ball_main);
     ball->owner = controller->owner;
-    ball->flags |= TIMESTOP_FLAG;
     return ball;
 }
 
@@ -185,17 +181,6 @@ static void ball_phase_active(Object *self)
 {
     bn6_self_sprite_copy_visibility(self->parent);
     bn6_self_object_update_timestop();
-}
-
-static void ball_phase_wait(Object *self)
-{
-    bn6_self_sprite_copy_visibility(self->parent);
-    if ((bn6_self_sprite_get_animation_status() & 0x02u) == 0) {
-        return;
-    }
-    self->flags &= (uint8_t)~TIMESTOP_FLAG;
-    set_phase(self, BALL_ACTIVE_PHASE);
-    ball_phase_active(self);
 }
 
 static void ball_update(Object *self)
@@ -213,9 +198,9 @@ static void ball_update(Object *self)
     self->x = controller->x;
     self->y = controller->y;
     self->z = controller->z;
-    self->flags = (uint8_t)(
-        (self->flags & (uint8_t)~VISIBLE_FLAG)
-        | (controller->flags & VISIBLE_FLAG)
+    self->header_flags = (uint8_t)(
+        (self->header_flags & (uint8_t)~BN6_OBJECT_FLAG_VISIBLE)
+        | (controller->header_flags & BN6_OBJECT_FLAG_VISIBLE)
     );
     bn6_self_sprite_set_scale(bn6_sprite_get_scale(controller));
     bn6_self_sprite_copy_palette_bits(controller);
@@ -223,11 +208,7 @@ static void ball_update(Object *self)
     self->owner_aux = controller->owner_aux;
     bn6_self_sprite_set_flip(bn6_self_object_get_flip());
 
-    if (self->phase == 0) {
-        ball_phase_wait(self);
-    } else {
-        ball_phase_active(self);
-    }
+    ball_phase_active(self);
 }
 
 static void ball_init(Object *self)
@@ -242,6 +223,7 @@ static void ball_init(Object *self)
     bn6_self_sprite_set_animation(self->animation);
     bn6_self_sprite_load_animation_data();
     bn6_self_sprite_update();
+    set_phase(self, BALL_ACTIVE_PHASE);
     self->state_word = ACTIVE_STATE;
     ball_update(self);
 }
@@ -266,7 +248,7 @@ static Object *spawn_aura(
 )
 {
     Object *aura = bn6_spawn_type4_at(
-        CUSTOM_TYPE4_ID,
+        BN6_OBJECT_ID(chaoslord_aura_main),
         x,
         y,
         z,
@@ -276,7 +258,6 @@ static Object *spawn_aura(
         return NULL;
     }
     aura->parent = controller;
-    aura->kind = BN6_OBJECT_KIND(chaoslord_aura_main);
     aura->owner_word = controller->owner_word;
     return aura;
 }
@@ -290,7 +271,7 @@ static Object *spawn_burst(
 )
 {
     Object *burst = bn6_spawn_type4_at(
-        CUSTOM_TYPE4_ID,
+        BN6_OBJECT_ID(chaoslord_burst_main),
         x,
         y,
         0,
@@ -300,19 +281,18 @@ static Object *spawn_burst(
         return NULL;
     }
     burst->parent = controller;
-    volatile struct ChaoslordBurstWork *work =
-        (volatile struct ChaoslordBurstWork *)burst->work;
+    struct ChaoslordBurstWork *work =
+        (struct ChaoslordBurstWork *)burst->work;
     work->vector = vector;
-    burst->kind = BN6_OBJECT_KIND(chaoslord_burst_main);
     burst->owner_word = controller->owner_word;
-    burst->flags |= ATTACK_FLAG;
+    burst->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
     return burst;
 }
 
 static Object *spawn_teardown(Object *controller)
 {
     Object *effect = bn6_spawn_type4_at(
-        CUSTOM_TYPE4_ID,
+        BN6_OBJECT_ID(chaoslord_teardown_main),
         controller->x,
         controller->y,
         controller->z + (16 << 16),
@@ -321,19 +301,20 @@ static Object *spawn_teardown(Object *controller)
     if (effect == NULL) {
         return NULL;
     }
-    effect->kind = BN6_OBJECT_KIND(chaoslord_teardown_main);
     effect->owner_word = controller->owner_word;
     return effect;
 }
 
 static Object *spawn_flash(void)
 {
-    Object *flash = bn6_spawn_type4(CUSTOM_TYPE4_ID, 0x00010401);
+    Object *flash = bn6_spawn_type4(
+        BN6_OBJECT_ID(chaoslord_flash_main), 0x00010401
+    );
     if (flash == NULL) {
         return NULL;
     }
-    flash->kind = BN6_OBJECT_KIND(chaoslord_flash_main);
-    flash->flags |= FLASH_FLAGS;
+    flash->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_PAUSE
+        | BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
     return flash;
 }
 
@@ -343,7 +324,7 @@ static Object *spawn_attack_object(
 )
 {
     Object *attack = bn6_spawn_type3(
-        CUSTOM_TYPE3_ID,
+        BN6_OBJECT_ID(chaoslord_attack_object_main),
         controller->x,
         controller->y,
         controller->z,
@@ -355,15 +336,14 @@ static Object *spawn_attack_object(
     attack->parameter = 0;
     attack->attack = controller->attack;
     attack->parent = NULL;
-    attack->kind = BN6_OBJECT_KIND(chaoslord_attack_object_main);
     attack->owner_word = controller->owner_word;
-    attack->flags |= ATTACK_FLAG;
+    attack->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
     return attack;
 }
 
 static void delete_live_objects(void)
 {
-    Object *volatile *objects = bn6_battle_context()->live_objects;
+    Object **objects = bn6_battle_context()->live_objects;
     for (uint32_t index = 0; index < 8; ++index) {
         if (objects[index] != NULL) {
             objects[index]->hp = 0;
@@ -392,7 +372,7 @@ static bool entrance_has_panel(
         uint32_t panel_y = (uint32_t)(
             (int32_t)center_y + ENTRANCE_PANEL_PATTERN[index].y
         );
-        if (bn6_panel_has_flags(panel_x, panel_y, area, 0) != 0) {
+        if (bn6_panel_matches_flags(panel_x, panel_y, area, 0) != 0) {
             return true;
         }
     }
@@ -406,7 +386,9 @@ static void controller_init(Object *self)
 
     uint32_t side = self->owner ^ self->owner_aux;
     uint32_t search_x = side * 5u + 1u;
-    uint32_t search_area = self->owner == 0 ? 0x04000000 : 0x08000000;
+    uint32_t search_area = self->owner == 0
+        ? BN6_PANEL_FLAG_SIDE_1_COLLISION
+        : BN6_PANEL_FLAG_SIDE_0_COLLISION;
     if (entrance_has_panel(search_x, 2, search_area, side)) {
         self->state_word = DESTROY_STATE;
         return;
@@ -425,8 +407,8 @@ static void controller_init(Object *self)
 
     self->timer = INTRO_FRAMES;
     self->velocity_x = direction * 0x00009D89;
-    volatile struct ChaoslordControllerWork *work =
-        (volatile struct ChaoslordControllerWork *)self->work;
+    struct ChaoslordControllerWork *work =
+        (struct ChaoslordControllerWork *)self->work;
     work->scale_low = 5;
     work->scale_middle = 1;
     work->scale_high = 0x17;
@@ -480,7 +462,7 @@ static void controller_phase_apparition(Object *self)
         bn6_self_sprite_set_animation(1);
         bn6_self_sprite_load_animation_data();
         self->z += 8 << 16;
-        self->flags |= VISIBLE_FLAG;
+        self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     }
     if (timer_nonnegative_after_decrement(self)) {
         return;
@@ -492,8 +474,8 @@ static void controller_phase_apparition(Object *self)
         BN6_SPRITE_ID(chaoslord_main_sprite)
     );
     bn6_self_sprite_property_2e3c();
-    bn6_self_sprite_set_flag(0);
-    self->flags |= VISIBLE_FLAG;
+    bn6_self_sprite_hide_piece(0);
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     self->animation_word = 0;
     bn6_self_sprite_set_animation(0);
     bn6_self_sprite_load_animation_data();
@@ -513,17 +495,17 @@ static void controller_phase_approach(Object *self)
         if (timer == 0x34) {
             bn6_play_sound(0x12A);
         }
-        self->flags |= VISIBLE_FLAG;
+        self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
         if ((timer & 2u) != 0) {
-            self->flags &= (uint8_t)~VISIBLE_FLAG;
+            self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
         } else if ((timer & 4u) != 0) {
             bn6_self_sprite_set_scale(packed_scale(self));
         } else {
             bn6_self_sprite_set_scale(0x00007FFF);
         }
     } else if (timer <= 0x24 && (timer & 3u) == 0) {
-        volatile struct ChaoslordControllerWork *work =
-            (volatile struct ChaoslordControllerWork *)self->work;
+        struct ChaoslordControllerWork *work =
+            (struct ChaoslordControllerWork *)self->work;
         work->scale_low = work->scale_low >= 2 ? work->scale_low - 2 : 0;
         work->scale_middle =
             work->scale_middle >= 2 ? work->scale_middle - 2 : 0;
@@ -606,7 +588,9 @@ BN6_OBJECT1(chaoslord_controller_main)
 BN6_SUMMON_ATTACK(0x12E, chaoslord_attack_main)
 {
     (void)spawn_argument;
-    Object *controller = bn6_spawn_type1(CUSTOM_TYPE1_ID, 0);
+    Object *controller = bn6_spawn_type1(
+        BN6_OBJECT_ID(chaoslord_controller_main), 0
+    );
     if (controller == NULL) {
         return;
     }
@@ -616,7 +600,6 @@ BN6_SUMMON_ATTACK(0x12E, chaoslord_attack_main)
     controller->owner_word = owner->owner_word;
     controller->attack = attack;
     controller->completion = completion;
-    controller->kind = BN6_OBJECT_KIND(chaoslord_controller_main);
     *completion = 1;
 }
 
@@ -675,12 +658,12 @@ static void attack_apply_panels(Object *self)
         uint32_t panel_y = (uint32_t)(
             (int32_t)self->removal_state + IMPACT_PANEL_PATTERN[index].y
         );
-        uint32_t flags = bn6_panel_get_flags(panel_x, panel_y);
+        uint32_t panel_flags = bn6_panel_get_flags(panel_x, panel_y);
         if (self->variant == 0) {
-            if ((flags & 0x40u) == 0) {
+            if ((panel_flags & BN6_PANEL_FLAG_CRACKED) == 0) {
                 bn6_panel_crack_from_solid(panel_x, panel_y);
             }
-        } else if ((flags & 0x10u) != 0) {
+        } else if ((panel_flags & BN6_PANEL_FLAG_SOLID) != 0) {
             bn6_panel_crack(panel_x, panel_y);
         }
     }
@@ -694,9 +677,9 @@ static void spawn_impact_effect(Object *self)
     }
 
     effect->aux_timer = 1;
-    volatile struct ChaoslordImpactWork *work =
-        (volatile struct ChaoslordImpactWork *)effect->work;
-    volatile uint8_t *panels = work->panels;
+    struct ChaoslordImpactWork *work =
+        (struct ChaoslordImpactWork *)effect->work;
+    uint8_t *panels = work->panels;
     uint8_t count = 0;
     int32_t direction = 1 - (int32_t)(self->owner * 2u);
     for (
@@ -711,7 +694,12 @@ static void spawn_impact_effect(Object *self)
         uint32_t panel_y = (uint32_t)(
             (int32_t)effect->panel_y + IMPACT_PANEL_PATTERN[index].y
         );
-        if (bn6_panel_has_flags(panel_x, panel_y, 0x00010000, 0) != 0) {
+        if (bn6_panel_matches_flags(
+                panel_x,
+                panel_y,
+                BN6_PANEL_FLAG_VALID,
+                0
+            ) != 0) {
             panels[count++] = (uint8_t)(panel_x | (panel_y << 4));
         }
     }
@@ -731,9 +719,11 @@ static void attack_impact(Object *self)
         3
     );
     if (damage != NULL) {
-        damage->flags = (uint8_t)(
-            (damage->flags & (uint8_t)~ATTACK_FLAG)
-            | (self->flags & ATTACK_FLAG)
+        damage->header_flags = (uint8_t)(
+            (damage->header_flags
+                & (uint8_t)~BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP)
+            | (self->header_flags
+                & BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP)
         );
         bn6_object_invoke(damage, PANEL_DAMAGE_MAIN);
     }
@@ -789,7 +779,7 @@ static void attack_form(Object *self)
         return;
     }
 
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     uint64_t coordinates = bn6_panel_to_coords(
         self->animation_state,
         self->removal_state
@@ -818,7 +808,7 @@ static void attack_update(Object *self)
 static void attack_init(Object *self)
 {
     attack_set_sprite(self, 0);
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     bn6_self_sprite_set_flip(bn6_self_object_get_flip());
     self->timer = self->variant == 0 ? 0x4B : 0x69;
     self->x += (int32_t)bn6_object_front_direction_for(self) * (46 << 16);
@@ -845,7 +835,7 @@ static void aura_appear_special(Object *self)
     if (self->phase_timer_low == 0) {
         self->phase_timer_low = 1;
         self->timer = 0x1E;
-        self->flags |= VISIBLE_FLAG;
+        self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     }
     if (self->phase_timer_low == 1) {
         uint32_t blend = self->timer >> 1;
@@ -878,7 +868,7 @@ static void aura_appear_normal(Object *self)
         if (timer_nonnegative_after_decrement(self)) {
             return;
         }
-        self->flags |= VISIBLE_FLAG;
+        self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
         self->timer = 0x0F;
         self->phase_timer_low = 2;
     }
@@ -912,9 +902,9 @@ static void aura_lifespan(Object *self)
 
 static void aura_fade(Object *self)
 {
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     if ((self->subvariant & 2u) == 0) {
-        self->flags &= (uint8_t)~VISIBLE_FLAG;
+        self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
     }
     --self->subvariant;
     if (self->subvariant == 0) {
@@ -966,9 +956,9 @@ BN6_OBJECT4(chaoslord_aura_main)
 
 static void burst_set_position(Object *self)
 {
-    const int16_t *sine = (const int16_t *)ChaoslordTrigTable;
-    volatile struct ChaoslordBurstWork *work =
-        (volatile struct ChaoslordBurstWork *)self->work;
+    const int16_t *sine = (const int16_t *)chaoslord_trig_table;
+    struct ChaoslordBurstWork *work =
+        (struct ChaoslordBurstWork *)self->work;
     uint8_t angle = self->animation_state;
     int32_t radius = work->radius;
     self->x = work->center_x
@@ -981,8 +971,8 @@ static void burst_set_position(Object *self)
 
 static void burst_update(Object *self)
 {
-    volatile struct ChaoslordBurstWork *work =
-        (volatile struct ChaoslordBurstWork *)self->work;
+    struct ChaoslordBurstWork *work =
+        (struct ChaoslordBurstWork *)self->work;
     int32_t direction = -bn6_self_object_side_direction();
     uint8_t lifetime = self->variant;
     if (lifetime == 0x14) {
@@ -1016,8 +1006,8 @@ static void burst_update(Object *self)
 
 static void burst_init(Object *self)
 {
-    volatile struct ChaoslordBurstWork *work =
-        (volatile struct ChaoslordBurstWork *)self->work;
+    struct ChaoslordBurstWork *work =
+        (struct ChaoslordBurstWork *)self->work;
     bn6_self_sprite_load(
         0x80,
         BN6_SPRITE_GROUP(chaoslord_aura_sprite),
@@ -1045,7 +1035,7 @@ static void burst_init(Object *self)
         vector_x * 0x10000
     );
     self->owner_aux = (uint8_t)-bn6_self_object_side_direction();
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     if (work->elevated != 0) {
         self->z += 27 << 16;
     }
@@ -1069,11 +1059,13 @@ static void teardown_update(Object *self)
     int32_t timer = (int32_t)self->timer - 1;
     self->timer = (uint16_t)timer;
     bool finished = timer == 0;
-    if (!finished && (bn6_self_sprite_get_animation_flags() & 0x80u) != 0) {
+    if (!finished
+        && (bn6_self_sprite_get_frame_flags()
+            & BN6_ANIMATION_FRAME_FLAG_END) != 0) {
         finished = (int16_t)self->timer <= 0;
     }
     if (finished) {
-        self->flags &= (uint8_t)~VISIBLE_FLAG;
+        self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
         self->state_word = DESTROY_STATE;
     }
     bn6_self_sprite_update();
@@ -1094,7 +1086,7 @@ static void teardown_init(Object *self)
     bn6_self_sprite_update();
     bn6_self_sprite_set_palette(self->animation_state);
     bn6_self_sprite_set_flip(self->subvariant);
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     if (self->removal_state != 0) {
         bn6_self_sprite_set_blend_mode(0);
     }

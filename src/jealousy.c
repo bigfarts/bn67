@@ -1,22 +1,20 @@
 #include "runtime.h"
 
 
-extern const uint8_t JealousyEffectTiles[0x100];
-extern const uint8_t JealousyEffectPalette[0x20];
+extern const uint8_t jealousy_effect_tiles[0x100];
+extern const uint8_t jealousy_effect_palette[0x20];
 
-BN6_INCBIN(JealousyIcon, "build/jealousy-icon.bin");
-BN6_INCBIN(JealousyImage, "build/jealousy-image.bin");
-BN6_INCBIN(JealousyPalette, "build/jealousy-palette.bin");
-BN6_INCBIN(JealousyEffectTiles, "build/jealousy-effect-tiles.bin");
-BN6_INCBIN(JealousyEffectPalette, "build/jealousy-effect-palette.bin");
+BN6_INCBIN(jealousy_icon, "build/jealousy-icon.bin");
+BN6_INCBIN(jealousy_image, "build/jealousy-image.bin");
+BN6_INCBIN(jealousy_palette, "build/jealousy-palette.bin");
+BN6_INCBIN(jealousy_effect_tiles, "build/jealousy-effect-tiles.bin");
+BN6_INCBIN(jealousy_effect_palette, "build/jealousy-effect-palette.bin");
 
 static const uintptr_t TILES_DESTINATION = 0x06017940u;
 static const uint16_t PULSE_DELAY = 10;
 static const uint16_t DELETE_FRAMES = 90;
 static const uint16_t OVERLAY_LAST_FRAME = 20;
 static const uint32_t GAUGE_FULL = 0x4000;
-static const uint32_t LEFT_PANEL_MASK = 0x00200000;
-static const uint32_t RIGHT_PANEL_MASK = 0x00400000;
 static const uint32_t DAMAGE_PROPERTIES = 0x1A050601;
 
 struct JealousyWork {
@@ -25,7 +23,7 @@ struct JealousyWork {
 
 static uint32_t unit_loaded_chips(Object *unit)
 {
-    volatile uint8_t *runtime = (volatile uint8_t *)unit->runtime_data;
+    const uint8_t *runtime = (const uint8_t *)unit->runtime_data;
     if (runtime == NULL) {
         return 0;
     }
@@ -33,9 +31,9 @@ static uint32_t unit_loaded_chips(Object *unit)
         return unit->loaded_chip_count;
     }
 
-    volatile uint8_t *list = bn6_chip_list(unit->owner);
-    volatile uint16_t *entry =
-        (volatile uint16_t *)(list + 2u + 2u * list[0]);
+    const uint8_t *list = bn6_chip_list(unit->owner);
+    const uint16_t *entry =
+        (const uint16_t *)(list + 2u + 2u * list[0]);
     uint32_t count = 0;
     while (*entry != UINT16_MAX) {
         ++count;
@@ -46,7 +44,7 @@ static uint32_t unit_loaded_chips(Object *unit)
 
 static uint32_t max_loaded_chips(Object *controller)
 {
-    Object *volatile *units =
+    Object *const *units =
         bn6_battle_units_for_side(controller->owner ^ 1u);
     uint32_t maximum = 0;
     for (size_t index = 0; index < 4; ++index) {
@@ -64,13 +62,18 @@ static uint32_t max_loaded_chips(Object *controller)
 
 static uint32_t attack_field(Object *controller)
 {
-    uint32_t flags = controller->owner == 0
-        ? LEFT_PANEL_MASK
-        : RIGHT_PANEL_MASK;
+    uint32_t opposing_navi_flag = controller->owner == 0
+        ? BN6_PANEL_FLAG_SIDE_1_NAVI
+        : BN6_PANEL_FLAG_SIDE_0_NAVI;
     uint32_t hits = 0;
     for (uint32_t panel_x = 6; panel_x != 0; --panel_x) {
         for (uint32_t panel_y = 3; panel_y != 0; --panel_y) {
-            if (bn6_panel_has_flags(panel_x, panel_y, flags, 0) == 0) {
+            if (bn6_panel_matches_flags(
+                    panel_x,
+                    panel_y,
+                    opposing_navi_flag,
+                    0
+                ) == 0) {
                 continue;
             }
             bn6_spawn_panel_damage(
@@ -128,8 +131,8 @@ static void delete_phase(Object *controller)
 
 static void pulse_phase(Object *controller)
 {
-    volatile struct JealousyWork *work =
-        (volatile struct JealousyWork *)controller->work;
+    struct JealousyWork *work =
+        (struct JealousyWork *)controller->work;
     uint16_t timer = (uint16_t)(controller->timer - 1u);
     controller->timer = timer;
     if (timer != 0) {
@@ -144,17 +147,17 @@ static void pulse_phase(Object *controller)
 
 static void effect_init(Object *controller)
 {
-    volatile struct JealousyWork *work =
-        (volatile struct JealousyWork *)controller->work;
+    struct JealousyWork *work =
+        (struct JealousyWork *)controller->work;
     bn6_display_setup(
-        JealousyEffectTiles,
+        jealousy_effect_tiles,
         (void *)TILES_DESTINATION,
-        sizeof(JealousyEffectTiles)
+        sizeof(jealousy_effect_tiles)
     );
     bn6_display_setup(
-        JealousyEffectPalette,
+        jealousy_effect_palette,
         (void *)BN6_PALETTE_BG_STAGING_0D,
-        sizeof(JealousyEffectPalette)
+        sizeof(jealousy_effect_palette)
     );
 
     work->remaining_attacks = max_loaded_chips(controller);
@@ -216,7 +219,9 @@ BN6_OBJECT4(jealousy_controller_main)
 
 BN6_ATTACK(0x0BF, jealousy_attack_main)
 {
-    Object *controller = bn6_spawn_type4(CUSTOM_TYPE4_ID, spawn_argument);
+    Object *controller = bn6_spawn_type4(
+        BN6_OBJECT_ID(jealousy_controller_main), spawn_argument
+    );
     if (controller == NULL) {
         return;
     }
@@ -227,5 +232,4 @@ BN6_ATTACK(0x0BF, jealousy_attack_main)
     controller->owner_word = owner->owner_word;
     controller->attack = attack;
     controller->chip_data = chip_data;
-    controller->kind = BN6_OBJECT_KIND(jealousy_controller_main);
 }

@@ -8,9 +8,9 @@ element = "null"
 class = "standard"
 mb = 32
 power = 50
-behavior = { effect_flags = 0x43, counter_settings = 0x94, family = 0x1B, subfamily = 0x0E, dark_soul_usage = 0x0A, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
+behavior = { effect_flags = 0x43, counter_settings = 0x94, dark_soul_usage = 0x0A, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
 library = { number = 0x17, flags = 0x00, lock_on_type = 0x0A, sort_order = 0x0017, gate_usage = 0x01, dark_chip_id = "none" }
-artwork = { icon = "RollarrowIcon1", image = "RollarrowImage", palette = "RollarrowPalette1" }
+artwork = { icon = "rollarrow_icon_1", image = "rollarrow_image", palette = "rollarrow_palette_1" }
 
 [chips."0x019"]
 name = "RollAro2"
@@ -22,9 +22,9 @@ element = "null"
 class = "standard"
 mb = 38
 power = 70
-behavior = { effect_flags = 0x43, counter_settings = 0x94, family = 0x1B, subfamily = 0x0E, dark_soul_usage = 0x0A, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
+behavior = { effect_flags = 0x43, counter_settings = 0x94, dark_soul_usage = 0x0A, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
 library = { number = 0x18, flags = 0x00, lock_on_type = 0x0A, sort_order = 0x0018, gate_usage = 0x01, dark_chip_id = "none" }
-artwork = { icon = "RollarrowIcon2", image = "RollarrowImage", palette = "RollarrowPalette2" }
+artwork = { icon = "rollarrow_icon_2", image = "rollarrow_image", palette = "rollarrow_palette_2" }
 
 [chips."0x01A"]
 name = "RollAro3"
@@ -36,6 +36,6 @@ element = "null"
 class = "standard"
 mb = 44
 power = 90
-behavior = { effect_flags = 0x43, counter_settings = 0x94, family = 0x1B, subfamily = 0x0E, dark_soul_usage = 0x0A, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
+behavior = { effect_flags = 0x43, counter_settings = 0x94, dark_soul_usage = 0x0A, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
 library = { number = 0x19, flags = 0x00, lock_on_type = 0x0A, sort_order = 0x0019, gate_usage = 0x01, dark_chip_id = "none" }
-artwork = { icon = "RollarrowIcon3", image = "RollarrowImage", palette = "RollarrowPalette3" }
+artwork = { icon = "rollarrow_icon_3", image = "rollarrow_image", palette = "rollarrow_palette_3" }

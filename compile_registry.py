@@ -14,7 +14,9 @@ from typing import Any
 
 NAME_RE = re.compile(r"^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$")
 SNAKE_CASE_RE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
-ASM_SYMBOL_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+POINTER_METADATA_RE = re.compile(
+    r"^pointer__(0[xX][0-9A-Fa-f]+)__([a-z][a-z0-9_]*)$"
+)
 RUNTIME_SOURCE_NAMES = {"abi.c", "runtime.c"}
 SONG_PLAYER_FIRST = 0x0C
 SONG_PLAYER_LAST = 0x1F
@@ -51,14 +53,23 @@ class PackageError(Exception):
 @dataclass(frozen=True)
 class ObjectClass:
     number: int
-    native_id: int
-    dispatch_entry: int
+    native_entries: int
+    native_table: str
+    references: tuple[int, ...]
+    interceptor: str | None
+
+
+@dataclass(frozen=True)
+class ObjectDispatch:
+    hook_address: int
+    advance_address: int
+    continuation_address: int
 
 
 @dataclass(frozen=True)
 class SpriteGroup:
     number: int
-    pointer_address: int
+    references: tuple[int, ...]
     native_table: str
     native_entries: int
 
@@ -67,71 +78,11 @@ class SpriteGroup:
 class SongConfig:
     native_table: str
     native_entries: int
-    gregar_references: tuple[int, ...]
-    falzar_references: tuple[int, ...]
-
-
-@dataclass(frozen=True)
-class TextArchive:
-    name: str
-    source: str
-    source_index: int
-    encoding: str
-    native_entries: int
-    symbol: str
-    binary: str
-    gregar_references: tuple[int, ...]
-    falzar_references: tuple[int, ...]
-
-
-@dataclass(frozen=True)
-class TextArchiveGroup:
-    archives: tuple[TextArchive, ...]
-
-
-@dataclass(frozen=True)
-class TextConfig:
-    gregar_folder_edit_skip: tuple[int, int]
-    falzar_folder_edit_skip: tuple[int, int]
-    groups: tuple[TextArchiveGroup, ...]
-
-
-@dataclass(frozen=True)
-class ChipConfig:
-    table_address: int
-    record_size: int
-    record_count: int
-
-
-@dataclass(frozen=True)
-class AttackRoute:
-    family: int
-    subfamily: int
-    hook_address: int
-    gregar_BN6_EXPORT: int | None
-    falzar_BN6_EXPORT: int | None
-
-
-@dataclass(frozen=True)
-class Config:
-    root: Path
-    object_classes: dict[int, ObjectClass]
-    sprite_groups: dict[int, SpriteGroup]
-    songs: SongConfig
-    text: TextConfig
-    chips: ChipConfig
-    attack_routes: dict[tuple[int, int], AttackRoute]
-
-
-@dataclass(frozen=True)
-class EditionSongConfig:
-    native_table: str
-    native_entries: int
     references: tuple[int, ...]
 
 
 @dataclass(frozen=True)
-class EditionTextArchive:
+class TextArchive:
     name: str
     region: int
     source: str
@@ -144,19 +95,42 @@ class EditionTextArchive:
 
 
 @dataclass(frozen=True)
-class EditionTextConfig:
-    folder_edit_skip: tuple[int, int]
-    archives: tuple[EditionTextArchive, ...]
+class TextArchiveGroup:
+    archives: tuple[TextArchive, ...]
 
 
 @dataclass(frozen=True)
-class EditionConfig:
+class TextConfig:
+    folder_edit_skip: tuple[int, int]
+    groups: tuple[TextArchiveGroup, ...]
+
+
+@dataclass(frozen=True)
+class ChipConfig:
+    table_address: int
+    record_size: int
+    record_count: int
+
+
+@dataclass(frozen=True)
+class AttackPool:
+    family: int
+    native_entries: int
+    native_table: str
+    references: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class Config:
+    root: Path
+    variant: str
     object_classes: dict[int, ObjectClass]
+    object_dispatch: ObjectDispatch
     sprite_groups: dict[int, SpriteGroup]
-    songs: EditionSongConfig
-    text: EditionTextConfig
+    songs: SongConfig
+    text: TextConfig
     chips: ChipConfig
-    attack_routes: dict[tuple[int, int], tuple[int, int | None]]
+    attack_pools: dict[str, AttackPool]
 
 
 @dataclass(frozen=True)
@@ -191,22 +165,27 @@ class ChipResource:
     package: str
     chip_id: int
     common: tuple[tuple[str, ChipValue], ...]
-    gregar: tuple[tuple[str, ChipValue], ...]
-    falzar: tuple[tuple[str, ChipValue], ...]
+    override: tuple[tuple[str, ChipValue], ...]
 
 
 @dataclass(frozen=True)
 class AttackResource:
     package: str
     chip_id: int
+    kind: str
     main: str
+
+
+@dataclass(frozen=True)
+class AttackAllocation:
+    family: int
+    subfamily: int
 
 
 @dataclass(frozen=True)
 class PointerPatch:
     symbol: str
-    gregar_address: int | None
-    falzar_address: int | None
+    address: int
 
 
 @dataclass(frozen=True)
@@ -230,6 +209,7 @@ class Allocations:
     sprites: dict[str, tuple[int, int]]
     songs: dict[str, int]
     song_players: dict[str, int]
+    attacks: dict[str, AttackAllocation]
 
 
 def require_int(table: dict[str, Any], key: str, context: str) -> int:
@@ -257,18 +237,6 @@ def check_name(name: str, context: str) -> None:
         raise PackageError(f"{context}: {name!r} must match {NAME_RE.pattern}")
 
 
-def pascal_case(value: str) -> str:
-    return "".join(part[0].upper() + part[1:] for part in re.split(r"[-_]", value))
-
-
-def symbol_case(value: str) -> str:
-    return re.sub(r"[-_]", "_", value).upper()
-
-
-def convention_label(package: str, resource: str, suffix: str) -> str:
-    return f"{pascal_case(package)}{pascal_case(resource)}{suffix}"
-
-
 def require_int_array(table: dict[str, Any], key: str, context: str) -> tuple[int, ...]:
     value = table.get(key)
     if not isinstance(value, list) or not all(
@@ -294,7 +262,7 @@ def require_table_array(
     return value
 
 
-def load_edition_config(path: Path, expected_edition: str) -> EditionConfig:
+def load_config(path: Path) -> Config:
     context = str(path)
     try:
         raw = tomllib.loads(path.read_text())
@@ -303,48 +271,100 @@ def load_edition_config(path: Path, expected_edition: str) -> EditionConfig:
     check_keys(
         raw,
         {
-            "edition",
+            "variant",
             "object_classes",
+            "object_dispatch",
             "sprite_groups",
             "songs",
             "text",
             "chips",
-            "attack_routes",
+            "attack_pools",
         },
         context,
     )
-    edition = require_str(raw, "edition", context)
-    if edition != expected_edition:
-        raise PackageError(
-            f"{path}: edition must be {expected_edition!r}, got {edition!r}"
-        )
+    variant = require_str(raw, "variant", context)
+    check_name(variant, f"{path}: variant")
     object_classes: dict[int, ObjectClass] = {}
     for index, item in enumerate(require_table_array(raw, "object_classes", context)):
         item_context = f"{path}: object_classes[{index}]"
-        check_keys(item, {"number", "native_id", "dispatch_entry"}, item_context)
+        check_keys(
+            item,
+            {
+                "number",
+                "native_entries",
+                "native_table",
+                "references",
+                "interceptor",
+            },
+            item_context,
+        )
         number = require_int(item, "number", item_context)
         if number in object_classes:
             raise PackageError(f"{item_context}: duplicate object class {number}")
+        native_entries = checked_int(
+            require_int(item, "native_entries", item_context),
+            1,
+            0xFF,
+            f"{item_context}: native_entries",
+        )
+        references = require_int_array(item, "references", item_context)
+        if not references:
+            raise PackageError(f"{item_context}: references must not be empty")
+        if any(address % 4 for address in references):
+            raise PackageError(f"{item_context}: references must be word-aligned")
+        interceptor = item.get("interceptor")
+        if interceptor is not None and (
+            not isinstance(interceptor, str)
+            or not SNAKE_CASE_RE.fullmatch(interceptor)
+        ):
+            raise PackageError(
+                f"{item_context}: interceptor must be a snake_case symbol"
+            )
         object_classes[number] = ObjectClass(
             number,
-            require_int(item, "native_id", item_context),
-            require_int(item, "dispatch_entry", item_context),
+            native_entries,
+            require_str(item, "native_table", item_context),
+            references,
+            interceptor,
         )
+
+    object_dispatch_raw = require_table(raw, "object_dispatch", context)
+    check_keys(
+        object_dispatch_raw,
+        {"hook_address", "advance_address", "continuation_address"},
+        f"{path}: object_dispatch",
+    )
+    object_dispatch = ObjectDispatch(
+        require_int(object_dispatch_raw, "hook_address", f"{path}: object_dispatch"),
+        require_int(
+            object_dispatch_raw, "advance_address", f"{path}: object_dispatch"
+        ),
+        require_int(
+            object_dispatch_raw,
+            "continuation_address",
+            f"{path}: object_dispatch",
+        ),
+    )
 
     sprite_groups: dict[int, SpriteGroup] = {}
     for index, item in enumerate(require_table_array(raw, "sprite_groups", context)):
         item_context = f"{path}: sprite_groups[{index}]"
         check_keys(
             item,
-            {"number", "pointer_address", "native_table", "native_entries"},
+            {"number", "references", "native_table", "native_entries"},
             item_context,
         )
         number = require_int(item, "number", item_context)
         if number in sprite_groups:
             raise PackageError(f"{item_context}: duplicate sprite group 0x{number:X}")
+        references = require_int_array(item, "references", item_context)
+        if not references:
+            raise PackageError(f"{item_context}: references must not be empty")
+        if any(address % 4 for address in references):
+            raise PackageError(f"{item_context}: references must be word-aligned")
         sprite_groups[number] = SpriteGroup(
             number,
-            require_int(item, "pointer_address", item_context),
+            references,
             require_str(item, "native_table", item_context),
             require_int(item, "native_entries", item_context),
         )
@@ -353,7 +373,7 @@ def load_edition_config(path: Path, expected_edition: str) -> EditionConfig:
     check_keys(
         songs_raw, {"native_table", "native_entries", "references"}, f"{path}: songs"
     )
-    songs = EditionSongConfig(
+    songs = SongConfig(
         require_str(songs_raw, "native_table", f"{path}: songs"),
         require_int(songs_raw, "native_entries", f"{path}: songs"),
         require_int_array(songs_raw, "references", f"{path}: songs"),
@@ -369,12 +389,16 @@ def load_edition_config(path: Path, expected_edition: str) -> EditionConfig:
         require_int(chips_raw, "record_count", f"{path}: chips"),
     )
 
-    attack_routes: dict[tuple[int, int], tuple[int, int | None]] = {}
-    for index, item in enumerate(require_table_array(raw, "attack_routes", context)):
-        item_context = f"{path}: attack_routes[{index}]"
+    attack_pools: dict[str, AttackPool] = {}
+    attack_pool_values = require_table(raw, "attack_pools", context)
+    for kind, item in attack_pool_values.items():
+        item_context = f"{path}: attack_pools.{kind}"
+        check_name(kind, item_context)
+        if not isinstance(item, dict):
+            raise PackageError(f"{item_context}: must be a table")
         check_keys(
             item,
-            {"family", "subfamily", "hook_address", "BN6_EXPORT"},
+            {"family", "native_entries", "native_table", "references"},
             item_context,
         )
         family = checked_int(
@@ -383,25 +407,22 @@ def load_edition_config(path: Path, expected_edition: str) -> EditionConfig:
             0xFF,
             f"{item_context}: family",
         )
-        subfamily = checked_int(
-            require_int(item, "subfamily", item_context),
-            0,
+        native_entries = checked_int(
+            require_int(item, "native_entries", item_context),
+            1,
             0xFF,
-            f"{item_context}: subfamily",
+            f"{item_context}: native_entries",
         )
-        key = (family, subfamily)
-        if key in attack_routes:
-            raise PackageError(
-                f"{item_context}: duplicate attack route 0x{family:02X}/0x{subfamily:02X}"
-            )
-        BN6_EXPORT = item.get("BN6_EXPORT")
-        if BN6_EXPORT is not None and (
-            isinstance(BN6_EXPORT, bool) or not isinstance(BN6_EXPORT, int)
-        ):
-            raise PackageError(f"{item_context}: BN6_EXPORT must be an integer")
-        attack_routes[key] = (
-            require_int(item, "hook_address", item_context),
-            BN6_EXPORT,
+        references = require_int_array(item, "references", item_context)
+        if not references:
+            raise PackageError(f"{item_context}: references must not be empty")
+        if any(address % 4 for address in references):
+            raise PackageError(f"{item_context}: references must be word-aligned")
+        attack_pools[kind] = AttackPool(
+            family,
+            native_entries,
+            require_str(item, "native_table", item_context),
+            references,
         )
 
     text_raw = require_table(raw, "text", context)
@@ -410,7 +431,7 @@ def load_edition_config(path: Path, expected_edition: str) -> EditionConfig:
         {"folder_edit_skip_address", "folder_edit_skip_target", "archives"},
         f"{path}: text",
     )
-    archives: list[EditionTextArchive] = []
+    archives: list[TextArchive] = []
     archive_names: set[str] = set()
     for index, item in enumerate(
         require_table_array(text_raw, "archives", f"{path}: text")
@@ -437,8 +458,10 @@ def load_edition_config(path: Path, expected_edition: str) -> EditionConfig:
             raise PackageError(f"{item_context}: duplicate text archive name {name!r}")
         archive_names.add(name)
         symbol = require_str(item, "symbol", item_context)
-        if not ASM_SYMBOL_RE.fullmatch(symbol):
-            raise PackageError(f"{item_context}: invalid assembly symbol {symbol!r}")
+        if not SNAKE_CASE_RE.fullmatch(symbol):
+            raise PackageError(
+                f"{item_context}: assembly symbol {symbol!r} must be snake_case"
+            )
         source = require_str(item, "source", item_context)
         encoding = require_str(item, "encoding", item_context)
         if source not in {"names", "descriptions"}:
@@ -446,7 +469,7 @@ def load_edition_config(path: Path, expected_edition: str) -> EditionConfig:
         if encoding not in {"name", "description"}:
             raise PackageError(f"{item_context}: unknown encoding {encoding!r}")
         archives.append(
-            EditionTextArchive(
+            TextArchive(
                 name,
                 require_int(item, "region", item_context),
                 source,
@@ -458,132 +481,29 @@ def load_edition_config(path: Path, expected_edition: str) -> EditionConfig:
                 require_int_array(item, "references", item_context),
             )
         )
-    text = EditionTextConfig(
+    groups = tuple(
+        TextArchiveGroup(
+            tuple(archive for archive in archives if archive.region == region)
+        )
+        for region in sorted({archive.region for archive in archives})
+    )
+    text = TextConfig(
         (
             require_int(text_raw, "folder_edit_skip_address", f"{path}: text"),
             require_int(text_raw, "folder_edit_skip_target", f"{path}: text"),
         ),
-        tuple(archives),
-    )
-    return EditionConfig(
-        object_classes, sprite_groups, songs, text, chips, attack_routes
-    )
-
-
-def static_config(root: Path) -> Config:
-    """Load and combine the Gregar and Falzar static backend configurations."""
-    resolved_root = root.resolve()
-    gregar = load_edition_config(resolved_root / "config.gregar.toml", "gregar")
-    falzar = load_edition_config(resolved_root / "config.falzar.toml", "falzar")
-    shared = (
-        ("object_classes", gregar.object_classes, falzar.object_classes),
-        ("sprite_groups", gregar.sprite_groups, falzar.sprite_groups),
-        (
-            "song layout",
-            (gregar.songs.native_table, gregar.songs.native_entries),
-            (falzar.songs.native_table, falzar.songs.native_entries),
-        ),
-        ("chip layout", gregar.chips, falzar.chips),
-    )
-    for label, gregar_value, falzar_value in shared:
-        if gregar_value != falzar_value:
-            raise PackageError(
-                f"config.gregar.toml and config.falzar.toml disagree on {label}"
-            )
-
-    if set(gregar.attack_routes) != set(falzar.attack_routes):
-        raise PackageError("Gregar and Falzar configure different attack routes")
-    attack_routes: dict[tuple[int, int], AttackRoute] = {}
-    for key, (gregar_hook, gregar_native) in gregar.attack_routes.items():
-        falzar_hook, falzar_native = falzar.attack_routes[key]
-        if gregar_hook != falzar_hook:
-            raise PackageError(
-                "config.gregar.toml and config.falzar.toml disagree on attack route "
-                f"0x{key[0]:02X}/0x{key[1]:02X}"
-            )
-        if (gregar_native is None) != (falzar_native is None):
-            raise PackageError(
-                "config.gregar.toml and config.falzar.toml must both define or both "
-                f"omit BN6_EXPORT for attack route 0x{key[0]:02X}/0x{key[1]:02X}"
-            )
-        attack_routes[key] = AttackRoute(
-            key[0], key[1], gregar_hook, gregar_native, falzar_native
-        )
-
-    falzar_archives = {archive.name: archive for archive in falzar.text.archives}
-    if {archive.name for archive in gregar.text.archives} != set(falzar_archives):
-        raise PackageError("Gregar and Falzar configure different text archives")
-    merged_archives: list[tuple[int, TextArchive]] = []
-    for gregar_archive in gregar.text.archives:
-        falzar_archive = falzar_archives[gregar_archive.name]
-        gregar_layout = (
-            gregar_archive.name,
-            gregar_archive.region,
-            gregar_archive.source,
-            gregar_archive.source_index,
-            gregar_archive.encoding,
-            gregar_archive.native_entries,
-            gregar_archive.symbol,
-            gregar_archive.binary,
-        )
-        falzar_layout = (
-            falzar_archive.name,
-            falzar_archive.region,
-            falzar_archive.source,
-            falzar_archive.source_index,
-            falzar_archive.encoding,
-            falzar_archive.native_entries,
-            falzar_archive.symbol,
-            falzar_archive.binary,
-        )
-        if gregar_layout != falzar_layout:
-            raise PackageError(
-                "config.gregar.toml and config.falzar.toml disagree on text archive "
-                f"{gregar_archive.name!r}"
-            )
-        merged_archives.append(
-            (
-                gregar_archive.region,
-                TextArchive(
-                    gregar_archive.name,
-                    gregar_archive.source,
-                    gregar_archive.source_index,
-                    gregar_archive.encoding,
-                    gregar_archive.native_entries,
-                    gregar_archive.symbol,
-                    gregar_archive.binary,
-                    gregar_archive.references,
-                    falzar_archive.references,
-                ),
-            )
-        )
-    groups = tuple(
-        TextArchiveGroup(
-            tuple(
-                archive
-                for archive_region, archive in merged_archives
-                if archive_region == region
-            )
-        )
-        for region in sorted({region for region, _ in merged_archives})
+        groups,
     )
     return Config(
-        resolved_root,
-        gregar.object_classes,
-        gregar.sprite_groups,
-        SongConfig(
-            gregar.songs.native_table,
-            gregar.songs.native_entries,
-            gregar.songs.references,
-            falzar.songs.references,
-        ),
-        TextConfig(
-            gregar.text.folder_edit_skip,
-            falzar.text.folder_edit_skip,
-            groups,
-        ),
-        gregar.chips,
-        attack_routes,
+        path.resolve().parent,
+        variant,
+        object_classes,
+        object_dispatch,
+        sprite_groups,
+        songs,
+        text,
+        chips,
+        attack_pools,
     )
 
 
@@ -631,8 +551,6 @@ CHIP_TOP_LEVEL_FIELDS = {
 CHIP_BEHAVIOR_FIELDS = {
     "effect_flags",
     "counter_settings",
-    "family",
-    "subfamily",
     "dark_soul_usage",
     "unknown_0e",
     "lock_on",
@@ -776,7 +694,7 @@ def parse_chip_record(
             isinstance(value, int)
             and 0 <= value <= 0xFFFFFFFF
             or isinstance(value, str)
-            and ASM_SYMBOL_RE.fullmatch(value)
+            and SNAKE_CASE_RE.fullmatch(value)
         ):
             raise PackageError(
                 f"{context}: artwork.{key} must be a 32-bit address or assembly symbol"
@@ -822,7 +740,7 @@ def load_package(source_path: Path, config: Config) -> Package:
             raise PackageError(f"{context}: configuration must be a table")
         check_keys(
             item,
-            CHIP_TOP_LEVEL_FIELDS | {"name", "description", "gregar", "falzar"},
+            CHIP_TOP_LEVEL_FIELDS | {"name", "description", "variants"},
             context,
         )
 
@@ -830,14 +748,17 @@ def load_package(source_path: Path, config: Config) -> Package:
             key: value for key, value in item.items() if key in CHIP_TOP_LEVEL_FIELDS
         }
         common = parse_chip_record(common_table, context)
-        variants: dict[str, tuple[tuple[str, ChipValue], ...]] = {}
-        for version in ("gregar", "falzar"):
-            version_table = item.get(version, {})
-            if not isinstance(version_table, dict):
-                raise PackageError(f"{context}: {version} must be a table")
-            variants[version] = parse_chip_record(
-                version_table, f"{context}: {version}"
+        variants = item.get("variants", {})
+        if not isinstance(variants, dict):
+            raise PackageError(f"{context}: variants must be a table")
+        variant_table = variants.get(config.variant, {})
+        if not isinstance(variant_table, dict):
+            raise PackageError(
+                f"{context}: variant {config.variant!r} must be a table"
             )
+        override = parse_chip_record(
+            variant_table, f"{context}: variant {config.variant}"
+        )
 
         if "name" in item:
             display_name = item["name"]
@@ -866,8 +787,7 @@ def load_package(source_path: Path, config: Config) -> Package:
 
         if (
             not common
-            and not variants["gregar"]
-            and not variants["falzar"]
+            and not override
             and not ("name" in item or "description" in item)
         ):
             raise PackageError(
@@ -878,8 +798,7 @@ def load_package(source_path: Path, config: Config) -> Package:
                 name,
                 chip_id,
                 common,
-                variants["gregar"],
-                variants["falzar"],
+                override,
             )
         )
 
@@ -959,17 +878,6 @@ def load_metadata(path: Path) -> dict[str, list[str]]:
     return result
 
 
-def check_resource_label(package: str, label: str, suffix: str) -> None:
-    prefix = pascal_case(package)
-    if not label.startswith(prefix) or not label.endswith(suffix):
-        raise PackageError(
-            f"{package}: {label} must use the {prefix}<name>{suffix} convention"
-        )
-    middle = label[len(prefix):-len(suffix)]
-    if not middle:
-        raise PackageError(f"{package}: empty resource name in {label}")
-
-
 def check_snake_resource_label(package: str, label: str, suffix: str) -> None:
     prefix = package.replace("-", "_") + "_"
     if not label.startswith(prefix) or not label.endswith(suffix):
@@ -992,7 +900,18 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         prefix = "__bn6_meta__"
         if not symbol.startswith(prefix):
             raise PackageError(f"{package.name}: invalid metadata symbol {symbol}")
-        parts = symbol[len(prefix):].split("__")
+        body = symbol[len(prefix):]
+        pointer = POINTER_METADATA_RE.fullmatch(body)
+        if pointer is not None:
+            address_text, patch_symbol = pointer.groups()
+            address = checked_int(int(address_text, 0), 0, 0xFFFFFFFF, symbol)
+            if SNAKE_CASE_RE.fullmatch(patch_symbol) is None:
+                raise PackageError(
+                    f"{package.name}: patch symbol {patch_symbol} must be snake_case"
+                )
+            patches.append(PointerPatch(patch_symbol, address))
+            continue
+        parts = body.split("__")
         kind = parts[0]
         if kind == "include" and len(parts) == 2:
             check_name(parts[1], f"{package.name}: include")
@@ -1005,22 +924,14 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
             check_snake_resource_label(package.name, parts[1], "_sprite")
             sprites.append(SpriteResource(parts[1]))
         elif kind == "song" and len(parts) == 2:
-            check_resource_label(package.name, parts[1], "Song")
+            check_snake_resource_label(package.name, parts[1], "_song")
             songs.append(SongResource(parts[1]))
-        elif kind == "attack" and len(parts) == 3:
+        elif kind in {"attack", "summon_attack"} and len(parts) == 3:
             if attack is not None:
                 raise PackageError(f"{package.name}: duplicate BN6_ATTACK declaration")
+            chip_id = checked_int(int(parts[1], 0), 0, 0xFFFF, symbol)
             check_snake_resource_label(package.name, parts[2], "_main")
-            attack = AttackResource(package.name, int(parts[1], 0), parts[2])
-        elif kind == "pointer" and len(parts) == 4:
-            address = checked_int(int(parts[2], 0), 0, 0xFFFFFFFF, symbol)
-            if ASM_SYMBOL_RE.fullmatch(parts[3]) is None:
-                raise PackageError(f"{package.name}: invalid patch symbol {parts[3]}")
-            patches.append(PointerPatch(
-                parts[3],
-                address if parts[1] != "falzar" else None,
-                address if parts[1] != "gregar" else None,
-            ))
+            attack = AttackResource(package.name, chip_id, kind, parts[2])
         else:
             raise PackageError(f"{package.name}: invalid metadata symbol {symbol}")
     return replace(
@@ -1103,17 +1014,21 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
             )
         chip_owners[item.chip_id] = item.package
 
-    resolve_attack_routes(config, packages)
+    attack_allocations = allocate_attacks(config, packages)
 
     object_allocations: dict[int, dict[str, int]] = {}
-    for number in config.object_classes:
+    for number, object_class in config.object_classes.items():
         names = [item.main for item in objects if item.object_class == number]
-        if len(names) > 0xFF:
+        first_custom_id = object_class.native_entries
+        capacity = 0x100 - first_custom_id
+        if len(names) > capacity:
             raise PackageError(
-                f"object class {number} has more than 255 package objects"
+                f"object class {number} has {capacity} entries for "
+                f"{len(names)} package objects"
             )
         object_allocations[number] = {
-            name: index for index, name in enumerate(names, 1)
+            name: first_custom_id + index
+            for index, name in enumerate(names)
         }
 
     # Sprite handles contain both a table group and an index. Spread resources
@@ -1154,78 +1069,60 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
         for index, item in enumerate(songs)
     }
     return Allocations(
-        object_allocations, sprite_allocations, song_allocations, song_players
+        object_allocations,
+        sprite_allocations,
+        song_allocations,
+        song_players,
+        attack_allocations,
     )
 
 
-def resolve_attack_routes(
+def allocate_attacks(
     config: Config,
     packages: list[Package],
-) -> dict[tuple[int, int], list[tuple[AttackResource, int]]]:
-    """Resolve package attack entries through their semantic chip records."""
-    resolved: dict[tuple[int, int], list[tuple[AttackResource, int]]] = {}
-    chips_by_id = {
-        chip.chip_id: chip for package in packages for chip in package.chips
-    }
+) -> dict[str, AttackAllocation]:
+    """Give every package attack a direct subfamily entry for its native ABI."""
+    allocations: dict[str, AttackAllocation] = {}
+    families = [pool.family for pool in config.attack_pools.values()]
+    if len(set(families)) != len(families):
+        raise PackageError("attack pools must use distinct native families")
+
     for package in packages:
         if package.attack is None:
             continue
-        chip = chips_by_id.get(package.attack.chip_id)
-        if chip is None:
+        if package.attack.chip_id not in {chip.chip_id for chip in package.chips}:
             raise PackageError(
                 f"{package.source}: BN6_ATTACK refers to chip "
-                f"0x{package.attack.chip_id:03X}, but no src/*.defs.toml declares it"
+                f"0x{package.attack.chip_id:03X}, but {package.definitions} "
+                "does not declare it"
             )
-        signatures: set[tuple[int, int, int]] = set()
-        fields = dict(chip.common)
-        required = (
-            "behavior.family",
-            "behavior.subfamily",
-            "behavior.counter_settings",
-        )
-        if not all(field in fields for field in required):
+        if package.attack.kind not in config.attack_pools:
             raise PackageError(
-                f"{package.definitions}: BN6_ATTACK chip 0x{chip.chip_id:03X} requires "
-                "family, subfamily, and counter_settings"
+                f"{package.source}: no attack pool is configured for "
+                f"{package.attack.kind!r}"
             )
-        for variant in (chip.gregar, chip.falzar):
-            effective = fields | dict(variant)
-            values = tuple(effective[field] for field in required)
-            if not all(isinstance(value, int) for value in values):
-                raise AssertionError("chip routing fields must be integers")
-            signatures.add((values[0], values[1], values[2]))
-        if len(signatures) != 1:
-            raise PackageError(
-                f"{package.definitions}: BN6_ATTACK chip must use one "
-                "family/subfamily/counter_settings signature in both editions"
-            )
-        family, subfamily, marker = next(iter(signatures))
-        key = (family, subfamily)
-        if key not in config.attack_routes:
-            raise PackageError(
-                f"{package.definitions}: no configured attack route for "
-                f"0x{family:02X}/0x{subfamily:02X}"
-            )
-        resolved.setdefault(key, []).append((package.attack, marker))
 
-    for key, implementations in resolved.items():
-        markers: dict[int, str] = {}
-        for attack, marker in implementations:
-            if marker in markers:
-                raise PackageError(
-                    f"attack route 0x{key[0]:02X}/0x{key[1]:02X} marker "
-                    f"0x{marker:02X} is declared by both {markers[marker]} and {attack.package}"
-                )
-            markers[marker] = attack.package
-        route = config.attack_routes[key]
-        if len(implementations) > 1 and (
-            route.gregar_BN6_EXPORT is None or route.falzar_BN6_EXPORT is None
-        ):
+    for kind, pool in config.attack_pools.items():
+        attacks = sorted(
+            (
+                package.attack
+                for package in packages
+                if package.attack is not None and package.attack.kind == kind
+            ),
+            key=lambda attack: (attack.chip_id, attack.package, attack.main),
+        )
+        capacity = 0x100 - pool.native_entries
+        if len(attacks) > capacity:
             raise PackageError(
-                f"shared attack route 0x{key[0]:02X}/0x{key[1]:02X} needs a "
-                "native entry for both editions"
+                f"attack pool {kind!r} has {capacity} entries for "
+                f"{len(attacks)} attacks"
             )
-    return resolved
+        for index, attack in enumerate(attacks):
+            allocations[attack.main] = AttackAllocation(
+                pool.family,
+                pool.native_entries + index,
+            )
+    return allocations
 
 
 def generate_linker_values(packages: list[Package], allocations: Allocations) -> str:
@@ -1237,7 +1134,7 @@ def generate_linker_values(packages: list[Package], allocations: Allocations) ->
     for package in packages:
         for item in package.objects:
             value = allocations.objects[item.object_class][item.main]
-            lines.append(f"__bn6_object_kind_{item.main} = 0x{value:X};")
+            lines.append(f"__bn6_object_id_{item.main} = 0x{value:X};")
         for item in package.sprites:
             group, resource_id = allocations.sprites[item.archive]
             lines.append(f"__bn6_sprite_group_{item.archive} = 0x{group:X};")
@@ -1274,139 +1171,165 @@ def emit_chip_field(
     return [f".org 0x{address:08X}", f"    {directive} // {field}"]
 
 
-def emit_chip_records(config: Config, packages: list[Package]) -> list[str]:
+def emit_chip_records(
+    config: Config, packages: list[Package], allocations: Allocations
+) -> list[str]:
     lines = ["// Semantic chip-record patches declared by packages."]
     for package in packages:
         for chip in package.chips:
-            if not chip.common and not chip.gregar and not chip.falzar:
+            if (
+                not chip.common
+                and not chip.override
+                and package.attack is None
+            ):
                 continue
             lines.extend(["", f"// {chip.package}: chip 0x{chip.chip_id:03X}"])
-            for field, value in chip.common:
+            common = dict(chip.common)
+            if package.attack is not None:
+                attack = allocations.attacks[package.attack.main]
+                common["behavior.family"] = attack.family
+                common["behavior.subfamily"] = attack.subfamily
+            for field, value in sorted(
+                common.items(), key=lambda item: CHIP_FIELD_LAYOUT[item[0]][0]
+            ):
                 lines.extend(emit_chip_field(config, chip.chip_id, field, value))
-            if chip.gregar or chip.falzar:
-                lines.append(".if FALZAR")
-                for field, value in chip.falzar:
-                    lines.extend(emit_chip_field(config, chip.chip_id, field, value))
-                lines.append(".else")
-                for field, value in chip.gregar:
-                    lines.extend(emit_chip_field(config, chip.chip_id, field, value))
-                lines.append(".endif")
+            for field, value in chip.override:
+                lines.extend(emit_chip_field(config, chip.chip_id, field, value))
     return lines
 
 
-def emit_attack_routes(config: Config, packages: list[Package]) -> list[str]:
-    """Install direct entries and discriminator routers for chip attack families."""
-    resolved = resolve_attack_routes(config, packages)
-    lines = ["// Compiler-owned chip attack-family routes."]
-    shared: list[tuple[AttackRoute, list[tuple[AttackResource, int]]]] = []
-    for key, implementations in sorted(resolved.items()):
-        route = config.attack_routes[key]
-        lines.extend(["", f"// family 0x{key[0]:02X}, subfamily 0x{key[1]:02X}"])
-        lines.append(f".org 0x{route.hook_address:08X}")
-        needs_router = (
-            len(implementations) > 1
-            or route.gregar_BN6_EXPORT is not None
-            or route.falzar_BN6_EXPORT is not None
-        )
-        if not needs_router:
-            lines.append(f".dw {implementations[0][0].main} + 1")
-        else:
-            label = f"AttackRoute{key[0]:02X}_{key[1]:02X}"
-            lines.append(f".dw {label} + 1")
-            shared.append((route, implementations))
+def emit_attack_tables(
+    config: Config, packages: list[Package], allocations: Allocations
+) -> list[str]:
+    """Relocate native attack tables and extend each to all 256 subfamilies."""
+    lines = ["// Compiler-owned 256-entry chip attack tables."]
+    for kind, pool in config.attack_pools.items():
+        label = f"attack_family_{pool.family:02x}_table"
+        lines.extend(["", f"// {kind}: native family 0x{pool.family:02X}"])
+        for address in pool.references:
+            lines.extend([f".org 0x{address:08X}", f"    .dw {label}"])
 
-    if not shared:
-        return lines
-    lines.extend(["", ".autoregion", ".align 4", "AttackRoutesCodeStart:"])
-    for route, implementations in shared:
-        label = f"AttackRoute{route.family:02X}_{route.subfamily:02X}"
-        compared = sorted(implementations, key=lambda item: (item[1], item[0].package))
+    lines.extend(
+        [
+            "",
+            ".autoregion",
+            ".align 2",
+            "unassigned_attack_main:",
+            "    bx lr",
+            ".endautoregion",
+        ]
+    )
+    attacks = {
+        package.attack.main: package.attack
+        for package in packages
+        if package.attack is not None
+    }
+    for pool in config.attack_pools.values():
+        label = f"attack_family_{pool.family:02x}_table"
+        assigned = {
+            allocation.subfamily: attacks[main]
+            for main, allocation in allocations.attacks.items()
+            if allocation.family == pool.family
+        }
         lines.extend(
             [
                 "",
+                ".autoregion",
+                ".align 4",
                 f"{label}:",
-                "    push {r0}",
-                "    mov r0,r6",
-                "    lsr r0,r0,16",
+                f'    .incbin "{pool.native_table}"',
             ]
         )
-        for attack, marker in compared:
-            lines.extend(
-                [
-                    f"    cmp r0,0x{marker:02X}",
-                    f"    beq {label}_{symbol_case(attack.package)}",
-                ]
-            )
-        lines.append("    pop {r0}")
-        if route.gregar_BN6_EXPORT is None or route.falzar_BN6_EXPORT is None:
-            raise PackageError(
-                f"attack route 0x{route.family:02X}/0x{route.subfamily:02X} "
-                "must configure BN6_EXPORT for both editions"
-            )
-        lines.extend(
-            [
-                ".if FALZAR",
-                f"    ldr r3,=0x{route.falzar_BN6_EXPORT:08X} + 1",
-                ".else",
-                f"    ldr r3,=0x{route.gregar_BN6_EXPORT:08X} + 1",
-                ".endif",
-                "    bx r3",
-            ]
-        )
-        for attack, _ in compared:
-            lines.extend(
-                [
-                    f"{label}_{symbol_case(attack.package)}:",
-                    "    pop {r0}",
-                    f"    ldr r3,={attack.main} + 1",
-                    "    bx r3",
-                ]
-            )
-        lines.append("    .pool")
-    lines.extend(["", "AttackRoutesCodeEnd:", ".endautoregion"])
+        for subfamily in range(pool.native_entries, 0x100):
+            attack = assigned.get(subfamily)
+            if attack is None:
+                lines.append(
+                    f"    .dw unassigned_attack_main + 1 // 0x{subfamily:02X}"
+                )
+            else:
+                lines.append(
+                    f"    .dw {attack.main} + 1 // 0x{subfamily:02X} {attack.package}"
+                )
+        lines.extend([f"{label}_end:", ".endautoregion"])
     return lines
 
 
 def emit_object_tables(
     config: Config, packages: list[Package], allocations: Allocations
 ) -> list[str]:
-    lines = [
-        "// Project-owned object dispatch hubs.",
-    ]
-    for number, object_class in sorted(config.object_classes.items()):
-        lines.extend(
-            [
-                f".org 0x{object_class.dispatch_entry:08X}",
-                f".dw CustomType{number}Main + 1",
-            ]
-        )
-    lines.extend(["", ".autoregion", ".align 4", "ObjectTypesCodeStart:"])
-    for number in sorted(config.object_classes):
-        lines.extend(
-            [
-                "",
-                f"CustomType{number}Main:",
-                "    ldr r0,[r5,CUSTOM_OBJECT_KIND]",
-                "    sub r0,1",
-                f"    cmp r0,{len(allocations.objects[number])}",
-                "    bhs CustomObjectInvalid",
-                "    lsl r0,r0,2",
-                f"    ldr r1,=CustomType{number}Table",
-                "    ldr r0,[r1,r0]",
-                "    bx r0",
-            ]
-        )
+    """Relocate native object-class tables and extend each to all 256 IDs."""
+    lines = ["// Compiler-owned 256-entry object-class tables."]
+    class_numbers = sorted(config.object_classes)
+    for number in class_numbers:
+        object_class = config.object_classes[number]
+        label = f"object_class_{number}_table"
+        lines.extend(["", f"// Object class {number}"])
+        for address in object_class.references:
+            lines.extend([f".org 0x{address:08X}", f"    .dw {label}"])
+
     lines.extend(
         [
             "",
-            "CustomObjectInvalid:",
+            "// Intercept the resolved object entry once, not every table slot.",
+            f".org 0x{config.object_dispatch.hook_address:08X}",
+            "    ldr r1,=object_dispatch_interceptor_main + 1",
+            "    bx r1",
+            "    .pool",
+            "",
+            ".autoregion",
+            ".align 2",
+            "object_dispatch_interceptor_main:",
+            "    push {r7}",
+            "    ldrb r1,[r5,2]",
+            "    mov r2,0x0F",
+            "    and r1,r2",
+        ]
+    )
+    for number, object_class in sorted(config.object_classes.items()):
+        if object_class.interceptor is not None:
+            lines.extend(
+                [
+                    f"    cmp r1,{number}",
+                    f"    beq object_dispatch_class_{number}",
+                ]
+            )
+    lines.extend(["    mov r1,r0", "    b object_dispatch_invoke"])
+    for number, object_class in sorted(config.object_classes.items()):
+        if object_class.interceptor is not None:
+            lines.extend(
+                [
+                    f"object_dispatch_class_{number}:",
+                    f"    ldr r1,={object_class.interceptor} + 1",
+                    "    b object_dispatch_invoke",
+                ]
+            )
+    lines.extend(
+        [
+            "object_dispatch_invoke:",
+            "    mov lr,pc",
+            "    bx r1",
+            "    pop {r7}",
+            f"    ldr r0,=0x{config.object_dispatch.advance_address:08X} + 1",
+            "    mov lr,pc",
+            "    bx r0",
+            f"    ldr r0,=0x{config.object_dispatch.continuation_address:08X} + 1",
+            "    bx r0",
+            "    .pool",
+            ".endautoregion",
+            "",
+            ".autoregion",
+            ".align 2",
+            "unassigned_object_main:",
             "    push {lr}",
-            "    EngineCall OBJECT_FREE",
+            "    engine_call object_free",
             "    pop {pc}",
+            "    .pool",
+            ".endautoregion",
         ]
     )
     all_objects = [item for package in packages for item in package.objects]
-    for number in sorted(config.object_classes):
+    for number in class_numbers:
+        object_class = config.object_classes[number]
         namespace = allocations.objects[number]
         active = {
             item.main: item
@@ -1414,12 +1337,22 @@ def emit_object_tables(
             if item.object_class == number
         }
         reverse = {resource_id: name for name, resource_id in namespace.items()}
-        lines.extend(["", ".align 4", f"CustomType{number}Table:"])
-        for resource_id in range(1, len(namespace) + 1):
-            name = reverse[resource_id]
-            lines.append(f"    .dw {active[name].main} + 1 // {name} ({resource_id})")
-        lines.append(f"CustomType{number}TableEnd:")
-    lines.extend(["    .pool", "", "ObjectTypesCodeEnd:", ".endautoregion"])
+        label = f"object_class_{number}_table"
+        lines.extend(
+            [
+                "",
+                ".autoregion",
+                ".align 4",
+                f"{label}:",
+                f'    .incbin "{object_class.native_table}"',
+            ]
+        )
+        for resource_id in range(object_class.native_entries, 0x100):
+            name = reverse.get(resource_id)
+            target = "unassigned_object_main" if name is None else active[name].main
+            suffix = "" if name is None else f" {name}"
+            lines.append(f"    .dw {target} + 1 // 0x{resource_id:02X}{suffix}")
+        lines.extend([f"{label}_end:", ".endautoregion"])
     return lines
 
 
@@ -1427,42 +1360,13 @@ def emit_pointer_patches(packages: list[Package]) -> list[str]:
     lines = ["// Package-declared fixed pointer patches."]
     for package in packages:
         for patch in package.pointer_patches:
-            lines.append(f"// {package.name}: {patch.symbol}")
-            if patch.gregar_address == patch.falzar_address:
-                assert patch.gregar_address is not None
-                lines.append(f".org 0x{patch.gregar_address:08X}")
-            elif patch.gregar_address is None:
-                assert patch.falzar_address is not None
-                lines.extend(
-                    (
-                        ".if FALZAR",
-                        f"    .org 0x{patch.falzar_address:08X}",
-                        f"    .dw {patch.symbol}",
-                        ".endif",
-                    )
-                )
-                continue
-            elif patch.falzar_address is None:
-                lines.extend(
-                    (
-                        ".if !FALZAR",
-                        f"    .org 0x{patch.gregar_address:08X}",
-                        f"    .dw {patch.symbol}",
-                        ".endif",
-                    )
-                )
-                continue
-            else:
-                lines.extend(
-                    (
-                        ".if FALZAR",
-                        f"    .org 0x{patch.falzar_address:08X}",
-                        ".else",
-                        f"    .org 0x{patch.gregar_address:08X}",
-                        ".endif",
-                    )
-                )
-            lines.append(f".dw {patch.symbol}")
+            lines.extend(
+                [
+                    f"// {package.name}: {patch.symbol}",
+                    f".org 0x{patch.address:08X}",
+                    f"    .dw {patch.symbol}",
+                ]
+            )
     return lines
 
 
@@ -1472,10 +1376,9 @@ def emit_sprite_tables(
     lines = ["// Relocated native sprite groups with package-owned archives appended."]
     all_sprites = [item for package in packages for item in package.sprites]
     for number, group in sorted(config.sprite_groups.items()):
-        table = f"ImportedSpriteGroup{number:02X}Table"
-        lines.extend(
-            [f".org 0x{group.pointer_address:08X}", f".dw {table}"]
-        )
+        table = f"imported_sprite_group_{number:02x}_table"
+        for address in group.references:
+            lines.extend([f".org 0x{address:08X}", f".dw {table}"])
     for number, group in sorted(config.sprite_groups.items()):
         active = {
             item.archive: item
@@ -1487,7 +1390,7 @@ def emit_sprite_tables(
             for name, (allocated_group, resource_id) in allocations.sprites.items()
             if allocated_group == number
         }
-        table = f"ImportedSpriteGroup{number:02X}Table"
+        table = f"imported_sprite_group_{number:02x}_table"
         lines.extend(
             [
                 "",
@@ -1501,33 +1404,24 @@ def emit_sprite_tables(
             name = reverse[resource_id]
             item = active[name]
             lines.append(f"    .dw {item.archive} // {name} (0x{resource_id:02X})")
-        lines.extend([f"{table}End:", ".endautoregion"])
+        lines.extend([f"{table}_end:", ".endautoregion"])
     return lines
 
 
 def emit_song_table(
     config: Config, packages: list[Package], allocations: Allocations
 ) -> list[str]:
-    lines = [
-        "// Relocated native song table with package-owned songs appended.",
-        ".if FALZAR",
-    ]
-    for address in config.songs.falzar_references:
+    lines = ["// Relocated native song table with package-owned songs appended."]
+    for address in config.songs.references:
         lines.extend(
-            [f"    .org 0x{address:08X}", "    .dw RelocatedSongTable"]
-        )
-    lines.append(".else")
-    for address in config.songs.gregar_references:
-        lines.extend(
-            [f"    .org 0x{address:08X}", "    .dw RelocatedSongTable"]
+            [f".org 0x{address:08X}", "    .dw relocated_song_table"]
         )
     lines.extend(
         [
-            ".endif",
             "",
             ".autoregion",
             ".align 4",
-            "RelocatedSongTable:",
+            "relocated_song_table:",
             f'    .incbin "{config.songs.native_table}"',
         ]
     )
@@ -1547,39 +1441,24 @@ def emit_song_table(
                 f"    .dh 0x{allocations.song_players[name]:04X},0x{allocations.song_players[name]:04X}",
             ]
         )
-    lines.extend(["RelocatedSongTableEnd:", ".endautoregion"])
+    lines.extend(["relocated_song_table_end:", ".endautoregion"])
     return lines
 
 
 def emit_text_archives(config: Config) -> list[str]:
     """Emit the fixed BN6 archive installer fed by package-generated text binaries."""
     archives = [archive for group in config.text.groups for archive in group.archives]
-    falzar_address, falzar_target = config.text.falzar_folder_edit_skip
-    gregar_address, gregar_target = config.text.gregar_folder_edit_skip
+    skip_address, skip_target = config.text.folder_edit_skip
     lines = [
         "// Complete chip-text archives with changes declared by packages.",
-        ".if FALZAR",
-        f"    .org 0x{falzar_address:08X}",
-        f"    b 0x{falzar_target:08X}",
+        f".org 0x{skip_address:08X}",
+        f"    b 0x{skip_target:08X}",
     ]
     for archive in archives:
-        for address in archive.falzar_references:
+        for address in archive.references:
             lines.extend(
-                [f"    .org 0x{address:08X}", f"    .dw {archive.symbol}"]
+                [f".org 0x{address:08X}", f"    .dw {archive.symbol}"]
             )
-    lines.extend(
-        [
-            ".else",
-            f"    .org 0x{gregar_address:08X}",
-            f"    b 0x{gregar_target:08X}",
-        ]
-    )
-    for archive in archives:
-        for address in archive.gregar_references:
-            lines.extend(
-                [f"    .org 0x{address:08X}", f"    .dw {archive.symbol}"]
-            )
-    lines.append(".endif")
     for group in config.text.groups:
         lines.extend(["", ".autoregion"])
         for archive in group.archives:
@@ -1628,9 +1507,9 @@ def generate(config: Config, packages: list[Package], allocations: Allocations) 
         ],
         emit_pointer_patches(packages),
         [""],
-        emit_attack_routes(config, packages),
+        emit_attack_tables(config, packages, allocations),
         [""],
-        emit_chip_records(config, packages),
+        emit_chip_records(config, packages, allocations),
         [""],
         emit_object_tables(config, packages, allocations),
         [""],
@@ -1652,7 +1531,7 @@ def write_if_changed(path: Path, content: str) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent)
+    parser.add_argument("config", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--text-output", type=Path)
     parser.add_argument("--metadata", type=Path)
@@ -1663,27 +1542,29 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        config = static_config(args.root)
+        config_path = args.config.resolve()
+        config = load_config(config_path)
+        artifact_name = config_path.stem.removeprefix("config.")
         metadata_path = (
             args.metadata.resolve()
             if args.metadata
-            else config.root / "build/registry-metadata.generated.json"
+            else config.root / f"build/registry-metadata-{artifact_name}.generated.json"
         )
         packages = discover_packages(config, load_metadata(metadata_path))
         output_path = (
             args.output.resolve()
             if args.output
-            else config.root / "build/registry.generated.asm"
+            else config.root / f"build/registry-{artifact_name}.generated.asm"
         )
         text_output_path = (
             args.text_output.resolve()
             if args.text_output
-            else config.root / "build/text-replacements.generated.json"
+            else config.root / f"build/text-replacements-{artifact_name}.generated.json"
         )
         linker_output_path = (
             args.linker_output.resolve()
             if args.linker_output
-            else config.root / "build/registry-values.generated.ld"
+            else config.root / f"build/registry-values-{artifact_name}.generated.ld"
         )
         allocations = validate_and_allocate(config, packages)
         output_text = generate(config, packages, allocations)

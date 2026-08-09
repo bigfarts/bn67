@@ -30,13 +30,16 @@ ASM_SOURCES := $(wildcard $(PATCH_DIR)/src/*.asm)
 C_SOURCES := $(wildcard $(PATCH_DIR)/src/*.c)
 C_HEADERS := $(wildcard $(PATCH_DIR)/src/*.h)
 C_LINKER_SCRIPT := $(PATCH_DIR)/src/link.ld
-CONFIG_SOURCES := $(PATCH_DIR)/config.gregar.toml $(PATCH_DIR)/config.falzar.toml
-
-REGISTRY_METADATA := $(BUILD_DIR)/registry-metadata.generated.json
-REGISTRY_ASSEMBLY := $(BUILD_DIR)/registry.generated.asm
-REGISTRY_LINKER_VALUES := $(BUILD_DIR)/registry-values.generated.ld
-TEXT_REPLACEMENTS := $(BUILD_DIR)/text-replacements.generated.json
-REGISTRY_STAMP := $(BUILD_DIR)/.registry.stamp
+GREGAR_REGISTRY_METADATA := $(BUILD_DIR)/registry-metadata-gregar.generated.json
+FALZAR_REGISTRY_METADATA := $(BUILD_DIR)/registry-metadata-falzar.generated.json
+GREGAR_REGISTRY_ASSEMBLY := $(BUILD_DIR)/registry-gregar.generated.asm
+FALZAR_REGISTRY_ASSEMBLY := $(BUILD_DIR)/registry-falzar.generated.asm
+GREGAR_REGISTRY_LINKER_VALUES := $(BUILD_DIR)/registry-values-gregar.generated.ld
+FALZAR_REGISTRY_LINKER_VALUES := $(BUILD_DIR)/registry-values-falzar.generated.ld
+GREGAR_TEXT_REPLACEMENTS := $(BUILD_DIR)/text-replacements-gregar.generated.json
+FALZAR_TEXT_REPLACEMENTS := $(BUILD_DIR)/text-replacements-falzar.generated.json
+GREGAR_REGISTRY_STAMP := $(BUILD_DIR)/.registry-gregar.stamp
+FALZAR_REGISTRY_STAMP := $(BUILD_DIR)/.registry-falzar.stamp
 GREGAR_C_STAMP := $(BUILD_DIR)/.c-gregar.stamp
 FALZAR_C_STAMP := $(BUILD_DIR)/.c-falzar.stamp
 ASSET_STAMP := $(BUILD_DIR)/.assets.stamp
@@ -53,7 +56,7 @@ FALZAR_BUILD_STAMP := $(BUILD_DIR)/.falzar.stamp
 
 all: patches
 
-build: $(FALZAR_BUILD_STAMP)
+build: $(GREGAR_BUILD_STAMP) $(FALZAR_BUILD_STAMP)
 
 compile-commands: $(PATCH_DIR)/compile_commands.json
 
@@ -94,16 +97,30 @@ check-roms:
 $(BUILD_DIR) $(DIST_DIR):
 	@mkdir -p "$@"
 
-$(REGISTRY_METADATA): $(PATCH_DIR)/compile_c_metadata.py $(PACKAGE_SOURCES) $(C_HEADERS) | $(BUILD_DIR)
+$(GREGAR_REGISTRY_METADATA): $(PATCH_DIR)/compile_c_metadata.py $(PACKAGE_SOURCES) $(C_HEADERS) | $(BUILD_DIR)
 	$(PYTHON) "$(PATCH_DIR)/compile_c_metadata.py" \
-		--cc "$(ARM_GCC)" --nm "$(ARM_NM)" --output "$@"
+		--cc "$(ARM_GCC)" --nm "$(ARM_NM)" --define FALZAR=0 --output "$@"
 
-$(REGISTRY_STAMP): $(PATCH_DIR)/compile_registry.py $(CONFIG_SOURCES) $(PACKAGE_DEFS) $(REGISTRY_METADATA) | check-roms $(BUILD_DIR)
+$(FALZAR_REGISTRY_METADATA): $(PATCH_DIR)/compile_c_metadata.py $(PACKAGE_SOURCES) $(C_HEADERS) | $(BUILD_DIR)
+	$(PYTHON) "$(PATCH_DIR)/compile_c_metadata.py" \
+		--cc "$(ARM_GCC)" --nm "$(ARM_NM)" --define FALZAR=1 --output "$@"
+
+$(GREGAR_REGISTRY_STAMP): $(PATCH_DIR)/compile_registry.py $(PATCH_DIR)/config.gregar.toml $(PACKAGE_DEFS) $(GREGAR_REGISTRY_METADATA) | $(BUILD_DIR)
 	$(PYTHON) "$(PATCH_DIR)/compile_registry.py" \
-		--metadata "$(REGISTRY_METADATA)" \
-		--output "$(REGISTRY_ASSEMBLY)" \
-		--linker-output "$(REGISTRY_LINKER_VALUES)" \
-		--text-output "$(TEXT_REPLACEMENTS)"
+		"$(PATCH_DIR)/config.gregar.toml" \
+		--metadata "$(GREGAR_REGISTRY_METADATA)" \
+		--output "$(GREGAR_REGISTRY_ASSEMBLY)" \
+		--linker-output "$(GREGAR_REGISTRY_LINKER_VALUES)" \
+		--text-output "$(GREGAR_TEXT_REPLACEMENTS)"
+	@touch "$@"
+
+$(FALZAR_REGISTRY_STAMP): $(PATCH_DIR)/compile_registry.py $(PATCH_DIR)/config.falzar.toml $(PACKAGE_DEFS) $(FALZAR_REGISTRY_METADATA) | $(BUILD_DIR)
+	$(PYTHON) "$(PATCH_DIR)/compile_registry.py" \
+		"$(PATCH_DIR)/config.falzar.toml" \
+		--metadata "$(FALZAR_REGISTRY_METADATA)" \
+		--output "$(FALZAR_REGISTRY_ASSEMBLY)" \
+		--linker-output "$(FALZAR_REGISTRY_LINKER_VALUES)" \
+		--text-output "$(FALZAR_TEXT_REPLACEMENTS)"
 	@touch "$@"
 
 CFLAGS := -std=c11 -Os -mthumb -march=armv4t -mthumb-interwork \
@@ -119,15 +136,15 @@ $(PATCH_DIR)/compile_commands.json: $(PATCH_DIR)/generate_compile_commands.py Ma
 		--cc "$(ARM_GCC)" --cflags='$(CFLAGS)' \
 		--directory "$(PATCH_DIR)" --output "$@" $(C_SOURCES)
 
-$(GREGAR_C_STAMP): $(REGISTRY_STAMP) $(ASSET_STAMP) $(C_SOURCES) $(C_HEADERS) $(C_LINKER_SCRIPT) $(PATCH_DIR)/export_c_symbols.py | $(BUILD_DIR)
-	$(ARM_GCC) $(CFLAGS) -DFALZAR=0 $(C_SOURCES) $(CLDFLAGS) -lgcc -o "$(BUILD_DIR)/gameplay-gregar.elf"
+$(GREGAR_C_STAMP): $(GREGAR_REGISTRY_STAMP) $(ASSET_STAMP) $(C_SOURCES) $(C_HEADERS) $(C_LINKER_SCRIPT) $(PATCH_DIR)/export_c_symbols.py | $(BUILD_DIR)
+	$(ARM_GCC) $(CFLAGS) -DFALZAR=0 $(C_SOURCES) $(CLDFLAGS) -Wl,-T,"$(GREGAR_REGISTRY_LINKER_VALUES)" -lgcc -o "$(BUILD_DIR)/gameplay-gregar.elf"
 	$(ARM_OBJCOPY) -O binary "$(BUILD_DIR)/gameplay-gregar.elf" "$(BUILD_DIR)/gameplay-gregar.bin"
 	$(PYTHON) "$(PATCH_DIR)/export_c_symbols.py" --nm "$(ARM_NM)" \
 		"$(BUILD_DIR)/gameplay-gregar.elf" "$(BUILD_DIR)/c-symbols-gregar.generated.asm"
 	@touch "$@"
 
-$(FALZAR_C_STAMP): $(REGISTRY_STAMP) $(ASSET_STAMP) $(C_SOURCES) $(C_HEADERS) $(C_LINKER_SCRIPT) $(PATCH_DIR)/export_c_symbols.py | $(BUILD_DIR)
-	$(ARM_GCC) $(CFLAGS) -DFALZAR=1 $(C_SOURCES) $(CLDFLAGS) -lgcc -o "$(BUILD_DIR)/gameplay-falzar.elf"
+$(FALZAR_C_STAMP): $(FALZAR_REGISTRY_STAMP) $(ASSET_STAMP) $(C_SOURCES) $(C_HEADERS) $(C_LINKER_SCRIPT) $(PATCH_DIR)/export_c_symbols.py | $(BUILD_DIR)
+	$(ARM_GCC) $(CFLAGS) -DFALZAR=1 $(C_SOURCES) $(CLDFLAGS) -Wl,-T,"$(FALZAR_REGISTRY_LINKER_VALUES)" -lgcc -o "$(BUILD_DIR)/gameplay-falzar.elf"
 	$(ARM_OBJCOPY) -O binary "$(BUILD_DIR)/gameplay-falzar.elf" "$(BUILD_DIR)/gameplay-falzar.bin"
 	$(PYTHON) "$(PATCH_DIR)/export_c_symbols.py" --nm "$(ARM_NM)" \
 		"$(BUILD_DIR)/gameplay-falzar.elf" "$(BUILD_DIR)/c-symbols-falzar.generated.asm"
@@ -156,58 +173,38 @@ $(ASSET_STAMP): $(PATCH_DIR)/extract_assets.py | check-roms $(BUILD_DIR)
 		--bn3-blue "$(BN3_BLUE_ROM)"
 	@touch "$@"
 
-$(GREGAR_TEXT_STAMP): $(PATCH_DIR)/build_text_archives.py $(REGISTRY_STAMP) | $(BUILD_DIR)
+$(GREGAR_TEXT_STAMP): $(PATCH_DIR)/build_text_archives.py $(GREGAR_REGISTRY_STAMP) | $(BUILD_DIR)
 	$(PYTHON) "$(PATCH_DIR)/build_text_archives.py" \
 		"$(BN6_GREGAR_ROM)" 0x42038 0x27D50 \
 		"$(BUILD_DIR)/chip-names-0-gregar.bin" "$(BUILD_DIR)/chip-names-1-gregar.bin" \
 		"$(BUILD_DIR)/chip-descriptions-0-gregar.bin" "$(BUILD_DIR)/chip-descriptions-1-gregar.bin" \
-		--package-text "$(TEXT_REPLACEMENTS)"
+		--package-text "$(GREGAR_TEXT_REPLACEMENTS)"
 	@touch "$@"
 
-$(FALZAR_TEXT_STAMP): $(PATCH_DIR)/build_text_archives.py $(REGISTRY_STAMP) | $(BUILD_DIR)
+$(FALZAR_TEXT_STAMP): $(PATCH_DIR)/build_text_archives.py $(FALZAR_REGISTRY_STAMP) | $(BUILD_DIR)
 	$(PYTHON) "$(PATCH_DIR)/build_text_archives.py" \
 		"$(BN6_FALZAR_ROM)" 0x42068 0x27D50 \
 		"$(BUILD_DIR)/chip-names-0-falzar.bin" "$(BUILD_DIR)/chip-names-1-falzar.bin" \
 		"$(BUILD_DIR)/chip-descriptions-0-falzar.bin" "$(BUILD_DIR)/chip-descriptions-1-falzar.bin" \
-		--package-text "$(TEXT_REPLACEMENTS)"
+		--package-text "$(FALZAR_TEXT_REPLACEMENTS)"
 	@touch "$@"
 
-$(GREGAR_BUILD_STAMP): $(GREGAR_TITLE_STAMP) $(ASSET_STAMP) $(GREGAR_TEXT_STAMP) $(GREGAR_C_STAMP) $(FALZAR_C_STAMP) $(ASM_SOURCES) $(CONFIG_SOURCES) $(PATCH_DIR)/reorder_chip_sort.py | $(BUILD_DIR)
+$(GREGAR_BUILD_STAMP): $(GREGAR_TITLE_STAMP) $(ASSET_STAMP) $(GREGAR_TEXT_STAMP) $(GREGAR_C_STAMP) $(ASM_SOURCES) $(PATCH_DIR)/config.gregar.toml $(PATCH_DIR)/reorder_chip_sort.py | $(BUILD_DIR)
 	cp "$(BN6_GREGAR_ROM)" "$(BUILD_DIR)/bn67-gregar.gba"
-	cp "$(BUILD_DIR)/chip-names-0-gregar.bin" "$(BUILD_DIR)/chip-names-0.bin"
-	cp "$(BUILD_DIR)/chip-names-1-gregar.bin" "$(BUILD_DIR)/chip-names-1.bin"
-	cp "$(BUILD_DIR)/chip-descriptions-0-gregar.bin" "$(BUILD_DIR)/chip-descriptions-0.bin"
-	cp "$(BUILD_DIR)/chip-descriptions-1-gregar.bin" "$(BUILD_DIR)/chip-descriptions-1.bin"
-	cp "$(BUILD_DIR)/song-table-gregar.bin" "$(BUILD_DIR)/song-table.bin"
-	cp "$(BUILD_DIR)/sprite-group08-table-gregar.bin" "$(BUILD_DIR)/sprite-group08-table.bin"
-	cp "$(BUILD_DIR)/sprite-group0C-table-gregar.bin" "$(BUILD_DIR)/sprite-group0C-table.bin"
-	cp "$(BUILD_DIR)/sprite-group10-table-gregar.bin" "$(BUILD_DIR)/sprite-group10-table.bin"
-	cp "$(BUILD_DIR)/sprite-group14-table-gregar.bin" "$(BUILD_DIR)/sprite-group14-table.bin"
 	cd "$(PATCH_DIR)" && "$(ARMIPS)" -root "$(PATCH_DIR)" -erroronwarning -sym "$(BUILD_DIR)/gregar.sym" src/gregar.asm
 	$(PYTHON) "$(PATCH_DIR)/reorder_chip_sort.py" \
 		"$(BUILD_DIR)/bn67-gregar.gba" "$(BUILD_DIR)/gregar.sym" "$(BN6_GREGAR_ROM)"
 	@touch "$@"
 
-# Falzar depends on Gregar because Armips consumes the same temporary text,
-# song, and sprite-table filenames for both editions.
-$(FALZAR_BUILD_STAMP): $(GREGAR_BUILD_STAMP) $(FALZAR_TITLE_STAMP) $(ASSET_STAMP) $(FALZAR_TEXT_STAMP) $(FALZAR_C_STAMP) $(ASM_SOURCES) $(CONFIG_SOURCES) $(PATCH_DIR)/reorder_chip_sort.py | $(BUILD_DIR)
+$(FALZAR_BUILD_STAMP): $(FALZAR_TITLE_STAMP) $(ASSET_STAMP) $(FALZAR_TEXT_STAMP) $(FALZAR_C_STAMP) $(ASM_SOURCES) $(PATCH_DIR)/config.falzar.toml $(PATCH_DIR)/reorder_chip_sort.py | $(BUILD_DIR)
 	cp "$(BN6_FALZAR_ROM)" "$(BUILD_DIR)/bn67-falzar.gba"
-	cp "$(BUILD_DIR)/chip-names-0-falzar.bin" "$(BUILD_DIR)/chip-names-0.bin"
-	cp "$(BUILD_DIR)/chip-names-1-falzar.bin" "$(BUILD_DIR)/chip-names-1.bin"
-	cp "$(BUILD_DIR)/chip-descriptions-0-falzar.bin" "$(BUILD_DIR)/chip-descriptions-0.bin"
-	cp "$(BUILD_DIR)/chip-descriptions-1-falzar.bin" "$(BUILD_DIR)/chip-descriptions-1.bin"
-	cp "$(BUILD_DIR)/song-table-falzar.bin" "$(BUILD_DIR)/song-table.bin"
-	cp "$(BUILD_DIR)/sprite-group08-table-falzar.bin" "$(BUILD_DIR)/sprite-group08-table.bin"
-	cp "$(BUILD_DIR)/sprite-group0C-table-falzar.bin" "$(BUILD_DIR)/sprite-group0C-table.bin"
-	cp "$(BUILD_DIR)/sprite-group10-table-falzar.bin" "$(BUILD_DIR)/sprite-group10-table.bin"
-	cp "$(BUILD_DIR)/sprite-group14-table-falzar.bin" "$(BUILD_DIR)/sprite-group14-table.bin"
 	cd "$(PATCH_DIR)" && "$(ARMIPS)" -root "$(PATCH_DIR)" -erroronwarning -sym "$(BUILD_DIR)/falzar.sym" src/falzar.asm
 	$(PYTHON) "$(PATCH_DIR)/reorder_chip_sort.py" \
 		"$(BUILD_DIR)/bn67-falzar.gba" "$(BUILD_DIR)/falzar.sym" "$(BN6_FALZAR_ROM)"
 	@touch "$@"
 	@echo "Patched ROMs written to $(BUILD_DIR)"
 
-patches: $(FALZAR_BUILD_STAMP) | $(DIST_DIR)
+patches: $(GREGAR_BUILD_STAMP) $(FALZAR_BUILD_STAMP) | $(DIST_DIR)
 	@set -eu; \
 	if command -v "$(FLIPS)" >/dev/null 2>&1; then \
 		"$(FLIPS)" --create --bps "$(BN6_GREGAR_ROM)" "$(BUILD_DIR)/bn67-gregar.gba" "$(DIST_DIR)/bn67-gregar.bps"; \

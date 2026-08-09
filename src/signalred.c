@@ -1,32 +1,35 @@
 #include "runtime.h"
 
 BN6_SPRITE(signalred_battle_sprite, "build/signalred-battle-sprite.bin");
-BN6_SONG(SignalredSpawnSong);
-BN6_POINTER_PATCH(0x08012010, SignalredDustSpriteTable);
-BN6_POINTER_PATCH(0x08012014, SignalredDustSpriteTable);
-BN6_GREGAR_POINTER_PATCH(0x080EACD0, SignalredDustSpriteTable);
-BN6_FALZAR_POINTER_PATCH(0x080E9990, SignalredDustSpriteTable);
-
 BN6_ASM_RESOURCE(
-    SignalredDustSpriteTable,
+    signalred_dust_sprite_table,
     ".short 0x0904,0x240C,0x230C,0x300C,0x0010\n"
     ".short 0x0810,0x1804,0x0A04,0x340C,0x350C\n"
     ".short 0x0D04,0x0010,0x410C,0x0504,0x410C\n"
     ".byte __bn6_sprite_group_signalred_battle_sprite\n"
     ".byte __bn6_sprite_id_signalred_battle_sprite\n"
 );
-BN6_PCM_SONG(
-    SignalredSpawnSong,
-    SignalredSpawn,
-    0x40,
-    0x08,
-    ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
-    ".byte 0xBE,0x7F,0xDC,0x3C,0x7F,0x8D,0xB1,0x00\n",
-    "build/signalred-spawn-sample.bin"
+BN6_SONG(
+    signalred_spawn_song,
+    BN6_PCM(
+        signalred_spawn,
+        0x40,
+        0x08,
+        ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
+        ".byte 0xBE,0x7F,0xDC,0x3C,0x7F,0x8D,0xB1,0x00\n",
+        "build/signalred-spawn-sample.bin"
+    )
 );
-BN6_INCBIN(SignalredIcon, "build/signalred-icon.bin");
-BN6_INCBIN(SignalredImage, "build/signalred-image.bin");
-BN6_INCBIN(SignalredPalette, "build/signalred-palette.bin");
+BN6_POINTER_PATCH(0x08012010, signalred_dust_sprite_table);
+BN6_POINTER_PATCH(0x08012014, signalred_dust_sprite_table);
+#if FALZAR
+BN6_POINTER_PATCH(0x080E9990, signalred_dust_sprite_table);
+#else
+BN6_POINTER_PATCH(0x080EACD0, signalred_dust_sprite_table);
+#endif
+BN6_INCBIN(signalred_icon, "build/signalred-icon.bin");
+BN6_INCBIN(signalred_image, "build/signalred-image.bin");
+BN6_INCBIN(signalred_palette, "build/signalred-palette.bin");
 
 static const uint32_t GREEN_SFX = 0x00D1;
 static const uint16_t STARTUP_TICKS = 3;
@@ -36,26 +39,29 @@ static const uint16_t OBJECT_HP = 100;
 static const uint32_t PASSIVE_COLLISION_REGION = 19;
 static const uint32_t HIT_COLLISION_REGION = 20;
 static const uint32_t DUST_AMMO_KIND = 15;
-static const uint8_t STARTUP_PENDING = 0x01;
-static const uint8_t COLLISION_DEFERRED = 0x80;
-static const uint32_t DUST_SUCTION_SIDE_0 = 0x00100000;
+static const uint8_t STARTUP_PENDING_FLAG = 0x01;
+static const uint8_t COLLISION_DEFERRED_FLAG = 0x80;
+static const uint8_t INITIAL_REMOVAL_FLAGS =
+    STARTUP_PENDING_FLAG | COLLISION_DEFERRED_FLAG;
 static const uint32_t DESTROY_EFFECT = 0x00;
 static const int32_t DESTROY_EFFECT_HEIGHT = 0x00100000;
 static const uint32_t DESTROY_SFX = 0x70;
 
-static uint32_t owner_can_use_chips_chip_flag(const Object *object)
+static uint32_t opponent_chip_enable_flag(const Object *object)
 {
-    return object->owner == 0 ? 0x08u : 0x04u;
+    return object->owner == 0
+        ? BN6_BATTLE_CONTROL_FLAG_SIDE_1_CHIPS_ENABLED
+        : BN6_BATTLE_CONTROL_FLAG_SIDE_0_CHIPS_ENABLED;
 }
 
-static void set_can_use_chips_flag(Object *object)
+static void enable_opponent_chips(Object *object)
 {
-    bn6_battle_flags_set(owner_can_use_chips_chip_flag(object));
+    bn6_battle_set_control_flags(opponent_chip_enable_flag(object));
 }
 
-static void clear_can_use_chips_flag(Object *object)
+static void disable_opponent_chips(Object *object)
 {
-    bn6_battle_flags_clear(owner_can_use_chips_chip_flag(object));
+    bn6_battle_clear_control_flags(opponent_chip_enable_flag(object));
 }
 
 static void object_animate(Object *object)
@@ -67,7 +73,7 @@ static void object_animate(Object *object)
 
 static void object_begin_destroy(Object *object)
 {
-    object->flags &= (uint8_t)~2u;
+    object->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
     object->state_word = 8;
 }
 
@@ -86,7 +92,7 @@ static void object_begin_damage_destroy(Object *object)
 
 static void object_destroy(Object *object)
 {
-    set_can_use_chips_flag(object);
+    enable_opponent_chips(object);
     bn6_self_object_unregister_deployable();
     Collision *collision = object->collision;
     if (collision != NULL) {
@@ -100,9 +106,9 @@ static void object_destroy(Object *object)
 
 static void play_spawn_sound(Object *object)
 {
-    bn6_play_sound(BN6_SONG_ID(SignalredSpawnSong));
+    bn6_play_sound(BN6_SONG_ID(signalred_spawn_song));
     object->aux_timer = RED_TICKS;
-    clear_can_use_chips_flag(object);
+    disable_opponent_chips(object);
 }
 
 static void play_green_sound(Object *object)
@@ -118,7 +124,7 @@ static void object_turn_green(Object *object)
     bn6_self_sprite_set_animation(1);
     bn6_self_sprite_load_animation_data();
     object->aux_timer = GREEN_TICKS;
-    set_can_use_chips_flag(object);
+    enable_opponent_chips(object);
     play_green_sound(object);
 }
 
@@ -141,13 +147,13 @@ static void object_cycle_update(Object *object)
     bn6_self_sprite_set_animation(0);
     bn6_self_sprite_load_animation_data();
     object->aux_timer = RED_TICKS;
-    clear_can_use_chips_flag(object);
+    disable_opponent_chips(object);
     object_animate(object);
 }
 
 static void object_normal_update(Object *object)
 {
-    if ((object->removal_state & STARTUP_PENDING) == 0) {
+    if ((object->removal_state & STARTUP_PENDING_FLAG) == 0) {
         object_cycle_update(object);
         return;
     }
@@ -158,7 +164,7 @@ static void object_normal_update(Object *object)
         object_animate(object);
         return;
     }
-    object->removal_state &= (uint8_t)~STARTUP_PENDING;
+    object->removal_state &= (uint8_t)~STARTUP_PENDING_FLAG;
     play_spawn_sound(object);
     object_animate(object);
 }
@@ -172,9 +178,9 @@ static void object_store_dust_ammo(Object *object)
 static void object_update(Object *object)
 {
     uint8_t removal = object->removal_state;
-    if ((removal & COLLISION_DEFERRED) != 0) {
+    if ((removal & COLLISION_DEFERRED_FLAG) != 0) {
         if (bn6_battle_is_time_stopped() != 0) {
-            if ((removal & STARTUP_PENDING) != 0) {
+            if ((removal & STARTUP_PENDING_FLAG) != 0) {
                 object_normal_update(object);
             } else {
                 object_animate(object);
@@ -189,13 +195,15 @@ static void object_update(Object *object)
             3
         );
         bn6_self_collision_present(0, PASSIVE_COLLISION_REGION);
-        object->removal_state = (uint8_t)(removal & ~COLLISION_DEFERRED);
+        object->removal_state = (uint8_t)(
+            removal & (uint8_t)~COLLISION_DEFERRED_FLAG
+        );
     }
 
     bn6_self_field_collision_update();
     bn6_self_deployable_lifetime_update();
     Collision *collision = object->collision;
-    uint32_t damage = collision->accumulated_damage;
+    uint32_t damage = collision->final_damage;
     if (damage != 0) {
         bn6_self_sprite_flash_white();
         bn6_self_object_apply_damage(damage);
@@ -213,13 +221,15 @@ static void object_update(Object *object)
         return;
     }
 
-    uint32_t flags = bn6_self_collision_get_flags();
-    uint32_t opponent_suction = DUST_SUCTION_SIDE_0 << (object->owner ^ 1u);
-    if ((flags & opponent_suction) != 0) {
+    uint32_t secondary_flags = bn6_self_collision_get_secondary_flags();
+    uint32_t opponent_dust_suction_flag = object->owner == 0
+        ? BN6_COLLISION_SECONDARY_FLAG_DUST_SUCTION_SIDE_1
+        : BN6_COLLISION_SECONDARY_FLAG_DUST_SUCTION_SIDE_0;
+    if ((secondary_flags & opponent_dust_suction_flag) != 0) {
         object_store_dust_ammo(object);
         return;
     }
-    if ((flags & 0x00040000u) != 0) {
+    if ((secondary_flags & BN6_COLLISION_SECONDARY_FLAG_WIND_REMOVAL) != 0) {
         if (bn6_self_object_update_suction() == 1) {
             object_begin_destroy(object);
         }
@@ -247,7 +257,7 @@ static void object_init(Object *object)
     bn6_self_sprite_update();
     bn6_self_sprite_set_flip(object->owner);
     bn6_self_object_set_coords();
-    object->flags |= 2u;
+    object->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
 
     object->hp = OBJECT_HP;
     object->max_hp = OBJECT_HP;
@@ -260,7 +270,7 @@ static void object_init(Object *object)
 
     object->animation_state = 0;
     object->substate = 0;
-    object->removal_state = 0x81;
+    object->removal_state = INITIAL_REMOVAL_FLAGS;
     object->state_word = 4;
     bn6_self_object_update();
 }
@@ -277,7 +287,7 @@ static Object *spawn_persistent(Object *controller)
 
     uint64_t coordinates = bn6_panel_to_coords(panel_x, panel_y);
     Object *object = bn6_spawn_type3(
-        CUSTOM_TYPE3_ID,
+        BN6_OBJECT_ID(signalred_object_main),
         (int32_t)(uint32_t)coordinates,
         (int32_t)(uint32_t)(coordinates >> 32),
         0,
@@ -293,8 +303,7 @@ static Object *spawn_persistent(Object *controller)
     object->owner = owner_side;
     object->parent = owner;
     object->attack = controller->attack;
-    object->kind = BN6_OBJECT_KIND(signalred_object_main);
-    object->flags |= 0x10u;
+    object->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
     bn6_object_register_deployable(object, owner_side, 1);
     return object;
 }
@@ -365,7 +374,9 @@ BN6_OBJECT3(signalred_object_main)
 
 BN6_ATTACK(0x0C1, signalred_attack_main)
 {
-    Object *controller = bn6_spawn_type4(CUSTOM_TYPE4_ID, spawn_argument);
+    Object *controller = bn6_spawn_type4(
+        BN6_OBJECT_ID(signalred_controller_main), spawn_argument
+    );
     if (controller == NULL) {
         return;
     }
@@ -376,5 +387,4 @@ BN6_ATTACK(0x0C1, signalred_attack_main)
     controller->owner_word = owner->owner_word;
     controller->attack = attack;
     controller->chip_data = chip_data;
-    controller->kind = BN6_OBJECT_KIND(signalred_controller_main);
 }

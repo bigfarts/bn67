@@ -172,11 +172,12 @@ registers its own attacks, objects, sprites, songs, dependencies, and pointer
 patches with `BN6_*` macros. No manifest or generated C header mirrors those
 declarations.
 
-`compile_c_metadata.py` compiles the gameplay package sources in metadata mode and
-extracts their ordered `__bn6_meta__...` symbols from the ELF objects with
-`arm-none-eabi-nm`. `compile_registry.py` allocates registry entries from that
-symbol data and generates absolute linker symbols used by expressions such as
-`BN6_OBJECT_KIND(searchman_actor_main)` and
+`compile_c_metadata.py` compiles the gameplay package sources in target-specific
+metadata mode and extracts their ordered `__bn6_meta__...` symbols from the ELF
+objects with `arm-none-eabi-nm`. `compile_registry.py` consumes one config path
+per invocation, allocates that config's registry independently, and generates
+absolute linker symbols used by expressions such as
+`BN6_OBJECT_ID(searchman_actor_main)` and
 `BN6_SPRITE_ID(searchman_battle_sprite)`.
 
 Optional `src/<name>.defs.toml` files keep declarative ROM-data edits separate:
@@ -185,16 +186,16 @@ Optional `src/<name>.defs.toml` files keep declarative ROM-data edits separate:
 [chips."0x131"]
 codes = ["B"]
 power = 200
-behavior = { counter_settings = 0x8B, family = 0x15, subfamily = 0x26 }
+behavior = { counter_settings = 0x8B }
 
 [text.chip-names-1]
 "0x31" = "BugCharg"
 ```
 
 `chips` contains semantic chip records; `text` contains explicit archive/index
-replacements. Edition-specific chip overrides remain under `gregar` and
-`falzar`. See [src/README.md](src/README.md) for the complete registry and defs
-reference.
+replacements. Target-specific chip overrides live in the generic `variants`
+table and are selected by the config's opaque `variant` value. See
+[src/README.md](src/README.md) for the complete registry and defs reference.
 
 ## Build
 

@@ -1,22 +1,21 @@
 #include "runtime.h"
 
 BN6_SPRITE(bugchain_battle_sprite, "build/bugchain-battle-sprite.bin");
-BN6_SONG(BugchainAuraSong);
-
-BN6_PCM_SONG(
-    BugchainAuraSong,
-    BugchainSound,
-    0x40,
-    0x00,
-    ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
-    ".byte 0xBE,0x7F,0xD7,0x2E,0x7F,0x88,0xDB,0x39,0x8C,0xB1\n",
-    "build/bugchain-sound-sample.bin"
+BN6_SONG(
+    bugchain_aura_song,
+    BN6_PCM(
+        bugchain_sound,
+        0x40,
+        0x00,
+        ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
+        ".byte 0xBE,0x7F,0xD7,0x2E,0x7F,0x88,0xDB,0x39,0x8C,0xB1\n",
+        "build/bugchain-sound-sample.bin"
+    )
 );
-BN6_INCBIN(BugchainIcon, "build/bugchain-icon.bin");
-BN6_INCBIN(BugchainImage, "build/bugchain-image.bin");
-BN6_INCBIN(BugchainPalette, "build/bugchain-palette.bin");
+BN6_INCBIN(bugchain_icon, "build/bugchain-icon.bin");
+BN6_INCBIN(bugchain_image, "build/bugchain-image.bin");
+BN6_INCBIN(bugchain_palette, "build/bugchain-palette.bin");
 
-static const uint32_t LINK_BATTLE_FLAG = 0x08;
 static const uint16_t EFFECT_FRAMES = 60;
 static const uint16_t VISUAL_FRAMES = 50;
 static const uint16_t SOUND_FRAME = 42;
@@ -42,9 +41,9 @@ static void transfer_bugs(Object *controller)
         }
     }
 
-    uint16_t source_value = *(volatile uint16_t *)(source + HALFWORD_PROPERTY_OFFSET);
-    volatile uint16_t *target_value =
-        (volatile uint16_t *)(target + HALFWORD_PROPERTY_OFFSET);
+    uint16_t source_value = *(uint16_t *)(source + HALFWORD_PROPERTY_OFFSET);
+    uint16_t *target_value =
+        (uint16_t *)(target + HALFWORD_PROPERTY_OFFSET);
     if (source_value != 0 && source_value > *target_value) {
         *target_value = source_value;
     }
@@ -52,18 +51,19 @@ static void transfer_bugs(Object *controller)
 
 static void spawn_visual(Object *player, uint32_t spawn_argument)
 {
-    Object *visual = bn6_spawn_type4(CUSTOM_TYPE4_ID, spawn_argument);
+    Object *visual = bn6_spawn_type4(
+        BN6_OBJECT_ID(bugchain_visual_main), spawn_argument
+    );
     if (visual == NULL) {
         return;
     }
     visual->parent = player;
-    visual->kind = BN6_OBJECT_KIND(bugchain_visual_main);
 }
 
 static void effect_update(Object *controller, uint32_t spawn_argument)
 {
     if (controller->substate == 0) {
-        if ((bn6_battle_config_flags() & LINK_BATTLE_FLAG) == 0) {
+        if ((bn6_battle_get_config_flags() & BN6_BATTLE_CONFIG_FLAG_LINK) == 0) {
             controller->phase = 0x0C;
             controller->phase_timer = 0;
             return;
@@ -137,7 +137,7 @@ static void copy_coords(Object *visual)
 static void visual_update(Object *visual)
 {
     if (visual->timer == SOUND_FRAME) {
-        bn6_play_sound(BN6_SONG_ID(BugchainAuraSong));
+        bn6_play_sound(BN6_SONG_ID(bugchain_aura_song));
     }
 
     uint16_t timer = (uint16_t)(visual->timer - 1u);
@@ -163,7 +163,7 @@ static void visual_init(Object *visual)
     bn6_self_sprite_update();
     visual->owner = visual->parent->owner;
     bn6_self_sprite_set_flip(visual->owner);
-    visual->flags |= 2u;
+    visual->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     visual->timer = VISUAL_FRAMES;
     visual->state_word = 4;
     visual_update(visual);
@@ -187,7 +187,9 @@ BN6_OBJECT4(bugchain_visual_main)
 
 BN6_ATTACK(0x0BE, bugchain_attack_main)
 {
-    Object *controller = bn6_spawn_type4(CUSTOM_TYPE4_ID, spawn_argument);
+    Object *controller = bn6_spawn_type4(
+        BN6_OBJECT_ID(bugchain_controller_main), spawn_argument
+    );
     if (controller == NULL) {
         return;
     }
@@ -198,5 +200,4 @@ BN6_ATTACK(0x0BE, bugchain_attack_main)
     controller->owner_word = owner->owner_word;
     controller->attack = attack;
     controller->chip_data = chip_data;
-    controller->kind = BN6_OBJECT_KIND(bugchain_controller_main);
 }

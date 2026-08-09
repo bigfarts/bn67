@@ -8,6 +8,6 @@ element = "obstacle"
 class = "standard"
 mb = 61
 power = 0
-behavior = { effect_flags = 0x41, counter_settings = 0x00, family = 0x15, subfamily = 0x26, dark_soul_usage = 0x0A, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
+behavior = { effect_flags = 0x41, counter_settings = 0x00, dark_soul_usage = 0x0A, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
 library = { number = 0x14, flags = 0xC4, lock_on_type = 0x40, sort_order = 0x00C6, gate_usage = 0x01, dark_chip_id = "none" }
-artwork = { icon = "SignalredIcon", image = "SignalredImage", palette = "SignalredPalette" }
+artwork = { icon = "signalred_icon", image = "signalred_image", palette = "signalred_palette" }

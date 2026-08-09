@@ -1,19 +1,18 @@
 #include "runtime.h"
 
-BN6_SONG(FolderbackRumbleSong);
-BN6_POINTER_PATCH(0x08003224, FolderbackType1DispatchTable);
-
-BN6_INCBIN(FolderbackIcon, "build/folderback-icon.bin");
-BN6_INCBIN(FolderbackImage, "build/folderback-image.bin");
-BN6_INCBIN(FolderbackPalette, "build/folderback-palette.bin");
-BN6_PCM_SONG(
-    FolderbackRumbleSong,
-    FolderbackRumble,
-    0x40,
-    0x08,
-    ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBE,0x7F\n"
-    ".byte 0xBF,0x40,0xF9,0x3C,0x7F,0xAA,0x81,0xB1\n",
-    "build/folderback-rumble-sample.bin"
+BN6_INCBIN(folderback_icon, "build/folderback-icon.bin");
+BN6_INCBIN(folderback_image, "build/folderback-image.bin");
+BN6_INCBIN(folderback_palette, "build/folderback-palette.bin");
+BN6_SONG(
+    folderback_rumble_song,
+    BN6_PCM(
+        folderback_rumble,
+        0x40,
+        0x08,
+        ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBE,0x7F\n"
+        ".byte 0xBF,0x40,0xF9,0x3C,0x7F,0xAA,0x81,0xB1\n",
+        "build/folderback-rumble-sample.bin"
+    )
 );
 
 static const uint32_t FULL_GAUGE = 0x4000;
@@ -29,36 +28,20 @@ struct FolderbackWork {
 
 _Static_assert(sizeof(struct FolderbackWork) == 0x1C, "FolderBack work layout");
 
-__asm__(
-    ".section .rodata.folderback_type1,\"a\",%progbits\n"
-    ".balign 4\n"
-    ".global FolderbackType1DispatchTable\n"
-    ".type FolderbackType1DispatchTable,%object\n"
-    "FolderbackType1DispatchTable:\n"
-    ".rept 95\n"
-    ".word FolderbackType1Main + 1\n"
-    ".endr\n"
-    ".size FolderbackType1DispatchTable,.-FolderbackType1DispatchTable\n"
-    ".previous\n"
-);
-
-NAKED void FolderbackType1Main(void)
+NAKED void folderback_type_1_main(void)
 {
     __asm__(
         ".syntax unified\n"
-        "push {r4,r6,r7,lr}\n"
+        "push {r0,r4,r6,r7,lr}\n"
         "ldr r6,=0x02036870\n"
         "movs r7,#32\n"
         "1:\n"
         "ldrb r0,[r6,#0]\n"
-        "movs r1,#1\n"
+        "movs r1,#" BN6_STRINGIFY(BN6_OBJECT_FLAG_ACTIVE) "\n"
         "tst r0,r1\n"
         "beq 3f\n"
         "ldrb r0,[r6,#1]\n"
-        "cmp r0,#44\n"
-        "bne 3f\n"
-        "ldr r0,[r6,#124]\n"
-        "ldr r1,=__bn6_object_kind_folderback_controller_main\n"
+        "ldr r1,=__bn6_object_id_folderback_controller_main\n"
         "cmp r0,r1\n"
         "bne 3f\n"
         "movs r4,#96\n"
@@ -75,14 +58,12 @@ NAKED void FolderbackType1Main(void)
         "adds r6,r6,r0\n"
         "subs r7,#1\n"
         "bne 1b\n"
-        "ldrb r0,[r5,#1]\n"
-        "lsls r0,r0,#2\n"
-        "ldr r1,=0x08003C9C\n"
-        "ldr r4,[r1,r0]\n"
+        "ldr r4,[sp,#0]\n"
+        "adds r0,r4,#0\n"
         "mov lr,pc\n"
         "bx r4\n"
         "4:\n"
-        "pop {r4,r6,r7,pc}\n"
+        "pop {r0,r4,r6,r7,pc}\n"
         "5:\n"
         "bl bn6_self_object_update_timestop\n"
         "b 4b\n"
@@ -91,9 +72,8 @@ NAKED void FolderbackType1Main(void)
 
 static void lock_opponent(Object *self)
 {
-    volatile struct FolderbackWork *work =
-        (volatile struct FolderbackWork *)self->work;
-    Object *volatile *units = bn6_active_units_for_side(self->owner ^ 1u);
+    struct FolderbackWork *work = (struct FolderbackWork *)self->work;
+    Object *const *units = bn6_active_units_for_side(self->owner ^ 1u);
     for (size_t index = 0; index < 4; ++index) {
         work->locked_opponents[index] = units[index];
     }
@@ -101,8 +81,7 @@ static void lock_opponent(Object *self)
 
 static void unlock_opponent(Object *self)
 {
-    volatile struct FolderbackWork *work =
-        (volatile struct FolderbackWork *)self->work;
+    struct FolderbackWork *work = (struct FolderbackWork *)self->work;
     for (size_t index = 0; index < 4; ++index) {
         work->locked_opponents[index] = NULL;
     }
@@ -124,14 +103,14 @@ static void restore_palette(void)
 static void impact(void)
 {
     bn6_screen_shake_set(3, IMPACT_FRAMES);
-    bn6_play_sound(BN6_SONG_ID(FolderbackRumbleSong));
+    bn6_play_sound(BN6_SONG_ID(folderback_rumble_song));
 }
 
 static void fill_local_custom_gauge(void)
 {
     BattleContext *context = bn6_battle_context();
-    volatile uint8_t *player = bn6_player_data(context->local_side);
-    *(volatile uint16_t *)(player + 0x28) = FULL_GAUGE;
+    uint8_t *player = bn6_player_data(context->local_side);
+    *(uint16_t *)(player + 0x28) = FULL_GAUGE;
     bn6_set_hud_gauge(FULL_GAUGE);
     bn6_play_sound(0x8F);
 }
@@ -191,16 +170,16 @@ static bool effect_update(Object *self)
 
 static void open_custom(uint32_t owner)
 {
-    volatile uint8_t *battle = bn6_battle_state();
-    uint32_t state = *(volatile uint32_t *)battle;
+    uint8_t *battle = bn6_battle_state();
+    uint32_t state = *(uint32_t *)battle;
     if (state == 4) {
         battle[5] = (uint8_t)owner;
         bn6_lock_battle_state();
-        *(volatile uint32_t *)battle = 0x18;
+        *(uint32_t *)battle = 0x18;
         bn6_begin_local_custom();
     } else if (state == 8) {
         bn6_lock_battle_state();
-        *(volatile uint32_t *)battle = 0x20;
+        *(uint32_t *)battle = 0x20;
     }
 }
 
@@ -232,7 +211,9 @@ BN6_OBJECT4(folderback_controller_main)
 
 BN6_ATTACK(0x139, folderback_attack_main)
 {
-    Object *controller = bn6_spawn_type4(CUSTOM_TYPE4_ID, spawn_argument);
+    Object *controller = bn6_spawn_type4(
+        BN6_OBJECT_ID(folderback_controller_main), spawn_argument
+    );
     if (controller == NULL) {
         return;
     }
@@ -243,13 +224,12 @@ BN6_ATTACK(0x139, folderback_attack_main)
     controller->owner_word = owner->owner_word;
     controller->attack = attack;
     controller->chip_data = chip_data;
-    volatile struct FolderbackWork *work =
-        (volatile struct FolderbackWork *)controller->work;
+    struct FolderbackWork *work =
+        (struct FolderbackWork *)controller->work;
     for (size_t index = 0; index < 4; ++index) {
         work->locked_opponents[index] = NULL;
     }
     for (size_t index = 0; index < 3; ++index) {
         work->reserved[index] = 0;
     }
-    controller->kind = BN6_OBJECT_KIND(folderback_controller_main);
 }

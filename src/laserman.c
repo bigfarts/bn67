@@ -1,33 +1,32 @@
 #include "runtime.h"
 
 BN6_INCLUDE(common);
-BN6_USE_SONG(CommonNaviSummonSong);
+BN6_USE_SONG(common_navi_summon_song);
 BN6_SPRITE(laserman_battle_sprite, "build/laserman-battle-sprite.bin");
-BN6_SONG(LasermanFireSong);
 
-BN6_INCBIN(LasermanIcon, "build/laserman-icon.bin");
-BN6_INCBIN(LasermanImage, "build/laserman-image.bin");
-BN6_INCBIN(LasermanPaletteBase, "build/laserman-pal-base.bin");
+BN6_INCBIN(laserman_icon, "build/laserman-icon.bin");
+BN6_INCBIN(laserman_image, "build/laserman-image.bin");
+BN6_INCBIN(laserman_palette_base, "build/laserman-pal-base.bin");
 BN6_ASM_RESOURCE(
-    LasermanPaletteEx,
+    laserman_palette_ex,
     ".incbin \"build/laserman-pal-base.bin\",0,0x02\n"
     ".short 0x00C0,0x0180,0x0280,0x03E0,0x0060\n"
     ".incbin \"build/laserman-pal-base.bin\",0x0C,0x14\n"
 );
-BN6_INCBIN(LasermanPaletteSp, "build/laserman-pal-sp.bin");
-BN6_PCM_SONG(
-    LasermanFireSong,
-    LasermanFire,
-    0x40,
-    0x00,
-    ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
-    ".byte 0xBE,0x7F,0xF6,0x2F,0x7F,0xA2,0x81,0xBE\n"
-    ".byte 0x60,0x84,0x40,0x84,0x20,0x84,0x10,0x84,0xB1\n",
-    "build/laserman-fire-sample.bin"
+BN6_INCBIN(laserman_palette_sp, "build/laserman-pal-sp.bin");
+BN6_SONG(
+    laserman_fire_song,
+    BN6_PCM(
+        laserman_fire,
+        0x40,
+        0x00,
+        ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
+        ".byte 0xBE,0x7F,0xF6,0x2F,0x7F,0xA2,0x81,0xBE\n"
+        ".byte 0x60,0x84,0x40,0x84,0x20,0x84,0x10,0x84,0xB1\n",
+        "build/laserman-fire-sample.bin"
+    )
 );
 
-static const uint8_t VISIBLE_FLAG = 2;
-static const uint8_t COLLISION_FLAG = 0x10;
 static const uint8_t ACTIVE_STATE = 4;
 static const uint8_t DESTROY_STATE = 8;
 static const uint8_t HIT_VISUAL = 25;
@@ -35,7 +34,6 @@ static const uint16_t WAIT_FRAMES = 20;
 static const uint16_t RAISE_FRAMES = 30;
 static const uint16_t LASER_FRAMES = 80;
 static const uint16_t BEAM_FRAMES = 60;
-static const uint32_t VALID_PANEL_FLAGS = 0x10;
 static const uint32_t COLLISION_SELECTOR = 5;
 
 struct LasermanHitWork {
@@ -124,22 +122,22 @@ static void set_animation(Object *self, uint8_t animation)
 
 static void read_command(Object *actor)
 {
-    volatile uint8_t *input = bn6_input_state_for_side(actor->owner);
-    uint16_t keys = *(volatile uint16_t *)(input + 2);
-    if ((keys & 0x40u) != 0) {
+    const uint8_t *input = bn6_input_state_for_side(actor->owner);
+    uint16_t keys = *(const uint16_t *)(input + 2);
+    if ((keys & BN6_KEY_UP) != 0) {
         actor->subvariant = 1;
-    } else if ((keys & 0x80u) != 0) {
+    } else if ((keys & BN6_KEY_DOWN) != 0) {
         actor->subvariant = 2;
-    } else if ((keys & 0x10u) != 0) {
+    } else if ((keys & BN6_KEY_RIGHT) != 0) {
         actor->subvariant = 3;
-    } else if ((keys & 0x20u) != 0) {
+    } else if ((keys & BN6_KEY_LEFT) != 0) {
         actor->subvariant = 4;
     }
 }
 
 static void actor_destroy(Object *self)
 {
-    volatile uint8_t *completion = self->completion;
+    uint8_t *completion = self->completion;
     if (completion != NULL) {
         *completion = 0;
     }
@@ -148,7 +146,9 @@ static void actor_destroy(Object *self)
 
 static void spawn_laser(Object *actor)
 {
-    Object *beam = bn6_spawn_type1(CUSTOM_TYPE1_ID, actor->subvariant);
+    Object *beam = bn6_spawn_type1(
+        BN6_OBJECT_ID(laserman_beam_main), actor->subvariant
+    );
     if (beam == NULL) {
         return;
     }
@@ -160,8 +160,7 @@ static void spawn_laser(Object *actor)
     beam->owner_word = actor->owner_word;
     beam->attack = actor->attack;
     beam->parent = actor;
-    beam->kind = BN6_OBJECT_KIND(laserman_beam_main);
-    beam->flags |= COLLISION_FLAG;
+    beam->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
 }
 
 static void actor_attack(Object *self)
@@ -177,7 +176,7 @@ static void actor_attack(Object *self)
         if (timer_expired(self)) {
             set_animation(self, 3);
             spawn_laser(self);
-            bn6_play_sound(BN6_SONG_ID(LasermanFireSong));
+            bn6_play_sound(BN6_SONG_ID(laserman_fire_song));
             self->timer = LASER_FRAMES;
             self->substate = 8;
         }
@@ -190,7 +189,8 @@ static void actor_attack(Object *self)
         }
         return;
     }
-    if ((bn6_self_sprite_get_animation_flags() & 0x80u) != 0) {
+    if ((bn6_self_sprite_get_frame_flags()
+            & BN6_ANIMATION_FRAME_FLAG_END) != 0) {
         self->state_word = DESTROY_STATE;
     }
 }
@@ -201,10 +201,10 @@ static void actor_update(Object *self)
         if (!timer_expired(self)) {
             return;
         }
-        if (bn6_panel_has_flags(
+        if (bn6_panel_matches_flags(
                 self->panel_x,
                 self->panel_y,
-                VALID_PANEL_FLAGS,
+                BN6_PANEL_FLAG_SOLID,
                 0
             ) == 0) {
             self->state_word = DESTROY_STATE;
@@ -235,12 +235,12 @@ static void actor_init(Object *self)
     bn6_self_sprite_set_flip(bn6_self_object_get_flip());
     bn6_self_sprite_set_palette(0);
     bn6_self_sprite_set_priority(1);
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     self->state_word = ACTIVE_STATE;
     self->phase = 0;
     self->substate = 0;
     self->timer = WAIT_FRAMES;
-    bn6_play_sound(BN6_SONG_ID(CommonNaviSummonSong));
+    bn6_play_sound(BN6_SONG_ID(common_navi_summon_song));
 }
 
 static void spawn_hit(
@@ -250,12 +250,14 @@ static void spawn_hit(
     uint16_t command
 )
 {
-    Object *hit = bn6_spawn_type3(CUSTOM_TYPE3_ID, 0, 0, 0, HIT_VISUAL);
+    Object *hit = bn6_spawn_type3(
+        BN6_OBJECT_ID(laserman_hit_main), 0, 0, 0, HIT_VISUAL
+    );
     if (hit == NULL) {
         return;
     }
-    volatile struct LasermanHitWork *work =
-        (volatile struct LasermanHitWork *)hit->work;
+    struct LasermanHitWork *work =
+        (struct LasermanHitWork *)hit->work;
     hit->panel_x = (uint8_t)panel_x;
     hit->panel_y = (uint8_t)panel_y;
     hit->animation_word = command;
@@ -265,8 +267,7 @@ static void spawn_hit(
     if (command != COMMAND_MARKER) {
         hit->phase_timer_low = 0;
     }
-    hit->kind = BN6_OBJECT_KIND(laserman_hit_main);
-    hit->flags |= COLLISION_FLAG;
+    hit->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
 }
 
 static void spawn_row_event(Object *beam, uint16_t command)
@@ -297,7 +298,8 @@ static void beam_command_tick(Object *self)
 static void beam_update(Object *self)
 {
     if (self->phase == 0) {
-        if ((bn6_self_sprite_get_animation_flags() & 0x80u) != 0) {
+        if ((bn6_self_sprite_get_frame_flags()
+                & BN6_ANIMATION_FRAME_FLAG_END) != 0) {
             set_animation(self, 18);
             self->animation_state = 0;
             self->removal_state = 0;
@@ -314,7 +316,8 @@ static void beam_update(Object *self)
         }
         return;
     }
-    if ((bn6_self_sprite_get_animation_flags() & 0x80u) != 0) {
+    if ((bn6_self_sprite_get_frame_flags()
+            & BN6_ANIMATION_FRAME_FLAG_END) != 0) {
         self->state_word = DESTROY_STATE;
     }
 }
@@ -338,7 +341,7 @@ static void beam_init(Object *self)
     );
     bn6_self_sprite_set_priority(1);
     bn6_self_sprite_set_scale(BEAM_SCALES[self->variant]);
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     self->state_word = ACTIVE_STATE;
     self->phase = 0;
 }
@@ -435,19 +438,25 @@ static void refresh_target_player(Object *hit, uint16_t command)
     }
     static const uint8_t PROPERTIES[] = {0x1B, 0x1C, 0x1D, 0x23};
     static const uint32_t STATUS_FLAGS[] = {
-        0x20, 0x10, 1u << 18, 1u << 17,
+        BN6_COLLISION_STATUS_FLAG_FLOAT_SHOES,
+        BN6_COLLISION_STATUS_FLAG_AIR_SHOES,
+        BN6_COLLISION_STATUS_FLAG_UNDERSHIRT,
+        BN6_COLLISION_STATUS_FLAG_SUPER_ARMOR,
     };
     for (size_t index = 0; index < 4; ++index) {
         if (bn6_player_property_for_side(target_side, PROPERTIES[index]) == 0) {
-            bn6_player_clear_status_flags(player, STATUS_FLAGS[index]);
+            bn6_player_clear_collision_status_flags(
+                player,
+                STATUS_FLAGS[index]
+            );
         }
     }
 }
 
 static void apply_selected_command(Object *hit)
 {
-    volatile struct LasermanHitWork *work =
-        (volatile struct LasermanHitWork *)hit->work;
+    struct LasermanHitWork *work =
+        (struct LasermanHitWork *)hit->work;
     const uint16_t *stream = COMMAND_STREAMS[work->command_stream];
     for (size_t index = 0;; ++index) {
         uint16_t command = stream[index];
@@ -486,7 +495,7 @@ static void hit_update(Object *self)
     Collision *collision = self->collision;
     bn6_collision_remove(collision);
     bn6_self_collision_spawn_effect();
-    if (collision->hit_flags != 0) {
+    if (collision->received_collision_type_flags != 0) {
         Object *target = bn6_player_object_for_side(self->owner ^ 1u);
         if (target != NULL
             && target->panel_x == self->panel_x
@@ -539,7 +548,9 @@ BN6_OBJECT1(laserman_actor_main)
 
 BN6_SUMMON_ATTACK(0x0E3, laserman_attack_main)
 {
-    Object *actor = bn6_spawn_type1(CUSTOM_TYPE1_ID, spawn_argument);
+    Object *actor = bn6_spawn_type1(
+        BN6_OBJECT_ID(laserman_actor_main), spawn_argument
+    );
     if (actor == NULL) {
         return;
     }
@@ -552,6 +563,5 @@ BN6_SUMMON_ATTACK(0x0E3, laserman_attack_main)
     actor->parent = owner;
     actor->attack = attack;
     actor->completion = completion;
-    actor->kind = BN6_OBJECT_KIND(laserman_actor_main);
     *completion = 1;
 }

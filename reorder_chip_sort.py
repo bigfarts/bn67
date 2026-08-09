@@ -15,7 +15,7 @@ CHIP_DATA_OFFSET = 0x21DA8
 CHIP_RECORD_COUNT = 0x13A
 CHIP_RECORD_SIZE = 0x2C
 CHIP_SORT_OFFSET = 0x18
-CHIP_NAME_ARCHIVE_SYMBOLS = ("chipnamearchive0", "chipnamearchive1")
+CHIP_NAME_ARCHIVE_SYMBOLS = ("chip_name_archive_0", "chip_name_archive_1")
 
 # BN6's English text encoding stores digits, uppercase letters, and lowercase
 # letters in these compact ranges. Expand the five multi-letter glyphs so EX,

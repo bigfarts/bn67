@@ -8,8 +8,8 @@ element = "null"
 class = "mega"
 mb = 60
 power = 100
-behavior = { effect_flags = 0x47, counter_settings = 0x8A, family = 0x1B, subfamily = 0x02, dark_soul_usage = 0x00, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0] }
-artwork = { icon = "LasermanIcon", image = "LasermanImage", palette = "LasermanPaletteBase" }
+behavior = { effect_flags = 0x47, counter_settings = 0x8A, dark_soul_usage = 0x00, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0] }
+artwork = { icon = "laserman_icon", image = "laserman_image", palette = "laserman_palette_base" }
 
 [chips."0x0E4"]
 name = "LaserMn[EX]"
@@ -21,8 +21,8 @@ element = "null"
 class = "mega"
 mb = 80
 power = 150
-behavior = { effect_flags = 0x47, counter_settings = 0x8A, family = 0x1B, subfamily = 0x02, dark_soul_usage = 0x00, unknown_0e = 0x04, lock_on = 0x00, parameters = [3, 0, 0, 0] }
-artwork = { icon = "LasermanIcon", image = "LasermanImage", palette = "LasermanPaletteEx" }
+behavior = { effect_flags = 0x47, counter_settings = 0x8A, dark_soul_usage = 0x00, unknown_0e = 0x04, lock_on = 0x00, parameters = [3, 0, 0, 0] }
+artwork = { icon = "laserman_icon", image = "laserman_image", palette = "laserman_palette_ex" }
 
 [chips."0x0E5"]
 name = "LaserMn[SP]"
@@ -34,5 +34,5 @@ element = "null"
 class = "mega"
 mb = 80
 power = 200
-behavior = { effect_flags = 0x47, counter_settings = 0x8A, family = 0x1B, subfamily = 0x02, dark_soul_usage = 0x00, unknown_0e = 0x04, lock_on = 0x00, parameters = [4, 0, 0, 0] }
-artwork = { icon = "LasermanIcon", image = "LasermanImage", palette = "LasermanPaletteSp" }
+behavior = { effect_flags = 0x47, counter_settings = 0x8A, dark_soul_usage = 0x00, unknown_0e = 0x04, lock_on = 0x00, parameters = [4, 0, 0, 0] }
+artwork = { icon = "laserman_icon", image = "laserman_image", palette = "laserman_palette_sp" }

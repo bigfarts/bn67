@@ -10,6 +10,9 @@ import subprocess
 
 
 SYMBOL_RE = re.compile(r"^([0-9A-Fa-f]+)\s+([A-Za-z])\s+([A-Za-z_][A-Za-z0-9_]*)$")
+SNAKE_CASE_SYMBOL_RE = re.compile(
+    r"^_*[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+)
 EXPORTED_KINDS = frozenset("TRDB")
 
 
@@ -26,10 +29,12 @@ def symbols(nm: str, elf: Path) -> list[tuple[int, str]]:
         if (
             match is None
             or match.group(2) not in EXPORTED_KINDS
-            or not match.group(3)[0].isupper()
         ):
             continue
-        found.append((int(match.group(1), 16), match.group(3)))
+        name = match.group(3)
+        if SNAKE_CASE_SYMBOL_RE.fullmatch(name) is None:
+            raise ValueError(f"exported C symbol {name!r} must be snake_case")
+        found.append((int(match.group(1), 16), name))
     return found
 
 

@@ -4,18 +4,16 @@ BN6_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
 BN6_SPRITE(searchman_reticle_alt_sprite, "build/searchman-reticle-alt.bin");
 BN6_SPRITE(searchman_reticle_sprite, "build/searchman-reticle.bin");
 
-BN6_INCBIN(SearchmanIcon, "build/searchman-icon.bin");
-BN6_INCBIN(SearchmanImage, "build/searchman-image.bin");
-BN6_INCBIN(SearchmanPaletteBase, "build/searchman-pal-base.bin");
+BN6_INCBIN(searchman_icon, "build/searchman-icon.bin");
+BN6_INCBIN(searchman_image, "build/searchman-image.bin");
+BN6_INCBIN(searchman_palette_base, "build/searchman-pal-base.bin");
 BN6_ASM_RESOURCE(
-    SearchmanPaletteEx,
+    searchman_palette_ex,
     ".incbin \"build/searchman-pal-base.bin\",0,0x1A\n"
     ".short 0x03FF,0x0299,0x0190\n"
 );
-BN6_INCBIN(SearchmanPaletteSp, "build/searchman-pal-sp.bin");
+BN6_INCBIN(searchman_palette_sp, "build/searchman-pal-sp.bin");
 
-static const uint8_t VISIBLE_FLAG = 2;
-static const uint8_t COLLISION_FLAG = 0x10;
 static const uint8_t ACTOR_ACTIVE_STATE = 4;
 static const uint8_t ACTOR_DESTROY_STATE = 8;
 static const uint8_t APPEAR_PHASE = 0;
@@ -32,7 +30,6 @@ static const uint16_t SHOT_COOLDOWN_FRAMES = 30;
 static const uint16_t EXIT_FRAMES = 5;
 static const uint16_t RETICLE_LIFETIME = 300;
 static const uint16_t RETICLE_LOCK_FRAMES = 50;
-static const uint32_t VALID_PANEL_FLAGS = 0x10;
 static const uint32_t IMPACT_RANDOM_MASK = 0x0F;
 static const uint32_t HIT_COLLISION_SELECTOR = 5;
 static const uint32_t PRESENT_COLLISION_REGION = HIT_COLLISION_SELECTOR << 3;
@@ -63,8 +60,8 @@ static void set_animation(Object *self, uint8_t animation)
 
 static void pulse_scale(Object *self)
 {
-    volatile struct SearchmanActorWork *work =
-        (volatile struct SearchmanActorWork *)self->work;
+    struct SearchmanActorWork *work =
+        (struct SearchmanActorWork *)self->work;
     bn6_self_sprite_set_scale(work->scale * 1057u);
 }
 
@@ -77,7 +74,7 @@ static void actor_animate(Object *self)
 
 static void actor_destroy(Object *self)
 {
-    volatile uint8_t *completion = self->completion;
+    uint8_t *completion = self->completion;
     if (completion != NULL) {
         *completion = 0;
     }
@@ -86,8 +83,8 @@ static void actor_destroy(Object *self)
 
 static void appear(Object *self)
 {
-    volatile struct SearchmanActorWork *work =
-        (volatile struct SearchmanActorWork *)self->work;
+    struct SearchmanActorWork *work =
+        (struct SearchmanActorWork *)self->work;
     if (self->substate == 0) {
         work->scale = 0x1F;
         bn6_play_sound(0x94);
@@ -96,10 +93,10 @@ static void appear(Object *self)
         return;
     }
 
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     ++self->timer;
     if ((self->timer & 2u) != 0) {
-        self->flags &= (uint8_t)~VISIBLE_FLAG;
+        self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
     }
 
     int32_t scale = (int32_t)work->scale - 2;
@@ -108,7 +105,7 @@ static void appear(Object *self)
         return;
     }
 
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     work->scale = 0;
     self->phase_timer = 4;
 }
@@ -123,10 +120,10 @@ static void wait_for_panel(Object *self)
     if (timer_positive_after_decrement(self)) {
         return;
     }
-    if (bn6_panel_has_flags(
+    if (bn6_panel_matches_flags(
             self->panel_x,
             self->panel_y,
-            VALID_PANEL_FLAGS,
+            BN6_PANEL_FLAG_SOLID,
             0
         ) == 0) {
         self->state_word = ACTOR_DESTROY_STATE;
@@ -147,17 +144,18 @@ static void appear_phase(Object *self)
 
 static void spawn_reticle(Object *actor, Object *player, uint32_t alternate)
 {
-    Object *reticle = bn6_spawn_type4(CUSTOM_TYPE4_ID, actor->variant);
+    Object *reticle = bn6_spawn_type4(
+        BN6_OBJECT_ID(searchman_reticle_main), actor->variant
+    );
     if (reticle == NULL) {
         return;
     }
-    volatile struct SearchmanReticleWork *work =
-        (volatile struct SearchmanReticleWork *)reticle->work;
+    struct SearchmanReticleWork *work =
+        (struct SearchmanReticleWork *)reticle->work;
     work->player = player;
     reticle->owner_word = actor->owner_word;
     work->alternate = alternate;
     reticle->parent = actor;
-    reticle->kind = BN6_OBJECT_KIND(searchman_reticle_main);
 }
 
 static void start_reticle(Object *self)
@@ -181,7 +179,9 @@ static void spawn_hit(Object *actor, bool final_alternate)
     uint32_t visual = final_alternate
         ? RETICLE_FINAL_HIT
         : RETICLE_NORMAL_HIT;
-    Object *hit = bn6_spawn_type3(CUSTOM_TYPE3_ID, 0, 0, 0, visual);
+    Object *hit = bn6_spawn_type3(
+        BN6_OBJECT_ID(searchman_hit_main), 0, 0, 0, visual
+    );
     if (hit == NULL) {
         return;
     }
@@ -190,8 +190,7 @@ static void spawn_hit(Object *actor, bool final_alternate)
     hit->parameter = actor->parameter;
     hit->attack = actor->attack;
     hit->owner_word = actor->owner_word;
-    hit->kind = BN6_OBJECT_KIND(searchman_hit_main);
-    hit->flags |= COLLISION_FLAG;
+    hit->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
 }
 
 static void next_shot(Object *self)
@@ -267,7 +266,7 @@ static void exit_phase(Object *self)
         return;
     }
     if (!timer_positive_after_decrement(self)) {
-        self->flags &= (uint8_t)~VISIBLE_FLAG;
+        self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
         self->state_word = ACTOR_DESTROY_STATE;
     }
 }
@@ -299,14 +298,14 @@ static void actor_init(Object *self)
     bn6_self_sprite_set_flip(bn6_self_object_get_flip());
     bn6_self_sprite_set_palette(0);
     bn6_self_sprite_set_scale(0x7FFF);
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     self->state_word = ACTOR_ACTIVE_STATE;
     actor_update(self);
 }
 
 static bool reticle_key_pressed(const Object *self, uint16_t mask)
 {
-    const volatile uint16_t *input = self->runtime_data;
+    const uint16_t *input = self->runtime_data;
     return (*input & mask) == mask;
 }
 
@@ -465,8 +464,8 @@ static void reticle_update(Object *self)
 
 static void reticle_init(Object *self)
 {
-    volatile struct SearchmanReticleWork *work =
-        (volatile struct SearchmanReticleWork *)self->work;
+    struct SearchmanReticleWork *work =
+        (struct SearchmanReticleWork *)self->work;
     uint32_t group = BN6_SPRITE_GROUP(searchman_reticle_sprite);
     uint32_t sprite = BN6_SPRITE_ID(searchman_reticle_sprite);
     if (work->alternate != 0) {
@@ -487,7 +486,7 @@ static void reticle_init(Object *self)
     Object *player = work->player;
     self->runtime_data = (void *)((uintptr_t)player->runtime_data + 0x2Cu);
     self->animation_state = 0;
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     self->z = 0;
     self->state_word = ACTOR_ACTIVE_STATE;
     self->phase = RETICLE_SCAN_PHASE;
@@ -509,7 +508,7 @@ static void hit_update(Object *self)
     bn6_collision_remove(collision);
     bn6_self_collision_spawn_effect();
 
-    if (collision->hit_flags == 0) {
+    if (collision->received_collision_type_flags == 0) {
         uint32_t random = bn6_rng_next();
         uint32_t effect = 7u | ((random & 2u) << 8);
         int32_t x = self->x;
@@ -585,7 +584,9 @@ BN6_OBJECT1(searchman_actor_main)
 
 BN6_SUMMON_ATTACK(0x107, searchman_attack_main)
 {
-    Object *actor = bn6_spawn_type1(CUSTOM_TYPE1_ID, spawn_argument);
+    Object *actor = bn6_spawn_type1(
+        BN6_OBJECT_ID(searchman_actor_main), spawn_argument
+    );
     if (actor == NULL) {
         return;
     }
@@ -596,6 +597,5 @@ BN6_SUMMON_ATTACK(0x107, searchman_attack_main)
     actor->parent = owner;
     actor->attack = attack;
     actor->completion = completion;
-    actor->kind = BN6_OBJECT_KIND(searchman_actor_main);
     *completion = 1;
 }

@@ -8,6 +8,6 @@ element = "null"
 class = "standard"
 mb = 59
 power = 0
-behavior = { effect_flags = 0x41, counter_settings = 0x00, family = 0x15, subfamily = 0x22, dark_soul_usage = 0x0A, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
+behavior = { effect_flags = 0x41, counter_settings = 0x00, dark_soul_usage = 0x0A, unknown_0e = 0x04, lock_on = 0x00, parameters = [0, 0, 0, 0], delay = 0 }
 library = { number = 0xC2, flags = 0x80, lock_on_type = 0x01, sort_order = 0x00C2, gate_usage = 0x03, dark_chip_id = "none" }
-artwork = { icon = "BugchainIcon", image = "BugchainImage", palette = "BugchainPalette" }
+artwork = { icon = "bugchain_icon", image = "bugchain_image", palette = "bugchain_palette" }

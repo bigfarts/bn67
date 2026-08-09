@@ -4,12 +4,11 @@ BN6_SPRITE(deathphoenix_battle_sprite, "build/deathphoenix-battle-sprite.bin");
 BN6_SPRITE(deathphoenix_strike_sprite, "build/deathphoenix-strike-sprite.bin");
 
 #if FALZAR
-BN6_INCBIN(DeathphoenixIcon, "build/deathphoenix-icon.bin");
-BN6_INCBIN(DeathphoenixImage, "build/deathphoenix-image.bin");
-BN6_INCBIN(DeathphoenixPalette, "build/deathphoenix-palette.bin");
+BN6_INCBIN(deathphoenix_icon, "build/deathphoenix-icon.bin");
+BN6_INCBIN(deathphoenix_image, "build/deathphoenix-image.bin");
+BN6_INCBIN(deathphoenix_palette, "build/deathphoenix-palette.bin");
 #endif
 
-static const uint8_t VISIBLE_FLAG = 2;
 static const uint8_t ACTIVE_STATE = 4;
 static const uint8_t DESTROY_STATE = 8;
 static const uint8_t APPEAR_PHASE = 4;
@@ -35,11 +34,10 @@ static const uint16_t FLAME_DELAY_FRAMES = 10;
 static const uint16_t FLAME_MOTION_FRAMES = 16;
 static const uint16_t FIRST_CONTACT_VISUAL = 0x19;
 static const uint16_t SECOND_CONTACT_VISUAL = 0x1F;
-static const uint32_t VALID_PANEL_FLAGS = 0x10;
 static const uint32_t CONTACT_PROPERTIES = 0x0A050001;
 static const uint32_t INTRO_PROPERTIES = 0x2705FF80;
 static const uintptr_t SAVED_NAVI_ADDRESS = 0x0203C960;
-static const uintptr_t SAVED_NAVI_DISPATCH = 0x0802CD5C;
+static const uintptr_t SAVED_NAVI_DISPATCH_REFERENCE = 0x08017BBC;
 static const uintptr_t SINE_TABLE_ADDRESS = 0x080065E0;
 
 static const uint8_t STRIKE_PATTERNS[] = {
@@ -100,7 +98,7 @@ static void finish(Object *self)
 static void build_panel_list(
     Object *self,
     uint32_t panel_y,
-    volatile uint8_t *output
+    uint8_t *output
 )
 {
     uint8_t candidates[8];
@@ -112,10 +110,10 @@ static void build_panel_list(
     int32_t panel_x = (int32_t)self->panel_x + direction;
     uint32_t count = 0;
     while (bn6_panel_is_valid_xy((uint32_t)panel_x, panel_y) != 0) {
-        if (bn6_panel_has_flags(
+        if (bn6_panel_matches_flags(
                 (uint32_t)panel_x,
                 panel_y,
-                VALID_PANEL_FLAGS,
+                BN6_PANEL_FLAG_SOLID,
                 0
             ) != 0) {
             candidates[count++] = (uint8_t)(panel_x | (panel_y << 4));
@@ -132,8 +130,8 @@ static void build_panel_list(
 
 static void actor_init(Object *self)
 {
-    volatile struct DeathphoenixWork *work =
-        (volatile struct DeathphoenixWork *)self->work;
+    struct DeathphoenixWork *work =
+        (struct DeathphoenixWork *)self->work;
     bn6_self_object_load_navi_sprite(
         0x00010000u
         | (BN6_SPRITE_GROUP(deathphoenix_battle_sprite) << 8)
@@ -163,7 +161,7 @@ static void begin(Object *self)
 static void appear(Object *self)
 {
     if (self->substate == 0) {
-        self->flags |= VISIBLE_FLAG;
+        self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
         bn6_play_sound(0x94);
         self->timer = 0;
         self->substate = 4;
@@ -190,8 +188,8 @@ static void wait_before_strikes(Object *self)
     }
     self->timer = 0;
     self->aux_timer = 0;
-    volatile struct DeathphoenixWork *work =
-        (volatile struct DeathphoenixWork *)self->work;
+    struct DeathphoenixWork *work =
+        (struct DeathphoenixWork *)self->work;
     work->pattern_row = 0;
     work->pattern_column = 0;
     set_phase(self, STRIKES_PHASE);
@@ -204,7 +202,9 @@ static void strike_spawn(
     uint32_t alternate
 )
 {
-    Object *strike = bn6_spawn_type4(CUSTOM_TYPE4_ID, alternate);
+    Object *strike = bn6_spawn_type4(
+        BN6_OBJECT_ID(deathphoenix_strike_main), alternate
+    );
     if (strike == NULL) {
         return;
     }
@@ -213,7 +213,6 @@ static void strike_spawn(
     strike->attack = actor->attack;
     strike->owner_word = actor->owner_word;
     strike->parent = actor;
-    strike->kind = BN6_OBJECT_KIND(deathphoenix_strike_main);
 }
 
 static void spawn_strike_for_panel(
@@ -237,8 +236,8 @@ static void spawn_strike_for_panel(
 
 static void strikes(Object *self)
 {
-    volatile struct DeathphoenixWork *work =
-        (volatile struct DeathphoenixWork *)self->work;
+    struct DeathphoenixWork *work =
+        (struct DeathphoenixWork *)self->work;
     if (timer_positive_after_decrement(self)) {
         return;
     }
@@ -276,15 +275,15 @@ static void wait_after_strikes(Object *self)
 
 static bool saved_navi_is_available(void)
 {
-    volatile struct SavedNaviFields *saved =
-        (volatile struct SavedNaviFields *)SAVED_NAVI_ADDRESS;
+    const struct SavedNaviFields *saved =
+        (const struct SavedNaviFields *)SAVED_NAVI_ADDRESS;
     return saved->data != 0 && saved->id != UINT8_MAX;
 }
 
 static void disappear(Object *self)
 {
     if (self->substate == 0) {
-        self->flags |= VISIBLE_FLAG;
+        self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
         self->timer = APPEAR_FRAMES;
         self->substate = 4;
     }
@@ -293,7 +292,7 @@ static void disappear(Object *self)
         return;
     }
 
-    self->flags &= (uint8_t)~VISIBLE_FLAG;
+    self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
     bn6_self_sprite_property_2cce();
     if (self->parent->hp != 0 && saved_navi_is_available()) {
         set_phase(self, RECYCLE_PHASE);
@@ -316,14 +315,14 @@ static void recycle_intro(Object *self)
 
 static void recycle_invoke(Object *self)
 {
-    volatile struct DeathphoenixWork *work =
-        (volatile struct DeathphoenixWork *)self->work;
-    volatile uint8_t *completion = &work->recycle_completion;
+    struct DeathphoenixWork *work =
+        (struct DeathphoenixWork *)self->work;
+    uint8_t *completion = &work->recycle_completion;
     if (self->substate == 0) {
-        volatile struct SavedNaviFields *saved =
-            (volatile struct SavedNaviFields *)SAVED_NAVI_ADDRESS;
-        volatile uintptr_t *dispatch =
-            (volatile uintptr_t *)SAVED_NAVI_DISPATCH;
+        const struct SavedNaviFields *saved =
+            (const struct SavedNaviFields *)SAVED_NAVI_ADDRESS;
+        const uintptr_t *dispatch = *(const uintptr_t *const *)
+            SAVED_NAVI_DISPATCH_REFERENCE;
         Object *owner = self->parent;
         bn6_saved_navi_dispatch(
             dispatch[saved->id],
@@ -395,15 +394,16 @@ static void actor_update(Object *self)
 
 static void flame_spawn(Object *strike, uint32_t alternate)
 {
-    Object *flame = bn6_spawn_type4(CUSTOM_TYPE4_ID, alternate);
+    Object *flame = bn6_spawn_type4(
+        BN6_OBJECT_ID(deathphoenix_flame_main), alternate
+    );
     if (flame == NULL) {
         return;
     }
     flame->panel_x = strike->panel_x;
     flame->panel_y = strike->panel_y;
     flame->owner_word = strike->owner_word;
-    flame->kind = BN6_OBJECT_KIND(deathphoenix_flame_main);
-    flame->flags |= 0x10u;
+    flame->header_flags |= BN6_OBJECT_FLAG_UPDATE_DURING_TIME_STOP;
     if (alternate != 0) {
         flame->owner_aux ^= 1u;
     }
@@ -460,7 +460,7 @@ static void strike_attack(Object *self)
     }
     self->phase_timer_low = 0;
     if (++self->substate >= PULSES_PER_STRIKE) {
-        self->flags &= (uint8_t)~VISIBLE_FLAG;
+        self->header_flags &= (uint8_t)~BN6_OBJECT_FLAG_VISIBLE;
         self->state_word = DESTROY_STATE;
     }
 }
@@ -468,7 +468,8 @@ static void strike_attack(Object *self)
 static void strike_lead_in(Object *self)
 {
     if (self->animation == 0) {
-        if ((bn6_self_sprite_get_animation_flags() & 0x80u) == 0) {
+        if ((bn6_self_sprite_get_frame_flags()
+                & BN6_ANIMATION_FRAME_FLAG_END) == 0) {
             return;
         }
         self->animation = 1;
@@ -501,7 +502,7 @@ static void strike_init(Object *self)
         | BN6_SPRITE_ID(deathphoenix_strike_sprite)
     );
     bn6_self_death_sprite_special();
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     bn6_self_object_set_coords();
     self->z = 0;
     bn6_play_sound(0x144);
@@ -531,8 +532,7 @@ static void flame_motion(Object *self)
     angle = (uint16_t)(angle + step);
     self->variant_word = angle;
 
-    volatile const int16_t *sine =
-        (volatile const int16_t *)SINE_TABLE_ADDRESS;
+    const int16_t *sine = (const int16_t *)SINE_TABLE_ADDRESS;
     int32_t height = sine[angle >> 8];
     self->z = (height * 20 << 8) + 0x00040000;
     if (!timer_positive_after_decrement(self)) {
@@ -569,7 +569,7 @@ static void flame_init(Object *self)
     bn6_self_sprite_load_animation_data();
     bn6_self_sprite_no_shadow();
     bn6_self_sprite_set_palette(0);
-    self->flags |= VISIBLE_FLAG;
+    self->header_flags |= BN6_OBJECT_FLAG_VISIBLE;
     self->state_word = ACTIVE_STATE;
 }
 
@@ -612,7 +612,9 @@ BN6_OBJECT1(deathphoenix_actor_main)
 
 BN6_SUMMON_ATTACK(0x134, deathphoenix_attack_main)
 {
-    Object *actor = bn6_spawn_type1(CUSTOM_TYPE1_ID, spawn_argument);
+    Object *actor = bn6_spawn_type1(
+        BN6_OBJECT_ID(deathphoenix_actor_main), spawn_argument
+    );
     if (actor == NULL) {
         return;
     }
@@ -623,6 +625,5 @@ BN6_SUMMON_ATTACK(0x134, deathphoenix_attack_main)
     actor->owner_word = owner->owner_word;
     actor->attack = attack;
     actor->completion = completion;
-    actor->kind = BN6_OBJECT_KIND(deathphoenix_actor_main);
     *completion = 1;
 }
