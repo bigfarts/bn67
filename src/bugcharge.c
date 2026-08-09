@@ -243,7 +243,7 @@ static bool hit_init(Object *self)
     }
     bn6_collision_setup(collision, 0x0A, COLLISION_SELECTOR, 3);
     collision->region = 1;
-    bn6_self_collision_set_hit_effect(1);
+    bn6_self_collision_set_hit_effect(BN6_HIT_EFFECT_FIRE);
     bn6_self_collision_present(0, PRESENT_COLLISION_VALUE);
     self->state_word = ACTIVE_STATE;
     return true;
@@ -324,7 +324,7 @@ static bool gospel_init(Object *self)
         return false;
     }
     bn6_collision_setup(collision, 4, COLLISION_SELECTOR, 3);
-    bn6_self_collision_set_hit_effect(6);
+    bn6_self_collision_set_hit_effect(BN6_HIT_EFFECT_SMALL_IMPACT);
     bn6_self_collision_set_extended_effect(0, PRESENT_COLLISION_VALUE);
     bn6_self_collision_present(0, EXTENDED_COLLISION_VALUE);
     self->animation_state = 8;
@@ -342,7 +342,7 @@ static bool gospel_update(Object *self)
     Collision *collision = self->collision;
     bn6_collision_remove(collision);
     bn6_self_collision_spawn_effect();
-    if (collision->received_collision_type_flags != 0) {
+    if (collision->received_collision_flags != 0) {
         free_collision(self);
         return false;
     }

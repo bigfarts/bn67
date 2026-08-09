@@ -1,13 +1,13 @@
 #include "runtime.h"
 
-
-extern const uint8_t jealousy_effect_tiles[0x100];
-extern const uint8_t jealousy_effect_palette[0x20];
-
 BN6_INCBIN(jealousy_icon, "build/jealousy-icon.bin");
 BN6_INCBIN(jealousy_image, "build/jealousy-image.bin");
 BN6_INCBIN(jealousy_palette, "build/jealousy-palette.bin");
+
+extern const uint8_t jealousy_effect_tiles[0x100];
 BN6_INCBIN(jealousy_effect_tiles, "build/jealousy-effect-tiles.bin");
+
+extern const uint8_t jealousy_effect_palette[0x20];
 BN6_INCBIN(jealousy_effect_palette, "build/jealousy-effect-palette.bin");
 
 static const uintptr_t TILES_DESTINATION = 0x06017940u;
@@ -15,7 +15,13 @@ static const uint16_t PULSE_DELAY = 10;
 static const uint16_t DELETE_FRAMES = 90;
 static const uint16_t OVERLAY_LAST_FRAME = 20;
 static const uint32_t GAUGE_FULL = 0x4000;
-static const uint32_t DAMAGE_PROPERTIES = 0x1A050601;
+
+static const Bn6PanelDamageProperties DAMAGE_PROPERTIES = {
+    .region = BN6_COLLISION_REGION_CURRENT_PANEL,
+    .hit_effect = BN6_HIT_EFFECT_SMALL_IMPACT,
+    .target_collision_type = BN6_COLLISION_TYPE_STANDARD_TARGET,
+    .self_collision_type = BN6_COLLISION_TYPE_1A,
+};
 
 struct JealousyWork {
     uint32_t remaining_attacks;          // +0x60

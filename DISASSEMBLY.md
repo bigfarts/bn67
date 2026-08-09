@@ -26,12 +26,20 @@ The firing loop at `0x080C136C`-`0x080C13CC` initializes a count of five. Each
 shot is spawned when its ten-frame timer reaches seven. The special flag is
 set only when both the delete-command byte is nonzero and the remaining-shot
 count is one. Therefore the **fifth spawned shot** is the only possible delete
-shot. Normal shots pass parameter `25`; the special shot passes `29`.
+shot. Normal shots use passive collision type `25`; the special shot uses type
+`29`. In BN6's collision-type table, type `25` resolves to flags `0x8000008C`
+or `0x4000008C` according to owner side, while type `29` resolves to
+`0x8000009C` or `0x4000009C`. The additional `0x10` collision-property bit is
+what carries the delete-shot behavior.
 
-The hit init maps parameter `25` to hit effect `0` and every other parameter
-to hit effect `9`. The collision engine applies the latter only on contact.
-The hit object removes collision, handles either contact or the miss visual,
-clears/frees its collision data, and frees itself in that same update.
+Separately, hit init maps collision type `25` to hit-effect visual `0` (normal
+impact) and type `29` to visual `9` (the chip-delete ping/slash). Despite that
+semantic name, hit effect `9` does not itself delete traps: it chooses the
+matching contact animation, while collision type `29` supplies the extra
+`0x10` delete-property bit. The hit object removes collision, spawns that
+visual after contact or creates the miss visual, clears/frees its collision
+data, and frees itself in that same update. The full BN6 hit-effect visual
+table is documented in `src/README.md`.
 
 ## BN6 hooks and translation
 
@@ -493,11 +501,14 @@ this port.
 
 The BN6 port keeps TrainArrow's IDs `0x18`-`0x1A`; the compiler gives the Roll
 attack a new Navi-family subfamily. Roll receives a direct class-1 ID and the
-straight-moving arrow receives a direct class-3 ID. The arrow uses BN6's native collision
-lifecycle with BN4's `8/5/3` setup and hit-effect `9`, so it travels at seven
-pixels per frame, stops on the first real contact, and invokes BN6's built-in
-loaded-chip deletion response rather than manufacturing a damage hit on every
-panel. Generated selector pairs `ROLLARROW_ACTOR_SPRITE_GROUP` /
+straight-moving arrow receives a direct class-3 ID. The arrow uses BN6's native
+collision lifecycle with BN4's `8/5/3` setup and hit-effect `9`, so it travels
+at seven pixels per frame and stops on the first real contact. Collision type
+`8` resolves to `0x80000090` or `0x40000090`, including the same `0x10`
+delete-property bit used by SearchMan's collision type `29`; hit effect `9`
+supplies the matching chip-delete VFX. This invokes BN6's built-in loaded-chip
+deletion response rather than manufacturing a damage hit on every panel.
+Generated selector pairs `ROLLARROW_ACTOR_SPRITE_GROUP` /
 `ROLLARROW_ACTOR_SPRITE` and `ROLLARROW_PROJECTILE_SPRITE_GROUP` /
 `ROLLARROW_PROJECTILE_SPRITE` point at the runtime-confirmed Blue Moon Roll
 and heart-arrow archives. The record codes,

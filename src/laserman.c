@@ -484,7 +484,7 @@ static bool hit_init(Object *self)
         return false;
     }
     bn6_collision_setup(collision, self->variant, COLLISION_SELECTOR, 3);
-    bn6_self_collision_set_hit_effect(0);
+    bn6_self_collision_set_hit_effect(BN6_HIT_EFFECT_NORMAL);
     bn6_self_collision_present(0, self->variant);
     self->state_word = ACTIVE_STATE;
     return true;
@@ -495,7 +495,7 @@ static void hit_update(Object *self)
     Collision *collision = self->collision;
     bn6_collision_remove(collision);
     bn6_self_collision_spawn_effect();
-    if (collision->received_collision_type_flags != 0) {
+    if (collision->received_collision_flags != 0) {
         Object *target = bn6_player_object_for_side(self->owner ^ 1u);
         if (target != NULL
             && target->panel_x == self->panel_x

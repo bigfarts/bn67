@@ -13,6 +13,37 @@ The shared native-call ABI veneers are in `abi.c`; direct runtime helpers are
 in `runtime.c`. The linker layout is `link.ld`, and public
 ABI/runtime declarations are `abi.h` and `runtime.h` here too.
 
+## Collision hit-effect visuals
+
+`bn6_self_collision_set_hit_effect()` writes the one-byte visual selector at
+`CollisionFields.hit_effect` (`+0x09`). On contact,
+`bn6_self_collision_spawn_effect()` reads it and creates the corresponding
+impact animation. The selector does **not** define damage, element, status, or
+special collision behavior such as SearchMan's trap deletion; those properties
+come from the collision setup and the attack object's other fields.
+
+The native BN6 hit-effect table contains these selectors in both editions:
+
+| ID | ABI name | Impact animation |
+| ---: | --- | --- |
+| `0x00` | `BN6_HIT_EFFECT_NORMAL` | normal white impact |
+| `0x01` | `BN6_HIT_EFFECT_FIRE` | fire impact |
+| `0x02` | `BN6_HIT_EFFECT_AQUA` | aqua impact |
+| `0x03` | `BN6_HIT_EFFECT_ELEC` | electric impact |
+| `0x04` | `BN6_HIT_EFFECT_WOOD` | wood impact |
+| `0x05` | `BN6_HIT_EFFECT_CHARGE_SHOT` | charge-shot spark |
+| `0x06` | `BN6_HIT_EFFECT_SMALL_IMPACT` | small orange/yellow impact |
+| `0x07` | `BN6_HIT_EFFECT_EXPLOSION` | explosion with debris |
+| `0x08` | `BN6_HIT_EFFECT_PING` | cyan ring/bubble |
+| `0x09` | `BN6_HIT_EFFECT_CHIP_DELETE` | chip-delete ping/slash |
+| `0x0A` | `BN6_HIT_EFFECT_BREAK` | break impact |
+| `0x0B` | `BN6_HIT_EFFECT_LARGE_EXPLOSION` | large explosion |
+| `0x0C` | `BN6_HIT_EFFECT_CHARGE_SHOT_PRIORITY_2` | charge-shot spark at native priority/layer 2 |
+| `0x0D` | `BN6_HIT_EFFECT_BAT` | bat burst |
+| `0x0E` | `BN6_HIT_EFFECT_UNINSTALL` | Uninstall shatter |
+| `0x0F` | `BN6_HIT_EFFECT_UNINSTALL_ALT` | native visual alias of `0x0E` |
+| `0xFF` | `BN6_HIT_EFFECT_NONE` | no contact animation |
+
 ## C declarations
 
 Put declarations beside the implementation they register:

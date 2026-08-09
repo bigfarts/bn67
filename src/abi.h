@@ -119,6 +119,67 @@ typedef struct RuntimeFields Runtime;
 #define BN6_COLLISION_SECONDARY_FLAG_DUST_SUCTION_SIDE_0 0x00100000
 #define BN6_COLLISION_SECONDARY_FLAG_DUST_SUCTION_SIDE_1 0x00200000
 
+/*
+ * CollisionData.Region (+0x01) values used by generic panel damage.
+ * CENTERED_3X3 is the nine-entry offset list centered on the origin.
+ * ALL_VALID_PANELS selects the engine's whole-board parameter scan with an
+ * empty required/excluded filter, so nonexistent panels are still rejected.
+ */
+typedef enum Bn6CollisionRegion {
+    BN6_COLLISION_REGION_CURRENT_PANEL = 0x01,
+    BN6_COLLISION_REGION_CENTERED_3X3 = 0x0F,
+    BN6_COLLISION_REGION_ALL_VALID_PANELS = 0x80,
+} __attribute__((packed)) Bn6CollisionRegion;
+
+/*
+ * CollisionData.FlagsFromCollision (+0x70). The collision resolver copies
+ * this bit from the attacker's resolved self-collision flags. Player hit
+ * processing then erases the active chip and advances the loaded-chip queue.
+ */
+#define BN6_RECEIVED_COLLISION_FLAG_DELETE_ACTIVE_CHIP 0x00000010u
+
+/*
+ * CollisionData.HitEffect (+0x09). These values select only the visual
+ * spawned on contact; damage, elements, statuses, and trap deletion are
+ * controlled by other collision fields.
+ */
+typedef enum Bn6HitEffect {
+    BN6_HIT_EFFECT_NORMAL = 0x00,
+    BN6_HIT_EFFECT_FIRE = 0x01,
+    BN6_HIT_EFFECT_AQUA = 0x02,
+    BN6_HIT_EFFECT_ELEC = 0x03,
+    BN6_HIT_EFFECT_WOOD = 0x04,
+    BN6_HIT_EFFECT_CHARGE_SHOT = 0x05,
+    BN6_HIT_EFFECT_SMALL_IMPACT = 0x06,
+    BN6_HIT_EFFECT_EXPLOSION = 0x07,
+    BN6_HIT_EFFECT_PING = 0x08,
+    BN6_HIT_EFFECT_CHIP_DELETE = 0x09,
+    BN6_HIT_EFFECT_BREAK = 0x0A,
+    BN6_HIT_EFFECT_LARGE_EXPLOSION = 0x0B,
+    BN6_HIT_EFFECT_CHARGE_SHOT_PRIORITY_2 = 0x0C,
+    BN6_HIT_EFFECT_BAT = 0x0D,
+    BN6_HIT_EFFECT_UNINSTALL = 0x0E,
+    BN6_HIT_EFFECT_UNINSTALL_ALT = 0x0F,
+    BN6_HIT_EFFECT_NONE = 0xFF,
+} __attribute__((packed)) Bn6HitEffect;
+
+/* Selectors into BN6's shared collision-type table. */
+typedef enum Bn6CollisionType {
+    BN6_COLLISION_TYPE_STANDARD_TARGET = 0x05,
+    BN6_COLLISION_TYPE_0A = 0x0A,
+    BN6_COLLISION_TYPE_15 = 0x15,
+    BN6_COLLISION_TYPE_1A = 0x1A,
+    BN6_COLLISION_TYPE_27 = 0x27,
+} __attribute__((packed)) Bn6CollisionType;
+
+/* Byte layout of the native panel-damage r4 parameter. */
+typedef struct __attribute__((aligned(4))) Bn6PanelDamageProperties {
+    Bn6CollisionRegion region;
+    Bn6HitEffect hit_effect;
+    Bn6CollisionType target_collision_type;
+    Bn6CollisionType self_collision_type;
+} Bn6PanelDamageProperties;
+
 /* BattleState control flags at +0x5C. */
 #define BN6_BATTLE_CONTROL_FLAG_SIDE_0_CHIPS_ENABLED 0x04
 #define BN6_BATTLE_CONTROL_FLAG_SIDE_1_CHIPS_ENABLED 0x08
@@ -255,8 +316,10 @@ struct PlayerRuntimeFields {
 struct CollisionFields {
     uint8_t enabled;                     // +0x00
     uint8_t region;                      // +0x01
-    uint8_t unknown_02[0x6E];
-    uint32_t received_collision_type_flags; // +0x70
+    uint8_t unknown_02[0x07];
+    uint8_t hit_effect;                  // +0x09, Bn6HitEffect
+    uint8_t unknown_0a[0x66];
+    uint32_t received_collision_flags;      // +0x70, BN6_RECEIVED_COLLISION_FLAG_*
     uint8_t unknown_74[0x0C];
     uint16_t final_damage;               // +0x80
 };
@@ -313,8 +376,32 @@ _Static_assert(
     "collision region offset"
 );
 _Static_assert(
-    offsetof(struct CollisionFields, received_collision_type_flags) == 0x70,
-    "received collision type flags offset"
+    sizeof(Bn6PanelDamageProperties) == sizeof(uint32_t),
+    "panel damage properties size"
+);
+_Static_assert(
+    offsetof(Bn6PanelDamageProperties, region) == 0,
+    "panel damage region byte"
+);
+_Static_assert(
+    offsetof(Bn6PanelDamageProperties, hit_effect) == 1,
+    "panel damage hit effect byte"
+);
+_Static_assert(
+    offsetof(Bn6PanelDamageProperties, target_collision_type) == 2,
+    "panel damage target collision byte"
+);
+_Static_assert(
+    offsetof(Bn6PanelDamageProperties, self_collision_type) == 3,
+    "panel damage self collision byte"
+);
+_Static_assert(
+    offsetof(struct CollisionFields, hit_effect) == 0x09,
+    "collision hit effect offset"
+);
+_Static_assert(
+    offsetof(struct CollisionFields, received_collision_flags) == 0x70,
+    "received collision flags offset"
 );
 _Static_assert(
     offsetof(struct CollisionFields, final_damage) == 0x80,
@@ -442,14 +529,19 @@ void bn6_self_object_store_dust_ammo(uint32_t kind);
 void bn6_self_deployable_lifetime_update(void);
 
 Collision *bn6_self_collision_create(void);
-void bn6_collision_setup(Collision *collision, uint32_t passive_region, uint32_t hit_region, uint32_t mode);
+void bn6_collision_setup(
+    Collision *collision,
+    Bn6CollisionType self_collision_type,
+    Bn6CollisionType target_collision_type,
+    uint32_t hit_modifier
+);
 void bn6_self_collision_present(uint32_t unused, uint32_t region);
 uint32_t bn6_self_collision_get_secondary_flags(void);
 void bn6_collision_remove(Collision *collision);
 void bn6_collision_clear_region(Collision *collision);
 void bn6_self_collision_update_panel(void);
 void bn6_self_collision_spawn_effect(void);
-void bn6_self_collision_set_hit_effect(uint32_t effect);
+void bn6_self_collision_set_hit_effect(Bn6HitEffect effect);
 void bn6_self_collision_set_extended_effect(uint32_t low, uint32_t high);
 void bn6_collision_free(Collision *collision);
 void bn6_self_field_collision_update(void);
@@ -494,7 +586,7 @@ Object *bn6_spawn_panel_damage(
     uint32_t panel_y,
     uint32_t parameter,
     uint32_t unused,
-    uint32_t properties,
+    Bn6PanelDamageProperties properties,
     uint32_t attack,
     uint32_t mode
 );

@@ -143,13 +143,23 @@ NATIVE_WRAPPER(bn6_battle_set_control_flags, 0x08001382, void, (uint32_t control
 NATIVE_WRAPPER(bn6_battle_clear_control_flags, 0x0800138E, void, (uint32_t control_flags))
 NATIVE_WRAPPER(bn6_self_collision_create, 0x08019892, Collision *, (void))
 NATIVE_WRAPPER(bn6_collision_free, 0x080198CE, void, (Collision *collision))
-NATIVE_WRAPPER(bn6_collision_setup, 0x08019FB4, void, (Collision *collision, uint32_t passive_region, uint32_t hit_region, uint32_t mode))
+NATIVE_WRAPPER(
+    bn6_collision_setup,
+    0x08019FB4,
+    void,
+    (
+        Collision *collision,
+        Bn6CollisionType self_collision_type,
+        Bn6CollisionType target_collision_type,
+        uint32_t hit_modifier
+    )
+)
 NATIVE_WRAPPER(bn6_collision_remove, 0x0801A00E, void, (Collision *collision))
 NATIVE_WRAPPER(bn6_self_collision_present, 0x0801A018, void, (uint32_t unused, uint32_t region))
 NATIVE_WRAPPER(bn6_self_collision_update_panel, 0x0801A04C, void, (void))
 NATIVE_WRAPPER(bn6_collision_clear_region, 0x0801A074, void, (Collision *collision))
 NATIVE_WRAPPER(bn6_self_collision_spawn_effect, 0x0801A0D4, void, (void))
-NATIVE_WRAPPER(bn6_self_collision_set_hit_effect, 0x0801A140, void, (uint32_t effect))
+NATIVE_WRAPPER(bn6_self_collision_set_hit_effect, 0x0801A140, void, (Bn6HitEffect effect))
 NATIVE_WRAPPER(bn6_self_collision_set_extended_effect, 0x0801A4D0, void, (uint32_t low, uint32_t high))
 NATIVE_WRAPPER(bn6_self_collision_get_secondary_flags, 0x0801A180, uint32_t, (void))
 NATIVE_WRAPPER(bn6_self_field_collision_update, 0x0801AD12, void, (void))
@@ -237,7 +247,7 @@ NAKED Object *bn6_spawn_panel_damage(
     uint32_t panel_y,
     uint32_t parameter,
     uint32_t unused,
-    uint32_t properties,
+    Bn6PanelDamageProperties properties,
     uint32_t attack,
     uint32_t mode
 )

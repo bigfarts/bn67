@@ -1,3 +1,4 @@
+#include "abi.h"
 #include "runtime.h"
 
 BN6_INCLUDE(common);
@@ -31,7 +32,6 @@ static const uint16_t EXIT_FRAMES = 5;
 static const int32_t PROJECTILE_SPEED = 0x00070000;
 static const uint8_t PROJECTILE_PANELS = 8;
 static const uint32_t PROJECTILE_COLLISION_REGION = 8;
-static const uint32_t PROJECTILE_HIT_EFFECT = 9;
 
 static bool timer_expired(Object *self)
 {
@@ -222,7 +222,7 @@ static bool projectile_init(Object *self)
         return false;
     }
     bn6_collision_setup(collision, PROJECTILE_COLLISION_REGION, 5, 3);
-    bn6_self_collision_set_hit_effect(PROJECTILE_HIT_EFFECT);
+    bn6_self_collision_set_hit_effect(BN6_HIT_EFFECT_CHIP_DELETE);
     bn6_self_collision_present(0, PROJECTILE_COLLISION_REGION);
     self->animation_state = PROJECTILE_PANELS;
     self->target_panel_x = (uint8_t)(
@@ -242,7 +242,7 @@ static bool projectile_update(Object *self)
     Collision *collision = self->collision;
     bn6_collision_remove(collision);
     bn6_self_collision_spawn_effect();
-    if (collision->received_collision_type_flags != 0) {
+    if (collision->received_collision_flags != 0) {
         projectile_free(self);
         return false;
     }

@@ -34,8 +34,18 @@ static const uint16_t FLAME_DELAY_FRAMES = 10;
 static const uint16_t FLAME_MOTION_FRAMES = 16;
 static const uint16_t FIRST_CONTACT_VISUAL = 0x19;
 static const uint16_t SECOND_CONTACT_VISUAL = 0x1F;
-static const uint32_t CONTACT_PROPERTIES = 0x0A050001;
-static const uint32_t INTRO_PROPERTIES = 0x2705FF80;
+static const Bn6PanelDamageProperties CONTACT_PROPERTIES = {
+    .region = BN6_COLLISION_REGION_CURRENT_PANEL,
+    .hit_effect = BN6_HIT_EFFECT_NORMAL,
+    .target_collision_type = BN6_COLLISION_TYPE_STANDARD_TARGET,
+    .self_collision_type = BN6_COLLISION_TYPE_0A,
+};
+static const Bn6PanelDamageProperties INTRO_PROPERTIES = {
+    .region = BN6_COLLISION_REGION_ALL_VALID_PANELS,
+    .hit_effect = BN6_HIT_EFFECT_NONE,
+    .target_collision_type = BN6_COLLISION_TYPE_STANDARD_TARGET,
+    .self_collision_type = BN6_COLLISION_TYPE_27,
+};
 static const uintptr_t SAVED_NAVI_ADDRESS = 0x0203C960;
 static const uintptr_t SAVED_NAVI_DISPATCH_REFERENCE = 0x08017BBC;
 static const uintptr_t SINE_TABLE_ADDRESS = 0x080065E0;

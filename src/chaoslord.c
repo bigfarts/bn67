@@ -28,7 +28,12 @@ static const uint16_t ATTACK_FRAMES = 0x80;
 static const uint16_t ATTACK_SPAWN_TIMER = 0x80;
 static const uint16_t OUTRO_FRAMES = 0x28;
 static const uint16_t BALL_FLIGHT_FRAMES = 0x0F;
-static const uint32_t DAMAGE_PROPERTIES = 0x1505FF0F;
+static const Bn6PanelDamageProperties DAMAGE_PROPERTIES = {
+    .region = BN6_COLLISION_REGION_CENTERED_3X3,
+    .hit_effect = BN6_HIT_EFFECT_NONE,
+    .target_collision_type = BN6_COLLISION_TYPE_STANDARD_TARGET,
+    .self_collision_type = BN6_COLLISION_TYPE_15,
+};
 #if FALZAR
 static const uintptr_t PANEL_DAMAGE_MAIN = 0x080C53C1;
 #else

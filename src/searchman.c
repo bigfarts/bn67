@@ -1,3 +1,4 @@
+#include "abi.h"
 #include "runtime.h"
 
 BN6_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
@@ -21,8 +22,8 @@ static const uint8_t ATTACK_PHASE = 4;
 static const uint8_t EXIT_PHASE = 8;
 static const uint8_t RETICLE_SCAN_PHASE = 4;
 static const uint8_t RETICLE_LOCKED_PHASE = 8;
-static const uint8_t RETICLE_NORMAL_HIT = 25;
-static const uint8_t RETICLE_FINAL_HIT = 29;
+static const uint8_t NORMAL_COLLISION_TYPE = 25;
+static const uint8_t DELETE_COLLISION_TYPE = 29;
 static const uint8_t SHOT_COUNT = 5;
 static const uint16_t PANEL_WAIT_FRAMES = 20;
 static const uint16_t SHOT_FRAMES = 10;
@@ -174,13 +175,13 @@ static void start_reticle(Object *self)
     }
 }
 
-static void spawn_hit(Object *actor, bool final_alternate)
+static void spawn_hit(Object *actor, bool delete_shot)
 {
-    uint32_t visual = final_alternate
-        ? RETICLE_FINAL_HIT
-        : RETICLE_NORMAL_HIT;
+    uint32_t collision_type = delete_shot
+        ? DELETE_COLLISION_TYPE
+        : NORMAL_COLLISION_TYPE;
     Object *hit = bn6_spawn_type3(
-        BN6_OBJECT_ID(searchman_hit_main), 0, 0, 0, visual
+        BN6_OBJECT_ID(searchman_hit_main), 0, 0, 0, collision_type
     );
     if (hit == NULL) {
         return;
@@ -206,8 +207,9 @@ static void fire_tick(Object *self)
 {
     if (self->timer == 7 && self->removal_state == 0) {
         self->removal_state = 1;
-        bool alternate = self->subvariant != 0 && self->animation_state == 1;
-        spawn_hit(self, alternate);
+        bool delete_shot = self->subvariant != 0
+            && self->animation_state == 1;
+        spawn_hit(self, delete_shot);
     }
 
     if (timer_positive_after_decrement(self)) {
@@ -508,7 +510,7 @@ static void hit_update(Object *self)
     bn6_collision_remove(collision);
     bn6_self_collision_spawn_effect();
 
-    if (collision->received_collision_type_flags == 0) {
+    if (collision->received_collision_flags == 0) {
         uint32_t random = bn6_rng_next();
         uint32_t effect = 7u | ((random & 2u) << 8);
         int32_t x = self->x;
@@ -542,9 +544,11 @@ static void hit_init(Object *self)
         HIT_COLLISION_SELECTOR,
         3
     );
-    bn6_self_collision_set_hit_effect(
-        self->variant == RETICLE_NORMAL_HIT ? 0 : 9
-    );
+    /* Type 29 carries the delete property; effect 9 supplies its contact VFX. */
+    Bn6HitEffect hit_effect = self->variant == NORMAL_COLLISION_TYPE
+        ? BN6_HIT_EFFECT_NORMAL
+        : BN6_HIT_EFFECT_CHIP_DELETE;
+    bn6_self_collision_set_hit_effect(hit_effect);
     bn6_self_collision_present(0, PRESENT_COLLISION_REGION);
     self->state_word = ACTOR_ACTIVE_STATE;
 }
