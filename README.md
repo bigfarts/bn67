@@ -20,7 +20,8 @@ is reduced from 50 MB to 33 MB in both versions.
 
 Replaces TrainArrow1, TrainArrow2, and TrainArrow3 with Blue Moon's RollArrow
 attack. Roll fires one arrow straight down the user's row, and the arrow
-destroys opposing chips on hit. The A/F/T, D/R/W, and Q/Y/Z code sets,
+destroys the opponent's entire loaded hand on hit. The A/F/T, D/R/W, and
+Q/Y/Z code sets,
 50/70/90 power, menu art, Roll actor, and arrow graphics are imported from
 Blue Moon in both versions. The original summon and firing sound effects are
 also imported intact.
@@ -29,7 +30,8 @@ also imported intact.
 
 Replaces CircusMan, CircusMan EX, and CircusMan SP with the complete SearchMan
 chip attack ported from Battle Network 5. Its shots retain Cursor element and
-destroy traps on contact.
+destroy traps on contact. A successful delete shot discards the opponent's
+entire loaded hand.
 
 - `SerchMan S/*`: 20 damage per shot
 - `SerchMnEX S`: 40 damage per shot

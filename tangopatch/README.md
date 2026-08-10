@@ -8,15 +8,16 @@ behavior and all other chip metadata are unchanged.
 ## RollArrow
 
 Replaces TrainArrow1/2/3 with Blue Moon RollArrow1/2/3 in both versions.
-Roll fires one arrow straight down the user's row and destroys opposing chips
-on hit, using the original codes, 50/70/90 power, chip art, actor, and arrow
-graphics.
+Roll fires one arrow straight down the user's row and destroys the opponent's
+entire loaded hand on hit, using the original codes, 50/70/90 power, chip art,
+actor, and arrow graphics.
 
 ## SearchMan
 
 Replaces CircusMan, CircusMan EX, and CircusMan SP with the complete SearchMan
 chip attack ported from Battle Network 5. Its Cursor-element shots destroy
-traps on contact.
+traps on contact, and a successful delete shot discards the opponent's entire
+loaded hand.
 
 - `SerchMan S/*`: 20 damage per shot
 - `SerchMnEX S`: 40 damage per shot

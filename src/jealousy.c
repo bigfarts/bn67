@@ -29,17 +29,18 @@ struct Exe6JealousyWork {
 
 static uint32_t unit_loaded_chips(Exe6Obj *unit)
 {
-    const uint8_t *runtime = (const uint8_t *)unit->runtime_data;
+    const Exe6PlayerRuntime *runtime = unit->runtime_data;
     if (runtime == NULL) {
         return 0;
     }
-    if (runtime[0] != 2) {
+    if (runtime->type != 2) {
         return unit->loaded_chip_count;
     }
 
-    const uint8_t *list = exe6_navi_select_chip_work_adrs_get(unit->owner);
+    const Exe6NaviSelectChipWork *selection =
+        exe6_navi_select_chip_work_adrs_get(unit->owner);
     const uint16_t *entry =
-        (const uint16_t *)(list + 2u + 2u * list[0]);
+        &selection->chip_ids[selection->active_chip_index];
     uint32_t count = 0;
     while (*entry != UINT16_MAX) {
         ++count;

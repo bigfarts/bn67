@@ -10,6 +10,7 @@
 
 typedef struct Exe6ObjFields Exe6Obj;
 typedef struct Exe6PlayerRuntimeFields Exe6PlayerRuntime;
+typedef struct Exe6NaviSelectChipWorkFields Exe6NaviSelectChipWork;
 typedef struct Exe6HitFields Exe6Hit;
 typedef struct Exe6BattleContextFields Exe6BattleContext;
 typedef struct Exe6RuntimeFields Exe6Runtime;
@@ -134,7 +135,7 @@ typedef enum Exe6HitRegion {
 /*
  * HitData.FlagsFromHit (+0x70). The hit resolver copies
  * this bit from the attacker's resolved self-hit flags. Player hit
- * processing then erases the active chip and advances the loaded-chip queue.
+ * processing then erases the active chip and discards the rest of the hand.
  */
 #define EXE6_RECEIVED_HIT_FLAG_DELETE_ACTIVE_CHIP \
     EXE6_HIT_TYPE_FLAG_DELETE_ACTIVE_CHIP
@@ -459,7 +460,8 @@ struct Exe6ObjFields {
     uint16_t aux_timer;                  // +0x22
     uint16_t hp;                         // +0x24
     uint16_t max_hp;                     // +0x26
-    uint8_t unknown_28[4];
+    uint8_t unknown_28[2];
+    uint16_t active_chip_id;             // +0x2A
     uint32_t attack;                     // +0x2C
     union {
         uint32_t chip_data;              // +0x30
@@ -478,15 +480,25 @@ struct Exe6ObjFields {
     Exe6Obj *parent;                         // +0x4C
     uint8_t unknown_50[4];
     Exe6Hit *hit;                           // +0x54
-    void *runtime_data;                  // +0x58
+    Exe6PlayerRuntime *runtime_data;     // +0x58
     uint32_t engine_reserved;            // +0x5C
     uint8_t work[0x20];                  // +0x60 through +0x7C
 };
 
 struct Exe6PlayerRuntimeFields {
-    uint8_t unknown_00[7];
+    uint8_t type;                        // +0x00
+    uint8_t unknown_01[6];
     uint8_t active_power_attack;         // +0x07
     uint8_t b_left;                      // +0x08
+    uint8_t unknown_09[0x23];
+    uint16_t input;                      // +0x2C
+};
+
+struct Exe6NaviSelectChipWorkFields {
+    uint8_t active_chip_index;           // +0x00
+    uint8_t loaded_chip_count;           // +0x01
+    uint16_t chip_ids[6];                // +0x02
+    uint8_t unknown_0e[0x42];
 };
 
 struct Exe6HitFields {
@@ -540,6 +552,10 @@ _Static_assert(offsetof(struct Exe6ObjFields, parameter) == 0x0E, "obj parameter
 _Static_assert(offsetof(struct Exe6ObjFields, block_x) == 0x12, "obj block offset");
 _Static_assert(offsetof(struct Exe6ObjFields, owner_word) == 0x16, "obj owner offset");
 _Static_assert(offsetof(struct Exe6ObjFields, timer) == 0x20, "obj timer offset");
+_Static_assert(
+    offsetof(struct Exe6ObjFields, active_chip_id) == 0x2A,
+    "obj active chip id offset"
+);
 _Static_assert(offsetof(struct Exe6ObjFields, attack) == 0x2C, "obj attack offset");
 _Static_assert(offsetof(struct Exe6ObjFields, chip_data) == 0x30, "obj chip data offset");
 _Static_assert(offsetof(struct Exe6ObjFields, attack_bonus) == 0x32, "obj attack bonus offset");
@@ -555,12 +571,32 @@ _Static_assert(
 _Static_assert(offsetof(struct Exe6ObjFields, work) == 0x60, "obj work offset");
 _Static_assert(offsetof(struct Exe6ObjFields, completion) == 0x30, "obj completion offset");
 _Static_assert(
+    offsetof(struct Exe6PlayerRuntimeFields, type) == 0,
+    "player runtime type offset"
+);
+_Static_assert(
     offsetof(struct Exe6PlayerRuntimeFields, active_power_attack) == 0x07,
     "player runtime active power attack offset"
 );
 _Static_assert(
     offsetof(struct Exe6PlayerRuntimeFields, b_left) == 0x08,
     "player runtime B-Left offset"
+);
+_Static_assert(
+    offsetof(struct Exe6PlayerRuntimeFields, input) == 0x2C,
+    "player runtime input offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviSelectChipWorkFields, active_chip_index) == 0,
+    "selected chip active index offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviSelectChipWorkFields, chip_ids) == 2,
+    "selected chip id offset"
+);
+_Static_assert(
+    sizeof(struct Exe6NaviSelectChipWorkFields) == 0x50,
+    "selected chip work size"
 );
 _Static_assert(
     offsetof(struct Exe6HitFields, region) == 0x01,
@@ -769,7 +805,7 @@ void exe6_battle_hit_status_flag_off(
     Exe6Obj *player,
     uint32_t status_flags
 );
-const uint8_t *exe6_navi_select_chip_work_adrs_get(uint32_t side);
+Exe6NaviSelectChipWork *exe6_navi_select_chip_work_adrs_get(uint32_t side);
 uint8_t *exe6_op_work_adrs_get(uint32_t side);
 void exe6_battle_chip_set(void);
 void exe6_battle_select_chip_work_init(void);

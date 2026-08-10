@@ -134,7 +134,12 @@ NATIVE_WRAPPER(exe6_cube_life_span_check, 0x0800F672, void, (void))
 NATIVE_WRAPPER(exe6_cube_erase2, 0x0800F8CE, uint32_t, (void))
 NATIVE_WRAPPER(exe6_cube_set_dust_suikomi_efc, 0x0800F90E, void, (uint32_t kind))
 NATIVE_WRAPPER(exe6_get_navi_adrs, 0x080103BC, Exe6Obj *, (uint32_t side))
-NATIVE_WRAPPER(exe6_navi_select_chip_work_adrs_get, 0x08010018, const uint8_t *, (uint32_t side))
+NATIVE_WRAPPER(
+    exe6_navi_select_chip_work_adrs_get,
+    0x08010018,
+    Exe6NaviSelectChipWork *,
+    (uint32_t side)
+)
 NATIVE_WRAPPER(exe6_navi_status_work_adrs_get, 0x08013682, uint8_t *, (uint32_t side))
 NATIVE_WRAPPER(exe6_navi_status_set, 0x080136B0, void, (uint32_t side, uint32_t property, uint32_t value))
 NATIVE_WRAPPER(exe6_navi_status_get, 0x080136CC, uint32_t, (uint32_t side, uint32_t property))

@@ -319,8 +319,9 @@ static void actor_init(Exe6Obj *self)
 
 static bool reticle_key_pressed(const Exe6Obj *self, uint16_t mask)
 {
-    const uint16_t *input = self->runtime_data;
-    return (*input & mask) == mask;
+    const struct Exe6SearchmanReticleWork *work =
+        (const struct Exe6SearchmanReticleWork *)self->work;
+    return (work->player->runtime_data->input & mask) == mask;
 }
 
 static void reticle_commit_target(Exe6Obj *self)
@@ -502,8 +503,6 @@ static void reticle_init(Exe6Obj *self)
     self->removal_state = 1;
     self->aux_timer = RETICLE_LIFETIME;
 
-    Exe6Obj *player = work->player;
-    self->runtime_data = (void *)((uintptr_t)player->runtime_data + 0x2Cu);
     self->animation_state = 0;
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     self->z = 0;

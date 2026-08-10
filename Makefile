@@ -15,8 +15,8 @@ TANGO_PATCH ?= tango-patch
 
 BN5_COLONEL_ROM ?=
 BN5_PROTOMAN_ROM ?=
-EXE6_GREGAR_ROM ?=
-EXE6_FALZAR_ROM ?=
+BN6_GREGAR_ROM ?=
+BN6_FALZAR_ROM ?=
 BN4_BLUE_MOON_ROM ?=
 BN3_BLUE_ROM ?=
 
@@ -48,11 +48,11 @@ CLDFLAGS := -nostdlib -nostartfiles -Wl,-T,"$(C_LINKER_SCRIPT)" \
 check-roms:
 	@set -eu; \
 	if [ -z "$(BN5_PROTOMAN_ROM)" ] || \
-	   [ -z "$(EXE6_GREGAR_ROM)" ] || \
-	   [ -z "$(EXE6_FALZAR_ROM)" ] || \
+	   [ -z "$(BN6_GREGAR_ROM)" ] || \
+	   [ -z "$(BN6_FALZAR_ROM)" ] || \
 	   [ -z "$(BN4_BLUE_MOON_ROM)" ] || \
 	   [ -z "$(BN3_BLUE_ROM)" ]; then \
-		echo "usage: make BN5_PROTOMAN_ROM=... EXE6_GREGAR_ROM=... EXE6_FALZAR_ROM=... BN4_BLUE_MOON_ROM=... BN3_BLUE_ROM=... [BN5_COLONEL_ROM=...]" >&2; \
+		echo "usage: make BN5_PROTOMAN_ROM=... BN6_GREGAR_ROM=... BN6_FALZAR_ROM=... BN4_BLUE_MOON_ROM=... BN3_BLUE_ROM=... [BN5_COLONEL_ROM=...]" >&2; \
 		exit 2; \
 	fi; \
 	if ! command -v "$(ARMIPS)" >/dev/null 2>&1; then \
@@ -72,8 +72,8 @@ check-roms:
 	}; \
 	check_sha256 "$(BN5_PROTOMAN_ROM)" b35f5890f54784c9d90a896dc5ac4831d43acc9f94e8c42816742fcfa6b41a7b; \
 	check_sha256 "$(BN5_COLONEL_ROM)" d4b7aefc3918c9f801c84cfd1322c2cdbb9d13c2e3271b3c3f8f9927480f2633; \
-	check_sha256 "$(EXE6_GREGAR_ROM)" 572e113eeb53bb29cd9ff8acb9db265cfd48c5e509c8d0e6420b58e71e442cf2; \
-	check_sha256 "$(EXE6_FALZAR_ROM)" a37c1028adb72082b51e142321fa437967bc54b6f46730a53f6581ad455ad670; \
+	check_sha256 "$(BN6_GREGAR_ROM)" 572e113eeb53bb29cd9ff8acb9db265cfd48c5e509c8d0e6420b58e71e442cf2; \
+	check_sha256 "$(BN6_FALZAR_ROM)" a37c1028adb72082b51e142321fa437967bc54b6f46730a53f6581ad455ad670; \
 	check_sha256 "$(BN4_BLUE_MOON_ROM)" 63ea187c792f4bfcd077f92c3a509fa09ed422993aee9480c39dfdf6a561c5c1; \
 	check_sha256 "$(BN3_BLUE_ROM)" 8c6767788f99dc9e2af0c9d75513b227c7c42d6d452d6165c8e08850af78e273
 
@@ -90,15 +90,15 @@ $(ASSET_STAMP): $(PATCH_DIR)/extract_assets.py | check-roms $(BUILD_DIR)
 		--output-dir "$(BUILD_DIR)" \
 		--bn5-protoman "$(BN5_PROTOMAN_ROM)" \
 		--bn5-colonel "$(BN5_COLONEL_ROM)" \
-		--exe6-gregar "$(EXE6_GREGAR_ROM)" \
-		--exe6-falzar "$(EXE6_FALZAR_ROM)" \
+		--exe6-gregar "$(BN6_GREGAR_ROM)" \
+		--exe6-falzar "$(BN6_FALZAR_ROM)" \
 		--bn4-blue-moon "$(BN4_BLUE_MOON_ROM)" \
 		--bn3-blue "$(BN3_BLUE_ROM)"
 	@touch "$@"
 
 EDITIONS := gregar falzar
-EDITION_ROM_gregar = $(EXE6_GREGAR_ROM)
-EDITION_ROM_falzar = $(EXE6_FALZAR_ROM)
+EDITION_ROM_gregar = $(BN6_GREGAR_ROM)
+EDITION_ROM_falzar = $(BN6_FALZAR_ROM)
 EDITION_DEFINE_gregar := 0
 EDITION_DEFINE_falzar := 1
 EDITION_TEXT_OFFSET_gregar := 0x42038
@@ -191,8 +191,8 @@ compile-commands: $(PATCH_DIR)/compile_commands.json
 patches: build | $(DIST_DIR)
 	@set -eu; \
 	if command -v "$(FLIPS)" >/dev/null 2>&1; then \
-		"$(FLIPS)" --create --bps "$(EXE6_GREGAR_ROM)" "$(BUILD_DIR)/bn67-gregar.gba" "$(DIST_DIR)/bn67-gregar.bps"; \
-		"$(FLIPS)" --create --bps "$(EXE6_FALZAR_ROM)" "$(BUILD_DIR)/bn67-falzar.gba" "$(DIST_DIR)/bn67-falzar.bps"; \
+		"$(FLIPS)" --create --bps "$(BN6_GREGAR_ROM)" "$(BUILD_DIR)/bn67-gregar.gba" "$(DIST_DIR)/bn67-gregar.bps"; \
+		"$(FLIPS)" --create --bps "$(BN6_FALZAR_ROM)" "$(BUILD_DIR)/bn67-falzar.gba" "$(DIST_DIR)/bn67-falzar.bps"; \
 		echo "BPS patches written to $(DIST_DIR)"; \
 		if command -v "$(TANGO_PATCH)" >/dev/null 2>&1; then \
 			mkdir -p "$(TANGOPATCH_SRC)/roms"; \
@@ -211,7 +211,7 @@ clean:
 	rm -rf "$(BUILD_DIR)" "$(DIST_DIR)" "$(TANGOPATCH_SRC)/roms"
 
 help:
-	@echo "make BN5_PROTOMAN_ROM=... BN5_COLONEL_ROM=... EXE6_GREGAR_ROM=... EXE6_FALZAR_ROM=... BN4_BLUE_MOON_ROM=... BN3_BLUE_ROM=..."
+	@echo "make BN5_PROTOMAN_ROM=... BN5_COLONEL_ROM=... BN6_GREGAR_ROM=... BN6_FALZAR_ROM=... BN4_BLUE_MOON_ROM=... BN3_BLUE_ROM=..."
 	@echo ""
 	@echo "Targets:"
 	@echo "  all      Build and create optional patch packages (default)"

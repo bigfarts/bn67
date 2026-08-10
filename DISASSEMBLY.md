@@ -41,6 +41,13 @@ visual after contact or creates the miss visual, clears/frees its hit
 data, and frees itself in that same update. The full BN6 hit-effect visual
 table is documented in `src/README.md`.
 
+BN6's shared player response at `0x0801A2CC` normally clears the active chip
+ID and advances the loaded-chip cursor once. The patch redirects that routine
+to `chip_delete_entire_hand_main`, which advances the cursor to the terminating
+`0xFFFF` entry instead. Consequently, any landed hit with the `0x10` property
+discards the complete remaining hand; non-player objects retain the native
+active-chip and loaded-count cleanup.
+
 ## BN6 hooks and translation
 
 The port installs all three cooperating object classes because BN6 does not
@@ -506,8 +513,9 @@ hit lifecycle with BN4's `8/5/3` setup and hit-effect `9`, so it travels
 at seven pixels per frame and stops on the first real contact. Hit type
 `8` resolves to `0x80000090` or `0x40000090`, including the same `0x10`
 delete-property bit used by SearchMan's hit type `29`; hit effect `9`
-supplies the matching chip-delete VFX. This invokes BN6's built-in loaded-chip
-deletion response rather than manufacturing a damage hit on every block.
+supplies the matching chip-delete VFX. The shared patched response discards
+the target's complete loaded hand rather than manufacturing a damage hit on
+every block.
 Generated selector pairs `ROLLARROW_ACTOR_SPRITE_GROUP` /
 `ROLLARROW_ACTOR_SPRITE` and `ROLLARROW_PROJECTILE_SPRITE_GROUP` /
 `ROLLARROW_PROJECTILE_SPRITE` point at the runtime-confirmed Blue Moon Roll
