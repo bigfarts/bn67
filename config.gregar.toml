@@ -4,7 +4,6 @@ variant = "gregar"
 number = 1
 native_table = "build/object-class1-table-gregar.bin"
 references = [0x08003224]
-interceptor = "folderback_type_1_main"
 
 [[object_classes]]
 number = 3
@@ -15,11 +14,6 @@ references = [0x0800322C]
 number = 4
 native_table = "build/object-class4-table-gregar.bin"
 references = [0x08003230]
-
-[object_dispatch]
-hook_address = 0x080031FA
-advance_address = 0x0800372A
-continuation_address = 0x08003206
 
 [[sprite_groups]]
 number = 0x08

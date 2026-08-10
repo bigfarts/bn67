@@ -64,10 +64,21 @@ struct Exe6FolderbackWork {
 
 _Static_assert(sizeof(struct Exe6FolderbackWork) == 0x1C, "FolderBack work layout");
 
+EXE6_PATCH_SECTION(0x080031FA, folderback_type_1_main);
+
 NAKED void folderback_type_1_main(void)
 {
     __asm__(
         ".syntax unified\n"
+        "push {r7}\n"
+        "ldrb r1,[r5,#2]\n"
+        "movs r2,#0x0F\n"
+        "ands r1,r2\n"
+        "cmp r1,#1\n"
+        "bne 6f\n"
+        "adr r1,7f\n"
+        "adds r1,#1\n"
+        "mov lr,r1\n"
         "push {r0,r4,r6,r7,lr}\n"
         "ldr r6,=0x02036870\n"
         "movs r7,#32\n"
@@ -103,6 +114,18 @@ NAKED void folderback_type_1_main(void)
         "5:\n"
         "bl exe6_battle_obj_char_move2\n"
         "b 4b\n"
+        "6:\n"
+        "adds r1,r0,#0\n"
+        "mov lr,pc\n"
+        "bx r1\n"
+        ".balign 4\n"
+        "7:\n"
+        "pop {r7}\n"
+        "ldr r0,=0x0800372A + 1\n"
+        "mov lr,pc\n"
+        "bx r0\n"
+        "ldr r0,=0x08003206 + 1\n"
+        "bx r0\n"
     );
 }
 

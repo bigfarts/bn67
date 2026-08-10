@@ -142,9 +142,15 @@ uint8_t *exe6_chip_queue(void);
 /* Source compatibility for packages written before the ABI names were split. */
 #define EXE6_ATTACK(chip_id, main) EXE6_PERSISTENT_ATTACK(chip_id, main)
 
-#define EXE6_POINTER_PATCH(address, symbol) \
+#define EXE6_PATCH_POINTER(address, symbol) \
     EXE6_METADATA_RECORD( \
         "pointer", \
+        EXE6_STRINGIFY(address) "__" EXE6_STRINGIFY(symbol) \
+    )
+
+#define EXE6_PATCH_SECTION(address, symbol) \
+    EXE6_METADATA_RECORD( \
+        "section", \
         EXE6_STRINGIFY(address) "__" EXE6_STRINGIFY(symbol) \
     )
 

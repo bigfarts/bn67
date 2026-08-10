@@ -15,6 +15,7 @@ from typing import Any
 NAME_RE = re.compile(r"^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$")
 SNAKE_CASE_RE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 POINTER_METADATA_RE = re.compile(r"^pointer__(0[xX][0-9A-Fa-f]+)__([a-z][a-z0-9_]*)$")
+SECTION_METADATA_RE = re.compile(r"^section__(0[xX][0-9A-Fa-f]+)__([a-z][a-z0-9_]*)$")
 RUNTIME_SOURCE_NAMES = {"abi.c", "runtime.c"}
 SONG_PLAYER_FIRST = 0x0C
 SONG_PLAYER_LAST = 0x1F
@@ -29,14 +30,6 @@ class ObjectClass:
     native_entries: int
     native_table: str
     references: tuple[int, ...]
-    interceptor: str | None
-
-
-@dataclass(frozen=True)
-class ObjectDispatch:
-    hook_address: int
-    advance_address: int
-    continuation_address: int
 
 
 @dataclass(frozen=True)
@@ -98,7 +91,6 @@ class Config:
     root: Path
     variant: str
     object_classes: dict[int, ObjectClass]
-    object_dispatch: ObjectDispatch
     sprite_groups: dict[int, SpriteGroup]
     songs: SongConfig
     text: TextConfig
@@ -158,6 +150,12 @@ class PointerPatch:
 
 
 @dataclass(frozen=True)
+class SectionPatch:
+    symbol: str
+    address: int
+
+
+@dataclass(frozen=True)
 class Package:
     name: str
     source: str
@@ -169,6 +167,7 @@ class Package:
     chips: tuple[ChipResource, ...]
     attack: AttackResource | None
     pointer_patches: tuple[PointerPatch, ...]
+    section_patches: tuple[SectionPatch, ...]
 
 
 @dataclass(frozen=True)
@@ -290,7 +289,6 @@ def load_config(path: Path) -> Config:
         {
             "variant",
             "object_classes",
-            "object_dispatch",
             "sprite_groups",
             "songs",
             "text",
@@ -310,7 +308,6 @@ def load_config(path: Path) -> Config:
                 "number",
                 "native_table",
                 "references",
-                "interceptor",
             },
             item_context,
         )
@@ -330,36 +327,12 @@ def load_config(path: Path) -> Config:
             raise PackageError(f"{item_context}: references must not be empty")
         if any(address % 4 for address in references):
             raise PackageError(f"{item_context}: references must be word-aligned")
-        interceptor = item.get("interceptor")
-        if interceptor is not None and (
-            not isinstance(interceptor, str) or not SNAKE_CASE_RE.fullmatch(interceptor)
-        ):
-            raise PackageError(
-                f"{item_context}: interceptor must be a snake_case symbol"
-            )
         object_classes[number] = ObjectClass(
             number,
             native_entries,
             native_table,
             references,
-            interceptor,
         )
-
-    object_dispatch_raw = require_table(raw, "object_dispatch", context)
-    check_keys(
-        object_dispatch_raw,
-        {"hook_address", "advance_address", "continuation_address"},
-        f"{path}: object_dispatch",
-    )
-    object_dispatch = ObjectDispatch(
-        require_int(object_dispatch_raw, "hook_address", f"{path}: object_dispatch"),
-        require_int(object_dispatch_raw, "advance_address", f"{path}: object_dispatch"),
-        require_int(
-            object_dispatch_raw,
-            "continuation_address",
-            f"{path}: object_dispatch",
-        ),
-    )
 
     sprite_groups: dict[int, SpriteGroup] = {}
     for index, item in enumerate(require_table_array(raw, "sprite_groups", context)):
@@ -527,7 +500,6 @@ def load_config(path: Path) -> Config:
         root,
         variant,
         object_classes,
-        object_dispatch,
         sprite_groups,
         songs,
         text,
@@ -612,6 +584,7 @@ def load_package(source_path: Path, config: Config) -> Package:
         (),
         None,
         (),
+        (),
     )
 
 
@@ -653,7 +626,8 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
     songs: list[SongResource] = []
     chips: list[ChipResource] = []
     attack: AttackResource | None = None
-    patches: list[PointerPatch] = []
+    pointer_patches: list[PointerPatch] = []
+    section_patches: list[SectionPatch] = []
     for symbol in symbols:
         prefix = "__exe6_meta__"
         if not symbol.startswith(prefix):
@@ -667,7 +641,17 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
                 raise PackageError(
                     f"{package.name}: patch symbol {patch_symbol} must be snake_case"
                 )
-            patches.append(PointerPatch(patch_symbol, address))
+            pointer_patches.append(PointerPatch(patch_symbol, address))
+            continue
+        section = SECTION_METADATA_RE.fullmatch(body)
+        if section is not None:
+            address_text, patch_symbol = section.groups()
+            address = checked_int(int(address_text, 0), 0, 0xFFFFFFFF, symbol)
+            if SNAKE_CASE_RE.fullmatch(patch_symbol) is None:
+                raise PackageError(
+                    f"{package.name}: patch symbol {patch_symbol} must be snake_case"
+                )
+            section_patches.append(SectionPatch(patch_symbol, address))
             continue
         parts = body.split("__")
         kind = parts[0]
@@ -709,7 +693,8 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         songs=tuple(songs),
         chips=tuple(chips),
         attack=attack,
-        pointer_patches=tuple(patches),
+        pointer_patches=tuple(pointer_patches),
+        section_patches=tuple(section_patches),
     )
 
 
@@ -987,57 +972,6 @@ def emit_object_tables(
         for address in object_class.references:
             lines.extend([f".org 0x{address:08X}", f"    .dw {label}"])
 
-    lines.extend(
-        [
-            "",
-            "// Intercept the resolved object entry once, not every table slot.",
-            f".org 0x{config.object_dispatch.hook_address:08X}",
-            "    ldr r1,=object_dispatch_interceptor_main + 1",
-            "    bx r1",
-            "    .pool",
-            "",
-            ".autoregion",
-            ".align 2",
-            "object_dispatch_interceptor_main:",
-            "    push {r7}",
-            "    ldrb r1,[r5,2]",
-            "    mov r2,0x0F",
-            "    and r1,r2",
-        ]
-    )
-    for number, object_class in sorted(config.object_classes.items()):
-        if object_class.interceptor is not None:
-            lines.extend(
-                [
-                    f"    cmp r1,{number}",
-                    f"    beq object_dispatch_class_{number}",
-                ]
-            )
-    lines.extend(["    mov r1,r0", "    b object_dispatch_invoke"])
-    for number, object_class in sorted(config.object_classes.items()):
-        if object_class.interceptor is not None:
-            lines.extend(
-                [
-                    f"object_dispatch_class_{number}:",
-                    f"    ldr r1,={object_class.interceptor} + 1",
-                    "    b object_dispatch_invoke",
-                ]
-            )
-    lines.extend(
-        [
-            "object_dispatch_invoke:",
-            "    mov lr,pc",
-            "    bx r1",
-            "    pop {r7}",
-            f"    ldr r0,=0x{config.object_dispatch.advance_address:08X} + 1",
-            "    mov lr,pc",
-            "    bx r0",
-            f"    ldr r0,=0x{config.object_dispatch.continuation_address:08X} + 1",
-            "    bx r0",
-            "    .pool",
-            ".endautoregion",
-        ]
-    )
     all_objects = [item for package in packages for item in package.objects]
     for number in class_numbers:
         object_class = config.object_classes[number]
@@ -1073,6 +1007,22 @@ def emit_pointer_patches(packages: list[Package]) -> list[str]:
                     f"// {package.name}: {patch.symbol}",
                     f".org 0x{patch.address:08X}",
                     f"    .dw {patch.symbol}",
+                ]
+            )
+    return lines
+
+
+def emit_section_patches(packages: list[Package]) -> list[str]:
+    lines = ["// Package-declared fixed section patches."]
+    for package in packages:
+        for patch in package.section_patches:
+            lines.extend(
+                [
+                    f"// {package.name}: {patch.symbol}",
+                    f".org 0x{patch.address:08X}",
+                    f"    ldr r1,={patch.symbol} + 1",
+                    "    bx r1",
+                    "    .pool",
                 ]
             )
     return lines
@@ -1208,6 +1158,8 @@ def generate(config: Config, packages: list[Package], allocations: Allocations) 
             "",
         ],
         emit_pointer_patches(packages),
+        [""],
+        emit_section_patches(packages),
         [""],
         emit_attack_tables(config, packages, allocations),
         [""],

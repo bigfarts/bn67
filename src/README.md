@@ -71,7 +71,7 @@ EXE6_SONG(
         "build/searchman-fire-sample.bin"
     )
 );
-EXE6_POINTER_PATCH(0x08012010, searchman_data);
+EXE6_PATCH_POINTER(0x08012010, searchman_data);
 
 EXE6_ENEMY(searchman_actor_main)
 {
@@ -90,9 +90,9 @@ build:
 
 ```c
 #if FALZAR
-EXE6_POINTER_PATCH(0x080E9990, signalred_dust_sprite_table);
+EXE6_PATCH_POINTER(0x080E9990, signalred_dust_sprite_table);
 #else
-EXE6_POINTER_PATCH(0x080EACD0, signalred_dust_sprite_table);
+EXE6_PATCH_POINTER(0x080EACD0, signalred_dust_sprite_table);
 #endif
 ```
 

@@ -20,12 +20,12 @@ EXE6_SONG(
         "build/signalred-spawn-sample.bin"
     )
 );
-EXE6_POINTER_PATCH(0x08012010, signalred_dust_sprite_table);
-EXE6_POINTER_PATCH(0x08012014, signalred_dust_sprite_table);
+EXE6_PATCH_POINTER(0x08012010, signalred_dust_sprite_table);
+EXE6_PATCH_POINTER(0x08012014, signalred_dust_sprite_table);
 #if FALZAR
-EXE6_POINTER_PATCH(0x080E9990, signalred_dust_sprite_table);
+EXE6_PATCH_POINTER(0x080E9990, signalred_dust_sprite_table);
 #else
-EXE6_POINTER_PATCH(0x080EACD0, signalred_dust_sprite_table);
+EXE6_PATCH_POINTER(0x080EACD0, signalred_dust_sprite_table);
 #endif
 EXE6_INCBIN(signalred_icon, "build/signalred-icon.bin");
 EXE6_INCBIN(signalred_image, "build/signalred-image.bin");
