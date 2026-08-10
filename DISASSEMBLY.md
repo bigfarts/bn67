@@ -404,7 +404,7 @@ path handled by `0x0800F8CE`; its 20-frame visibility timer owns object byte
 
 The BN6 battle-flag helpers at `0x08001382` and `0x0800138E` retain Blue
 Moon's set/clear contract; the battle structure field moved from `+0x64` to
-`+0x5C`. SignalRed's gameplay routines live in `src/signalred.c`;
+`+0x5C`. SignalRed's gameplay routines live in `src/chips/signalred.c`;
 its assembly file contains only binary resources and the DustCross table
 extension.
 

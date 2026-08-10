@@ -10,10 +10,7 @@ import re
 import subprocess
 import tempfile
 
-
-SYMBOL_RE = re.compile(
-    r"^[0-9A-Fa-f]+\s+[A-Za-z]\s+(__exe6_meta__[A-Za-z0-9_]+)$"
-)
+SYMBOL_RE = re.compile(r"^[0-9A-Fa-f]+\s+[A-Za-z]\s+(__exe6_meta__[A-Za-z0-9_]+)$")
 RUNTIME_SOURCE_NAMES = {"abi.c", "runtime.c"}
 
 
@@ -85,7 +82,7 @@ def main() -> int:
     packages: list[dict[str, object]] = []
     with tempfile.TemporaryDirectory(prefix="bn6-registry-metadata-") as directory:
         temporary = Path(directory)
-        for source in sorted(root.glob("src/*.c")):
+        for source in sorted(root.glob("src/**/*.c")):
             if source.name in RUNTIME_SOURCE_NAMES:
                 continue
             package = source.stem

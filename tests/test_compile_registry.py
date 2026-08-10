@@ -235,18 +235,18 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertNotIn("ROLLARROW_SUMMON_SONG", assembly)
         self.assertIn(
             "exe6_sound_req(EXE6_SONG_ID(common_navi_summon_song))",
-            (ROOT / "src/laserman.c").read_text(),
+            (ROOT / "src/chips/laserman.c").read_text(),
         )
         self.assertIn(
             "EXE6_SONG_ID(common_navi_summon_song)",
-            (ROOT / "src/rollarrow.c").read_text(),
+            (ROOT / "src/chips/rollarrow.c").read_text(),
         )
         self.assertNotIn(".definelabel", assembly)
 
-    def test_flat_sources_and_chip_definition_files(self) -> None:
+    def test_sources_and_chip_definition_files(self) -> None:
         self.assertFalse((ROOT / "packages").exists())
-        self.assertFalse(list((ROOT / "src").glob("manifest.toml")))
-        for path in ROOT.glob("src/*.defs.toml"):
+        self.assertFalse(list((ROOT / "src").rglob("manifest.toml")))
+        for path in (ROOT / "src").rglob("*.defs.toml"):
             definitions = tomllib.loads(path.read_text())
             self.assertTrue(definitions, path)
             self.assertLessEqual(set(definitions), {"chips", "text"}, path)
@@ -259,7 +259,7 @@ class PackageCompilerTests(unittest.TestCase):
             for archive, entries in definitions.get("text", {}).items():
                 self.assertIsInstance(archive, str, path)
                 self.assertIsInstance(entries, dict, path)
-        for source in ROOT.glob("src/*.c"):
+        for source in (ROOT / "src").rglob("*.c"):
             text = source.read_text()
             self.assertNotIn(".generated.h", text, source)
             self.assertNotIn("EXE6_PCM_SONG", text, source)
@@ -340,7 +340,7 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertEqual(falzar_assembly.count(".dw 0x0872BE14 // artwork.icon"), 6)
         self.assertIn(".dw bugcharge_icon // artwork.icon", assembly)
         self.assertNotIn(".dw 0x0872C594 // artwork.icon", assembly)
-        for path in ROOT.glob("src/*.c"):
+        for path in (ROOT / "src").rglob("*.c"):
             self.assertNotIn("CHIP_DATA", path.read_text(), path)
 
     def test_attack_entries_are_compiler_allocated(self) -> None:
@@ -498,7 +498,7 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn(
             f".org 0x{config.object_dispatch.hook_address:08X}", assembly
         )
-        folderback = (ROOT / "src/folderback.c").read_text()
+        folderback = (ROOT / "src/chips/folderback.c").read_text()
         self.assertNotIn("EXE6_POINTER_PATCH(0x08003224", folderback)
         self.assertNotIn("__exe6_object_kind", folderback)
         self.assertIn("__exe6_object_id_folderback_controller_main", folderback)

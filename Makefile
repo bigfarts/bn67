@@ -13,19 +13,22 @@ ARM_NM ?= arm-none-eabi-nm
 FLIPS ?= flips
 TANGO_PATCH ?= tango-patch
 
-BN5_COLONEL_ROM ?=
 BN5_PROTOMAN_ROM ?=
+BN5_COLONEL_ROM ?=
 BN6_GREGAR_ROM ?=
 BN6_FALZAR_ROM ?=
 BN4_BLUE_MOON_ROM ?=
 BN3_BLUE_ROM ?=
 
-PACKAGE_DEFS := $(wildcard $(PATCH_DIR)/src/*.defs.toml)
+# GNU Make's wildcard does not recurse, so walk every directory beneath src.
+recursive_wildcard = $(foreach path,$(wildcard $1*),$(call recursive_wildcard,$(path)/,$2) $(filter $(subst *,%,$2),$(path)))
+
+PACKAGE_DEFS := $(call recursive_wildcard,$(PATCH_DIR)/src/,*.defs.toml)
 RUNTIME_SOURCES := $(PATCH_DIR)/src/abi.c $(PATCH_DIR)/src/runtime.c
-PACKAGE_SOURCES := $(filter-out $(RUNTIME_SOURCES),$(wildcard $(PATCH_DIR)/src/*.c))
-ASM_SOURCES := $(wildcard $(PATCH_DIR)/src/*.asm)
-C_SOURCES := $(wildcard $(PATCH_DIR)/src/*.c)
-C_HEADERS := $(wildcard $(PATCH_DIR)/src/*.h)
+C_SOURCES := $(call recursive_wildcard,$(PATCH_DIR)/src/,*.c)
+PACKAGE_SOURCES := $(filter-out $(RUNTIME_SOURCES),$(C_SOURCES))
+ASM_SOURCES := $(call recursive_wildcard,$(PATCH_DIR)/src/,*.asm)
+C_HEADERS := $(call recursive_wildcard,$(PATCH_DIR)/src/,*.h)
 C_LINKER_SCRIPT := $(PATCH_DIR)/src/link.ld
 # Asset extraction writes one shared set of files, so it needs a completion marker.
 ASSET_STAMP := $(BUILD_DIR)/.assets.stamp

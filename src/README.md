@@ -1,6 +1,7 @@
 # Source registry
 
-Every gameplay feature is a flat pair of files in this directory:
+Gameplay features may be organized in any subdirectory here. Each feature is a
+pair of sibling files:
 
 - `<name>.c` owns the implementation, resources, and registry declarations.
 - `<name>.defs.toml` optionally describes semantic chip-record and text edits.
@@ -10,7 +11,8 @@ the source of truth for attacks, objects, sprites, songs, dependencies, and
 pointer patches.
 
 The shared native-call ABI veneers are in `abi.c`; direct runtime helpers are
-in `runtime.c`. The linker layout is `link.ld`, and public
+in `runtime.c`. Global hooks are in `hooks.c` and `hooks.asm`. The linker layout
+is `link.ld`, and public
 ABI/runtime declarations are `abi.h` and `runtime.h` here too.
 Native veneer names follow the recovered
 [`MEGAMAN6_GXX_BR5E00.sym`](https://github.com/StraDaMa/Mega-Man-Battle-Network-6-Symbols/blob/main/MEGAMAN6_GXX_BR5E00.sym)

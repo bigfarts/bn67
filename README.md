@@ -169,7 +169,7 @@ hook locations.
 
 ## Source registry
 
-Gameplay implementations are flat `src/<name>.c` files. Each implementation
+Gameplay implementations may live anywhere under `src/`. Each implementation
 registers its own attacks, objects, sprites, songs, dependencies, and pointer
 patches with `EXE6_*` macros. No manifest or generated C header mirrors those
 declarations.
@@ -182,7 +182,8 @@ absolute linker symbols used by expressions such as
 `EXE6_OBJ_ID(searchman_actor_main)` and
 `EXE6_SPRITE_ID(searchman_battle_sprite)`.
 
-Optional `src/<name>.defs.toml` files keep declarative ROM-data edits separate:
+Optional sibling `<name>.defs.toml` files keep declarative ROM-data edits
+separate:
 
 ```toml
 [chips."0x131"]
@@ -210,8 +211,8 @@ Pass the five source ROM paths as Make variables:
 ```sh
 make \
   BN5_PROTOMAN_ROM=/path/to/bn5.srl \
-  EXE6_GREGAR_ROM=/path/to/bn6-gregar.srl \
-  EXE6_FALZAR_ROM=/path/to/bn6-falzar.srl \
+  BN6_GREGAR_ROM=/path/to/bn6-gregar.srl \
+  BN6_FALZAR_ROM=/path/to/bn6-falzar.srl \
   BN4_BLUE_MOON_ROM=/path/to/bn4-blue-moon.srl \
   BN3_BLUE_ROM=/path/to/bn3-blue.srl
 ```
