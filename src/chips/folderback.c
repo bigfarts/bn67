@@ -202,17 +202,24 @@ static void open_custom(uint32_t owner) {
   }
 }
 
+static void delete_controller(Exe6Obj *self) {
+  // FolderBack bypasses the common event-chip exit while opening Custom.
+  // Clear the persistent attack's handshake before removing its controller.
+  exe6_event_chip_state_reset(self->owner);
+  exe6_obj_move_delete();
+}
+
 BN67_EFFECT(folderback_controller_main) {
   if (self->state == 0) {
     self->state_word = 4;
   } else if (self->state != 4) {
-    exe6_obj_move_delete();
+    delete_controller(self);
     return;
   }
 
   if (exe6_battle_end_check() != 0) {
     restore_palette();
-    exe6_obj_move_delete();
+    delete_controller(self);
     return;
   }
   if (!effect_update(self)) {
@@ -220,7 +227,7 @@ BN67_EFFECT(folderback_controller_main) {
   }
 
   uint32_t owner = self->owner;
-  exe6_obj_move_delete();
+  delete_controller(self);
   open_custom(owner);
 }
 
