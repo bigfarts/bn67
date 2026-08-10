@@ -481,26 +481,31 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertNotIn("object_dispatch_interceptor_main:", assembly)
         self.assertIn("// Package-declared fixed section patches.", assembly)
         self.assertIn(
-            "push {r1}\n    ldr r1,=folderback_type_1_main + 1",
+            "push {r1}\n    ldr r1,=folderback_dispatch_main + 1",
             assembly,
         )
-        self.assertIn("ldr r1,=folderback_type_1_main + 1", assembly)
+        self.assertIn("ldr r1,=folderback_dispatch_main + 1", assembly)
         self.assertIn(".org 0x080031FA", assembly)
         folderback = (ROOT / "src/chips/folderback.c").read_text()
         self.assertIn(
-            "EXE6_PATCH_SECTION(0x080031FA, folderback_type_1_main)",
+            "EXE6_PATCH_SECTION(0x080031FA, folderback_dispatch_main)",
             folderback,
         )
         self.assertNotIn("EXE6_PATCH_POINTER(0x08003224", folderback)
         self.assertNotIn("__exe6_object_kind", folderback)
         self.assertIn("EXE6_OBJ_ID(folderback_controller_main)", folderback)
         self.assertNotIn("0x08003C9C", folderback)
-        self.assertIn("folderback_opponent_is_locked", folderback)
+        self.assertIn("folderback_object_should_pause", folderback)
         self.assertIn("const Exe6ObjectSlot *slots = EXE6_EFFECT_POOL_HEAD", folderback)
         self.assertIn("EXE6_POOL_SLOT_COUNT", folderback)
-        self.assertIn("opponent->object_class", folderback)
+        self.assertIn("object->object_class", folderback)
         self.assertIn("EXE6_OBJECT_CLASS_ENEMY", folderback)
-        self.assertIn('"bl folderback_opponent_is_locked\\n"', folderback)
+        self.assertIn("EXE6_OBJECT_CLASS_SHELL", folderback)
+        self.assertNotIn("EXE6_SHELL_TYPE_2", folderback)
+        self.assertNotIn("locked_opponents", folderback)
+        self.assertNotIn("object->parent", folderback)
+        self.assertNotIn("object->owner", folderback)
+        self.assertIn('"bl folderback_object_should_pause\\n"', folderback)
         self.assertNotIn('"ldr r6,=0x02036870\\n"', folderback)
         self.assertIn('"pop {r1}\\n"', folderback)
         self.assertIn('"push {r0,r1,r2,r3,r4,r6,r7}\\n"', folderback)

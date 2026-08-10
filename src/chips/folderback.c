@@ -53,17 +53,13 @@ static const uint32_t WHITE_FLASH = 0x00006318;
 static const uint16_t IMPACT_FRAMES = 0x46;
 static const uint16_t RESTORED_FRAMES = 0x14;
 
-struct Exe6FolderbackWork {
-  Exe6Obj *locked_opponents[4]; // +0x60
-  uint32_t reserved[3];         // +0x70
-};
-
-_Static_assert(sizeof(struct Exe6FolderbackWork) == 0x1C,
-               "FolderBack work layout");
-
 static USED __attribute__((noinline)) bool
-folderback_opponent_is_locked(const Exe6Obj *opponent) {
-  if ((opponent->object_class & 0x0Fu) != EXE6_OBJECT_CLASS_ENEMY) {
+folderback_object_should_pause(const Exe6Obj *object) {
+  const enum Exe6ObjectClass object_class =
+      (enum Exe6ObjectClass)(object->object_class & 0x0Fu);
+  const bool is_enemy = object_class == EXE6_OBJECT_CLASS_ENEMY;
+  const bool is_shell = object_class == EXE6_OBJECT_CLASS_SHELL;
+  if (!is_enemy && !is_shell) {
     return false;
   }
 
@@ -72,28 +68,20 @@ folderback_opponent_is_locked(const Exe6Obj *opponent) {
       (uint8_t)EXE6_OBJ_ID(folderback_controller_main);
   for (size_t slot_index = 0; slot_index < EXE6_POOL_SLOT_COUNT;
        ++slot_index) {
-    const Exe6Obj *object = &slots[slot_index].object;
-    if ((object->header_flags & EXE6_OBJ_FLAG_ACTIVE) == 0 ||
-        object->object_id != controller_id) {
+    const Exe6Obj *controller = &slots[slot_index].object;
+    if ((controller->header_flags & EXE6_OBJ_FLAG_ACTIVE) == 0 ||
+        controller->object_id != controller_id) {
       continue;
     }
 
-    const struct Exe6FolderbackWork *work =
-        (const struct Exe6FolderbackWork *)(const void *)object->work;
-    for (size_t opponent_index = 0;
-         opponent_index < sizeof(work->locked_opponents) / sizeof(work->locked_opponents[0]);
-         ++opponent_index) {
-      if (work->locked_opponents[opponent_index] == opponent) {
-        return true;
-      }
-    }
+    return true;
   }
   return false;
 }
 
-EXE6_PATCH_SECTION(0x080031FA, folderback_type_1_main);
+EXE6_PATCH_SECTION(0x080031FA, folderback_dispatch_main);
 
-NAKED void folderback_type_1_main(void) {
+NAKED void folderback_dispatch_main(void) {
   // Native object mains consume the dispatcher's live registers and flags.
   // Preserve them around the C predicate, then reproduce the final flag-setting
   // shift from the native table lookup. The native advance routine also returns
@@ -103,7 +91,7 @@ NAKED void folderback_type_1_main(void) {
           "push {r7}\n"
           "push {r0,r1,r2,r3,r4,r6,r7}\n"
           "adds r0,r5,#0\n"
-          "bl folderback_opponent_is_locked\n"
+          "bl folderback_object_should_pause\n"
           "cmp r0,#0\n"
           "bne 1f\n"
           "pop {r0,r1,r2,r3,r4,r6,r7}\n"
@@ -127,22 +115,6 @@ NAKED void folderback_type_1_main(void) {
           "mov lr,r0\n"
           "pop {r0}\n"
           "mov pc,lr\n");
-}
-
-static void lock_opponent(Exe6Obj *self) {
-  struct Exe6FolderbackWork *work = (struct Exe6FolderbackWork *)self->work;
-  Exe6Obj *const *units =
-      exe6_runtime()->battle_context->active_units[self->owner ^ 1u];
-  for (size_t index = 0; index < 4; ++index) {
-    work->locked_opponents[index] = units[index];
-  }
-}
-
-static void unlock_opponent(Exe6Obj *self) {
-  struct Exe6FolderbackWork *work = (struct Exe6FolderbackWork *)self->work;
-  for (size_t index = 0; index < 4; ++index) {
-    work->locked_opponents[index] = NULL;
-  }
 }
 
 static void apply_white_flash(Exe6Obj *self) {
@@ -235,7 +207,6 @@ static void open_custom(uint32_t owner) {
 EXE6_EFFECT(folderback_controller_main) {
   if (self->state == 0) {
     self->state_word = 4;
-    lock_opponent(self);
   } else if (self->state != 4) {
     exe6_obj_move_delete();
     return;
@@ -243,7 +214,6 @@ EXE6_EFFECT(folderback_controller_main) {
 
   if (exe6_battle_end_check() != 0) {
     restore_palette();
-    unlock_opponent(self);
     exe6_obj_move_delete();
     return;
   }
@@ -252,7 +222,6 @@ EXE6_EFFECT(folderback_controller_main) {
   }
 
   uint32_t owner = self->owner;
-  unlock_opponent(self);
   exe6_obj_move_delete();
   open_custom(owner);
 }
@@ -270,13 +239,5 @@ EXE6_PERSISTENT_ATTACK(0x139, folderback_attack_main) {
   controller->owner_word = owner->owner_word;
   controller->attack = attack;
   controller->chip_data = chip_data;
-  struct Exe6FolderbackWork *work =
-      (struct Exe6FolderbackWork *)controller->work;
-  for (size_t index = 0; index < 4; ++index) {
-    work->locked_opponents[index] = NULL;
-  }
-  for (size_t index = 0; index < 3; ++index) {
-    work->reserved[index] = 0;
-  }
   return controller;
 }
