@@ -132,6 +132,8 @@ NATIVE_WRAPPER(exe6_block_status_get, 0x0800C8F8, uint32_t, (uint32_t x, uint32_
 NATIVE_WRAPPER(exe6_block_flash, 0x0800CBD8, void, (uint32_t x, uint32_t y))
 NATIVE_WRAPPER(exe6_block_crack_set, 0x0800C938, void, (uint32_t x, uint32_t y))
 NATIVE_WRAPPER(exe6_block_out_set3, 0x0800CA8C, void, (uint32_t x, uint32_t y))
+NATIVE_WRAPPER(exe6_block_draw_disable, 0x0800CE32, void, (uint32_t x, uint32_t y))
+NATIVE_WRAPPER(exe6_block_draw_enable, 0x0800CE42, void, (uint32_t x, uint32_t y))
 NATIVE_WRAPPER(exe6_calc_degree, 0x0800117C, uint32_t, (int32_t y, int32_t x))
 NATIVE_WRAPPER(exe6_calc_pl_em_spd, 0x0800E2C0, int32_t, (void))
 NATIVE_WRAPPER(exe6_block_in_screen_check, 0x0800CC66, uint32_t, (void))
@@ -342,6 +344,7 @@ NAKED void exe6_saved_navi_dispatch(
     );
 }
 
+NATIVE_WRAPPER(exe6_event_chip_state_reset, 0x0800B89C, void, (uint32_t side))
 NATIVE_WRAPPER(exe6_event_chip_common_init, 0x0800B916, void, (void))
 NATIVE_WRAPPER(exe6_event_chip_common_fade, 0x0800B94C, void, (void))
 NATIVE_WRAPPER(exe6_event_chip_common_telop, 0x0800B9B0, void, (void))

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import struct
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,6 +27,40 @@ BN3_IMAGE_WIDTH = 64
 BN3_IMAGE_HEIGHT = 56
 EXE6_IMAGE_WIDTH = 56
 EXE6_IMAGE_HEIGHT = 48
+
+# Duo is one of BN4's two event chips.  Its chip record points at the event
+# loader's EWRAM cache instead of directly at ROM, so the image and palette
+# cannot be represented by an ordinary static ROM slice.  These are the exact
+# cache bytes produced by the US Blue Moon event loader, captured by the Tango
+# headless reference probe in tools/duo_reference_probe.rs.  The icon is a
+# normal ROM-backed asset and remains in ASSETS below.
+DUO_IMAGE = base64.b64decode(
+    "ZlNVVWZbVVVmK1VVZrdVVXa2UlVmdytSdne3O2d3d7clJVJVJVVSVSVVUiJVVSIzJSUz2yUyyu4zM+zMzMzrrlVVIjIlIjPLMrPs"
+    "7svu7u7u7u6s7s2KVotmhliqZocZM8vc7u3u7u7u7u6s7r1od3lmZnZlZmZ3VWVmZlZVZXbuzpqj3pqZeniYmWaHiGlmd4hnZndo"
+    "ZmZ3dmZmZndnZmdmZWVmZmZmZmZmZmZmZmZmZmaXZmaXqmaXq6qovLuqZpaZmWaYmZmGqZmamZqamaqpqZmqqZk5qpk5I6o5I1Jm"
+    "dnd3ZnZ2dmdmZ2d8ZmZm3XpmZt3di2bd3d3N3N3d3Wdn6K52ZtauZmZ2d2ZmdnhmZmZ4ZmZmeLu7u3fd3d1nqWeIHoiHyB9mmPrP"
+    "dqr933Z3FxFWVVURZlVlFVZVVVYRVVVVERFVZRERcXcRRHFnRER3VkQUd1VBdGdVQXFWtWZ3Z3Zmd1ZmZlZVZlVVVWZVVVVmVVVW"
+    "ZpVVVmXNVVZly7urqry8u6rLu6uquLy6qse7u6q2u6uqpruqOZarOTM5IyVVOVIlVTlSJVU5UiVVOVIlVTlSJVUjUiVSIlIlUtvd"
+    "3d2ou9zdJTIzyyUlIjNVJSUyVSVVMlUlVSJVJSUl3d3dad3d3Wvd3d1d3d3dbdzd3b3b3d29M7vLrCIzy71mVVVlVlVVZlfY/s5X"
+    "pu19dnaHyGZ22+5qdsjuembG7hVnpv52ZtX/ZpZndnuGmap+h5m6nneZuq53qbrOiKmqv1VWZXxlVWWHZlVlqlZVZatWVWa7VlVm"
+    "u1dVZrtXVYaGuszMZoiIiGZ3d4hmdoeIZnaIeGaHiHeHiHd3iHh3d8wjJVKIPCJSiMkiUpfJI1KImTxSh5k8UniYySOHmMk5VSUl"
+    "JVUlJSJVJSUyVSUlMlUlJTVVJSUlVSUlJVUlJSUyw+69w+59Zpyad2acqndmnKp3ZsOqd2bDqnhmw6poZspmpe3YaIbt1mxm7MZt"
+    "VuuGfVbZVp1mx2bcZpVW2GZV7pqqqu6tqqrumoiort68iu7MmqrujWep7I53prmNd4arWIeIqpiJd6qoqneqqKp4mqeqeImXqnl4"
+    "hap6V3Wqenh3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d4iZvIeImcl3iJiod4eImXeHl5l3d3Z3d2Zmd2dmZnZVJSUl"
+    "VXUlMlVVJbNVVTXrJVU17SVVNe5VVTLeVVUyz8OqaWbDqWlW/plYVf+sV1X/rpqZy82qeKuqiZerqoqXVcVoVlVVZlZVVVVVVVVV"
+    "VWdVVVV3d3eIiYiHd4iIZ2aFi3dnVWV3V1VVVVVVVVVVVVVmdlaGmKp2qaqqmImIiFVlqopVVaqaVVWqmlV1mZmHqaqqqqqqmaqa"
+    "eHeIeHd3d3d3Z3d3Z2Z3h4h2qJp5ZpqId2d3d3dnd3d3Z3d3d3dmZnd2ZnZ3Z3d3d2dmd3dnZnd3Z2Z2d1ZmdmdVZmZWVSUls78l"
+    "ks6+JerPvZX835qV7O+rsuz/rcLO2625vqqaq6p6iaqqeomqqnmJqqp5d5mqeGaqiXdlmnh3ZYl3V1WIiGZliIhmZoh4ZlZ3d2dW"
+    "ZmZ3VmZmdmdmZmZ2ZmZmh5mZiYiZmYmImZmJiJmZiYiZmYmImZmJiJmZiYiIiIiYiIh3d4iId3eIiHd3iIh3d4iId3eIiHeHiIiY"
+    "qpmqqqp3d3d3d3d3d3d3d6h3d5eqd5iqqqmqqqqqqqp4qpp4d2ZmZVWZiWdVqqpoVaqKZ1Wad2ZVeGdmVXdmVlVnZlVV",
+    validate=True,
+)
+DUO_PALETTE = base64.b64decode(
+    "AAA5GEAZBjKfKYAIYxzFJCcxiTnLQQ1GcVL1Ynlv3Xs=",
+    validate=True,
+)
+assert len(DUO_IMAGE) == 0x540
+assert len(DUO_PALETTE) == 0x20
 
 
 def decompress_gba_lz77(data: bytes) -> bytes:
@@ -191,6 +226,15 @@ ASSETS = (
     Asset("bn4_blue_moon", "bugchain-battle-sprite.bin", 0x380CA4, 0xF8C),
     Asset("bn4_blue_moon", "bugchain-sound-sample.bin", 0x1970A0, 0x4B1),
 
+    # BN4 Blue Moon: Duo's event icon and combined group-8/id-24 body/fist
+    # archive. The source expands to the exact EWRAM archive selected by the
+    # native event renderer; decompress_sprite_archive removes its size prefix
+    # before the BN6 sprite registry installs it.
+    Asset("bn4_blue_moon", "duo-icon.bin", 0x7471EC, 0x80),
+    Asset("bn4_blue_moon", "duo-battle-sprite.bin", 0x33FC3C, 0x5833, lz77=True),
+    Asset("bn4_blue_moon", "duo-arrival-sound-sample.bin", 0x17D0C8, 0x227D),
+    Asset("bn4_blue_moon", "duo-fist-sound-sample.bin", 0x1DD24C, 0x1166),
+
     # BN5 Colonel: BugCharge menu art, Gospel archive, and charge sample.
     Asset("bn5_colonel", "bugcharge-icon.bin", 0x74AE3C, 0x80),
     Asset("bn5_colonel", "bugcharge-image.bin", 0x730664, 0x540),
@@ -299,6 +343,15 @@ def extract_assets(roms: dict[str, bytes], output_dir: Path) -> tuple[int, int]:
         strict=True,
     )
     for name, data in folderback_outputs:
+        if name in output_names:
+            raise ValueError(f"duplicate output name: {name}")
+        output_names.add(name)
+        outputs.append((name, data))
+
+    for name, data in (
+        ("duo-image.bin", DUO_IMAGE),
+        ("duo-palette.bin", DUO_PALETTE),
+    ):
         if name in output_names:
             raise ValueError(f"duplicate output name: {name}")
         output_names.add(name)

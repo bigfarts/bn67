@@ -9,17 +9,12 @@ import json
 import struct
 from pathlib import Path
 
-
 # The leading BN6 English charset entries cover the chip text used here.
 # Bracketed tokens are single glyphs in the ROM (for example EX and SP).
-EXE6_EN_CHARSET = (
-    [" "]
-    + list("0123456789")
-    + list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-    + ["*"]
-    + list("abcdefghijklmnopqrstuvwxyz")
-    + ["[RV]", "[BX]", "[EX]", "[SP]", "[FZ]"]
-)
+# fmt: off
+EXE6_EN_CHARSET = [" ", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "*", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "[RV]", "[BX]", "[EX]", "[SP]", "[FZ]", "ウ", "ア", "イ", "オ", "エ", "ケ", "コ", "カ", "ク", "キ", "セ", "サ", "ソ", "シ", "ス", "テ", "ト", "ツ", "タ", "チ", "ネ", "ノ", "ヌ", "ナ", "ニ", "ヒ", "ヘ", "ホ", "ハ", "フ", "ミ", "マ", "メ", "ム", "モ", "ヤ", "ヨ", "ユ", "ロ", "ル", "リ", "レ", "ラ", "ン", "熱", "斗", "ワ", "ヲ", "ギ", "ガ", "ゲ", "ゴ", "グ", "ゾ", "ジ", "ゼ", "ズ", "ザ", "デ", "ド", "ヅ", "ダ", "ヂ", "ベ", "ビ", "ボ", "バ", "ブ", "ピ", "パ", "ペ", "プ", "ポ", "ゥ", "ァ", "ィ", "ォ", "ェ", "ュ", "ヴ", "ッ", "ョ", "ャ", "-", "×", "=", ":", "%", "?", "+", "█", "[bat]", "ー", "!", "&", ",", "゜", ".", "・", ";", "'", "\"", "~", "/", "(", ")", "「", "」", "�", "_", "ƶ", "[L]", "[B]", "[R]", "[A]", "あ", "い", "け", "く", "き", "こ", "か", "せ", "そ", "す", "さ", "し", "つ", "と", "て", "た", "ち", "ね", "の", "な", "ぬ", "に", "へ", "ふ", "ほ", "は", "ひ", "め", "む", "み", "も", "ま", "ゆ", "よ", "や", "る", "ら", "り", "ろ", "れ", "[END]", "ん", "を", "わ", "研", "げ", "ぐ", "ご", "が", "ぎ", "ぜ", "ず", "じ", "ぞ", "ざ", "で", "ど", "づ", "だ", "ぢ", "べ", "ば", "び", "ぼ", "ぶ", "ぽ", "ぷ", "ぴ", "ぺ", "ぱ", "ぅ", "ぁ", "ぃ", "ぉ", "ぇ", "ゅ", "ょ", "っ", "ゃ", "容", "量", "全", "木", "[MB]", "無", "現", "実", "[circle]", "×", "緑", "道", "不", "止", "彩", "起", "父", "集", "院", "一", "二", "三", "四", "五", "六", "七", "八", "陽", "十", "百", "千", "万", "脳", "上", "下", "左", "右", "手", "来", "日", "目", "月", "獣", "各", "人", "入", "出", "山", "口", "光", "電", "気", "綾", "科", "次", "名", "前", "学", "校", "省", "祐", "室", "世", "界", "高", "朗", "枚", "野", "悪", "路", "闇", "大", "小", "中", "自", "分", "間", "系", "花", "問", "究", "門", "城", "王", "兄", "化", "葉", "行", "街", "屋", "水", "見", "終", "新", "桜", "先", "生", "長", "今", "了", "点", "井", "子", "言", "太", "属", "風", "会", "性", "持", "時", "勝", "赤", "代", "年", "火", "改", "計", "画", "職", "体", "波", "回", "外", "地", "員", "正", "造", "値", "合", "戦", "川", "秋", "原", "町", "晴", "用", "金", "郎", "作", "数", "方", "社", "攻", "撃", "力", "同", "武", "何", "発", "少", "教", "以", "白", "早", "暮", "面", "組", "後", "文", "字", "本", "階", "明", "才", "者", "向", "犬", "々", "ヶ", "連", "射", "舟", "戸", "切", "土", "炎", "伊", "夫", "鉄", "国", "男", "天", "老", "師", "堀", "杉", "士", "悟", "森", "霧", "麻", "剛", "垣", "★", "[bracket1]", "[bracket2]", "[.]"]
+# fmt: on
+
 CHAR_TO_BYTE = {character: index for index, character in enumerate(EXE6_EN_CHARSET)}
 # BN6's English ampersand glyph is at charset index 0xA3. The compact
 # leading-character table above intentionally omits the intervening Japanese
@@ -65,9 +60,14 @@ def encode_text(text: str) -> bytes:
     index = 0
     tokens = sorted(CHAR_TO_BYTE, key=len, reverse=True)
     while index < len(text):
-        token = next((candidate for candidate in tokens if text.startswith(candidate, index)), None)
+        token = next(
+            (candidate for candidate in tokens if text.startswith(candidate, index)),
+            None,
+        )
         if token is None:
-            raise ValueError(f"character at {text[index:]!r} is not in the BN6 English charset")
+            raise ValueError(
+                f"character at {text[index:]!r} is not in the BN6 English charset"
+            )
         encoded.append(CHAR_TO_BYTE[token])
         index += len(token)
     return bytes(encoded)
@@ -93,14 +93,19 @@ def load_package_text(path: Path) -> PackageText:
         or not isinstance(raw["archives"], list)
         or not isinstance(raw["entries"], list)
     ):
-        raise ValueError(f"{path}: expected an object containing archives and entries arrays")
+        raise ValueError(
+            f"{path}: expected an object containing archives and entries arrays"
+        )
 
     archives: dict[str, TextArchiveSpec] = {}
     sources: set[tuple[str, int]] = set()
     for index, archive in enumerate(raw["archives"]):
         context = f"{path}: archives[{index}]"
         if not isinstance(archive, dict) or set(archive) != {
-            "name", "source", "source_index", "encoding"
+            "name",
+            "source",
+            "source_index",
+            "encoding",
         }:
             raise ValueError(f"{context}: invalid generated archive definition")
         name = archive["name"]
@@ -119,7 +124,9 @@ def load_package_text(path: Path) -> PackageText:
             raise ValueError(f"{context}: duplicate text archive name {name!r}")
         source_key = (source, source_index)
         if source_key in sources:
-            raise ValueError(f"{context}: duplicate text archive source {source}[{source_index}]")
+            raise ValueError(
+                f"{context}: duplicate text archive source {source}[{source_index}]"
+            )
         sources.add(source_key)
         archives[name] = TextArchiveSpec(name, source, source_index, encoding)
 
@@ -127,7 +134,10 @@ def load_package_text(path: Path) -> PackageText:
     for index, entry in enumerate(raw["entries"]):
         context = f"{path}: entries[{index}]"
         if not isinstance(entry, dict) or set(entry) != {
-            "package", "archive", "index", "value"
+            "package",
+            "archive",
+            "index",
+            "value",
         }:
             raise ValueError(f"{context}: invalid generated text entry")
         package = entry["package"]
@@ -147,7 +157,9 @@ def load_package_text(path: Path) -> PackageText:
                     raise ValueError("value must be a string")
                 encoded = encode_name(value)
             else:
-                if not isinstance(value, list) or not all(isinstance(line, str) for line in value):
+                if not isinstance(value, list) or not all(
+                    isinstance(line, str) for line in value
+                ):
                     raise ValueError("value must be a string array")
                 encoded = encode_description(*value)
         except ValueError as exc:
@@ -180,7 +192,7 @@ def read_archive(rom: bytes, offset: int) -> list[bytes]:
         if index + 1 < entry_count:
             finish = offset + offsets[index + 1]
         else:
-            terminator = rom.find(b"\xE6", start)
+            terminator = rom.find(b"\xe6", start)
             if terminator < 0:
                 raise ValueError(f"unterminated final archive entry at 0x{start:X}")
             finish = terminator + 1
@@ -231,8 +243,7 @@ def main() -> None:
 
     rom = args.rom.read_bytes()
     name_offsets = [
-        u32(rom, args.name_pointer_table + index * 4) - 0x08000000
-        for index in range(2)
+        u32(rom, args.name_pointer_table + index * 4) - 0x08000000 for index in range(2)
     ]
     description_offsets = [
         u32(rom, args.description_pointer_table + index * 4) - 0x08000000
@@ -240,7 +251,9 @@ def main() -> None:
     ]
     for archive_offset in name_offsets + description_offsets:
         if not 0 <= archive_offset < len(rom):
-            raise ValueError(f"text archive pointer is outside the ROM: 0x{archive_offset:X}")
+            raise ValueError(
+                f"text archive pointer is outside the ROM: 0x{archive_offset:X}"
+            )
 
     name_archives = [read_archive(rom, offset) for offset in name_offsets]
     description_archives = [read_archive(rom, offset) for offset in description_offsets]

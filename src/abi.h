@@ -907,6 +907,8 @@ uint32_t exe6_block_status_get(uint32_t x, uint32_t y);
 void exe6_block_flash(uint32_t x, uint32_t y);
 void exe6_block_crack_set(uint32_t x, uint32_t y);
 void exe6_block_out_set3(uint32_t x, uint32_t y);
+void exe6_block_draw_disable(uint32_t x, uint32_t y);
+void exe6_block_draw_enable(uint32_t x, uint32_t y);
 uint64_t exe6_get_block_pos(uint32_t x, uint32_t y);
 uint32_t exe6_block_in_screen_check(void);
 uint32_t exe6_calc_degree(int32_t y, int32_t x);
@@ -999,6 +1001,7 @@ void exe6_saved_navi_dispatch(
     uint8_t *completion
 );
 
+void exe6_event_chip_state_reset(uint32_t side);
 void exe6_event_chip_common_init(void);
 void exe6_event_chip_common_fade(void);
 void exe6_event_chip_common_telop(void);

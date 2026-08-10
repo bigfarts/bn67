@@ -392,6 +392,9 @@ class PackageCompilerTests(unittest.TestCase):
         signalred = next(package for package in packages if package.name == "signalred")
         self.assertIsNotNone(signalred.attack)
         self.assertEqual(signalred.attack.kind, "persistent_attack")
+        folderback = next(package for package in packages if package.name == "folderback")
+        self.assertIsNotNone(folderback.attack)
+        self.assertEqual(folderback.attack.kind, "ephemeral_attack")
 
     def test_ephemeral_attack_pool_follows_the_native_table(self) -> None:
         expected_references = {
