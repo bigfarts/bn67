@@ -3,11 +3,8 @@
 
 #include "abi.h"
 
-Exe6Obj *const *exe6_battle_units_for_side(uint32_t side);
-Exe6Obj *const *exe6_active_units_for_side(uint32_t side);
-Exe6BattleContext *exe6_battle_context(void);
-uint8_t *exe6_battle_state(void);
-uint8_t *exe6_chip_queue(void);
+extern Exe6BattleState *const EXE6_BATTLE_STATE;
+extern Exe6ChipQueue *const EXE6_CHIP_QUEUE;
 
 #define EXE6_LINK_OBJ_ID(main) EXE6_JOIN(__exe6_object_id_, main)
 #define EXE6_LINK_SPRITE_ID(archive) EXE6_JOIN(__exe6_sprite_id_, archive)

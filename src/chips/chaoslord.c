@@ -403,7 +403,7 @@ static Exe6Obj *spawn_attack_obj(
 
 static void delete_live_objs(void)
 {
-    Exe6Obj **objs = exe6_battle_context()->live_objs;
+    Exe6Obj **objs = exe6_runtime()->battle_context->live_objs;
     for (uint32_t index = 0; index < 8; ++index) {
         if (objs[index] != NULL) {
             objs[index]->hp = 0;

@@ -65,9 +65,10 @@ in that class's relocated table. IDs are assigned from dependency and
 declaration order; package code passes `EXE6_OBJ_ID(...)` to the native spawn
 helper rather than storing a second discriminator in object memory. The native
 prefixes, including released HeatMan `0x30` and LifeSync `0x5C`, remain intact.
-FolderBack hooks the shared dispatcher after it resolves an entry, substitutes
-its freeze wrapper only for class 1, and otherwise invokes that resolved entry
-directly; it does not duplicate a class table full of wrapper pointers.
+FolderBack owns a fixed section patch at the shared dispatcher after it resolves
+an entry. Its target substitutes the freeze wrapper only for class 1 and
+otherwise invokes that resolved entry directly; it does not duplicate a class
+table full of wrapper pointers.
 
 Exe6Runtime code and imported assets are allocated from file offset `0x800000`
 onward in an expanded 16 MiB image; exact addresses are selected by Armips.

@@ -13,6 +13,8 @@ typedef struct Exe6PlayerRuntimeFields Exe6PlayerRuntime;
 typedef struct Exe6NaviSelectChipWorkFields Exe6NaviSelectChipWork;
 typedef struct Exe6HitFields Exe6Hit;
 typedef struct Exe6BattleContextFields Exe6BattleContext;
+typedef struct Exe6BattleContextFields Exe6BattleState;
+typedef struct Exe6ChipQueueFields Exe6ChipQueue;
 typedef struct Exe6RuntimeFields Exe6Runtime;
 
 #define EXE6_PALETTE_BG_STAGING_00 ((uintptr_t)0x03001550u)
@@ -597,17 +599,24 @@ struct Exe6HitFields {
 };
 
 struct Exe6BattleContextFields {
-    uint8_t unknown_00[0x0D];
+    uint32_t state;                      // +0x00
+    uint8_t unknown_04;
+    uint8_t custom_screen_side;          // +0x05
+    uint8_t unknown_06[0x07];
     uint8_t local_side;                  // +0x0D
     uint8_t unknown_0e[0x09];
-    uint8_t regular_available;           // +0x17
+    uint8_t regular_chip_available;           // +0x17
     uint8_t unknown_18[0x2C];
-    uint8_t work_44;                     // +0x44
+    uint8_t tag_chips_available;                     // +0x44
     uint8_t unknown_45[0x3B];
     Exe6Obj *battle_units[2][4];             // +0x80
     Exe6Obj *live_objs[8];                   // +0xA0
     uint8_t unknown_c0[0x10];
     Exe6Obj *active_units[2][4];             // +0xD0
+};
+
+struct Exe6ChipQueueFields {
+    uint16_t chips[30];                  // +0x00 through +0x3A
 };
 
 struct Exe6RuntimeFields {
@@ -727,16 +736,21 @@ _Static_assert(
     offsetof(struct Exe6HitFields, final_damage) == 0x80,
     "final hit damage offset"
 );
+_Static_assert(offsetof(Exe6BattleState, state) == 0, "battle state offset");
+_Static_assert(
+    offsetof(Exe6BattleState, custom_screen_side) == 0x05,
+    "battle Custom-screen side offset"
+);
 _Static_assert(
     offsetof(struct Exe6BattleContextFields, local_side) == 0x0D,
     "battle context local side offset"
 );
 _Static_assert(
-    offsetof(struct Exe6BattleContextFields, regular_available) == 0x17,
+    offsetof(struct Exe6BattleContextFields, regular_chip_available) == 0x17,
     "battle context regular availability offset"
 );
 _Static_assert(
-    offsetof(struct Exe6BattleContextFields, work_44) == 0x44,
+    offsetof(struct Exe6BattleContextFields, tag_chips_available) == 0x44,
     "battle context work offset"
 );
 _Static_assert(
@@ -755,10 +769,12 @@ _Static_assert(
     sizeof(struct Exe6BattleContextFields) == 0xF0,
     "battle context size"
 );
+_Static_assert(sizeof(Exe6ChipQueue) == 0x3C, "chip queue size");
 _Static_assert(
     offsetof(struct Exe6RuntimeFields, battle_context) == 0x18,
     "runtime battle context offset"
 );
+Exe6Runtime *exe6_runtime(void);
 void exe6_sound_req(uint32_t sound);
 void exe6_obj_char_init(uint32_t mode, uint32_t group, uint32_t index);
 void exe6_obj_shadow_set(void);
@@ -902,7 +918,11 @@ Exe6NaviSelectChipWork *exe6_navi_select_chip_work_adrs_get(uint32_t side);
 uint8_t *exe6_op_work_adrs_get(uint32_t side);
 void exe6_battle_chip_set(void);
 void exe6_battle_select_chip_work_init(void);
-void exe6_deck_shuffle_sub(void *queue, uint32_t reserved, uint32_t regular, uint32_t size);
+void exe6_deck_shuffle_sub(
+    Exe6ChipQueue *queue,
+    uint32_t preserve_regular,
+    uint32_t preserve_tag
+);
 void exe6_cockpit_set_custom_gauge_value(uint32_t value);
 void exe6_operate_slot_in_gauge_sub(uint32_t side, uint32_t amount);
 void exe6_yazirushi_trans(uint32_t duration, uint32_t animation);

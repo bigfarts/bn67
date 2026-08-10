@@ -76,6 +76,13 @@
         ); \
     }
 
+Exe6Runtime *exe6_runtime(void)
+{
+    Exe6Runtime *runtime;
+    __asm__("mov %0,r10" : "=l" (runtime));
+    return runtime;
+}
+
 NATIVE_WRAPPER(exe6_sound_req, 0x080005CC, void, (uint32_t sound))
 NATIVE_WRAPPER(exe6_mem_task_trans_set256, 0x08000AC8, void, (const void *source, void *destination, uint32_t size))
 NATIVE_WRAPPER_R4(exe6_col_fade_set, 0x08002378, void, (uint32_t unused, uint32_t color, uint32_t count, uint32_t cache, uintptr_t destination))
@@ -107,7 +114,12 @@ NATIVE_WRAPPER(exe6_battle_event_busy_check, 0x0800A098, uint32_t, (void))
 NATIVE_WRAPPER(exe6_battle_end_check, 0x0800A18E, uint32_t, (void))
 NATIVE_WRAPPER(exe6_battle_pause_on, 0x0800A028, void, (void))
 NATIVE_WRAPPER(exe6_battle_chip_set, 0x0800A318, void, (void))
-NATIVE_WRAPPER(exe6_deck_shuffle_sub, 0x0800A570, void, (void *queue, uint32_t reserved, uint32_t regular, uint32_t size))
+NATIVE_WRAPPER(
+    exe6_deck_shuffle_sub,
+    0x0800A570,
+    void,
+    (Exe6ChipQueue *queue, uint32_t preserve_regular, uint32_t preserve_tag)
+)
 NATIVE_WRAPPER(exe6_real_operation_battle_check, 0x0800A8F8, uint32_t, (void))
 NATIVE_WRAPPER(exe6_battle_select_chip_work_init, 0x0800A954, void, (void))
 NATIVE_WRAPPER(exe6_battle_one_self_check, 0x0800A9EC, uint32_t, (uint32_t side))

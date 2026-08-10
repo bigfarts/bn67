@@ -88,7 +88,7 @@ static uint32_t unit_loaded_chips(Exe6Obj *unit)
 static uint32_t max_loaded_chips(Exe6Obj *controller)
 {
     Exe6Obj *const *units =
-        exe6_battle_units_for_side(controller->owner ^ 1u);
+        exe6_runtime()->battle_context->battle_units[controller->owner ^ 1u];
     uint32_t maximum = 0;
     for (size_t index = 0; index < 4; ++index) {
         Exe6Obj *unit = units[index];

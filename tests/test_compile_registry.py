@@ -14,7 +14,6 @@ from compile_registry import (
     discover_packages,
     emit_attack_tables,
     emit_chip_records,
-    emit_object_tables,
     emit_text_archives,
     fixed_width_entry_count,
     generate,
@@ -452,7 +451,7 @@ class PackageCompilerTests(unittest.TestCase):
     def test_object_ids_are_compiler_allocated(self) -> None:
         config, packages = self.packages()
         allocations = validate_and_allocate(config, packages)
-        assembly = "\n".join(emit_object_tables(config, packages, allocations))
+        assembly = generate(config, packages, allocations)
 
         self.assertNotIn("custom_type_", assembly)
         self.assertNotIn("custom_object_kind", assembly)
@@ -467,7 +466,9 @@ class PackageCompilerTests(unittest.TestCase):
                     assembly,
                 )
             if namespace:
-                self.assertNotIn(f"// 0x{max(namespace.values()) + 1:02X}", assembly)
+                self.assertNotIn(
+                    f"// 0x{max(namespace.values()) + 1:02X}", assembly
+                )
             label = f"object_class_{number}_table"
             self.assertIn(f"{label}:", assembly)
             self.assertIn(f"{label}_end:", assembly)
@@ -477,16 +478,23 @@ class PackageCompilerTests(unittest.TestCase):
                 self.assertIn(f".org 0x{address:08X}", assembly)
 
         self.assertNotIn("object_class_1_dispatch_table", assembly)
-        self.assertIn("object_dispatch_interceptor_main:", assembly)
+        self.assertNotIn("object_dispatch_interceptor_main:", assembly)
+        self.assertIn("// Package-declared fixed section patches.", assembly)
         self.assertIn("ldr r1,=folderback_type_1_main + 1", assembly)
-        self.assertIn(
-            f".org 0x{config.object_dispatch.hook_address:08X}", assembly
-        )
+        self.assertIn(".org 0x080031FA", assembly)
         folderback = (ROOT / "src/chips/folderback.c").read_text()
-        self.assertNotIn("EXE6_POINTER_PATCH(0x08003224", folderback)
+        self.assertIn(
+            "EXE6_PATCH_SECTION(0x080031FA, folderback_type_1_main)",
+            folderback,
+        )
+        self.assertNotIn("EXE6_PATCH_POINTER(0x08003224", folderback)
         self.assertNotIn("__exe6_object_kind", folderback)
         self.assertIn("__exe6_object_id_folderback_controller_main", folderback)
         self.assertNotIn("0x08003C9C", folderback)
+        runtime = (ROOT / "src/runtime.h").read_text()
+        self.assertNotIn("EXE6_POINTER_PATCH", runtime)
+        self.assertIn("EXE6_PATCH_POINTER", runtime)
+        self.assertIn("EXE6_PATCH_SECTION", runtime)
 
     def test_out_of_range_c_chip_id_is_rejected(self) -> None:
         metadata = dict(self.metadata["gregar"])

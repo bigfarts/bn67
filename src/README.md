@@ -8,7 +8,7 @@ one required implementation and one optional text file:
 - `<name>.text.toml` optionally describes text archive replacements.
 
 There are no package manifests. The C implementation is the source of truth
-for chip records, attacks, objects, sprites, songs, dependencies, and pointer
+for chip records, attacks, objects, sprites, songs, dependencies, and fixed
 patches. A generated header supplies allocated attack constants to the final C
 compilation.
 
@@ -95,6 +95,11 @@ EXE6_PATCH_POINTER(0x080E9990, signalred_dust_sprite_table);
 EXE6_PATCH_POINTER(0x080EACD0, signalred_dust_sprite_table);
 #endif
 ```
+
+`EXE6_PATCH_SECTION(address, symbol)` replaces native instructions with a
+Thumb trampoline to `symbol`. The target owns any displaced instructions and
+must continue or return according to that native call site; FolderBack's class-1
+dispatcher hook is an example.
 
 The attack macros name the native family lifecycle they register:
 
