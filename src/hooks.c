@@ -4,7 +4,7 @@ static USED __attribute__((noinline)) void delete_entire_hand(Exe6Obj *player)
 {
     if (
         (player->hit->received_hit_flags
-            & EXE6_RECEIVED_HIT_FLAG_DELETE_ACTIVE_CHIP) == 0
+            & EXE6_HIT_TYPE_FLAG_DELETE_ACTIVE_CHIP) == 0
     ) {
         return;
     }

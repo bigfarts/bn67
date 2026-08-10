@@ -133,14 +133,6 @@ typedef enum Exe6HitRegion {
 } __attribute__((packed)) Exe6HitRegion;
 
 /*
- * HitData.FlagsFromHit (+0x70). The hit resolver copies
- * this bit from the attacker's resolved self-hit flags. Player hit
- * processing then erases the active chip and discards the rest of the hand.
- */
-#define EXE6_RECEIVED_HIT_FLAG_DELETE_ACTIVE_CHIP \
-    EXE6_HIT_TYPE_FLAG_DELETE_ACTIVE_CHIP
-
-/*
  * HitData.HitEffect (+0x09). These values select only the visual
  * spawned on contact; damage, elements, statuses, and trap deletion are
  * controlled by other hit fields.
@@ -507,7 +499,7 @@ struct Exe6HitFields {
     uint8_t unknown_02[0x07];
     uint8_t hit_effect;                  // +0x09, Exe6HitEffect
     uint8_t unknown_0a[0x66];
-    uint32_t received_hit_flags;         // +0x70, EXE6_RECEIVED_HIT_FLAG_*
+    Exe6HitTypeFlag received_hit_flags;         // +0x70, EXE6_RECEIVED_HIT_FLAG_*
     uint8_t unknown_74[0x0C];
     uint16_t final_damage;               // +0x80
 };
