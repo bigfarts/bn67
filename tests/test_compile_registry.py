@@ -216,28 +216,28 @@ class PackageCompilerTests(unittest.TestCase):
 
         self.assertNotIn('.include "packages/', assembly)
         self.assertIn(".dw searchman_reticle_main + 1", assembly)
-        self.assertIn("__exe6_object_id_searchman_reticle_main =", linker)
-        self.assertIn("__exe6_sprite_id_searchman_reticle_sprite =", linker)
-        self.assertIn("__exe6_sprite_group_searchman_reticle_sprite =", linker)
+        self.assertIn("__bn67_object_id_searchman_reticle_main =", linker)
+        self.assertIn("__bn67_sprite_id_searchman_reticle_sprite =", linker)
+        self.assertIn("__bn67_sprite_group_searchman_reticle_sprite =", linker)
         self.assertIn(".dw searchman_reticle_sprite", assembly)
         self.assertIn(
-            f"__exe6_song_id_common_navi_summon_song = "
+            f"__bn67_song_id_common_navi_summon_song = "
             f"0x{allocations.songs['common_navi_summon_song']:X};",
             linker,
         )
         self.assertIn(
-            f"__exe6_song_group_common_navi_summon_song = "
+            f"__bn67_song_group_common_navi_summon_song = "
             f"0x{allocations.song_players['common_navi_summon_song']:X};",
             linker,
         )
         self.assertNotIn("LASERMAN_SUMMON_SONG", assembly)
         self.assertNotIn("ROLLARROW_SUMMON_SONG", assembly)
         self.assertIn(
-            "exe6_sound_req(EXE6_SONG_ID(common_navi_summon_song))",
+            "exe6_sound_req(BN67_SONG_ID(common_navi_summon_song))",
             (ROOT / "src/chips/laserman.c").read_text(),
         )
         self.assertIn(
-            "EXE6_SONG_ID(common_navi_summon_song)",
+            "BN67_SONG_ID(common_navi_summon_song)",
             (ROOT / "src/chips/rollarrow.c").read_text(),
         )
         self.assertNotIn(".definelabel", assembly)
@@ -260,7 +260,7 @@ class PackageCompilerTests(unittest.TestCase):
         for source in (ROOT / "src").rglob("*.c"):
             text = source.read_text()
             self.assertNotIn(".generated.h", text, source)
-            self.assertNotIn("EXE6_PCM_SONG", text, source)
+            self.assertNotIn("BN67_PCM_SONG", text, source)
 
     def test_chip_records_are_linked_c_resources(self) -> None:
         gregar_config, gregar_packages = self.packages("gregar")
@@ -277,7 +277,7 @@ class PackageCompilerTests(unittest.TestCase):
             for chip in package.chips
         )
         self.assertEqual(bugcharge.chip_id, 0x131)
-        self.assertEqual(bugcharge.record, "exe6_chip_record_0x131")
+        self.assertEqual(bugcharge.record, "bn67_chip_record_0x131")
         self.assertIn(
             0x0BA,
             {
@@ -302,27 +302,27 @@ class PackageCompilerTests(unittest.TestCase):
 
         self.assertIn("// bugcharge: chip 0x131", assembly)
         self.assertIn(
-            "copy_c_data 0x08025214,exe6_chip_record_0x131,0x2C",
+            "copy_c_data 0x08025214,bn67_chip_record_0x131,0x2C",
             assembly,
         )
-        self.assertIn("exe6_chip_record_0x131", falzar_assembly)
+        self.assertIn("bn67_chip_record_0x131", falzar_assembly)
         bugcharge_attack = allocations.attacks["bugcharge_attack_main"]
         c_values = generate_c_values(allocations)
         self.assertIn(
-            f"#define exe6_attack_family_bugcharge_attack_main "
+            f"#define bn67_attack_family_bugcharge_attack_main "
             f"0x{bugcharge_attack.family:02X}u",
             c_values,
         )
         self.assertIn(
-            f"#define exe6_attack_subfamily_bugcharge_attack_main "
+            f"#define bn67_attack_subfamily_bugcharge_attack_main "
             f"0x{bugcharge_attack.subfamily:02X}u",
             c_values,
         )
         bugcharge_source = (ROOT / "src/chips/bugcharge.c").read_text()
-        self.assertIn("EXE6_CHIP_RECORD(0x131)", bugcharge_source)
+        self.assertIn("BN67_CHIP_RECORD(0x131)", bugcharge_source)
         self.assertIn(".counter_settings = 0x8B", bugcharge_source)
         self.assertIn(
-            ".family = EXE6_ATTACK_FAMILY(bugcharge_attack_main)",
+            ".family = BN67_ATTACK_FAMILY(bugcharge_attack_main)",
             bugcharge_source,
         )
 
@@ -488,12 +488,12 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn(".org 0x080031FA", assembly)
         folderback = (ROOT / "src/chips/folderback.c").read_text()
         self.assertIn(
-            "EXE6_PATCH_SECTION(0x080031FA, folderback_dispatch_main)",
+            "BN67_PATCH_SECTION(0x080031FA, folderback_dispatch_main)",
             folderback,
         )
-        self.assertNotIn("EXE6_PATCH_POINTER(0x08003224", folderback)
-        self.assertNotIn("__exe6_object_kind", folderback)
-        self.assertIn("EXE6_OBJ_ID(folderback_controller_main)", folderback)
+        self.assertNotIn("BN67_PATCH_POINTER(0x08003224", folderback)
+        self.assertNotIn("__bn67_object_kind", folderback)
+        self.assertIn("BN67_OBJ_ID(folderback_controller_main)", folderback)
         self.assertNotIn("0x08003C9C", folderback)
         self.assertIn("folderback_object_should_pause", folderback)
         self.assertIn("const Exe6ObjectSlot *slots = EXE6_EFFECT_POOL_HEAD", folderback)
@@ -535,13 +535,14 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn("0x02036870u", abi)
         self.assertIn("sizeof(Exe6EnemyObjectSlot) == 0xD8", abi)
         self.assertIn("sizeof(Exe6ShellObjectSlot) == 0xD8", abi)
-        self.assertNotIn("EXE6_POINTER_PATCH", runtime)
-        self.assertIn("EXE6_PATCH_POINTER", runtime)
-        self.assertIn("EXE6_PATCH_SECTION", runtime)
+        self.assertNotIn("BN67_POINTER_PATCH", runtime)
+        self.assertIn("BN67_PATCH_POINTER", runtime)
+        self.assertIn("BN67_PATCH_SECTION", runtime)
+        self.assertNotRegex(runtime, r"(?m)^#define EXE6_")
 
     def test_out_of_range_c_chip_id_is_rejected(self) -> None:
         metadata = dict(self.metadata["gregar"])
-        metadata["antinavi"] = ["__exe6_meta__chip__0x13a"]
+        metadata["antinavi"] = ["__bn67_meta__chip__0x13a"]
         config = self.config()
         packages = discover_packages(config, metadata)
         with self.assertRaisesRegex(PackageError, "chip ID must be between"):
@@ -587,15 +588,15 @@ class PackageCompilerTests(unittest.TestCase):
         allocations = validate_and_allocate(config, packages)
         linker = generate_linker_values(packages, allocations)
         self.assertIn(
-            f"__exe6_object_id_signalred_controller_main = "
+            f"__bn67_object_id_signalred_controller_main = "
             f"0x{allocations.objects[4]['signalred_controller_main']:X};",
             linker,
         )
         group, sprite_id = allocations.sprites["signalred_battle_sprite"]
-        self.assertIn(f"__exe6_sprite_group_signalred_battle_sprite = 0x{group:X};", linker)
-        self.assertIn(f"__exe6_sprite_id_signalred_battle_sprite = 0x{sprite_id:X};", linker)
+        self.assertIn(f"__bn67_sprite_group_signalred_battle_sprite = 0x{group:X};", linker)
+        self.assertIn(f"__bn67_sprite_id_signalred_battle_sprite = 0x{sprite_id:X};", linker)
         self.assertIn(
-            f"__exe6_song_id_signalred_spawn_song = "
+            f"__bn67_song_id_signalred_spawn_song = "
             f"0x{allocations.songs['signalred_spawn_song']:X};",
             linker,
         )

@@ -10,7 +10,7 @@
 #define ANTINAVI_PALETTE ((const uint8_t *)0x08722B90u)
 #endif
 
-EXE6_CHIP_RECORD(0x0ba) {
+BN67_CHIP_RECORD(0x0ba) {
     .codes = {
         EXE6_CHIP_CODE_F,
         EXE6_CHIP_CODE_L,

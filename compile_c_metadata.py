@@ -10,7 +10,7 @@ import re
 import subprocess
 import tempfile
 
-SYMBOL_RE = re.compile(r"^[0-9A-Fa-f]+\s+[A-Za-z]\s+(__exe6_meta__[A-Za-z0-9_]+)$")
+SYMBOL_RE = re.compile(r"^[0-9A-Fa-f]+\s+[A-Za-z]\s+(__bn67_meta__[A-Za-z0-9_]+)$")
 RUNTIME_SOURCE_NAMES = {"abi.c", "runtime.c"}
 
 
@@ -32,7 +32,7 @@ def package_symbols(
             "-ffreestanding",
             "-fno-builtin",
             "-ffixed-r5",
-            "-DEXE6_METADATA_ONLY",
+            "-DBN67_METADATA_ONLY",
             *(f"-D{define}" for define in defines),
             f"-I{include_dir}",
             "-c",

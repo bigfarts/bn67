@@ -1,8 +1,8 @@
 #include "runtime.h"
 
-EXE6_SONG(
+BN67_SONG(
     common_navi_summon_song,
-    EXE6_PCM(
+    BN67_PCM(
         common_navi_summon,
         0x40,
         0x08,

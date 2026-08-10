@@ -1,16 +1,16 @@
 #include "runtime.h"
 
-EXE6_INCBIN(jealousy_icon, "build/jealousy-icon.bin");
-EXE6_INCBIN(jealousy_image, "build/jealousy-image.bin");
-EXE6_INCBIN(jealousy_palette, "build/jealousy-palette.bin");
+BN67_INCBIN(jealousy_icon, "build/jealousy-icon.bin");
+BN67_INCBIN(jealousy_image, "build/jealousy-image.bin");
+BN67_INCBIN(jealousy_palette, "build/jealousy-palette.bin");
 
 extern const uint8_t jealousy_effect_tiles[0x100];
-EXE6_INCBIN(jealousy_effect_tiles, "build/jealousy-effect-tiles.bin");
+BN67_INCBIN(jealousy_effect_tiles, "build/jealousy-effect-tiles.bin");
 
 extern const uint8_t jealousy_effect_palette[0x20];
-EXE6_INCBIN(jealousy_effect_palette, "build/jealousy-effect-palette.bin");
+BN67_INCBIN(jealousy_effect_palette, "build/jealousy-effect-palette.bin");
 
-EXE6_CHIP_RECORD(0x0bf) {
+BN67_CHIP_RECORD(0x0bf) {
     .codes = {
         EXE6_CHIP_CODE_J,
         EXE6_CHIP_CODE_NONE,
@@ -25,8 +25,8 @@ EXE6_CHIP_RECORD(0x0bf) {
     .behavior = {
         .effect_flags = 0x43,
         .counter_settings = 0x8A,
-        .family = EXE6_ATTACK_FAMILY(jealousy_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(jealousy_attack_main),
+        .family = BN67_ATTACK_FAMILY(jealousy_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(jealousy_attack_main),
         .dark_soul_usage = 0x0A,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
@@ -245,7 +245,7 @@ static void update(Exe6Obj *controller)
     }
 }
 
-EXE6_EFFECT(jealousy_controller_main)
+BN67_EFFECT(jealousy_controller_main)
 {
     switch (self->state) {
     case 0:
@@ -260,10 +260,10 @@ EXE6_EFFECT(jealousy_controller_main)
     }
 }
 
-EXE6_PERSISTENT_ATTACK(0x0BF, jealousy_attack_main)
+BN67_PERSISTENT_ATTACK(0x0BF, jealousy_attack_main)
 {
     Exe6Obj *controller = exe6_efc_open(
-        EXE6_OBJ_ID(jealousy_controller_main), spawn_parameters
+        BN67_OBJ_ID(jealousy_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;

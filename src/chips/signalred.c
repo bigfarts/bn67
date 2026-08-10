@@ -1,17 +1,17 @@
 #include "runtime.h"
 
-EXE6_SPRITE(signalred_battle_sprite, "build/signalred-battle-sprite.bin");
-EXE6_ASM_RESOURCE(
+BN67_SPRITE(signalred_battle_sprite, "build/signalred-battle-sprite.bin");
+BN67_ASM_RESOURCE(
     signalred_dust_sprite_table,
     ".short 0x0904,0x240C,0x230C,0x300C,0x0010\n"
     ".short 0x0810,0x1804,0x0A04,0x340C,0x350C\n"
     ".short 0x0D04,0x0010,0x410C,0x0504,0x410C\n"
-    ".byte __exe6_sprite_group_signalred_battle_sprite\n"
-    ".byte __exe6_sprite_id_signalred_battle_sprite\n"
+    ".byte __bn67_sprite_group_signalred_battle_sprite\n"
+    ".byte __bn67_sprite_id_signalred_battle_sprite\n"
 );
-EXE6_SONG(
+BN67_SONG(
     signalred_spawn_song,
-    EXE6_PCM(
+    BN67_PCM(
         signalred_spawn,
         0x40,
         0x08,
@@ -20,18 +20,18 @@ EXE6_SONG(
         "build/signalred-spawn-sample.bin"
     )
 );
-EXE6_PATCH_POINTER(0x08012010, signalred_dust_sprite_table);
-EXE6_PATCH_POINTER(0x08012014, signalred_dust_sprite_table);
+BN67_PATCH_POINTER(0x08012010, signalred_dust_sprite_table);
+BN67_PATCH_POINTER(0x08012014, signalred_dust_sprite_table);
 #if FALZAR
-EXE6_PATCH_POINTER(0x080E9990, signalred_dust_sprite_table);
+BN67_PATCH_POINTER(0x080E9990, signalred_dust_sprite_table);
 #else
-EXE6_PATCH_POINTER(0x080EACD0, signalred_dust_sprite_table);
+BN67_PATCH_POINTER(0x080EACD0, signalred_dust_sprite_table);
 #endif
-EXE6_INCBIN(signalred_icon, "build/signalred-icon.bin");
-EXE6_INCBIN(signalred_image, "build/signalred-image.bin");
-EXE6_INCBIN(signalred_palette, "build/signalred-palette.bin");
+BN67_INCBIN(signalred_icon, "build/signalred-icon.bin");
+BN67_INCBIN(signalred_image, "build/signalred-image.bin");
+BN67_INCBIN(signalred_palette, "build/signalred-palette.bin");
 
-EXE6_CHIP_RECORD(0x0c1) {
+BN67_CHIP_RECORD(0x0c1) {
     .codes = {
         EXE6_CHIP_CODE_S,
         EXE6_CHIP_CODE_NONE,
@@ -46,8 +46,8 @@ EXE6_CHIP_RECORD(0x0c1) {
     .behavior = {
         .effect_flags = 0x41,
         .counter_settings = 0x00,
-        .family = EXE6_ATTACK_FAMILY(signalred_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(signalred_attack_main),
+        .family = BN67_ATTACK_FAMILY(signalred_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(signalred_attack_main),
         .dark_soul_usage = 0x0A,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
@@ -144,7 +144,7 @@ static void obj_destroy(Exe6Obj *obj)
 
 static void play_spawn_sound(Exe6Obj *obj)
 {
-    exe6_sound_req(EXE6_SONG_ID(signalred_spawn_song));
+    exe6_sound_req(BN67_SONG_ID(signalred_spawn_song));
     obj->aux_timer = RED_TICKS;
     disable_opponent_chips(obj);
 }
@@ -282,8 +282,8 @@ static void obj_init(Exe6Obj *obj)
 
     exe6_obj_char_init(
         0x80,
-        EXE6_SPRITE_GROUP(signalred_battle_sprite),
-        EXE6_SPRITE_ID(signalred_battle_sprite)
+        BN67_SPRITE_GROUP(signalred_battle_sprite),
+        BN67_SPRITE_ID(signalred_battle_sprite)
     );
     exe6_obj_shadow_set();
     obj->animation_word = 0;
@@ -322,7 +322,7 @@ static Exe6Obj *spawn_persistent(Exe6Obj *controller)
 
     uint64_t coordinates = exe6_get_block_pos(block_x, block_y);
     Exe6Obj *obj = exe6_shl_open(
-        EXE6_OBJ_ID(signalred_obj_main),
+        BN67_OBJ_ID(signalred_obj_main),
         (int32_t)(uint32_t)coordinates,
         (int32_t)(uint32_t)(coordinates >> 32),
         0,
@@ -377,7 +377,7 @@ static void update(Exe6Obj *controller)
     }
 }
 
-EXE6_EFFECT(signalred_controller_main)
+BN67_EFFECT(signalred_controller_main)
 {
     switch (self->state) {
     case 0:
@@ -392,7 +392,7 @@ EXE6_EFFECT(signalred_controller_main)
     }
 }
 
-EXE6_SHELL(signalred_obj_main)
+BN67_SHELL(signalred_obj_main)
 {
     switch (self->state) {
     case 0:
@@ -407,10 +407,10 @@ EXE6_SHELL(signalred_obj_main)
     }
 }
 
-EXE6_PERSISTENT_ATTACK(0x0C1, signalred_attack_main)
+BN67_PERSISTENT_ATTACK(0x0C1, signalred_attack_main)
 {
     Exe6Obj *controller = exe6_efc_open(
-        EXE6_OBJ_ID(signalred_controller_main), spawn_parameters
+        BN67_OBJ_ID(signalred_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;

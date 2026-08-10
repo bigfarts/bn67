@@ -1,12 +1,12 @@
 #include "runtime.h"
 
-EXE6_SPRITE(deathphoenix_battle_sprite, "build/deathphoenix-battle-sprite.bin");
-EXE6_SPRITE(deathphoenix_strike_sprite, "build/deathphoenix-strike-sprite.bin");
+BN67_SPRITE(deathphoenix_battle_sprite, "build/deathphoenix-battle-sprite.bin");
+BN67_SPRITE(deathphoenix_strike_sprite, "build/deathphoenix-strike-sprite.bin");
 
 #if FALZAR
-EXE6_INCBIN(deathphoenix_icon, "build/deathphoenix-icon.bin");
-EXE6_INCBIN(deathphoenix_image, "build/deathphoenix-image.bin");
-EXE6_INCBIN(deathphoenix_palette, "build/deathphoenix-palette.bin");
+BN67_INCBIN(deathphoenix_icon, "build/deathphoenix-icon.bin");
+BN67_INCBIN(deathphoenix_image, "build/deathphoenix-image.bin");
+BN67_INCBIN(deathphoenix_palette, "build/deathphoenix-palette.bin");
 #endif
 
 #if FALZAR
@@ -21,7 +21,7 @@ EXE6_INCBIN(deathphoenix_palette, "build/deathphoenix-palette.bin");
 #define DEATHPHOENIX_PALETTE ((const uint8_t *)0x087234B0u)
 #endif
 
-EXE6_CHIP_RECORD(0x134) {
+BN67_CHIP_RECORD(0x134) {
     .codes = {
         EXE6_CHIP_CODE_D,
         EXE6_CHIP_CODE_NONE,
@@ -36,8 +36,8 @@ EXE6_CHIP_RECORD(0x134) {
     .behavior = {
         .effect_flags = DEATHPHOENIX_EFFECT_FLAGS,
         .counter_settings = 0x94,
-        .family = EXE6_ATTACK_FAMILY(deathphoenix_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(deathphoenix_attack_main),
+        .family = BN67_ATTACK_FAMILY(deathphoenix_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(deathphoenix_attack_main),
         .dark_soul_usage = 0x0A,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
@@ -192,8 +192,8 @@ static void actor_init(Exe6Obj *self)
         (struct Exe6DeathphoenixWork *)self->work;
     exe6_battle_obj_char_init(
         0x00010000u
-        | (EXE6_SPRITE_GROUP(deathphoenix_battle_sprite) << 8)
-        | EXE6_SPRITE_ID(deathphoenix_battle_sprite)
+        | (BN67_SPRITE_GROUP(deathphoenix_battle_sprite) << 8)
+        | BN67_SPRITE_ID(deathphoenix_battle_sprite)
     );
     exe6_obj_flip_set(exe6_enemy_flip_check());
 
@@ -261,7 +261,7 @@ static void strike_spawn(
 )
 {
     Exe6Obj *strike = exe6_efc_open(
-        EXE6_OBJ_ID(deathphoenix_strike_main),
+        BN67_OBJ_ID(deathphoenix_strike_main),
         exe6_obj_spawn_with_variant((uint8_t)alternate)
     );
     if (strike == NULL) {
@@ -454,7 +454,7 @@ static void actor_update(Exe6Obj *self)
 static void flame_spawn(Exe6Obj *strike, uint32_t alternate)
 {
     Exe6Obj *flame = exe6_efc_open(
-        EXE6_OBJ_ID(deathphoenix_flame_main),
+        BN67_OBJ_ID(deathphoenix_flame_main),
         exe6_obj_spawn_with_variant((uint8_t)alternate)
     );
     if (flame == NULL) {
@@ -558,8 +558,8 @@ static void strike_init(Exe6Obj *self)
 {
     exe6_battle_obj_char_init(
         0x01000000u
-        | (EXE6_SPRITE_GROUP(deathphoenix_strike_sprite) << 8)
-        | EXE6_SPRITE_ID(deathphoenix_strike_sprite)
+        | (BN67_SPRITE_GROUP(deathphoenix_strike_sprite) << 8)
+        | BN67_SPRITE_ID(deathphoenix_strike_sprite)
     );
     exe6_obj_shadow_all_set();
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
@@ -621,8 +621,8 @@ static void flame_init(Exe6Obj *self)
     self->y -= 1 << 16;
     exe6_obj_char_init(
         0x80,
-        EXE6_SPRITE_GROUP(deathphoenix_strike_sprite),
-        EXE6_SPRITE_ID(deathphoenix_strike_sprite)
+        BN67_SPRITE_GROUP(deathphoenix_strike_sprite),
+        BN67_SPRITE_ID(deathphoenix_strike_sprite)
     );
     self->animation = 2;
     exe6_obj_dma_seq_set(2);
@@ -633,7 +633,7 @@ static void flame_init(Exe6Obj *self)
     self->state_word = ACTIVE_STATE;
 }
 
-EXE6_EFFECT(deathphoenix_flame_main)
+BN67_EFFECT(deathphoenix_flame_main)
 {
     if (self->state == 0) {
         flame_init(self);
@@ -645,7 +645,7 @@ EXE6_EFFECT(deathphoenix_flame_main)
     exe6_battle_obj_char_move();
 }
 
-EXE6_EFFECT(deathphoenix_strike_main)
+BN67_EFFECT(deathphoenix_strike_main)
 {
     if (self->state == 0) {
         strike_init(self);
@@ -657,7 +657,7 @@ EXE6_EFFECT(deathphoenix_strike_main)
     exe6_battle_obj_char_move();
 }
 
-EXE6_ENEMY(deathphoenix_actor_main)
+BN67_ENEMY(deathphoenix_actor_main)
 {
     if (self->state == 0) {
         actor_init(self);
@@ -670,10 +670,10 @@ EXE6_ENEMY(deathphoenix_actor_main)
     exe6_battle_obj_char_move2();
 }
 
-EXE6_SUMMON_ATTACK(0x134, deathphoenix_attack_main)
+BN67_SUMMON_ATTACK(0x134, deathphoenix_attack_main)
 {
     Exe6Obj *actor = exe6_em_open(
-        EXE6_OBJ_ID(deathphoenix_actor_main), spawn_parameters
+        BN67_OBJ_ID(deathphoenix_actor_main), spawn_parameters
     );
     if (actor == NULL) {
         return;

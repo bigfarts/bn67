@@ -171,26 +171,26 @@ hook locations.
 
 Gameplay implementations may live anywhere under `src/`. Each implementation
 registers its own chip records, attacks, objects, sprites, songs, dependencies,
-and pointer patches with `EXE6_*` macros. There is no package manifest.
+and pointer patches with `BN67_*` macros. There is no package manifest.
 
 `compile_c_metadata.py` compiles the gameplay package sources in target-specific
-metadata mode and extracts their ordered `__exe6_meta__...` symbols from the ELF
+metadata mode and extracts their ordered `__bn67_meta__...` symbols from the ELF
 objects with `arm-none-eabi-nm`. `compile_registry.py` consumes one config path
 per invocation, allocates that config's registry independently, and generates
 absolute linker symbols used by expressions such as
-`EXE6_OBJ_ID(searchman_actor_main)` and
-`EXE6_SPRITE_ID(searchman_battle_sprite)`.
+`BN67_OBJ_ID(searchman_actor_main)` and
+`BN67_SPRITE_ID(searchman_battle_sprite)`.
 
 Complete 44-byte chip records are ordinary C initializers embedded in the
 linked gameplay image:
 
 ```c
-EXE6_CHIP_RECORD(0x131) {
+BN67_CHIP_RECORD(0x131) {
     .codes = { EXE6_CHIP_CODE_B, EXE6_CHIP_CODE_NONE,
                EXE6_CHIP_CODE_NONE, EXE6_CHIP_CODE_NONE },
     .behavior = {
-        .family = EXE6_ATTACK_FAMILY(bugcharge_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(bugcharge_attack_main),
+        .family = BN67_ATTACK_FAMILY(bugcharge_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(bugcharge_attack_main),
     },
     .power = 200,
     // Remaining Exe6ChipRecord fields omitted here for brevity.

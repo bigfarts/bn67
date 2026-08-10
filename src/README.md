@@ -16,6 +16,8 @@ The shared native-call ABI veneers are in `abi.c`; direct runtime helpers are
 in `runtime.c`. Global hooks are in `hooks.c` and `hooks.asm`. The linker layout
 is `link.ld`, and public
 ABI/runtime declarations are `abi.h` and `runtime.h` here too.
+Native BN6 ABI names use the `EXE6_`/`Exe6`/`exe6_` namespace; the BN67
+registry and resource macros in `runtime.h` use `BN67_`.
 Native veneer names follow the recovered
 [`MEGAMAN6_GXX_BR5E00.sym`](https://github.com/StraDaMa/Mega-Man-Battle-Network-6-Symbols/blob/main/MEGAMAN6_GXX_BR5E00.sym)
 labels, with source-file prefixes removed and CamelCase normalized to the
@@ -59,11 +61,11 @@ Put declarations beside the implementation they register:
 ```c
 #include "runtime.h"
 
-EXE6_USE_SONG(common_navi_summon_song);
-EXE6_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
-EXE6_SONG(
+BN67_USE_SONG(common_navi_summon_song);
+BN67_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
+BN67_SONG(
     searchman_fire_song,
-    EXE6_PCM(
+    BN67_PCM(
         searchman_fire,
         0x40,
         0x08,
@@ -71,14 +73,14 @@ EXE6_SONG(
         "build/searchman-fire-sample.bin"
     )
 );
-EXE6_PATCH_POINTER(0x08012010, searchman_data);
+BN67_PATCH_POINTER(0x08012010, searchman_data);
 
-EXE6_ENEMY(searchman_actor_main)
+BN67_ENEMY(searchman_actor_main)
 {
     /* `self` is the current object. */
 }
 
-EXE6_SUMMON_ATTACK(0x107, searchman_attack_main)
+BN67_SUMMON_ATTACK(0x107, searchman_attack_main)
 {
     /* Native attack arguments are available by name here. */
 }
@@ -90,13 +92,13 @@ build:
 
 ```c
 #if FALZAR
-EXE6_PATCH_POINTER(0x080E9990, signalred_dust_sprite_table);
+BN67_PATCH_POINTER(0x080E9990, signalred_dust_sprite_table);
 #else
-EXE6_PATCH_POINTER(0x080EACD0, signalred_dust_sprite_table);
+BN67_PATCH_POINTER(0x080EACD0, signalred_dust_sprite_table);
 #endif
 ```
 
-`EXE6_PATCH_SECTION(address, symbol)` replaces native instructions with a
+`BN67_PATCH_SECTION(address, symbol)` replaces native instructions with a
 Thumb trampoline to `symbol`, with the original `r1` pushed on the stack. The
 target must pop `r1`, owns any displaced instructions, and must continue or
 return according to that native call site; FolderBack's class-1 dispatcher hook
@@ -104,17 +106,17 @@ is an example.
 
 The attack macros name the native family lifecycle they register:
 
-- `EXE6_PERSISTENT_ATTACK` uses family `0x15`. Its C function returns the
+- `BN67_PERSISTENT_ATTACK` uses family `0x15`. Its C function returns the
   spawned controller/effect object (or `NULL`), which the native wrapper can
   track after the callback. Its sixth argument is packed `chip_data`.
-- `EXE6_SUMMON_ATTACK` uses family `0x1B` and receives the summon manager's
+- `BN67_SUMMON_ATTACK` uses family `0x1B` and receives the summon manager's
   completion pointer as its sixth argument.
-- `EXE6_EPHEMERAL_ATTACK` uses family `0x1C`. Its callback return is ignored,
+- `BN67_EPHEMERAL_ATTACK` uses family `0x1C`. Its callback return is ignored,
   its `attack` argument is already resolved with the activation bonus, and its
   sixth argument is the owner's signed 16.16 `z` coordinate.
 
-`EXE6_ATTACK` remains a source-compatible alias for
-`EXE6_PERSISTENT_ATTACK`. Here, persistent and ephemeral describe the native
+`BN67_ATTACK` remains a source-compatible alias for
+`BN67_PERSISTENT_ATTACK`. Here, persistent and ephemeral describe the native
 wrapper lifecycle; an ephemeral callback may still spawn an independently
 managed object.
 
@@ -123,7 +125,7 @@ index into that family's function table. The compiler relocates each
 configured native prefix, appends registered attacks, and writes the resulting
 family/subfamily selectors into the generated C constants. The first attack
 macro argument is a representative chip ID that explicitly connects the attack
-to an `EXE6_CHIP_RECORD` in the same package; the compiler rejects a missing ID.
+to a `BN67_CHIP_RECORD` in the same package; the compiler rejects a missing ID.
 
 Object and attack entry points follow `<package>_<name>_main`; sprite archives
 follow `<package>_<name>_sprite`; and songs follow `<package>_<name>_song`. The
@@ -133,33 +135,33 @@ Every object and attack macro exposes the native `r4` value by value as
 `Exe6ObjSpawnParameters spawn_parameters`. It is a four-byte struct, not a
 pointer: its `variant`, `subvariant`, `animation_state`, and `removal_state`
 fields are copied to new-object offsets `+0x04` through `+0x07`.
-`EXE6_SPRITE` and `EXE6_SONG` likewise combine registration with the resource
-definition; `EXE6_PCM` supplies the standard PCM song body.
+`BN67_SPRITE` and `BN67_SONG` likewise combine registration with the resource
+definition; `BN67_PCM` supplies the standard PCM song body.
 
 Use the allocated values in ordinary C expressions:
 
 ```c
 Exe6Obj *reticle = exe6_efc_open(
-    EXE6_OBJ_ID(searchman_reticle_main),
+    BN67_OBJ_ID(searchman_reticle_main),
     exe6_obj_spawn_with_variant(actor->variant)
 );
 exe6_obj_char_init(
     0x80,
-    EXE6_SPRITE_GROUP(searchman_battle_sprite),
-    EXE6_SPRITE_ID(searchman_battle_sprite)
+    BN67_SPRITE_GROUP(searchman_battle_sprite),
+    BN67_SPRITE_ID(searchman_battle_sprite)
 );
-exe6_sound_req(EXE6_SONG_ID(searchman_fire_song));
+exe6_sound_req(BN67_SONG_ID(searchman_fire_song));
 ```
 
 Shared resources are registered by their implementation source.
-`EXE6_USE_SONG(common_navi_summon_song)` declares the link-time selector in a
+`BN67_USE_SONG(common_navi_summon_song)` declares the link-time selector in a
 consumer without adding another song-table entry.
 
 ## ELF metadata and link-time values
 
 `compile_c_metadata.py` compiles every gameplay package source with
-`EXE6_METADATA_ONLY` and the target's normal preprocessor definitions. The
-registration and definition macros emit ordered `__exe6_meta__...` symbols into
+`BN67_METADATA_ONLY` and the target's normal preprocessor definitions. The
+registration and definition macros emit ordered `__bn67_meta__...` symbols into
 each ELF object. The script reads those symbols with `arm-none-eabi-nm`; it does
 not parse C source text.
 
@@ -176,22 +178,22 @@ allocates that config's registry slots, and writes separate target artifacts:
 
 An object's class selects its native allocator and lifecycle table; its ID is
 the 8-bit index within that table. The compiler relocates configured class
-tables to 256 entries and resolves `EXE6_OBJ_ID` directly, so custom objects
+tables to 256 entries and resolves `BN67_OBJ_ID` directly, so custom objects
 do not need an extra runtime discriminator field.
 
-The final C link resolves `EXE6_OBJ_ID`, `EXE6_SPRITE_ID`,
-`EXE6_SPRITE_GROUP`, `EXE6_SONG_ID`, and `EXE6_SONG_GROUP` from that linker file.
+The final C link resolves `BN67_OBJ_ID`, `BN67_SPRITE_ID`,
+`BN67_SPRITE_GROUP`, `BN67_SONG_ID`, and `BN67_SONG_GROUP` from that linker file.
 Metadata records are not included in the final gameplay binary.
 
 ## Chip definitions
 
-`EXE6_CHIP_RECORD(chip_id)` declares a complete `Exe6ChipRecord` C initializer.
+`BN67_CHIP_RECORD(chip_id)` declares a complete `Exe6ChipRecord` C initializer.
 The macro emits registration metadata and keeps the 44-byte record in its own
 linked read-only section. The generated Armips registry copies those bytes from
 `gameplay-<target>.bin` over `chip_table + chip_id * 0x2C` during final ROM
 assembly. Artwork pointers therefore receive normal C/ELF relocations.
 
-Use `EXE6_ATTACK_FAMILY(main)` and `EXE6_ATTACK_SUBFAMILY(main)` for a custom
+Use `BN67_ATTACK_FAMILY(main)` and `BN67_ATTACK_SUBFAMILY(main)` for a custom
 attack's allocated selector bytes. `Exe6ChipRecord.behavior.object_spawn` has
 the named `variant`, `subvariant`, `animation_state`, and `removal_state`
 fields. Use `#if FALZAR` for edition-specific values. Every field must be

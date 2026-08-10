@@ -1,15 +1,15 @@
 #include "runtime.h"
 
-EXE6_INCBIN(folderback_icon, "build/folderback-icon.bin");
-EXE6_INCBIN(folderback_image, "build/folderback-image.bin");
-EXE6_INCBIN(folderback_palette, "build/folderback-palette.bin");
-EXE6_SONG(folderback_rumble_song,
-          EXE6_PCM(folderback_rumble, 0x40, 0x08,
+BN67_INCBIN(folderback_icon, "build/folderback-icon.bin");
+BN67_INCBIN(folderback_image, "build/folderback-image.bin");
+BN67_INCBIN(folderback_palette, "build/folderback-palette.bin");
+BN67_SONG(folderback_rumble_song,
+          BN67_PCM(folderback_rumble, 0x40, 0x08,
                    ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBE,0x7F\n"
                    ".byte 0xBF,0x40,0xF9,0x3C,0x7F,0xAA,0x81,0xB1\n",
                    "build/folderback-rumble-sample.bin"));
 
-EXE6_CHIP_RECORD(0x139){
+BN67_CHIP_RECORD(0x139){
     .codes =
         {
             EXE6_CHIP_CODE_ASTERISK,
@@ -26,8 +26,8 @@ EXE6_CHIP_RECORD(0x139){
         {
             .effect_flags = 0x41,
             .counter_settings = 0x00,
-            .family = EXE6_ATTACK_FAMILY(folderback_attack_main),
-            .subfamily = EXE6_ATTACK_SUBFAMILY(folderback_attack_main),
+            .family = BN67_ATTACK_FAMILY(folderback_attack_main),
+            .subfamily = BN67_ATTACK_SUBFAMILY(folderback_attack_main),
             .dark_soul_usage = 0x0A,
             .unknown_0e = 0x00,
             .lock_on = 0x00,
@@ -65,7 +65,7 @@ folderback_object_should_pause(const Exe6Obj *object) {
 
   const Exe6ObjectSlot *slots = EXE6_EFFECT_POOL_HEAD;
   const uint8_t controller_id =
-      (uint8_t)EXE6_OBJ_ID(folderback_controller_main);
+      (uint8_t)BN67_OBJ_ID(folderback_controller_main);
   for (size_t slot_index = 0; slot_index < EXE6_POOL_SLOT_COUNT;
        ++slot_index) {
     const Exe6Obj *controller = &slots[slot_index].object;
@@ -79,7 +79,7 @@ folderback_object_should_pause(const Exe6Obj *object) {
   return false;
 }
 
-EXE6_PATCH_SECTION(0x080031FA, folderback_dispatch_main);
+BN67_PATCH_SECTION(0x080031FA, folderback_dispatch_main);
 
 NAKED void folderback_dispatch_main(void) {
   // Native object mains consume the dispatcher's live registers and flags.
@@ -130,7 +130,7 @@ static void restore_palette(void) {
 
 static void impact(void) {
   exe6_camera_quake_set(3, IMPACT_FRAMES);
-  exe6_sound_req(EXE6_SONG_ID(folderback_rumble_song));
+  exe6_sound_req(BN67_SONG_ID(folderback_rumble_song));
 }
 
 static void fill_local_custom_gauge(void) {
@@ -204,7 +204,7 @@ static void open_custom(uint32_t owner) {
   }
 }
 
-EXE6_EFFECT(folderback_controller_main) {
+BN67_EFFECT(folderback_controller_main) {
   if (self->state == 0) {
     self->state_word = 4;
   } else if (self->state != 4) {
@@ -226,9 +226,9 @@ EXE6_EFFECT(folderback_controller_main) {
   open_custom(owner);
 }
 
-EXE6_PERSISTENT_ATTACK(0x139, folderback_attack_main) {
+BN67_PERSISTENT_ATTACK(0x139, folderback_attack_main) {
   Exe6Obj *controller =
-      exe6_efc_open(EXE6_OBJ_ID(folderback_controller_main), spawn_parameters);
+      exe6_efc_open(BN67_OBJ_ID(folderback_controller_main), spawn_parameters);
   if (controller == NULL) {
     return NULL;
   }

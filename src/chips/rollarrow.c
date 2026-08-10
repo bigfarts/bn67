@@ -1,20 +1,20 @@
 #include "abi.h"
 #include "runtime.h"
 
-EXE6_USE_SONG(common_navi_summon_song);
-EXE6_SPRITE(rollarrow_actor_sprite, "build/rollarrow-actor-sprite.bin");
-EXE6_SPRITE(rollarrow_projectile_sprite, "build/rollarrow-projectile-sprite.bin");
+BN67_USE_SONG(common_navi_summon_song);
+BN67_SPRITE(rollarrow_actor_sprite, "build/rollarrow-actor-sprite.bin");
+BN67_SPRITE(rollarrow_projectile_sprite, "build/rollarrow-projectile-sprite.bin");
 
-EXE6_INCBIN(rollarrow1_icon, "build/rollarrow1-icon.bin");
-EXE6_INCBIN(rollarrow2_icon, "build/rollarrow2-icon.bin");
-EXE6_INCBIN(rollarrow3_icon, "build/rollarrow3-icon.bin");
-EXE6_INCBIN(rollarrow_image, "build/rollarrow-image.bin");
-EXE6_INCBIN(rollarrow1_palette, "build/rollarrow1-pal.bin");
-EXE6_INCBIN(rollarrow2_palette, "build/rollarrow2-pal.bin");
-EXE6_INCBIN(rollarrow3_palette, "build/rollarrow3-pal.bin");
-EXE6_SONG(
+BN67_INCBIN(rollarrow1_icon, "build/rollarrow1-icon.bin");
+BN67_INCBIN(rollarrow2_icon, "build/rollarrow2-icon.bin");
+BN67_INCBIN(rollarrow3_icon, "build/rollarrow3-icon.bin");
+BN67_INCBIN(rollarrow_image, "build/rollarrow-image.bin");
+BN67_INCBIN(rollarrow1_palette, "build/rollarrow1-pal.bin");
+BN67_INCBIN(rollarrow2_palette, "build/rollarrow2-pal.bin");
+BN67_INCBIN(rollarrow3_palette, "build/rollarrow3-pal.bin");
+BN67_SONG(
     rollarrow_fire_song,
-    EXE6_PCM(
+    BN67_PCM(
         rollarrow_fire,
         0x40,
         0x08,
@@ -24,7 +24,7 @@ EXE6_SONG(
     )
 );
 
-EXE6_CHIP_RECORD(0x018) {
+BN67_CHIP_RECORD(0x018) {
     .codes = {
         EXE6_CHIP_CODE_A,
         EXE6_CHIP_CODE_F,
@@ -39,8 +39,8 @@ EXE6_CHIP_RECORD(0x018) {
     .behavior = {
         .effect_flags = 0x43,
         .counter_settings = 0x94,
-        .family = EXE6_ATTACK_FAMILY(rollarrow_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(rollarrow_attack_main),
+        .family = BN67_ATTACK_FAMILY(rollarrow_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(rollarrow_attack_main),
         .dark_soul_usage = 0x0A,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
@@ -60,7 +60,7 @@ EXE6_CHIP_RECORD(0x018) {
     .palette = rollarrow1_palette,
 };
 
-EXE6_CHIP_RECORD(0x019) {
+BN67_CHIP_RECORD(0x019) {
     .codes = {
         EXE6_CHIP_CODE_D,
         EXE6_CHIP_CODE_R,
@@ -75,8 +75,8 @@ EXE6_CHIP_RECORD(0x019) {
     .behavior = {
         .effect_flags = 0x43,
         .counter_settings = 0x94,
-        .family = EXE6_ATTACK_FAMILY(rollarrow_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(rollarrow_attack_main),
+        .family = BN67_ATTACK_FAMILY(rollarrow_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(rollarrow_attack_main),
         .dark_soul_usage = 0x0A,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
@@ -96,7 +96,7 @@ EXE6_CHIP_RECORD(0x019) {
     .palette = rollarrow2_palette,
 };
 
-EXE6_CHIP_RECORD(0x01a) {
+BN67_CHIP_RECORD(0x01a) {
     .codes = {
         EXE6_CHIP_CODE_Q,
         EXE6_CHIP_CODE_Y,
@@ -111,8 +111,8 @@ EXE6_CHIP_RECORD(0x01a) {
     .behavior = {
         .effect_flags = 0x43,
         .counter_settings = 0x94,
-        .family = EXE6_ATTACK_FAMILY(rollarrow_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(rollarrow_attack_main),
+        .family = BN67_ATTACK_FAMILY(rollarrow_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(rollarrow_attack_main),
         .dark_soul_usage = 0x0A,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
@@ -159,7 +159,7 @@ static void set_animation(Exe6Obj *self, uint32_t animation)
 static void spawn_projectile(Exe6Obj *actor)
 {
     Exe6Obj *projectile = exe6_shl_open(
-        EXE6_OBJ_ID(rollarrow_arrow_main),
+        BN67_OBJ_ID(rollarrow_arrow_main),
         actor->block_y,
         actor->parameter,
         0,
@@ -200,7 +200,7 @@ static void actor_fire(Exe6Obj *self)
 {
     if (self->substate == 0) {
         set_animation(self, 7);
-        exe6_sound_req(EXE6_SONG_ID(rollarrow_fire_song));
+        exe6_sound_req(BN67_SONG_ID(rollarrow_fire_song));
         spawn_projectile(self);
         self->timer = FIRE_HOLD_FRAMES;
         self->substate = 4;
@@ -252,8 +252,8 @@ static void actor_init(Exe6Obj *self)
 {
     exe6_obj_char_init(
         0x80,
-        EXE6_SPRITE_GROUP(rollarrow_actor_sprite),
-        EXE6_SPRITE_ID(rollarrow_actor_sprite)
+        BN67_SPRITE_GROUP(rollarrow_actor_sprite),
+        BN67_SPRITE_ID(rollarrow_actor_sprite)
     );
     exe6_obj_char_set();
     exe6_obj_shadow_set();
@@ -267,7 +267,7 @@ static void actor_init(Exe6Obj *self)
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     self->state_word = 4;
     self->substate = 0;
-    exe6_sound_req(EXE6_SONG_ID(common_navi_summon_song));
+    exe6_sound_req(BN67_SONG_ID(common_navi_summon_song));
 }
 
 static void actor_destroy(Exe6Obj *self)
@@ -279,7 +279,7 @@ static void actor_destroy(Exe6Obj *self)
     exe6_obj_move_delete();
 }
 
-EXE6_ENEMY(rollarrow_actor_main)
+BN67_ENEMY(rollarrow_actor_main)
 {
     switch (self->state) {
     case 0:
@@ -312,8 +312,8 @@ static bool projectile_init(Exe6Obj *self)
 
     exe6_obj_char_init(
         0x80,
-        EXE6_SPRITE_GROUP(rollarrow_projectile_sprite),
-        EXE6_SPRITE_ID(rollarrow_projectile_sprite)
+        BN67_SPRITE_GROUP(rollarrow_projectile_sprite),
+        BN67_SPRITE_ID(rollarrow_projectile_sprite)
     );
     exe6_obj_char_set();
     exe6_obj_no_shadow();
@@ -389,7 +389,7 @@ static bool projectile_update(Exe6Obj *self)
     return true;
 }
 
-EXE6_SHELL(rollarrow_arrow_main)
+BN67_SHELL(rollarrow_arrow_main)
 {
     switch (self->state) {
     case 0:
@@ -409,10 +409,10 @@ EXE6_SHELL(rollarrow_arrow_main)
     exe6_battle_obj_char_move2();
 }
 
-EXE6_SUMMON_ATTACK(0x018, rollarrow_attack_main)
+BN67_SUMMON_ATTACK(0x018, rollarrow_attack_main)
 {
     Exe6Obj *actor = exe6_em_open(
-        EXE6_OBJ_ID(rollarrow_actor_main), spawn_parameters
+        BN67_OBJ_ID(rollarrow_actor_main), spawn_parameters
     );
     if (actor == NULL) {
         return;

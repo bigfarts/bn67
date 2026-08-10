@@ -1,18 +1,18 @@
 #include "abi.h"
 #include "runtime.h"
 
-EXE6_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
-EXE6_SPRITE(searchman_reticle_alt_sprite, "build/searchman-reticle-alt.bin");
-EXE6_SPRITE(searchman_reticle_sprite, "build/searchman-reticle.bin");
+BN67_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
+BN67_SPRITE(searchman_reticle_alt_sprite, "build/searchman-reticle-alt.bin");
+BN67_SPRITE(searchman_reticle_sprite, "build/searchman-reticle.bin");
 
-EXE6_INCBIN(searchman_image, "build/searchman-image.bin");
-EXE6_INCBIN(searchman_palette_base, "build/searchman-pal-base.bin");
-EXE6_ASM_RESOURCE(
+BN67_INCBIN(searchman_image, "build/searchman-image.bin");
+BN67_INCBIN(searchman_palette_base, "build/searchman-pal-base.bin");
+BN67_ASM_RESOURCE(
     searchman_palette_ex,
     ".incbin \"build/searchman-pal-base.bin\",0,0x1A\n"
     ".short 0x03FF,0x0299,0x0190\n"
 );
-EXE6_INCBIN(searchman_palette_sp, "build/searchman-pal-sp.bin");
+BN67_INCBIN(searchman_palette_sp, "build/searchman-pal-sp.bin");
 
 #if FALZAR
 #define SEARCHMAN_ICON ((const uint8_t *)0x0872BE14u)
@@ -20,7 +20,7 @@ EXE6_INCBIN(searchman_palette_sp, "build/searchman-pal-sp.bin");
 #define SEARCHMAN_ICON ((const uint8_t *)0x08729D50u)
 #endif
 
-EXE6_CHIP_RECORD(0x107) {
+BN67_CHIP_RECORD(0x107) {
     .codes = {
         EXE6_CHIP_CODE_S,
         EXE6_CHIP_CODE_ASTERISK,
@@ -35,8 +35,8 @@ EXE6_CHIP_RECORD(0x107) {
     .behavior = {
         .effect_flags = 0x47,
         .counter_settings = 0x8A,
-        .family = EXE6_ATTACK_FAMILY(searchman_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(searchman_attack_main),
+        .family = BN67_ATTACK_FAMILY(searchman_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(searchman_attack_main),
         .dark_soul_usage = 0x1F,
         .unknown_0e = 0x00,
         .lock_on = 0x00,
@@ -56,7 +56,7 @@ EXE6_CHIP_RECORD(0x107) {
     .palette = searchman_palette_base,
 };
 
-EXE6_CHIP_RECORD(0x108) {
+BN67_CHIP_RECORD(0x108) {
     .codes = {
         EXE6_CHIP_CODE_S,
         EXE6_CHIP_CODE_NONE,
@@ -71,8 +71,8 @@ EXE6_CHIP_RECORD(0x108) {
     .behavior = {
         .effect_flags = 0x47,
         .counter_settings = 0x8A,
-        .family = EXE6_ATTACK_FAMILY(searchman_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(searchman_attack_main),
+        .family = BN67_ATTACK_FAMILY(searchman_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(searchman_attack_main),
         .dark_soul_usage = 0x00,
         .unknown_0e = 0x00,
         .lock_on = 0x00,
@@ -92,7 +92,7 @@ EXE6_CHIP_RECORD(0x108) {
     .palette = searchman_palette_ex,
 };
 
-EXE6_CHIP_RECORD(0x109) {
+BN67_CHIP_RECORD(0x109) {
     .codes = {
         EXE6_CHIP_CODE_S,
         EXE6_CHIP_CODE_NONE,
@@ -107,8 +107,8 @@ EXE6_CHIP_RECORD(0x109) {
     .behavior = {
         .effect_flags = 0x47,
         .counter_settings = 0x8A,
-        .family = EXE6_ATTACK_FAMILY(searchman_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(searchman_attack_main),
+        .family = BN67_ATTACK_FAMILY(searchman_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(searchman_attack_main),
         .dark_soul_usage = 0x00,
         .unknown_0e = 0x00,
         .lock_on = 0x00,
@@ -267,7 +267,7 @@ static void appear_phase(Exe6Obj *self)
 static void spawn_reticle(Exe6Obj *actor, Exe6Obj *player, uint32_t alternate)
 {
     Exe6Obj *reticle = exe6_efc_open(
-        EXE6_OBJ_ID(searchman_reticle_main),
+        BN67_OBJ_ID(searchman_reticle_main),
         exe6_obj_spawn_with_variant(actor->variant)
     );
     if (reticle == NULL) {
@@ -303,7 +303,7 @@ static void spawn_hit(Exe6Obj *actor, bool delete_shot)
         ? DELETE_HIT_TYPE
         : NORMAL_HIT_TYPE;
     Exe6Obj *hit = exe6_shl_open(
-        EXE6_OBJ_ID(searchman_hit_main),
+        BN67_OBJ_ID(searchman_hit_main),
         0,
         0,
         0,
@@ -415,8 +415,8 @@ static void actor_init(Exe6Obj *self)
 {
     exe6_obj_char_init(
         0x80,
-        EXE6_SPRITE_GROUP(searchman_battle_sprite),
-        EXE6_SPRITE_ID(searchman_battle_sprite)
+        BN67_SPRITE_GROUP(searchman_battle_sprite),
+        BN67_SPRITE_ID(searchman_battle_sprite)
     );
     exe6_obj_char_set();
     exe6_obj_shadow_set();
@@ -600,11 +600,11 @@ static void reticle_init(Exe6Obj *self)
 {
     struct Exe6SearchmanReticleWork *work =
         (struct Exe6SearchmanReticleWork *)self->work;
-    uint32_t group = EXE6_SPRITE_GROUP(searchman_reticle_sprite);
-    uint32_t sprite = EXE6_SPRITE_ID(searchman_reticle_sprite);
+    uint32_t group = BN67_SPRITE_GROUP(searchman_reticle_sprite);
+    uint32_t sprite = BN67_SPRITE_ID(searchman_reticle_sprite);
     if (work->alternate != 0) {
-        group = EXE6_SPRITE_GROUP(searchman_reticle_alt_sprite);
-        sprite = EXE6_SPRITE_ID(searchman_reticle_alt_sprite);
+        group = BN67_SPRITE_GROUP(searchman_reticle_alt_sprite);
+        sprite = BN67_SPRITE_ID(searchman_reticle_alt_sprite);
     }
     exe6_obj_char_init(0x80, group, sprite);
     exe6_obj_char_set();
@@ -686,7 +686,7 @@ static void hit_init(Exe6Obj *self)
     self->state_word = ACTOR_ACTIVE_STATE;
 }
 
-EXE6_SHELL(searchman_hit_main)
+BN67_SHELL(searchman_hit_main)
 {
     if (self->state == 0) {
         hit_init(self);
@@ -697,7 +697,7 @@ EXE6_SHELL(searchman_hit_main)
     }
 }
 
-EXE6_EFFECT(searchman_reticle_main)
+BN67_EFFECT(searchman_reticle_main)
 {
     if (self->state == 0) {
         reticle_init(self);
@@ -708,7 +708,7 @@ EXE6_EFFECT(searchman_reticle_main)
     }
 }
 
-EXE6_ENEMY(searchman_actor_main)
+BN67_ENEMY(searchman_actor_main)
 {
     if (self->state == 0) {
         actor_init(self);
@@ -719,10 +719,10 @@ EXE6_ENEMY(searchman_actor_main)
     }
 }
 
-EXE6_SUMMON_ATTACK(0x107, searchman_attack_main)
+BN67_SUMMON_ATTACK(0x107, searchman_attack_main)
 {
     Exe6Obj *actor = exe6_em_open(
-        EXE6_OBJ_ID(searchman_actor_main), spawn_parameters
+        BN67_OBJ_ID(searchman_actor_main), spawn_parameters
     );
     if (actor == NULL) {
         return;

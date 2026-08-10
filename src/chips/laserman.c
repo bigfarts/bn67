@@ -1,20 +1,20 @@
 #include "runtime.h"
 
-EXE6_USE_SONG(common_navi_summon_song);
-EXE6_SPRITE(laserman_battle_sprite, "build/laserman-battle-sprite.bin");
+BN67_USE_SONG(common_navi_summon_song);
+BN67_SPRITE(laserman_battle_sprite, "build/laserman-battle-sprite.bin");
 
-EXE6_INCBIN(laserman_image, "build/laserman-image.bin");
-EXE6_INCBIN(laserman_palette_base, "build/laserman-pal-base.bin");
-EXE6_ASM_RESOURCE(
+BN67_INCBIN(laserman_image, "build/laserman-image.bin");
+BN67_INCBIN(laserman_palette_base, "build/laserman-pal-base.bin");
+BN67_ASM_RESOURCE(
     laserman_palette_ex,
     ".incbin \"build/laserman-pal-base.bin\",0,0x02\n"
     ".short 0x00C0,0x0180,0x0280,0x03E0,0x0060\n"
     ".incbin \"build/laserman-pal-base.bin\",0x0C,0x14\n"
 );
-EXE6_INCBIN(laserman_palette_sp, "build/laserman-pal-sp.bin");
-EXE6_SONG(
+BN67_INCBIN(laserman_palette_sp, "build/laserman-pal-sp.bin");
+BN67_SONG(
     laserman_fire_song,
-    EXE6_PCM(
+    BN67_PCM(
         laserman_fire,
         0x40,
         0x00,
@@ -37,7 +37,7 @@ EXE6_SONG(
 #define LASERMAN_LIBRARY_SORT_BASE 0x00E3
 #endif
 
-EXE6_CHIP_RECORD(0x0e3) {
+BN67_CHIP_RECORD(0x0e3) {
     .codes = {
         EXE6_CHIP_CODE_L,
         EXE6_CHIP_CODE_ASTERISK,
@@ -52,8 +52,8 @@ EXE6_CHIP_RECORD(0x0e3) {
     .behavior = {
         .effect_flags = 0x47,
         .counter_settings = 0x8A,
-        .family = EXE6_ATTACK_FAMILY(laserman_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(laserman_attack_main),
+        .family = BN67_ATTACK_FAMILY(laserman_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(laserman_attack_main),
         .dark_soul_usage = 0x00,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
@@ -73,7 +73,7 @@ EXE6_CHIP_RECORD(0x0e3) {
     .palette = laserman_palette_base,
 };
 
-EXE6_CHIP_RECORD(0x0e4) {
+BN67_CHIP_RECORD(0x0e4) {
     .codes = {
         EXE6_CHIP_CODE_L,
         EXE6_CHIP_CODE_NONE,
@@ -88,8 +88,8 @@ EXE6_CHIP_RECORD(0x0e4) {
     .behavior = {
         .effect_flags = 0x47,
         .counter_settings = 0x8A,
-        .family = EXE6_ATTACK_FAMILY(laserman_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(laserman_attack_main),
+        .family = BN67_ATTACK_FAMILY(laserman_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(laserman_attack_main),
         .dark_soul_usage = 0x00,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
@@ -109,7 +109,7 @@ EXE6_CHIP_RECORD(0x0e4) {
     .palette = laserman_palette_ex,
 };
 
-EXE6_CHIP_RECORD(0x0e5) {
+BN67_CHIP_RECORD(0x0e5) {
     .codes = {
         EXE6_CHIP_CODE_L,
         EXE6_CHIP_CODE_NONE,
@@ -124,8 +124,8 @@ EXE6_CHIP_RECORD(0x0e5) {
     .behavior = {
         .effect_flags = 0x47,
         .counter_settings = 0x8A,
-        .family = EXE6_ATTACK_FAMILY(laserman_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(laserman_attack_main),
+        .family = BN67_ATTACK_FAMILY(laserman_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(laserman_attack_main),
         .dark_soul_usage = 0x00,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
@@ -266,7 +266,7 @@ static void actor_destroy(Exe6Obj *self)
 static void spawn_laser(Exe6Obj *actor)
 {
     Exe6Obj *beam = exe6_em_open(
-        EXE6_OBJ_ID(laserman_beam_main),
+        BN67_OBJ_ID(laserman_beam_main),
         exe6_obj_spawn_with_variant(actor->subvariant)
     );
     if (beam == NULL) {
@@ -296,7 +296,7 @@ static void actor_attack(Exe6Obj *self)
         if (timer_expired(self)) {
             set_animation(self, 3);
             spawn_laser(self);
-            exe6_sound_req(EXE6_SONG_ID(laserman_fire_song));
+            exe6_sound_req(BN67_SONG_ID(laserman_fire_song));
             self->timer = LASER_FRAMES;
             self->substate = 8;
         }
@@ -341,8 +341,8 @@ static void actor_init(Exe6Obj *self)
 {
     exe6_obj_char_init(
         0x80,
-        EXE6_SPRITE_GROUP(laserman_battle_sprite),
-        EXE6_SPRITE_ID(laserman_battle_sprite)
+        BN67_SPRITE_GROUP(laserman_battle_sprite),
+        BN67_SPRITE_ID(laserman_battle_sprite)
     );
     exe6_obj_char_set();
     exe6_obj_shadow_set();
@@ -360,7 +360,7 @@ static void actor_init(Exe6Obj *self)
     self->phase = 0;
     self->substate = 0;
     self->timer = WAIT_FRAMES;
-    exe6_sound_req(EXE6_SONG_ID(common_navi_summon_song));
+    exe6_sound_req(BN67_SONG_ID(common_navi_summon_song));
 }
 
 static void spawn_hit(
@@ -371,7 +371,7 @@ static void spawn_hit(
 )
 {
     Exe6Obj *hit = exe6_shl_open(
-        EXE6_OBJ_ID(laserman_hit_main),
+        BN67_OBJ_ID(laserman_hit_main),
         0,
         0,
         0,
@@ -453,8 +453,8 @@ static void beam_init(Exe6Obj *self)
     self->x += exe6_calc_pl_em_spd() * (0x40 << 16);
     exe6_obj_char_init(
         0x80,
-        EXE6_SPRITE_GROUP(laserman_battle_sprite),
-        EXE6_SPRITE_ID(laserman_battle_sprite)
+        BN67_SPRITE_GROUP(laserman_battle_sprite),
+        BN67_SPRITE_ID(laserman_battle_sprite)
     );
     exe6_obj_char_set();
     exe6_obj_no_shadow();
@@ -638,7 +638,7 @@ static void hit_update(Exe6Obj *self)
     exe6_obj_move_delete();
 }
 
-EXE6_SHELL(laserman_hit_main)
+BN67_SHELL(laserman_hit_main)
 {
     if (self->state == 0) {
         (void)hit_init(self);
@@ -649,7 +649,7 @@ EXE6_SHELL(laserman_hit_main)
     }
 }
 
-EXE6_ENEMY(laserman_beam_main)
+BN67_ENEMY(laserman_beam_main)
 {
     if (self->state == 0) {
         beam_init(self);
@@ -662,7 +662,7 @@ EXE6_ENEMY(laserman_beam_main)
     exe6_obj_char_move();
 }
 
-EXE6_ENEMY(laserman_actor_main)
+BN67_ENEMY(laserman_actor_main)
 {
     if (self->state == 0) {
         actor_init(self);
@@ -675,10 +675,10 @@ EXE6_ENEMY(laserman_actor_main)
     exe6_obj_char_move();
 }
 
-EXE6_SUMMON_ATTACK(0x0E3, laserman_attack_main)
+BN67_SUMMON_ATTACK(0x0E3, laserman_attack_main)
 {
     Exe6Obj *actor = exe6_em_open(
-        EXE6_OBJ_ID(laserman_actor_main), spawn_parameters
+        BN67_OBJ_ID(laserman_actor_main), spawn_parameters
     );
     if (actor == NULL) {
         return;

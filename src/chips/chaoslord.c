@@ -1,16 +1,16 @@
 #include "runtime.h"
 
-EXE6_SPRITE(chaoslord_main_sprite, "build/chaoslord-bass-sprite.bin");
-EXE6_SPRITE(chaoslord_aura_sprite, "build/chaoslord-aura-sprite.bin");
-EXE6_SPRITE(chaoslord_teardown_sprite, "build/chaoslord-teardown-sprite.bin");
-EXE6_SPRITE(chaoslord_apparition_sprite, "build/chaoslord-apparition-sprite.bin");
+BN67_SPRITE(chaoslord_main_sprite, "build/chaoslord-bass-sprite.bin");
+BN67_SPRITE(chaoslord_aura_sprite, "build/chaoslord-aura-sprite.bin");
+BN67_SPRITE(chaoslord_teardown_sprite, "build/chaoslord-teardown-sprite.bin");
+BN67_SPRITE(chaoslord_apparition_sprite, "build/chaoslord-apparition-sprite.bin");
 
 #if !FALZAR
-EXE6_INCBIN(chaoslord_icon, "build/chaoslord-icon.bin");
-EXE6_INCBIN(chaoslord_image, "build/chaoslord-image.bin");
-EXE6_INCBIN(chaoslord_palette, "build/chaoslord-palette.bin");
+BN67_INCBIN(chaoslord_icon, "build/chaoslord-icon.bin");
+BN67_INCBIN(chaoslord_image, "build/chaoslord-image.bin");
+BN67_INCBIN(chaoslord_palette, "build/chaoslord-palette.bin");
 #endif
-EXE6_INCBIN(chaoslord_trig_table, "build/chaoslord-trig.bin");
+BN67_INCBIN(chaoslord_trig_table, "build/chaoslord-trig.bin");
 
 #if FALZAR
 #define CHAOSLORD_EFFECT_FLAGS 0x03
@@ -24,7 +24,7 @@ EXE6_INCBIN(chaoslord_trig_table, "build/chaoslord-trig.bin");
 #define CHAOSLORD_PALETTE chaoslord_palette
 #endif
 
-EXE6_CHIP_RECORD(0x12e) {
+BN67_CHIP_RECORD(0x12e) {
     .codes = {
         EXE6_CHIP_CODE_X,
         EXE6_CHIP_CODE_NONE,
@@ -39,8 +39,8 @@ EXE6_CHIP_RECORD(0x12e) {
     .behavior = {
         .effect_flags = CHAOSLORD_EFFECT_FLAGS,
         .counter_settings = 0xB2,
-        .family = EXE6_ATTACK_FAMILY(chaoslord_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(chaoslord_attack_main),
+        .family = BN67_ATTACK_FAMILY(chaoslord_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(chaoslord_attack_main),
         .dark_soul_usage = 0x0A,
         .unknown_0e = 0x00,
         .lock_on = 0x00,
@@ -216,13 +216,13 @@ static void ball_request_destroy(Exe6Obj *ball)
 static Exe6Obj *spawn_ball(Exe6Obj *controller)
 {
     Exe6ObjSpawnParameters spawn_parameters = {
-        .variant = (uint8_t)EXE6_SPRITE_GROUP(chaoslord_main_sprite),
-        .subvariant = (uint8_t)EXE6_SPRITE_ID(chaoslord_main_sprite),
+        .variant = (uint8_t)BN67_SPRITE_GROUP(chaoslord_main_sprite),
+        .subvariant = (uint8_t)BN67_SPRITE_ID(chaoslord_main_sprite),
         .animation_state = 1,
         .removal_state = 0x10,
     };
     Exe6Obj *ball = exe6_em_open(
-        EXE6_OBJ_ID(chaoslord_ball_main), spawn_parameters
+        BN67_OBJ_ID(chaoslord_ball_main), spawn_parameters
     );
     if (ball == NULL) {
         return NULL;
@@ -283,7 +283,7 @@ static void ball_init(Exe6Obj *self)
     ball_update(self);
 }
 
-EXE6_ENEMY(chaoslord_ball_main)
+BN67_ENEMY(chaoslord_ball_main)
 {
     if (self->state == 0) {
         ball_init(self);
@@ -303,7 +303,7 @@ static Exe6Obj *spawn_aura(
 )
 {
     Exe6Obj *aura = exe6_efc_open_at(
-        EXE6_OBJ_ID(chaoslord_aura_main),
+        BN67_OBJ_ID(chaoslord_aura_main),
         x,
         y,
         z,
@@ -326,7 +326,7 @@ static Exe6Obj *spawn_burst(
 )
 {
     Exe6Obj *burst = exe6_efc_open_at(
-        EXE6_OBJ_ID(chaoslord_burst_main),
+        BN67_OBJ_ID(chaoslord_burst_main),
         x,
         y,
         0,
@@ -347,7 +347,7 @@ static Exe6Obj *spawn_burst(
 static Exe6Obj *spawn_teardown(Exe6Obj *controller)
 {
     Exe6Obj *effect = exe6_efc_open_at(
-        EXE6_OBJ_ID(chaoslord_teardown_main),
+        BN67_OBJ_ID(chaoslord_teardown_main),
         controller->x,
         controller->y,
         controller->z + (16 << 16),
@@ -368,7 +368,7 @@ static Exe6Obj *spawn_flash(void)
         .animation_state = 1,
     };
     Exe6Obj *flash = exe6_efc_open(
-        EXE6_OBJ_ID(chaoslord_flash_main), spawn_parameters
+        BN67_OBJ_ID(chaoslord_flash_main), spawn_parameters
     );
     if (flash == NULL) {
         return NULL;
@@ -384,7 +384,7 @@ static Exe6Obj *spawn_attack_obj(
 )
 {
     Exe6Obj *attack = exe6_shl_open(
-        EXE6_OBJ_ID(chaoslord_attack_obj_main),
+        BN67_OBJ_ID(chaoslord_attack_obj_main),
         controller->x,
         controller->y,
         controller->z,
@@ -539,8 +539,8 @@ static void controller_phase_apparition(Exe6Obj *self)
     if (self->timer == 7) {
         exe6_obj_char_init(
             0x80,
-            EXE6_SPRITE_GROUP(chaoslord_apparition_sprite),
-            EXE6_SPRITE_ID(chaoslord_apparition_sprite)
+            BN67_SPRITE_GROUP(chaoslord_apparition_sprite),
+            BN67_SPRITE_ID(chaoslord_apparition_sprite)
         );
         exe6_obj_no_shadow();
         self->animation_word = 0x0101;
@@ -555,8 +555,8 @@ static void controller_phase_apparition(Exe6Obj *self)
 
     exe6_obj_char_init(
         0x80,
-        EXE6_SPRITE_GROUP(chaoslord_main_sprite),
-        EXE6_SPRITE_ID(chaoslord_main_sprite)
+        BN67_SPRITE_GROUP(chaoslord_main_sprite),
+        BN67_SPRITE_ID(chaoslord_main_sprite)
     );
     exe6_obj_shadow_set();
     exe6_obj_no_trans_flag_num_set(0);
@@ -658,7 +658,7 @@ static void controller_destroy(Exe6Obj *self)
     exe6_obj_move_delete();
 }
 
-EXE6_ENEMY(chaoslord_controller_main)
+BN67_ENEMY(chaoslord_controller_main)
 {
     if (self->state == 0) {
         controller_init(self);
@@ -670,11 +670,11 @@ EXE6_ENEMY(chaoslord_controller_main)
     exe6_battle_obj_char_move2();
 }
 
-EXE6_SUMMON_ATTACK(0x12E, chaoslord_attack_main)
+BN67_SUMMON_ATTACK(0x12E, chaoslord_attack_main)
 {
     (void)spawn_parameters;
     Exe6Obj *controller = exe6_em_open(
-        EXE6_OBJ_ID(chaoslord_controller_main),
+        BN67_OBJ_ID(chaoslord_controller_main),
         exe6_obj_spawn_empty()
     );
     if (controller == NULL) {
@@ -702,8 +702,8 @@ static void attack_set_sprite(Exe6Obj *self, uint32_t stage)
         animation = entry->animation;
         palette = entry->palette;
     } else {
-        group = EXE6_SPRITE_GROUP(chaoslord_main_sprite);
-        index = EXE6_SPRITE_ID(chaoslord_main_sprite);
+        group = BN67_SPRITE_GROUP(chaoslord_main_sprite);
+        index = BN67_SPRITE_ID(chaoslord_main_sprite);
         animation = stage == 2 ? 0x27 : 0x28;
         palette = 0;
     }
@@ -907,7 +907,7 @@ static void attack_init(Exe6Obj *self)
     attack_update(self);
 }
 
-EXE6_SHELL(chaoslord_attack_obj_main)
+BN67_SHELL(chaoslord_attack_obj_main)
 {
     if (self->state == 0) {
         attack_init(self);
@@ -1017,8 +1017,8 @@ static void aura_init(Exe6Obj *self)
 {
     exe6_obj_char_init(
         0x80,
-        EXE6_SPRITE_GROUP(chaoslord_aura_sprite),
-        EXE6_SPRITE_ID(chaoslord_aura_sprite)
+        BN67_SPRITE_GROUP(chaoslord_aura_sprite),
+        BN67_SPRITE_ID(chaoslord_aura_sprite)
     );
     self->animation_word = (uint16_t)(self->variant | (self->variant << 8));
     exe6_obj_dma_seq_set(self->variant);
@@ -1032,7 +1032,7 @@ static void aura_init(Exe6Obj *self)
     aura_update(self);
 }
 
-EXE6_EFFECT(chaoslord_aura_main)
+BN67_EFFECT(chaoslord_aura_main)
 {
     if (self->state == 0) {
         aura_init(self);
@@ -1099,8 +1099,8 @@ static void burst_init(Exe6Obj *self)
         (struct Exe6ChaoslordBurstWork *)self->work;
     exe6_obj_char_init(
         0x80,
-        EXE6_SPRITE_GROUP(chaoslord_aura_sprite),
-        EXE6_SPRITE_ID(chaoslord_aura_sprite)
+        BN67_SPRITE_GROUP(chaoslord_aura_sprite),
+        BN67_SPRITE_ID(chaoslord_aura_sprite)
     );
     self->animation = 0x15;
     exe6_obj_dma_seq_set(0x15);
@@ -1131,7 +1131,7 @@ static void burst_init(Exe6Obj *self)
     self->state_word = ACTIVE_STATE;
 }
 
-EXE6_EFFECT(chaoslord_burst_main)
+BN67_EFFECT(chaoslord_burst_main)
 {
     if (self->state == 0) {
         burst_init(self);
@@ -1164,8 +1164,8 @@ static void teardown_init(Exe6Obj *self)
 {
     exe6_obj_char_init(
         0x80,
-        EXE6_SPRITE_GROUP(chaoslord_teardown_sprite),
-        EXE6_SPRITE_ID(chaoslord_teardown_sprite)
+        BN67_SPRITE_GROUP(chaoslord_teardown_sprite),
+        BN67_SPRITE_ID(chaoslord_teardown_sprite)
     );
     exe6_obj_char_set();
     exe6_obj_no_shadow();
@@ -1182,7 +1182,7 @@ static void teardown_init(Exe6Obj *self)
     self->state_word = ACTIVE_STATE;
 }
 
-EXE6_EFFECT(chaoslord_teardown_main)
+BN67_EFFECT(chaoslord_teardown_main)
 {
     if (self->state == 0) {
         teardown_init(self);
@@ -1209,7 +1209,7 @@ static void flash_update(Exe6Obj *self)
     exe6_col_fade_set(0, color, 0x0F, 0x15, EXE6_PALETTE_BG_OUTPUT_00);
 }
 
-EXE6_EFFECT(chaoslord_flash_main)
+BN67_EFFECT(chaoslord_flash_main)
 {
     if (self->state == 0) {
         self->aux_timer = self->subvariant;

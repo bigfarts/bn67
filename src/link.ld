@@ -33,7 +33,7 @@ SECTIONS
 
     /DISCARD/ :
     {
-        *(.exe6_metadata)
+        *(.bn67_metadata)
         *(.comment)
         *(.ARM.attributes)
         *(.note*)

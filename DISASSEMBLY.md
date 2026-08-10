@@ -62,7 +62,7 @@ contain a usable SearchMan actor/reticle/hit set.
 
 Every imported object keeps its native BN6 class and receives a real 8-bit ID
 in that class's relocated table. IDs are assigned from dependency and
-declaration order; package code passes `EXE6_OBJ_ID(...)` to the native spawn
+declaration order; package code passes `BN67_OBJ_ID(...)` to the native spawn
 helper rather than storing a second discriminator in object memory. The native
 prefixes, including released HeatMan `0x30` and LifeSync `0x5C`, remain intact.
 FolderBack owns a fixed section patch at the shared dispatcher after it resolves
@@ -70,7 +70,7 @@ an entry. Its target substitutes the freeze wrapper only for class 1 and
 otherwise invokes that resolved entry directly; it does not duplicate a class
 table full of wrapper pointers.
 
-Exe6Runtime code and imported assets are allocated from file offset `0x800000`
+BN67 runtime code and imported assets are allocated from file offset `0x800000`
 onward in an expanded 16 MiB image; exact addresses are selected by Armips.
 The object state machine, timers, reticle movement/input, five-shot loop, and
 hit-effect selection follow BN5 state for state. The intentional engine

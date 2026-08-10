@@ -1,9 +1,9 @@
 #include "runtime.h"
 
-EXE6_SPRITE(bugchain_battle_sprite, "build/bugchain-battle-sprite.bin");
-EXE6_SONG(
+BN67_SPRITE(bugchain_battle_sprite, "build/bugchain-battle-sprite.bin");
+BN67_SONG(
     bugchain_aura_song,
-    EXE6_PCM(
+    BN67_PCM(
         bugchain_sound,
         0x40,
         0x00,
@@ -12,11 +12,11 @@ EXE6_SONG(
         "build/bugchain-sound-sample.bin"
     )
 );
-EXE6_INCBIN(bugchain_icon, "build/bugchain-icon.bin");
-EXE6_INCBIN(bugchain_image, "build/bugchain-image.bin");
-EXE6_INCBIN(bugchain_palette, "build/bugchain-palette.bin");
+BN67_INCBIN(bugchain_icon, "build/bugchain-icon.bin");
+BN67_INCBIN(bugchain_image, "build/bugchain-image.bin");
+BN67_INCBIN(bugchain_palette, "build/bugchain-palette.bin");
 
-EXE6_CHIP_RECORD(0x0be) {
+BN67_CHIP_RECORD(0x0be) {
     .codes = {
         EXE6_CHIP_CODE_C,
         EXE6_CHIP_CODE_ASTERISK,
@@ -31,8 +31,8 @@ EXE6_CHIP_RECORD(0x0be) {
     .behavior = {
         .effect_flags = 0x41,
         .counter_settings = 0x00,
-        .family = EXE6_ATTACK_FAMILY(bugchain_attack_main),
-        .subfamily = EXE6_ATTACK_SUBFAMILY(bugchain_attack_main),
+        .family = BN67_ATTACK_FAMILY(bugchain_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(bugchain_attack_main),
         .dark_soul_usage = 0x0A,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
@@ -116,7 +116,7 @@ static void spawn_visual(
 )
 {
     Exe6Obj *visual = exe6_efc_open(
-        EXE6_OBJ_ID(bugchain_visual_main), spawn_parameters
+        BN67_OBJ_ID(bugchain_visual_main), spawn_parameters
     );
     if (visual == NULL) {
         return;
@@ -178,7 +178,7 @@ static void update(
     }
 }
 
-EXE6_EFFECT(bugchain_controller_main)
+BN67_EFFECT(bugchain_controller_main)
 {
     switch (self->state) {
     case 0:
@@ -207,7 +207,7 @@ static void copy_coords(Exe6Obj *visual)
 static void visual_update(Exe6Obj *visual)
 {
     if (visual->timer == SOUND_FRAME) {
-        exe6_sound_req(EXE6_SONG_ID(bugchain_aura_song));
+        exe6_sound_req(BN67_SONG_ID(bugchain_aura_song));
     }
 
     uint16_t timer = (uint16_t)(visual->timer - 1u);
@@ -222,8 +222,8 @@ static void visual_init(Exe6Obj *visual)
 {
     exe6_obj_char_init(
         0x80,
-        EXE6_SPRITE_GROUP(bugchain_battle_sprite),
-        EXE6_SPRITE_ID(bugchain_battle_sprite)
+        BN67_SPRITE_GROUP(bugchain_battle_sprite),
+        BN67_SPRITE_ID(bugchain_battle_sprite)
     );
     exe6_obj_char_set();
     exe6_obj_no_shadow();
@@ -239,7 +239,7 @@ static void visual_init(Exe6Obj *visual)
     visual_update(visual);
 }
 
-EXE6_EFFECT(bugchain_visual_main)
+BN67_EFFECT(bugchain_visual_main)
 {
     switch (self->state) {
     case 0:
@@ -255,10 +255,10 @@ EXE6_EFFECT(bugchain_visual_main)
     exe6_battle_obj_char_move2();
 }
 
-EXE6_PERSISTENT_ATTACK(0x0BE, bugchain_attack_main)
+BN67_PERSISTENT_ATTACK(0x0BE, bugchain_attack_main)
 {
     Exe6Obj *controller = exe6_efc_open(
-        EXE6_OBJ_ID(bugchain_controller_main), spawn_parameters
+        BN67_OBJ_ID(bugchain_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;
