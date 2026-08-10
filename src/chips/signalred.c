@@ -31,6 +31,42 @@ EXE6_INCBIN(signalred_icon, "build/signalred-icon.bin");
 EXE6_INCBIN(signalred_image, "build/signalred-image.bin");
 EXE6_INCBIN(signalred_palette, "build/signalred-palette.bin");
 
+EXE6_CHIP_RECORD(0x0c1) {
+    .codes = {
+        EXE6_CHIP_CODE_S,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+    },
+    .attack_element = 0,
+    .rarity = 4,
+    .element = EXE6_CHIP_ELEMENT_OBSTACLE,
+    .chip_class = EXE6_CHIP_CLASS_STANDARD,
+    .mb = 61,
+    .behavior = {
+        .effect_flags = 0x41,
+        .counter_settings = 0x00,
+        .family = EXE6_ATTACK_FAMILY(signalred_attack_main),
+        .subfamily = EXE6_ATTACK_SUBFAMILY(signalred_attack_main),
+        .dark_soul_usage = 0x0A,
+        .unknown_0e = 0x04,
+        .lock_on = 0x00,
+        .object_spawn = {0},
+        .delay = 0,
+    },
+    .library_number = 0x14,
+    .library_flags = 0xC4,
+    .library_lock_on_type = 0x40,
+    .alphabetical_sort = 0,
+    .power = 0,
+    .library_sort_order = 0x00C6,
+    .library_gate_usage = 0x01,
+    .dark_chip_id = UINT8_MAX,
+    .icon = signalred_icon,
+    .image = signalred_image,
+    .palette = signalred_palette,
+};
+
 static const uint32_t GREEN_SFX = 0x00D1;
 static const uint16_t STARTUP_TICKS = 3;
 static const uint16_t RED_TICKS = 420;

@@ -1,14 +1,16 @@
 # Source registry
 
-Gameplay features may be organized in any subdirectory here. Each feature is a
-pair of sibling files:
+Gameplay features may be organized in any subdirectory here. Each feature has
+one required implementation and one optional text file:
 
-- `<name>.c` owns the implementation, resources, and registry declarations.
-- `<name>.defs.toml` optionally describes semantic chip-record and text edits.
+- `<name>.c` owns the implementation, chip records, resources, and registry
+  declarations.
+- `<name>.text.toml` optionally describes text archive replacements.
 
-There are no package manifests or generated C headers. The C implementation is
-the source of truth for attacks, objects, sprites, songs, dependencies, and
-pointer patches.
+There are no package manifests. The C implementation is the source of truth
+for chip records, attacks, objects, sprites, songs, dependencies, and pointer
+patches. A generated header supplies allocated attack constants to the final C
+compilation.
 
 The shared native-call ABI veneers are in `abi.c`; direct runtime helpers are
 in `runtime.c`. Global hooks are in `hooks.c` and `hooks.asm`. The linker layout
@@ -113,9 +115,9 @@ managed object.
 The family selects one of these native ABIs and the subfamily is an 8-bit
 index into that family's function table. The compiler relocates each
 configured native prefix, appends registered attacks, and writes the resulting
-family/subfamily selectors into every chip owned by the package. The first
-macro argument is a representative chip ID that explicitly connects the C
-attack to the matching package definitions; the compiler rejects a missing ID.
+family/subfamily selectors into the generated C constants. The first attack
+macro argument is a representative chip ID that explicitly connects the attack
+to an `EXE6_CHIP_RECORD` in the same package; the compiler rejects a missing ID.
 
 Object and attack entry points follow `<package>_<name>_main`; sprite archives
 follow `<package>_<name>_sprite`; and songs follow `<package>_<name>_song`. The
@@ -162,7 +164,9 @@ allocates that config's registry slots, and writes separate target artifacts:
 - `build/registry-<target>.generated.asm` for ROM hooks and tables;
 - `build/text-replacements-<target>.generated.json` for text edits;
 - `build/registry-values-<target>.generated.ld` for C-visible absolute selector
-  symbols.
+  symbols;
+- `build/registry-values-<target>.generated.h` for C integer constants used by
+  embedded chip records.
 
 An object's class selects its native allocator and lifecycle table; its ID is
 the 8-bit index within that table. The compiler relocates configured class
@@ -175,50 +179,35 @@ Metadata records are not included in the final gameplay binary.
 
 ## Chip definitions
 
-The optional `<name>.defs.toml` is deliberately un-namespaced. Its top-level
-keys are complete BN6 chip IDs:
+`EXE6_CHIP_RECORD(chip_id)` declares a complete `Exe6ChipRecord` C initializer.
+The macro emits registration metadata and keeps the 44-byte record in its own
+linked read-only section. The generated Armips registry copies those bytes from
+`gameplay-<target>.bin` over `chip_table + chip_id * 0x2C` during final ROM
+assembly. Artwork pointers therefore receive normal C/ELF relocations.
+
+Use `EXE6_ATTACK_FAMILY(main)` and `EXE6_ATTACK_SUBFAMILY(main)` for a custom
+attack's allocated selector bytes. `Exe6ChipRecord.behavior.object_spawn` has
+the named `variant`, `subvariant`, `animation_state`, and `removal_state`
+fields. Use `#if FALZAR` for edition-specific values. Every field must be
+specified deliberately because this is a complete replacement, not a partial
+native-record patch. `alphabetical_sort` may be zero: the final sort pass
+regenerates it from the completed name archives.
+
+Text replacements live in an optional sibling `<name>.text.toml`. Archive names
+are direct top-level tables; there is no `text.` prefix:
 
 ```toml
-[chips."0x131"]
-name = "BugCharg"
-description = ["All your", "bugs will", "attack!"]
-codes = ["B"]
-rarity = 4
-element = "null"
-class = "giga"
-mb = 77
-power = 200
-behavior = { counter_settings = 0x8B, object_spawn = {} }
-
-[chips."0x131".variants]
-gregar = { behavior = { effect_flags = 0x41 } }
-falzar = { behavior = { effect_flags = 0x01 } }
-```
-
-`behavior.object_spawn` uses the same named fields as
-`Exe6ObjSpawnParameters`. Missing fields inside the table are zero, so
-`object_spawn = { variant = 3 }` initializes only `variant`. Omitting the
-`object_spawn` table entirely preserves the native chip record's four bytes.
-
-Unrelated text replacements use a separate archive/index namespace:
-
-```toml
-[text.chip-names-1]
+[chip-names-1]
 "0x31" = "BugCharg"
 
-[text.chip-descriptions-1]
+[chip-descriptions-1]
 "0x31" = ["All your", "bugs will", "attack!"]
 ```
 
-Supported common fields are `codes`, `attack_element`, `rarity`, `element`,
-`class`, `mb`, `power`, `behavior`, `library`, and `artwork`. Entries under the
-generic `variants` table override common fields when their key matches the
-config's opaque `variant` value. Omitted values preserve the native chip record.
-
 Allocation is deterministic: attacks are ordered by their explicit
 representative chip IDs, while other resources sort source paths and retain ELF
-declaration order. Capacity overflow, duplicate registrations, missing
-definitions, and exhausted tables are build errors.
+declaration order. Capacity overflow, duplicate chip records, missing records,
+and exhausted tables are build errors.
 
 Run both compiler stages directly with:
 

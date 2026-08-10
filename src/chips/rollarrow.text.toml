@@ -1,0 +1,9 @@
+[chip-names-0]
+"0x18" = "RollAro1"
+"0x19" = "RollAro2"
+"0x1A" = "RollAro3"
+
+[chip-descriptions-0]
+"0x18" = ["RollArrow", "destroys", "chips"]
+"0x19" = ["RollArrow", "destroys", "chips"]
+"0x1A" = ["RollArrow", "destroys", "chips"]

@@ -25,6 +25,126 @@ EXE6_SONG(
     )
 );
 
+#if FALZAR
+#define LASERMAN_ICON ((const uint8_t *)0x0872BE14u)
+#define LASERMAN_LIBRARY_FLAGS 0x01
+#define LASERMAN_LIBRARY_NUMBER_BASE 0x03
+#define LASERMAN_LIBRARY_SORT_BASE 0x00F2
+#else
+#define LASERMAN_ICON ((const uint8_t *)0x08729D50u)
+#define LASERMAN_LIBRARY_FLAGS 0x00
+#define LASERMAN_LIBRARY_NUMBER_BASE 0x07
+#define LASERMAN_LIBRARY_SORT_BASE 0x00E3
+#endif
+
+EXE6_CHIP_RECORD(0x0e3) {
+    .codes = {
+        EXE6_CHIP_CODE_L,
+        EXE6_CHIP_CODE_ASTERISK,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+    },
+    .attack_element = 0,
+    .rarity = 2,
+    .element = EXE6_CHIP_ELEMENT_NULL,
+    .chip_class = EXE6_CHIP_CLASS_MEGA,
+    .mb = 60,
+    .behavior = {
+        .effect_flags = 0x47,
+        .counter_settings = 0x8A,
+        .family = EXE6_ATTACK_FAMILY(laserman_attack_main),
+        .subfamily = EXE6_ATTACK_SUBFAMILY(laserman_attack_main),
+        .dark_soul_usage = 0x00,
+        .unknown_0e = 0x04,
+        .lock_on = 0x00,
+        .object_spawn = {0},
+        .delay = 0,
+    },
+    .library_number = LASERMAN_LIBRARY_NUMBER_BASE,
+    .library_flags = LASERMAN_LIBRARY_FLAGS,
+    .library_lock_on_type = 0x00,
+    .alphabetical_sort = 0,
+    .power = 100,
+    .library_sort_order = LASERMAN_LIBRARY_SORT_BASE,
+    .library_gate_usage = 0x01,
+    .dark_chip_id = UINT8_MAX,
+    .icon = LASERMAN_ICON,
+    .image = laserman_image,
+    .palette = laserman_palette_base,
+};
+
+EXE6_CHIP_RECORD(0x0e4) {
+    .codes = {
+        EXE6_CHIP_CODE_L,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+    },
+    .attack_element = 0,
+    .rarity = 3,
+    .element = EXE6_CHIP_ELEMENT_NULL,
+    .chip_class = EXE6_CHIP_CLASS_MEGA,
+    .mb = 80,
+    .behavior = {
+        .effect_flags = 0x47,
+        .counter_settings = 0x8A,
+        .family = EXE6_ATTACK_FAMILY(laserman_attack_main),
+        .subfamily = EXE6_ATTACK_SUBFAMILY(laserman_attack_main),
+        .dark_soul_usage = 0x00,
+        .unknown_0e = 0x04,
+        .lock_on = 0x00,
+        .object_spawn = { .variant = 3 },
+        .delay = 0,
+    },
+    .library_number = LASERMAN_LIBRARY_NUMBER_BASE + 1,
+    .library_flags = LASERMAN_LIBRARY_FLAGS,
+    .library_lock_on_type = 0x00,
+    .alphabetical_sort = 0,
+    .power = 150,
+    .library_sort_order = LASERMAN_LIBRARY_SORT_BASE + 1,
+    .library_gate_usage = 0x01,
+    .dark_chip_id = UINT8_MAX,
+    .icon = LASERMAN_ICON,
+    .image = laserman_image,
+    .palette = laserman_palette_ex,
+};
+
+EXE6_CHIP_RECORD(0x0e5) {
+    .codes = {
+        EXE6_CHIP_CODE_L,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+    },
+    .attack_element = 0,
+    .rarity = 4,
+    .element = EXE6_CHIP_ELEMENT_NULL,
+    .chip_class = EXE6_CHIP_CLASS_MEGA,
+    .mb = 80,
+    .behavior = {
+        .effect_flags = 0x47,
+        .counter_settings = 0x8A,
+        .family = EXE6_ATTACK_FAMILY(laserman_attack_main),
+        .subfamily = EXE6_ATTACK_SUBFAMILY(laserman_attack_main),
+        .dark_soul_usage = 0x00,
+        .unknown_0e = 0x04,
+        .lock_on = 0x00,
+        .object_spawn = { .variant = 4 },
+        .delay = 0,
+    },
+    .library_number = LASERMAN_LIBRARY_NUMBER_BASE + 2,
+    .library_flags = LASERMAN_LIBRARY_FLAGS,
+    .library_lock_on_type = 0x00,
+    .alphabetical_sort = 0,
+    .power = 200,
+    .library_sort_order = LASERMAN_LIBRARY_SORT_BASE + 2,
+    .library_gate_usage = 0x01,
+    .dark_chip_id = UINT8_MAX,
+    .icon = LASERMAN_ICON,
+    .image = laserman_image,
+    .palette = laserman_palette_sp,
+};
+
 static const uint8_t ACTIVE_STATE = 4;
 static const uint8_t DESTROY_STATE = 8;
 static const uint8_t HIT_VISUAL = 25;

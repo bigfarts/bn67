@@ -170,9 +170,8 @@ hook locations.
 ## Source registry
 
 Gameplay implementations may live anywhere under `src/`. Each implementation
-registers its own attacks, objects, sprites, songs, dependencies, and pointer
-patches with `EXE6_*` macros. No manifest or generated C header mirrors those
-declarations.
+registers its own chip records, attacks, objects, sprites, songs, dependencies,
+and pointer patches with `EXE6_*` macros. There is no package manifest.
 
 `compile_c_metadata.py` compiles the gameplay package sources in target-specific
 metadata mode and extracts their ordered `__exe6_meta__...` symbols from the ELF
@@ -182,23 +181,33 @@ absolute linker symbols used by expressions such as
 `EXE6_OBJ_ID(searchman_actor_main)` and
 `EXE6_SPRITE_ID(searchman_battle_sprite)`.
 
-Optional sibling `<name>.defs.toml` files keep declarative ROM-data edits
-separate:
+Complete 44-byte chip records are ordinary C initializers embedded in the
+linked gameplay image:
+
+```c
+EXE6_CHIP_RECORD(0x131) {
+    .codes = { EXE6_CHIP_CODE_B, EXE6_CHIP_CODE_NONE,
+               EXE6_CHIP_CODE_NONE, EXE6_CHIP_CODE_NONE },
+    .behavior = {
+        .family = EXE6_ATTACK_FAMILY(bugcharge_attack_main),
+        .subfamily = EXE6_ATTACK_SUBFAMILY(bugcharge_attack_main),
+    },
+    .power = 200,
+    // Remaining Exe6ChipRecord fields omitted here for brevity.
+};
+```
+
+The final Armips pass copies each linked record over its original table entry.
+Optional sibling `<name>.text.toml` files contain only text archive edits, with
+archive names directly at the top level:
 
 ```toml
-[chips."0x131"]
-codes = ["B"]
-power = 200
-behavior = { counter_settings = 0x8B }
-
-[text.chip-names-1]
+[chip-names-1]
 "0x31" = "BugCharg"
 ```
 
-`chips` contains semantic chip records; `text` contains explicit archive/index
-replacements. Target-specific chip overrides live in the generic `variants`
-table and are selected by the config's opaque `variant` value. See
-[src/README.md](src/README.md) for the complete registry and defs reference.
+See [src/README.md](src/README.md) for the complete registry, chip-record, and
+text reference.
 
 ## Build
 
@@ -246,15 +255,15 @@ special, enemy, and unused records remain untouched.
 
 BN6 splits chip names and descriptions into an earlier 256-entry archive for
 IDs `0x000`-`0x0FF` and a later archive beginning at ID `0x100`. The Python
-builder relocates all four archives (two names and two descriptions). Chip
-`name` and `description` fields are routed through the configured archive map
-using the chip ID. The generated assembly repoints every configured consumer.
+builder relocates all four archives (two names and two descriptions). The
+generated assembly repoints every configured consumer.
 
 ```toml
-[chips."0x107"]
-name = "SerchMan"
-description = ["Aim", "and fire", "5 shots"]
+[chip-names-1]
+"0x07" = "SerchMan"
+
+[chip-descriptions-1]
+"0x07" = ["Aim", "and fire", "5 shots"]
 ```
 
-The lower-level `[text.<archive>]` syntax remains available for explicit
-archive edits that are not chip fields. Untouched entries remain unchanged.
+These tables live in `searchman.text.toml`; untouched entries remain unchanged.

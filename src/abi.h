@@ -388,6 +388,98 @@ static inline Exe6ObjSpawnParameters exe6_obj_spawn_with_variant(
     return (Exe6ObjSpawnParameters){ .variant = variant };
 }
 
+enum Exe6ChipCode {
+    EXE6_CHIP_CODE_A = 0x00,
+    EXE6_CHIP_CODE_B = 0x01,
+    EXE6_CHIP_CODE_C = 0x02,
+    EXE6_CHIP_CODE_D = 0x03,
+    EXE6_CHIP_CODE_E = 0x04,
+    EXE6_CHIP_CODE_F = 0x05,
+    EXE6_CHIP_CODE_G = 0x06,
+    EXE6_CHIP_CODE_H = 0x07,
+    EXE6_CHIP_CODE_I = 0x08,
+    EXE6_CHIP_CODE_J = 0x09,
+    EXE6_CHIP_CODE_K = 0x0A,
+    EXE6_CHIP_CODE_L = 0x0B,
+    EXE6_CHIP_CODE_M = 0x0C,
+    EXE6_CHIP_CODE_N = 0x0D,
+    EXE6_CHIP_CODE_O = 0x0E,
+    EXE6_CHIP_CODE_P = 0x0F,
+    EXE6_CHIP_CODE_Q = 0x10,
+    EXE6_CHIP_CODE_R = 0x11,
+    EXE6_CHIP_CODE_S = 0x12,
+    EXE6_CHIP_CODE_T = 0x13,
+    EXE6_CHIP_CODE_U = 0x14,
+    EXE6_CHIP_CODE_V = 0x15,
+    EXE6_CHIP_CODE_W = 0x16,
+    EXE6_CHIP_CODE_X = 0x17,
+    EXE6_CHIP_CODE_Y = 0x18,
+    EXE6_CHIP_CODE_Z = 0x19,
+    EXE6_CHIP_CODE_ASTERISK = 0x1A,
+    EXE6_CHIP_CODE_NONE = 0xFF,
+};
+
+enum Exe6ChipElement {
+    EXE6_CHIP_ELEMENT_FIRE = 0x00,
+    EXE6_CHIP_ELEMENT_AQUA = 0x01,
+    EXE6_CHIP_ELEMENT_ELEC = 0x02,
+    EXE6_CHIP_ELEMENT_WOOD = 0x03,
+    EXE6_CHIP_ELEMENT_BONUS = 0x04,
+    EXE6_CHIP_ELEMENT_SWORD = 0x05,
+    EXE6_CHIP_ELEMENT_CURSOR = 0x06,
+    EXE6_CHIP_ELEMENT_OBSTACLE = 0x07,
+    EXE6_CHIP_ELEMENT_WIND = 0x08,
+    EXE6_CHIP_ELEMENT_BREAK = 0x09,
+    EXE6_CHIP_ELEMENT_NULL = 0x0A,
+};
+
+enum Exe6ChipClass {
+    EXE6_CHIP_CLASS_STANDARD = 0x00,
+    EXE6_CHIP_CLASS_MEGA = 0x01,
+    EXE6_CHIP_CLASS_GIGA = 0x02,
+    EXE6_CHIP_CLASS_PROGRAM_ADVANCE = 0x04,
+};
+
+typedef struct __attribute__((packed)) Exe6ChipSpawnParametersFields {
+    uint8_t variant;
+    uint8_t subvariant;
+    uint8_t animation_state;
+    uint8_t removal_state;
+} Exe6ChipSpawnParameters;
+
+typedef struct __attribute__((packed)) Exe6ChipBehaviorFields {
+    uint8_t effect_flags;                // +0x09
+    uint8_t counter_settings;            // +0x0A
+    uint8_t family;                      // +0x0B
+    uint8_t subfamily;                   // +0x0C
+    uint8_t dark_soul_usage;             // +0x0D
+    uint8_t unknown_0e;                  // +0x0E
+    uint8_t lock_on;                     // +0x0F
+    Exe6ChipSpawnParameters object_spawn; // +0x10
+    uint8_t delay;                       // +0x14
+} Exe6ChipBehavior;
+
+typedef struct __attribute__((packed, aligned(4))) Exe6ChipRecordFields {
+    uint8_t codes[4];                    // +0x00
+    uint8_t attack_element;              // +0x04
+    uint8_t rarity;                      // +0x05
+    uint8_t element;                     // +0x06
+    uint8_t chip_class;                  // +0x07
+    uint8_t mb;                          // +0x08
+    Exe6ChipBehavior behavior;           // +0x09
+    uint8_t library_number;              // +0x15
+    uint8_t library_flags;               // +0x16
+    uint8_t library_lock_on_type;        // +0x17
+    uint16_t alphabetical_sort;          // +0x18, regenerated after ROM linking
+    uint16_t power;                      // +0x1A
+    uint16_t library_sort_order;         // +0x1C
+    uint8_t library_gate_usage;          // +0x1E
+    uint8_t dark_chip_id;                // +0x1F
+    const uint8_t *icon;                 // +0x20
+    const uint8_t *image;                // +0x24
+    const uint8_t *palette;              // +0x28
+} Exe6ChipRecord;
+
 struct Exe6ObjFields {
     uint8_t header_flags;                // +0x00, EXE6_OBJ_FLAG_*
     uint8_t unknown_01[3];
@@ -534,6 +626,15 @@ _Static_assert(
         && offsetof(Exe6ObjSpawnParameters, removal_state) == 3,
     "obj spawn parameter byte layout"
 );
+_Static_assert(sizeof(Exe6ChipBehavior) == 0x0C, "chip behavior size");
+_Static_assert(sizeof(Exe6ChipRecord) == 0x2C, "chip record size");
+_Static_assert(offsetof(Exe6ChipRecord, behavior) == 0x09, "chip behavior offset");
+_Static_assert(
+    offsetof(Exe6ChipRecord, library_number) == 0x15,
+    "chip library offset"
+);
+_Static_assert(offsetof(Exe6ChipRecord, power) == 0x1A, "chip power offset");
+_Static_assert(offsetof(Exe6ChipRecord, icon) == 0x20, "chip artwork offset");
 _Static_assert(
     offsetof(struct Exe6ObjFields, spawn_parameters) == 0x04,
     "obj spawn parameters offset"

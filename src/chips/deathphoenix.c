@@ -9,6 +9,54 @@ EXE6_INCBIN(deathphoenix_image, "build/deathphoenix-image.bin");
 EXE6_INCBIN(deathphoenix_palette, "build/deathphoenix-palette.bin");
 #endif
 
+#if FALZAR
+#define DEATHPHOENIX_EFFECT_FLAGS 0x43
+#define DEATHPHOENIX_ICON deathphoenix_icon
+#define DEATHPHOENIX_IMAGE deathphoenix_image
+#define DEATHPHOENIX_PALETTE deathphoenix_palette
+#else
+#define DEATHPHOENIX_EFFECT_FLAGS 0x03
+#define DEATHPHOENIX_ICON ((const uint8_t *)0x0872A3D0u)
+#define DEATHPHOENIX_IMAGE ((const uint8_t *)0x0871EFF0u)
+#define DEATHPHOENIX_PALETTE ((const uint8_t *)0x087234B0u)
+#endif
+
+EXE6_CHIP_RECORD(0x134) {
+    .codes = {
+        EXE6_CHIP_CODE_D,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+    },
+    .attack_element = 0,
+    .rarity = 4,
+    .element = EXE6_CHIP_ELEMENT_NULL,
+    .chip_class = EXE6_CHIP_CLASS_GIGA,
+    .mb = 93,
+    .behavior = {
+        .effect_flags = DEATHPHOENIX_EFFECT_FLAGS,
+        .counter_settings = 0x94,
+        .family = EXE6_ATTACK_FAMILY(deathphoenix_attack_main),
+        .subfamily = EXE6_ATTACK_SUBFAMILY(deathphoenix_attack_main),
+        .dark_soul_usage = 0x0A,
+        .unknown_0e = 0x04,
+        .lock_on = 0x00,
+        .object_spawn = {0},
+        .delay = 0,
+    },
+    .library_number = 0x00,
+    .library_flags = 0x00,
+    .library_lock_on_type = 0x10,
+    .alphabetical_sort = 0,
+    .power = 150,
+    .library_sort_order = 0x0134,
+    .library_gate_usage = 0x01,
+    .dark_chip_id = UINT8_MAX,
+    .icon = DEATHPHOENIX_ICON,
+    .image = DEATHPHOENIX_IMAGE,
+    .palette = DEATHPHOENIX_PALETTE,
+};
+
 static const uint8_t ACTIVE_STATE = 4;
 static const uint8_t DESTROY_STATE = 8;
 static const uint8_t APPEAR_PHASE = 4;

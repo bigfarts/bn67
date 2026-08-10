@@ -16,6 +16,42 @@ EXE6_INCBIN(bugchain_icon, "build/bugchain-icon.bin");
 EXE6_INCBIN(bugchain_image, "build/bugchain-image.bin");
 EXE6_INCBIN(bugchain_palette, "build/bugchain-palette.bin");
 
+EXE6_CHIP_RECORD(0x0be) {
+    .codes = {
+        EXE6_CHIP_CODE_C,
+        EXE6_CHIP_CODE_ASTERISK,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+    },
+    .attack_element = 0,
+    .rarity = 3,
+    .element = EXE6_CHIP_ELEMENT_NULL,
+    .chip_class = EXE6_CHIP_CLASS_STANDARD,
+    .mb = 59,
+    .behavior = {
+        .effect_flags = 0x41,
+        .counter_settings = 0x00,
+        .family = EXE6_ATTACK_FAMILY(bugchain_attack_main),
+        .subfamily = EXE6_ATTACK_SUBFAMILY(bugchain_attack_main),
+        .dark_soul_usage = 0x0A,
+        .unknown_0e = 0x04,
+        .lock_on = 0x00,
+        .object_spawn = {0},
+        .delay = 0,
+    },
+    .library_number = 0xC2,
+    .library_flags = 0x80,
+    .library_lock_on_type = 0x01,
+    .alphabetical_sort = 0,
+    .power = 0,
+    .library_sort_order = 0x00C2,
+    .library_gate_usage = 0x03,
+    .dark_chip_id = UINT8_MAX,
+    .icon = bugchain_icon,
+    .image = bugchain_image,
+    .palette = bugchain_palette,
+};
+
 static const uint16_t EFFECT_FRAMES = 60;
 static const uint16_t VISUAL_FRAMES = 50;
 static const uint16_t SOUND_FRAME = 42;

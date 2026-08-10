@@ -15,6 +15,42 @@ EXE6_SONG(
     )
 );
 
+EXE6_CHIP_RECORD(0x139) {
+    .codes = {
+        EXE6_CHIP_CODE_ASTERISK,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+    },
+    .attack_element = 0,
+    .rarity = 4,
+    .element = EXE6_CHIP_ELEMENT_NULL,
+    .chip_class = EXE6_CHIP_CLASS_GIGA,
+    .mb = 99,
+    .behavior = {
+        .effect_flags = 0x41,
+        .counter_settings = 0x00,
+        .family = EXE6_ATTACK_FAMILY(folderback_attack_main),
+        .subfamily = EXE6_ATTACK_SUBFAMILY(folderback_attack_main),
+        .dark_soul_usage = 0x0A,
+        .unknown_0e = 0x00,
+        .lock_on = 0x00,
+        .object_spawn = {0},
+        .delay = 0,
+    },
+    .library_number = 0x0D,
+    .library_flags = 0x10,
+    .library_lock_on_type = 0x00,
+    .alphabetical_sort = 0,
+    .power = 0,
+    .library_sort_order = 0x0139,
+    .library_gate_usage = 0x01,
+    .dark_chip_id = UINT8_MAX,
+    .icon = folderback_icon,
+    .image = folderback_image,
+    .palette = folderback_palette,
+};
+
 static const uint32_t FULL_GAUGE = 0x4000;
 static const uint32_t PALE_FLASH = 0x00004210;
 static const uint32_t WHITE_FLASH = 0x00006318;

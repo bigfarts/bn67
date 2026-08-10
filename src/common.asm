@@ -12,6 +12,15 @@
     bx r12
 .endmacro
 
+.macro copy_c_data,address,symbol,size
+    .org address
+    .if falzar
+        .incbin "build/gameplay-falzar.bin",symbol-c_code_start,size
+    .else
+        .incbin "build/gameplay-gregar.bin",symbol-c_code_start,size
+    .endif
+.endmacro
+
 .include "src/hooks.asm"
 
 .if falzar

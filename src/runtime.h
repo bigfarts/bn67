@@ -15,6 +15,12 @@ uint8_t *exe6_chip_queue(void);
 #define EXE6_LINK_SONG_ID(archive) EXE6_JOIN(__exe6_song_id_, archive)
 #define EXE6_LINK_SONG_GROUP(archive) EXE6_JOIN(__exe6_song_group_, archive)
 
+/* Metadata compilation runs before attack slots are allocated. */
+#ifndef EXE6_ATTACK_FAMILY
+#define EXE6_ATTACK_FAMILY(main) 0
+#define EXE6_ATTACK_SUBFAMILY(main) 0
+#endif
+
 #define EXE6_OBJ_ID(main) \
     __extension__ ({ \
         extern const uint8_t EXE6_LINK_OBJ_ID(main)[]; \
@@ -141,6 +147,21 @@ uint8_t *exe6_chip_queue(void);
         "pointer", \
         EXE6_STRINGIFY(address) "__" EXE6_STRINGIFY(symbol) \
     )
+
+/*
+ * A complete native 0x2C chip record. The linked record remains in the C
+ * image; the final ROM assembly copies it over the chip ID's native slot.
+ */
+#define EXE6_CHIP_RECORD_SYMBOL(chip_id) \
+    EXE6_JOIN(exe6_chip_record_, chip_id)
+
+#define EXE6_CHIP_RECORD(chip_id) \
+    EXE6_METADATA_RECORD( \
+        "chip", \
+        EXE6_STRINGIFY(chip_id) \
+    ); \
+    USED const Exe6ChipRecord EXE6_CHIP_RECORD_SYMBOL(chip_id) \
+        __attribute__((section(".rodata." EXE6_STRINGIFY(chip_id)), aligned(4))) =
 
 #ifdef EXE6_METADATA_ONLY
 #define EXE6_ASM_RESOURCE(name, contents) extern const uint8_t name[]

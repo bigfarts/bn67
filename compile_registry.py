@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile BN6 C metadata and definitions into registry glue."""
+"""Compile BN6 C metadata and text replacements into registry glue."""
 
 from __future__ import annotations
 
@@ -18,31 +18,6 @@ POINTER_METADATA_RE = re.compile(r"^pointer__(0[xX][0-9A-Fa-f]+)__([a-z][a-z0-9_
 RUNTIME_SOURCE_NAMES = {"abi.c", "runtime.c"}
 SONG_PLAYER_FIRST = 0x0C
 SONG_PLAYER_LAST = 0x1F
-
-CHIP_CODE_VALUES = {
-    letter: index for index, letter in enumerate("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-}
-CHIP_CODE_VALUES["*"] = 0x1A
-CHIP_ELEMENTS = {
-    "fire": 0x00,
-    "aqua": 0x01,
-    "elec": 0x02,
-    "wood": 0x03,
-    "bonus": 0x04,
-    "sword": 0x05,
-    "cursor": 0x06,
-    "obstacle": 0x07,
-    "wind": 0x08,
-    "break": 0x09,
-    "null": 0x0A,
-}
-CHIP_CLASSES = {
-    "standard": 0x00,
-    "mega": 0x01,
-    "giga": 0x02,
-    "program-advance": 0x04,
-}
-
 
 class PackageError(Exception):
     pass
@@ -155,15 +130,11 @@ class TextResource:
     value: str | tuple[str, ...]
 
 
-ChipValue = int | str | tuple[int, ...]
-
-
 @dataclass(frozen=True)
 class ChipResource:
     package: str
     chip_id: int
-    common: tuple[tuple[str, ChipValue], ...]
-    override: tuple[tuple[str, ChipValue], ...]
+    record: str
 
 
 @dataclass(frozen=True)
@@ -565,73 +536,6 @@ def load_config(path: Path) -> Config:
     )
 
 
-CHIP_FIELD_LAYOUT: dict[str, tuple[int, str]] = {
-    "codes": (0x00, "bytes"),
-    "attack_element": (0x04, "byte"),
-    "rarity": (0x05, "byte"),
-    "element": (0x06, "byte"),
-    "class": (0x07, "byte"),
-    "mb": (0x08, "byte"),
-    "behavior.effect_flags": (0x09, "byte"),
-    "behavior.counter_settings": (0x0A, "byte"),
-    "behavior.family": (0x0B, "byte"),
-    "behavior.subfamily": (0x0C, "byte"),
-    "behavior.dark_soul_usage": (0x0D, "byte"),
-    "behavior.unknown_0e": (0x0E, "byte"),
-    "behavior.lock_on": (0x0F, "byte"),
-    "behavior.object_spawn": (0x10, "bytes"),
-    "behavior.delay": (0x14, "byte"),
-    "library.number": (0x15, "byte"),
-    "library.flags": (0x16, "byte"),
-    "library.lock_on_type": (0x17, "byte"),
-    # 0x18 is compiler-owned: reorder_chip_sort.py regenerates it from names.
-    "power": (0x1A, "halfword"),
-    "library.sort_order": (0x1C, "halfword"),
-    "library.gate_usage": (0x1E, "byte"),
-    "library.dark_chip_id": (0x1F, "byte"),
-    "artwork.icon": (0x20, "word"),
-    "artwork.image": (0x24, "word"),
-    "artwork.palette": (0x28, "word"),
-}
-
-CHIP_TOP_LEVEL_FIELDS = {
-    "codes",
-    "attack_element",
-    "rarity",
-    "element",
-    "class",
-    "mb",
-    "power",
-    "behavior",
-    "library",
-    "artwork",
-}
-CHIP_BEHAVIOR_FIELDS = {
-    "effect_flags",
-    "counter_settings",
-    "dark_soul_usage",
-    "unknown_0e",
-    "lock_on",
-    "object_spawn",
-    "delay",
-}
-CHIP_OBJECT_SPAWN_FIELDS = (
-    "variant",
-    "subvariant",
-    "animation_state",
-    "removal_state",
-)
-CHIP_LIBRARY_FIELDS = {
-    "number",
-    "flags",
-    "lock_on_type",
-    "sort_order",
-    "gate_usage",
-    "dark_chip_id",
-}
-CHIP_ARTWORK_FIELDS = {"icon", "image", "palette"}
-
-
 def checked_int(value: Any, minimum: int, maximum: int, context: str) -> int:
     if (
         isinstance(value, bool)
@@ -644,241 +548,26 @@ def checked_int(value: Any, minimum: int, maximum: int, context: str) -> int:
     return value
 
 
-def chip_text_archive(
-    config: Config,
-    source: str,
-    chip_id: int,
-    context: str,
-) -> tuple[str, int]:
-    """Resolve a semantic chip-text field through the configured archives."""
-    source_index, entry_index = divmod(chip_id, 0x100)
-    matches = [
-        archive
-        for group in config.text.groups
-        for archive in group.archives
-        if archive.source == source and archive.source_index == source_index
-    ]
-    if len(matches) != 1 or entry_index >= matches[0].native_entries:
-        raise PackageError(
-            f"{context}: chip 0x{chip_id:03X} has no configured {source} archive"
-        )
-    return matches[0].name, entry_index
-
-
-def parse_chip_record(
-    table: dict[str, Any], context: str
-) -> tuple[tuple[str, ChipValue], ...]:
-    check_keys(table, CHIP_TOP_LEVEL_FIELDS, context)
-    fields: dict[str, ChipValue] = {}
-
-    if "codes" in table:
-        raw_codes = table["codes"]
-        if (
-            not isinstance(raw_codes, list)
-            or not 1 <= len(raw_codes) <= 4
-            or not all(
-                isinstance(code, str) and code in CHIP_CODE_VALUES for code in raw_codes
-            )
-        ):
-            raise PackageError(
-                f"{context}: codes must contain one to four values from A-Z or '*'"
-            )
-        if len(set(raw_codes)) != len(raw_codes):
-            raise PackageError(f"{context}: codes must not contain duplicates")
-        fields["codes"] = tuple(
-            [CHIP_CODE_VALUES[code] for code in raw_codes]
-            + [0xFF] * (4 - len(raw_codes))
-        )
-
-    for key in ("attack_element", "rarity", "mb"):
-        if key in table:
-            fields[key] = checked_int(table[key], 0, 0xFF, f"{context}: {key}")
-    if "power" in table:
-        fields["power"] = checked_int(table["power"], 0, 0xFFFF, f"{context}: power")
-
-    if "element" in table:
-        element = table["element"]
-        if not isinstance(element, str) or element not in CHIP_ELEMENTS:
-            raise PackageError(
-                f"{context}: element must be one of {', '.join(sorted(CHIP_ELEMENTS))}"
-            )
-        fields["element"] = CHIP_ELEMENTS[element]
-    if "class" in table:
-        chip_class = table["class"]
-        if not isinstance(chip_class, str) or chip_class not in CHIP_CLASSES:
-            raise PackageError(
-                f"{context}: class must be one of {', '.join(sorted(CHIP_CLASSES))}"
-            )
-        fields["class"] = CHIP_CLASSES[chip_class]
-
-    behavior = table.get("behavior", {})
-    if not isinstance(behavior, dict):
-        raise PackageError(f"{context}: behavior must be a table")
-    check_keys(behavior, CHIP_BEHAVIOR_FIELDS, f"{context}: behavior")
-    for key in CHIP_BEHAVIOR_FIELDS - {"object_spawn"}:
-        if key in behavior:
-            fields[f"behavior.{key}"] = checked_int(
-                behavior[key], 0, 0xFF, f"{context}: behavior.{key}"
-            )
-    if "object_spawn" in behavior:
-        object_spawn = behavior["object_spawn"]
-        if not isinstance(object_spawn, dict):
-            raise PackageError(f"{context}: behavior.object_spawn must be a table")
-        check_keys(
-            object_spawn,
-            set(CHIP_OBJECT_SPAWN_FIELDS),
-            f"{context}: behavior.object_spawn",
-        )
-        fields["behavior.object_spawn"] = tuple(
-            checked_int(
-                object_spawn.get(field, 0),
-                0,
-                0xFF,
-                f"{context}: behavior.object_spawn.{field}",
-            )
-            for field in CHIP_OBJECT_SPAWN_FIELDS
-        )
-
-    library = table.get("library", {})
-    if not isinstance(library, dict):
-        raise PackageError(f"{context}: library must be a table")
-    check_keys(library, CHIP_LIBRARY_FIELDS, f"{context}: library")
-    for key in CHIP_LIBRARY_FIELDS:
-        if key not in library:
-            continue
-        value = library[key]
-        if key == "dark_chip_id" and value == "none":
-            normalized = 0xFF
-        else:
-            maximum = 0xFFFF if key == "sort_order" else 0xFF
-            normalized = checked_int(value, 0, maximum, f"{context}: library.{key}")
-        fields[f"library.{key}"] = normalized
-
-    artwork = table.get("artwork", {})
-    if not isinstance(artwork, dict):
-        raise PackageError(f"{context}: artwork must be a table")
-    check_keys(artwork, CHIP_ARTWORK_FIELDS, f"{context}: artwork")
-    for key in CHIP_ARTWORK_FIELDS:
-        if key not in artwork:
-            continue
-        value = artwork[key]
-        if isinstance(value, bool) or not (
-            isinstance(value, int)
-            and 0 <= value <= 0xFFFFFFFF
-            or isinstance(value, str)
-            and SNAKE_CASE_RE.fullmatch(value)
-        ):
-            raise PackageError(
-                f"{context}: artwork.{key} must be a 32-bit address or assembly symbol"
-            )
-        fields[f"artwork.{key}"] = value
-
-    return tuple(sorted(fields.items(), key=lambda item: CHIP_FIELD_LAYOUT[item[0]][0]))
-
-
 def load_package(source_path: Path, config: Config) -> Package:
     name = source_path.stem
     check_name(name, str(source_path))
-    definitions = source_path.with_suffix(".defs.toml")
-    if definitions.is_file():
+    text_definitions = source_path.with_suffix(".text.toml")
+    if text_definitions.is_file():
         try:
-            raw_definitions = tomllib.loads(definitions.read_text())
+            text_values = tomllib.loads(text_definitions.read_text())
         except (OSError, tomllib.TOMLDecodeError) as exc:
-            raise PackageError(f"cannot read {definitions}: {exc}") from exc
+            raise PackageError(f"cannot read {text_definitions}: {exc}") from exc
     else:
-        raw_definitions = {}
-    check_keys(raw_definitions, {"chips", "text"}, str(definitions))
-    chip_values = raw_definitions.get("chips", {})
-    text_values = raw_definitions.get("text", {})
-    if not isinstance(chip_values, dict):
-        raise PackageError(f"{definitions}: chips must be a table")
-    if not isinstance(text_values, dict):
-        raise PackageError(f"{definitions}: text must be a table")
+        text_values = {}
 
     text: list[TextResource] = []
-    chips: list[ChipResource] = []
-    for chip_key, item in chip_values.items():
-        context = f"{definitions}:{chip_key}"
-        try:
-            chip_id = int(chip_key, 0)
-        except ValueError as exc:
-            raise PackageError(f"{context}: chip ID must be an integer string") from exc
-        if not 0 <= chip_id < config.chips.record_count:
-            raise PackageError(
-                f"{context}: chip ID must be between 0x000 and "
-                f"0x{config.chips.record_count - 1:03X}"
-            )
-        if not isinstance(item, dict):
-            raise PackageError(f"{context}: configuration must be a table")
-        check_keys(
-            item,
-            CHIP_TOP_LEVEL_FIELDS | {"name", "description", "variants"},
-            context,
-        )
-
-        common_table = {
-            key: value for key, value in item.items() if key in CHIP_TOP_LEVEL_FIELDS
-        }
-        common = parse_chip_record(common_table, context)
-        variants = item.get("variants", {})
-        if not isinstance(variants, dict):
-            raise PackageError(f"{context}: variants must be a table")
-        variant_table = variants.get(config.variant, {})
-        if not isinstance(variant_table, dict):
-            raise PackageError(f"{context}: variant {config.variant!r} must be a table")
-        override = parse_chip_record(
-            variant_table, f"{context}: variant {config.variant}"
-        )
-
-        if "name" in item:
-            display_name = item["name"]
-            if not isinstance(display_name, str) or not display_name:
-                raise PackageError(f"{context}: name must be a non-empty string")
-            archive_name, entry_index = chip_text_archive(
-                config, "names", chip_id, context
-            )
-            text.append(TextResource(name, archive_name, entry_index, display_name))
-        if "description" in item:
-            description = item["description"]
-            if (
-                not isinstance(description, list)
-                or not description
-                or not all(isinstance(line, str) and line for line in description)
-            ):
-                raise PackageError(
-                    f"{context}: description must be a non-empty string array"
-                )
-            archive_name, entry_index = chip_text_archive(
-                config, "descriptions", chip_id, context
-            )
-            text.append(
-                TextResource(name, archive_name, entry_index, tuple(description))
-            )
-
-        if (
-            not common
-            and not override
-            and not ("name" in item or "description" in item)
-        ):
-            raise PackageError(
-                f"{context}: configuration must declare at least one chip detail"
-            )
-        chips.append(
-            ChipResource(
-                name,
-                chip_id,
-                common,
-                override,
-            )
-        )
-
     archives = {
         archive.name: archive
         for group in config.text.groups
         for archive in group.archives
     }
     for archive_name, entries in text_values.items():
-        context = f"{definitions}:text.{archive_name}"
+        context = f"{text_definitions}:{archive_name}"
         archive = archives.get(archive_name)
         if archive is None:
             raise PackageError(f"{context}: unknown text archive")
@@ -915,12 +604,12 @@ def load_package(source_path: Path, config: Config) -> Package:
     return Package(
         name,
         source_path.relative_to(config.root).as_posix(),
-        definitions if definitions.is_file() else source_path,
+        text_definitions if text_definitions.is_file() else source_path,
         (),
         (),
         (),
         tuple(text),
-        tuple(chips),
+        (),
         None,
         (),
     )
@@ -962,6 +651,7 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
     objects: list[ObjectResource] = []
     sprites: list[SpriteResource] = []
     songs: list[SongResource] = []
+    chips: list[ChipResource] = []
     attack: AttackResource | None = None
     patches: list[PointerPatch] = []
     for symbol in symbols:
@@ -991,6 +681,11 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         elif kind == "song" and len(parts) == 2:
             check_snake_resource_label(package.name, parts[1], "_song")
             songs.append(SongResource(parts[1]))
+        elif kind == "chip" and len(parts) == 2:
+            chip_id = checked_int(int(parts[1], 0), 0, 0xFFFF, symbol)
+            chips.append(
+                ChipResource(package.name, chip_id, f"exe6_chip_record_{parts[1]}")
+            )
         elif (
             kind
             in {
@@ -1012,6 +707,7 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         objects=tuple(objects),
         sprites=tuple(sprites),
         songs=tuple(songs),
+        chips=tuple(chips),
         attack=attack,
         pointer_patches=tuple(patches),
     )
@@ -1058,6 +754,11 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
         text_owners[key] = item.package
     chip_owners: dict[int, str] = {}
     for item in chips:
+        if not 0 <= item.chip_id < config.chips.record_count:
+            raise PackageError(
+                f"{item.record}: chip ID must be between 0x000 and "
+                f"0x{config.chips.record_count - 1:03X}"
+            )
         if item.chip_id in chip_owners:
             raise PackageError(
                 f"chip 0x{item.chip_id:03X} is declared by both "
@@ -1196,50 +897,40 @@ def generate_linker_values(packages: list[Package], allocations: Allocations) ->
     return "\n".join(lines) + "\n"
 
 
-def emit_chip_field(
-    config: Config, chip_id: int, field: str, value: ChipValue
-) -> list[str]:
-    offset, kind = CHIP_FIELD_LAYOUT[field]
-    address = config.chips.table_address + chip_id * config.chips.record_size + offset
-    if kind == "bytes":
-        assert isinstance(value, tuple)
-        rendered = ",".join(f"0x{item:02X}" for item in value)
-        directive = f".db {rendered}"
-    elif kind == "byte":
-        assert isinstance(value, int)
-        directive = f".db 0x{value:02X}"
-    elif kind == "halfword":
-        assert isinstance(value, int)
-        directive = f".dh 0x{value:04X}"
-    elif kind == "word":
-        assert isinstance(value, (int, str))
-        rendered = f"0x{value:08X}" if isinstance(value, int) else value
-        directive = f".dw {rendered}"
-    else:
-        raise AssertionError(f"unknown chip field kind: {kind}")
-    return [f".org 0x{address:08X}", f"    {directive} // {field}"]
+def generate_c_values(allocations: Allocations) -> str:
+    """Expose allocated attack selectors as integer constant expressions."""
+    lines = [
+        "/* Generated by compile_registry.py. Do not edit. */",
+        "#define EXE6_ATTACK_FAMILY(main) \\",
+        "    EXE6_JOIN(exe6_attack_family_, main)",
+        "#define EXE6_ATTACK_SUBFAMILY(main) \\",
+        "    EXE6_JOIN(exe6_attack_subfamily_, main)",
+    ]
+    for main, allocation in sorted(allocations.attacks.items()):
+        lines.append(
+            f"#define exe6_attack_family_{main} 0x{allocation.family:02X}u"
+        )
+        lines.append(
+            f"#define exe6_attack_subfamily_{main} 0x{allocation.subfamily:02X}u"
+        )
+    return "\n".join(lines) + "\n"
 
 
 def emit_chip_records(
-    config: Config, packages: list[Package], allocations: Allocations
+    config: Config, packages: list[Package]
 ) -> list[str]:
-    lines = ["// Semantic chip-record patches declared by packages."]
+    lines = ["// Complete chip records linked into the C gameplay image."]
     for package in packages:
         for chip in package.chips:
-            if not chip.common and not chip.override and package.attack is None:
-                continue
-            lines.extend(["", f"// {chip.package}: chip 0x{chip.chip_id:03X}"])
-            common = dict(chip.common)
-            if package.attack is not None:
-                attack = allocations.attacks[package.attack.main]
-                common["behavior.family"] = attack.family
-                common["behavior.subfamily"] = attack.subfamily
-            for field, value in sorted(
-                common.items(), key=lambda item: CHIP_FIELD_LAYOUT[item[0]][0]
-            ):
-                lines.extend(emit_chip_field(config, chip.chip_id, field, value))
-            for field, value in chip.override:
-                lines.extend(emit_chip_field(config, chip.chip_id, field, value))
+            address = config.chips.table_address + chip.chip_id * config.chips.record_size
+            lines.extend(
+                [
+                    "",
+                    f"// {chip.package}: chip 0x{chip.chip_id:03X}",
+                    f"copy_c_data 0x{address:08X},{chip.record},"
+                    f"0x{config.chips.record_size:X}",
+                ]
+            )
     return lines
 
 
@@ -1511,7 +1202,7 @@ def generate_text_manifest(config: Config, packages: list[Package]) -> str:
 def generate(config: Config, packages: list[Package], allocations: Allocations) -> str:
     sections: list[list[str]] = [
         [
-            "// Generated by compile_registry.py from C object metadata and sibling .defs.toml files.",
+            "// Generated by compile_registry.py from C object metadata and sibling .text.toml files.",
             "// Do not edit this file or assign registry IDs by hand.",
             "// IDs follow sorted source paths and ELF symbol order.",
             "",
@@ -1520,7 +1211,7 @@ def generate(config: Config, packages: list[Package], allocations: Allocations) 
         [""],
         emit_attack_tables(config, packages, allocations),
         [""],
-        emit_chip_records(config, packages, allocations),
+        emit_chip_records(config, packages),
         [""],
         emit_object_tables(config, packages, allocations),
         [""],
@@ -1547,6 +1238,7 @@ def main() -> int:
     parser.add_argument("--text-output", type=Path)
     parser.add_argument("--metadata", type=Path)
     parser.add_argument("--linker-output", type=Path)
+    parser.add_argument("--c-output", type=Path)
     parser.add_argument(
         "--check", action="store_true", help="fail if the generated output is stale"
     )
@@ -1577,10 +1269,16 @@ def main() -> int:
             if args.linker_output
             else config.root / f"build/registry-values-{artifact_name}.generated.ld"
         )
+        c_output_path = (
+            args.c_output.resolve()
+            if args.c_output
+            else config.root / f"build/registry-values-{artifact_name}.generated.h"
+        )
         allocations = validate_and_allocate(config, packages)
         output_text = generate(config, packages, allocations)
         text_manifest = generate_text_manifest(config, packages)
         linker_values = generate_linker_values(packages, allocations)
+        c_values = generate_c_values(allocations)
         if args.check:
             stale: list[str] = []
             if not output_path.exists() or output_path.read_text() != output_text:
@@ -1595,6 +1293,8 @@ def main() -> int:
                 or linker_output_path.read_text() != linker_values
             ):
                 stale.append(str(linker_output_path))
+            if not c_output_path.exists() or c_output_path.read_text() != c_values:
+                stale.append(str(c_output_path))
             if stale:
                 raise PackageError(
                     "generated package file is stale: " + ", ".join(stale)
@@ -1603,6 +1303,7 @@ def main() -> int:
             write_if_changed(output_path, output_text)
             write_if_changed(text_output_path, text_manifest)
             write_if_changed(linker_output_path, linker_values)
+            write_if_changed(c_output_path, c_values)
     except PackageError as exc:
         print(f"registry compiler: {exc}", file=sys.stderr)
         return 1

@@ -18,11 +18,11 @@ from compile_registry import (
     emit_text_archives,
     fixed_width_entry_count,
     generate,
+    generate_c_values,
     generate_linker_values,
     generate_text_manifest,
     load_config,
     load_metadata,
-    parse_chip_record,
     text_archive_entry_count,
     validate_and_allocate,
 )
@@ -243,40 +243,33 @@ class PackageCompilerTests(unittest.TestCase):
         )
         self.assertNotIn(".definelabel", assembly)
 
-    def test_sources_and_chip_definition_files(self) -> None:
+    def test_sources_and_text_definition_files(self) -> None:
         self.assertFalse((ROOT / "packages").exists())
         self.assertFalse(list((ROOT / "src").rglob("manifest.toml")))
-        for path in (ROOT / "src").rglob("*.defs.toml"):
+        self.assertFalse(list((ROOT / "src").rglob("*.defs.toml")))
+        configured_archives = {
+            archive.name
+            for group in self.config().text.groups
+            for archive in group.archives
+        }
+        for path in (ROOT / "src").rglob("*.text.toml"):
             definitions = tomllib.loads(path.read_text())
             self.assertTrue(definitions, path)
-            self.assertLessEqual(set(definitions), {"chips", "text"}, path)
-            for chip_id, chip in definitions.get("chips", {}).items():
-                self.assertTrue(chip_id.startswith("0x"), path)
-                self.assertIsInstance(chip, dict, path)
-                behavior = chip.get("behavior", {})
-                self.assertNotIn("family", behavior, path)
-                self.assertNotIn("subfamily", behavior, path)
-            for archive, entries in definitions.get("text", {}).items():
-                self.assertIsInstance(archive, str, path)
+            self.assertLessEqual(set(definitions), configured_archives, path)
+            for entries in definitions.values():
                 self.assertIsInstance(entries, dict, path)
         for source in (ROOT / "src").rglob("*.c"):
             text = source.read_text()
             self.assertNotIn(".generated.h", text, source)
             self.assertNotIn("EXE6_PCM_SONG", text, source)
 
-    def test_chip_records_are_semantic_definition_resources(self) -> None:
+    def test_chip_records_are_linked_c_resources(self) -> None:
         gregar_config, gregar_packages = self.packages("gregar")
         falzar_config, falzar_packages = self.packages("falzar")
         allocations = validate_and_allocate(gregar_config, gregar_packages)
-        assembly = "\n".join(
-            emit_chip_records(gregar_config, gregar_packages, allocations)
-        )
+        assembly = "\n".join(emit_chip_records(gregar_config, gregar_packages))
         falzar_assembly = "\n".join(
-            emit_chip_records(
-                falzar_config,
-                falzar_packages,
-                validate_and_allocate(falzar_config, falzar_packages),
-            )
+            emit_chip_records(falzar_config, falzar_packages)
         )
 
         bugcharge = next(
@@ -284,21 +277,16 @@ class PackageCompilerTests(unittest.TestCase):
             for package in gregar_packages if package.name == "bugcharge"
             for chip in package.chips
         )
-        falzar_bugcharge = next(
-            chip
-            for package in falzar_packages if package.name == "bugcharge"
-            for chip in package.chips
-        )
         self.assertEqual(bugcharge.chip_id, 0x131)
-        self.assertEqual(dict(bugcharge.common)["codes"], (0x01, 0xFF, 0xFF, 0xFF))
-        self.assertEqual(dict(bugcharge.common)["class"], 0x02)
-        self.assertEqual(dict(bugcharge.common)["behavior.counter_settings"], 0x8B)
-        self.assertEqual(dict(bugcharge.override)["behavior.effect_flags"], 0x41)
-        self.assertEqual(
-            dict(falzar_bugcharge.override)["behavior.effect_flags"], 0x01
+        self.assertEqual(bugcharge.record, "exe6_chip_record_0x131")
+        self.assertIn(
+            0x0BA,
+            {
+                chip.chip_id
+                for package in gregar_packages
+                for chip in package.chips
+            },
         )
-        self.assertEqual(dict(bugcharge.override)["artwork.icon"], "bugcharge_icon")
-        self.assertNotIn("artwork.icon", dict(falzar_bugcharge.override))
 
         bugcharge_package = next(
             package for package in gregar_packages if package.name == "bugcharge"
@@ -314,34 +302,30 @@ class PackageCompilerTests(unittest.TestCase):
         )
 
         self.assertIn("// bugcharge: chip 0x131", assembly)
-        self.assertIn(".db 0x8B // behavior.counter_settings", assembly)
+        self.assertIn(
+            "copy_c_data 0x08025214,exe6_chip_record_0x131,0x2C",
+            assembly,
+        )
+        self.assertIn("exe6_chip_record_0x131", falzar_assembly)
         bugcharge_attack = allocations.attacks["bugcharge_attack_main"]
-        self.assertIn(f".db 0x{bugcharge_attack.family:02X} // behavior.family", assembly)
+        c_values = generate_c_values(allocations)
         self.assertIn(
-            f".db 0x{bugcharge_attack.subfamily:02X} // behavior.subfamily",
-            assembly,
-        )
-        searchman_ex = next(
-            chip
-            for package in gregar_packages
-            if package.name == "searchman"
-            for chip in package.chips
-            if chip.chip_id == 0x108
-        )
-        self.assertEqual(
-            dict(searchman_ex.common)["behavior.object_spawn"],
-            (3, 0, 0, 0),
+            f"#define exe6_attack_family_bugcharge_attack_main "
+            f"0x{bugcharge_attack.family:02X}u",
+            c_values,
         )
         self.assertIn(
-            ".db 0x03,0x00,0x00,0x00 // behavior.object_spawn",
-            assembly,
+            f"#define exe6_attack_subfamily_bugcharge_attack_main "
+            f"0x{bugcharge_attack.subfamily:02X}u",
+            c_values,
         )
-        self.assertEqual(assembly.count(".dw 0x08729D50 // artwork.icon"), 6)
-        self.assertEqual(falzar_assembly.count(".dw 0x0872BE14 // artwork.icon"), 6)
-        self.assertIn(".dw bugcharge_icon // artwork.icon", assembly)
-        self.assertNotIn(".dw 0x0872C594 // artwork.icon", assembly)
-        for path in (ROOT / "src").rglob("*.c"):
-            self.assertNotIn("CHIP_DATA", path.read_text(), path)
+        bugcharge_source = (ROOT / "src/chips/bugcharge.c").read_text()
+        self.assertIn("EXE6_CHIP_RECORD(0x131)", bugcharge_source)
+        self.assertIn(".counter_settings = 0x8B", bugcharge_source)
+        self.assertIn(
+            ".family = EXE6_ATTACK_FAMILY(bugcharge_attack_main)",
+            bugcharge_source,
+        )
 
     def test_attack_entries_are_compiler_allocated(self) -> None:
         config, packages = self.packages()
@@ -504,40 +488,31 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn("__exe6_object_id_folderback_controller_main", folderback)
         self.assertNotIn("0x08003C9C", folderback)
 
-    def test_invalid_semantic_chip_code_is_rejected(self) -> None:
+    def test_out_of_range_c_chip_id_is_rejected(self) -> None:
+        metadata = dict(self.metadata["gregar"])
+        metadata["antinavi"] = ["__exe6_meta__chip__0x13a"]
+        config = self.config()
+        packages = discover_packages(config, metadata)
+        with self.assertRaisesRegex(PackageError, "chip ID must be between"):
+            validate_and_allocate(config, packages)
+
+    def test_unknown_text_archive_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / "src" / "invalid.c"
             source.parent.mkdir(parents=True)
             source.write_text("")
-            source.with_suffix(".defs.toml").write_text(
-                '[chips."0x001"]\ncodes = ["AA"]\n'
-            )
+            source.with_suffix(".text.toml").write_text('[unknown]\n"0" = "bad"\n')
             config = replace(self.config(), root=root.resolve())
-            with self.assertRaisesRegex(PackageError, "codes must contain"):
+            with self.assertRaisesRegex(PackageError, "unknown text archive"):
                 discover_packages(config, {"invalid": []})
 
-    def test_object_spawn_parameters_are_named_fields(self) -> None:
-        fields = dict(
-            parse_chip_record(
-                {
-                    "behavior": {
-                        "object_spawn": {
-                            "variant": 3,
-                            "animation_state": 5,
-                        }
-                    }
-                },
-                "test chip",
-            )
-        )
-        self.assertEqual(fields["behavior.object_spawn"], (3, 0, 5, 0))
-
-        with self.assertRaisesRegex(PackageError, r"unknown field\(s\): parameters"):
-            parse_chip_record(
-                {"behavior": {"parameters": [3, 0, 0, 0]}},
-                "test chip",
-            )
+    def test_object_spawn_parameters_are_named_c_fields(self) -> None:
+        searchman = (ROOT / "src/chips/searchman.c").read_text()
+        self.assertIn(".object_spawn = { .variant = 3 }", searchman)
+        abi = (ROOT / "src/abi.h").read_text()
+        self.assertIn("sizeof(Exe6ChipRecord) == 0x2C", abi)
+        self.assertIn("offsetof(Exe6ChipRecord, behavior) == 0x09", abi)
 
     def test_discovery_and_output_are_deterministic(self) -> None:
         config, first = self.packages()

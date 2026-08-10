@@ -23,7 +23,7 @@ BN3_BLUE_ROM ?=
 # GNU Make's wildcard does not recurse, so walk every directory beneath src.
 recursive_wildcard = $(foreach path,$(wildcard $1*),$(call recursive_wildcard,$(path)/,$2) $(filter $(subst *,%,$2),$(path)))
 
-PACKAGE_DEFS := $(call recursive_wildcard,$(PATCH_DIR)/src/,*.defs.toml)
+PACKAGE_TEXT := $(call recursive_wildcard,$(PATCH_DIR)/src/,*.text.toml)
 RUNTIME_SOURCES := $(PATCH_DIR)/src/abi.c $(PATCH_DIR)/src/runtime.c
 C_SOURCES := $(call recursive_wildcard,$(PATCH_DIR)/src/,*.c)
 PACKAGE_SOURCES := $(filter-out $(RUNTIME_SOURCES),$(C_SOURCES))
@@ -125,7 +125,7 @@ $(EDITION_REGISTRY_METADATA): $(BUILD_DIR)/registry-metadata-%.generated.json: \
 		--cc "$(ARM_GCC)" --nm "$(ARM_NM)" --define FALZAR=$(EDITION_DEFINE_$*) --output "$@"
 
 $(EDITION_REGISTRY_STAMPS): $(BUILD_DIR)/.registry-%.stamp: \
-	$(PATCH_DIR)/compile_registry.py $(PATCH_DIR)/config.%.toml $(PACKAGE_DEFS) \
+	$(PATCH_DIR)/compile_registry.py $(PATCH_DIR)/config.%.toml $(PACKAGE_TEXT) \
 	$(BUILD_DIR)/registry-metadata-%.generated.json \
 	$(BUILD_DIR)/.native-text-%.stamp | $(BUILD_DIR)
 	$(PYTHON) "$(PATCH_DIR)/compile_registry.py" \
@@ -133,6 +133,7 @@ $(EDITION_REGISTRY_STAMPS): $(BUILD_DIR)/.registry-%.stamp: \
 		--metadata "$(BUILD_DIR)/registry-metadata-$*.generated.json" \
 		--output "$(BUILD_DIR)/registry-$*.generated.asm" \
 		--linker-output "$(BUILD_DIR)/registry-values-$*.generated.ld" \
+		--c-output "$(BUILD_DIR)/registry-values-$*.generated.h" \
 		--text-output "$(BUILD_DIR)/text-replacements-$*.generated.json"
 	@touch "$@"
 
@@ -147,7 +148,10 @@ $(EDITION_NATIVE_TEXT_STAMPS): $(BUILD_DIR)/.native-text-%.stamp: \
 $(EDITION_ELFS): $(BUILD_DIR)/gameplay-%.elf: \
 	$(BUILD_DIR)/.registry-%.stamp $(ASSET_STAMP) $(C_SOURCES) $(C_HEADERS) \
 	$(C_LINKER_SCRIPT) | $(BUILD_DIR)
-	$(ARM_GCC) $(CFLAGS) -DFALZAR=$(EDITION_DEFINE_$*) $(C_SOURCES) $(CLDFLAGS) -Wl,-T,"$(BUILD_DIR)/registry-values-$*.generated.ld" -lgcc -o "$@"
+	$(ARM_GCC) $(CFLAGS) -DFALZAR=$(EDITION_DEFINE_$*) \
+		-include "$(BUILD_DIR)/registry-values-$*.generated.h" \
+		$(C_SOURCES) $(CLDFLAGS) \
+		-Wl,-T,"$(BUILD_DIR)/registry-values-$*.generated.ld" -lgcc -o "$@"
 
 $(EDITION_BINARIES): $(BUILD_DIR)/gameplay-%.bin: $(BUILD_DIR)/gameplay-%.elf
 	$(ARM_OBJCOPY) -O binary "$<" "$@"

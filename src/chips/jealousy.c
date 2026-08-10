@@ -10,6 +10,42 @@ EXE6_INCBIN(jealousy_effect_tiles, "build/jealousy-effect-tiles.bin");
 extern const uint8_t jealousy_effect_palette[0x20];
 EXE6_INCBIN(jealousy_effect_palette, "build/jealousy-effect-palette.bin");
 
+EXE6_CHIP_RECORD(0x0bf) {
+    .codes = {
+        EXE6_CHIP_CODE_J,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+    },
+    .attack_element = 0,
+    .rarity = 3,
+    .element = EXE6_CHIP_ELEMENT_NULL,
+    .chip_class = EXE6_CHIP_CLASS_STANDARD,
+    .mb = 60,
+    .behavior = {
+        .effect_flags = 0x43,
+        .counter_settings = 0x8A,
+        .family = EXE6_ATTACK_FAMILY(jealousy_attack_main),
+        .subfamily = EXE6_ATTACK_SUBFAMILY(jealousy_attack_main),
+        .dark_soul_usage = 0x0A,
+        .unknown_0e = 0x04,
+        .lock_on = 0x00,
+        .object_spawn = {0},
+        .delay = 0,
+    },
+    .library_number = 0x00,
+    .library_flags = 0x80,
+    .library_lock_on_type = 0x10,
+    .alphabetical_sort = 0,
+    .power = 80,
+    .library_sort_order = 0x00C3,
+    .library_gate_usage = 0x01,
+    .dark_chip_id = UINT8_MAX,
+    .icon = jealousy_icon,
+    .image = jealousy_image,
+    .palette = jealousy_palette,
+};
+
 static const uintptr_t TILES_DESTINATION = 0x06017940u;
 static const uint16_t PULSE_DELAY = 10;
 static const uint16_t DELETE_FRAMES = 90;

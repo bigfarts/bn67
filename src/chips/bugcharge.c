@@ -33,6 +33,54 @@ EXE6_SONG(
     ".byte 0x9B,0x81,0xB1\n"
 );
 
+#if FALZAR
+#define BUGCHARGE_EFFECT_FLAGS 0x01
+#define BUGCHARGE_ICON ((const uint8_t *)0x0872C594u)
+#define BUGCHARGE_IMAGE ((const uint8_t *)0x08721B34u)
+#define BUGCHARGE_PALETTE ((const uint8_t *)0x087255B4u)
+#else
+#define BUGCHARGE_EFFECT_FLAGS 0x41
+#define BUGCHARGE_ICON bugcharge_icon
+#define BUGCHARGE_IMAGE bugcharge_image
+#define BUGCHARGE_PALETTE bugcharge_palette
+#endif
+
+EXE6_CHIP_RECORD(0x131) {
+    .codes = {
+        EXE6_CHIP_CODE_B,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+    },
+    .attack_element = 0,
+    .rarity = 4,
+    .element = EXE6_CHIP_ELEMENT_NULL,
+    .chip_class = EXE6_CHIP_CLASS_GIGA,
+    .mb = 77,
+    .behavior = {
+        .effect_flags = BUGCHARGE_EFFECT_FLAGS,
+        .counter_settings = 0x8B,
+        .family = EXE6_ATTACK_FAMILY(bugcharge_attack_main),
+        .subfamily = EXE6_ATTACK_SUBFAMILY(bugcharge_attack_main),
+        .dark_soul_usage = 0x01,
+        .unknown_0e = 0x04,
+        .lock_on = 0x00,
+        .object_spawn = {0},
+        .delay = 0,
+    },
+    .library_number = 0x05,
+    .library_flags = 0x14,
+    .library_lock_on_type = 0x00,
+    .alphabetical_sort = 0,
+    .power = 200,
+    .library_sort_order = 0x0131,
+    .library_gate_usage = 0x01,
+    .dark_chip_id = UINT8_MAX,
+    .icon = BUGCHARGE_ICON,
+    .image = BUGCHARGE_IMAGE,
+    .palette = BUGCHARGE_PALETTE,
+};
+
 static const uint8_t ACTIVE_STATE = 4;
 static const uint8_t EFFECT_PHASE = 8;
 static const uint8_t OUTRO_PHASE = 0x0C;

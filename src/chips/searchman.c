@@ -14,6 +14,120 @@ EXE6_ASM_RESOURCE(
 );
 EXE6_INCBIN(searchman_palette_sp, "build/searchman-pal-sp.bin");
 
+#if FALZAR
+#define SEARCHMAN_ICON ((const uint8_t *)0x0872BE14u)
+#else
+#define SEARCHMAN_ICON ((const uint8_t *)0x08729D50u)
+#endif
+
+EXE6_CHIP_RECORD(0x107) {
+    .codes = {
+        EXE6_CHIP_CODE_S,
+        EXE6_CHIP_CODE_ASTERISK,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+    },
+    .attack_element = 0,
+    .rarity = 2,
+    .element = EXE6_CHIP_ELEMENT_CURSOR,
+    .chip_class = EXE6_CHIP_CLASS_MEGA,
+    .mb = 42,
+    .behavior = {
+        .effect_flags = 0x47,
+        .counter_settings = 0x8A,
+        .family = EXE6_ATTACK_FAMILY(searchman_attack_main),
+        .subfamily = EXE6_ATTACK_SUBFAMILY(searchman_attack_main),
+        .dark_soul_usage = 0x1F,
+        .unknown_0e = 0x00,
+        .lock_on = 0x00,
+        .object_spawn = {0},
+        .delay = 0,
+    },
+    .library_number = 0x1C,
+    .library_flags = 0x00,
+    .library_lock_on_type = 0x00,
+    .alphabetical_sort = 0,
+    .power = 20,
+    .library_sort_order = 0x0107,
+    .library_gate_usage = 0x01,
+    .dark_chip_id = UINT8_MAX,
+    .icon = SEARCHMAN_ICON,
+    .image = searchman_image,
+    .palette = searchman_palette_base,
+};
+
+EXE6_CHIP_RECORD(0x108) {
+    .codes = {
+        EXE6_CHIP_CODE_S,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+    },
+    .attack_element = 0,
+    .rarity = 3,
+    .element = EXE6_CHIP_ELEMENT_CURSOR,
+    .chip_class = EXE6_CHIP_CLASS_MEGA,
+    .mb = 64,
+    .behavior = {
+        .effect_flags = 0x47,
+        .counter_settings = 0x8A,
+        .family = EXE6_ATTACK_FAMILY(searchman_attack_main),
+        .subfamily = EXE6_ATTACK_SUBFAMILY(searchman_attack_main),
+        .dark_soul_usage = 0x00,
+        .unknown_0e = 0x00,
+        .lock_on = 0x00,
+        .object_spawn = { .variant = 3 },
+        .delay = 0,
+    },
+    .library_number = 0x1D,
+    .library_flags = 0x00,
+    .library_lock_on_type = 0x00,
+    .alphabetical_sort = 0,
+    .power = 40,
+    .library_sort_order = 0x0108,
+    .library_gate_usage = 0x01,
+    .dark_chip_id = UINT8_MAX,
+    .icon = SEARCHMAN_ICON,
+    .image = searchman_image,
+    .palette = searchman_palette_ex,
+};
+
+EXE6_CHIP_RECORD(0x109) {
+    .codes = {
+        EXE6_CHIP_CODE_S,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+    },
+    .attack_element = 0,
+    .rarity = 4,
+    .element = EXE6_CHIP_ELEMENT_CURSOR,
+    .chip_class = EXE6_CHIP_CLASS_MEGA,
+    .mb = 86,
+    .behavior = {
+        .effect_flags = 0x47,
+        .counter_settings = 0x8A,
+        .family = EXE6_ATTACK_FAMILY(searchman_attack_main),
+        .subfamily = EXE6_ATTACK_SUBFAMILY(searchman_attack_main),
+        .dark_soul_usage = 0x00,
+        .unknown_0e = 0x00,
+        .lock_on = 0x00,
+        .object_spawn = { .variant = 4 },
+        .delay = 0,
+    },
+    .library_number = 0x1E,
+    .library_flags = 0x00,
+    .library_lock_on_type = 0x00,
+    .alphabetical_sort = 0,
+    .power = 75,
+    .library_sort_order = 0x0109,
+    .library_gate_usage = 0x01,
+    .dark_chip_id = UINT8_MAX,
+    .icon = SEARCHMAN_ICON,
+    .image = searchman_image,
+    .palette = searchman_palette_sp,
+};
+
 static const uint8_t ACTOR_ACTIVE_STATE = 4;
 static const uint8_t ACTOR_DESTROY_STATE = 8;
 static const uint8_t APPEAR_PHASE = 0;

@@ -12,6 +12,54 @@ EXE6_INCBIN(chaoslord_palette, "build/chaoslord-palette.bin");
 #endif
 EXE6_INCBIN(chaoslord_trig_table, "build/chaoslord-trig.bin");
 
+#if FALZAR
+#define CHAOSLORD_EFFECT_FLAGS 0x03
+#define CHAOSLORD_ICON ((const uint8_t *)0x0872C414u)
+#define CHAOSLORD_IMAGE ((const uint8_t *)0x08720B74u)
+#define CHAOSLORD_PALETTE ((const uint8_t *)0x08725554u)
+#else
+#define CHAOSLORD_EFFECT_FLAGS 0x43
+#define CHAOSLORD_ICON chaoslord_icon
+#define CHAOSLORD_IMAGE chaoslord_image
+#define CHAOSLORD_PALETTE chaoslord_palette
+#endif
+
+EXE6_CHIP_RECORD(0x12e) {
+    .codes = {
+        EXE6_CHIP_CODE_X,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+    },
+    .attack_element = 0,
+    .rarity = 4,
+    .element = EXE6_CHIP_ELEMENT_NULL,
+    .chip_class = EXE6_CHIP_CLASS_GIGA,
+    .mb = 99,
+    .behavior = {
+        .effect_flags = CHAOSLORD_EFFECT_FLAGS,
+        .counter_settings = 0xB2,
+        .family = EXE6_ATTACK_FAMILY(chaoslord_attack_main),
+        .subfamily = EXE6_ATTACK_SUBFAMILY(chaoslord_attack_main),
+        .dark_soul_usage = 0x0A,
+        .unknown_0e = 0x00,
+        .lock_on = 0x00,
+        .object_spawn = {0},
+        .delay = 0,
+    },
+    .library_number = 0x00,
+    .library_flags = 0x00,
+    .library_lock_on_type = 0x10,
+    .alphabetical_sort = 0,
+    .power = 500,
+    .library_sort_order = 0x012E,
+    .library_gate_usage = 0x01,
+    .dark_chip_id = UINT8_MAX,
+    .icon = CHAOSLORD_ICON,
+    .image = CHAOSLORD_IMAGE,
+    .palette = CHAOSLORD_PALETTE,
+};
+
 static const uint8_t ACTIVE_STATE = 4;
 static const uint8_t DESTROY_STATE = 8;
 static const uint8_t BALL_ACTIVE_PHASE = 4;
