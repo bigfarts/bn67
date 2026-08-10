@@ -61,69 +61,72 @@ struct Exe6FolderbackWork {
 _Static_assert(sizeof(struct Exe6FolderbackWork) == 0x1C,
                "FolderBack work layout");
 
+static USED __attribute__((noinline)) bool
+folderback_opponent_is_locked(const Exe6Obj *opponent) {
+  if ((opponent->object_class & 0x0Fu) != EXE6_OBJECT_CLASS_ENEMY) {
+    return false;
+  }
+
+  const Exe6ObjectSlot *slots = EXE6_EFFECT_POOL_HEAD;
+  const uint8_t controller_id =
+      (uint8_t)EXE6_OBJ_ID(folderback_controller_main);
+  for (size_t slot_index = 0; slot_index < EXE6_POOL_SLOT_COUNT;
+       ++slot_index) {
+    const Exe6Obj *object = &slots[slot_index].object;
+    if ((object->header_flags & EXE6_OBJ_FLAG_ACTIVE) == 0 ||
+        object->object_id != controller_id) {
+      continue;
+    }
+
+    const struct Exe6FolderbackWork *work =
+        (const struct Exe6FolderbackWork *)(const void *)object->work;
+    for (size_t opponent_index = 0;
+         opponent_index < sizeof(work->locked_opponents) / sizeof(work->locked_opponents[0]);
+         ++opponent_index) {
+      if (work->locked_opponents[opponent_index] == opponent) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 EXE6_PATCH_SECTION(0x080031FA, folderback_type_1_main);
 
 NAKED void folderback_type_1_main(void) {
+  // Native object mains consume the dispatcher's live registers and flags.
+  // Preserve them around the C predicate, then reproduce the final flag-setting
+  // shift from the native table lookup. The native advance routine also returns
+  // its object-list count in r0, so preserve it across the long jump back.
   __asm__(".syntax unified\n"
+          "pop {r1}\n"
           "push {r7}\n"
-          "ldrb r1,[r5,#2]\n"
-          "movs r2,#0x0F\n"
-          "ands r1,r2\n"
-          "cmp r1,#1\n"
-          "bne 6f\n"
-          "adr r1,7f\n"
-          "adds r1,#1\n"
-          "mov lr,r1\n"
-          "push {r0,r4,r6,r7,lr}\n"
-          "ldr r6,=0x02036870\n"
-          "movs r7,#32\n"
+          "push {r0,r1,r2,r3,r4,r6,r7}\n"
+          "adds r0,r5,#0\n"
+          "bl folderback_opponent_is_locked\n"
+          "cmp r0,#0\n"
+          "bne 1f\n"
+          "pop {r0,r1,r2,r3,r4,r6,r7}\n"
+          "lsrs r1,r1,#1\n"
+          "lsls r1,r1,#1\n"
+          "mov lr,pc\n"
+          "bx r0\n"
+          "b 2f\n"
           "1:\n"
-          "ldrb r0,[r6,#0]\n"
-          "movs r1,#" EXE6_STRINGIFY(
-              EXE6_OBJ_FLAG_ACTIVE) "\n"
-                                    "tst r0,r1\n"
-                                    "beq 3f\n"
-                                    "ldrb r0,[r6,#1]\n"
-                                    "ldr "
-                                    "r1,=__exe6_object_id_folderback_"
-                                    "controller_main\n"
-                                    "cmp r0,r1\n"
-                                    "bne 3f\n"
-                                    "movs r4,#96\n"
-                                    "movs r1,#4\n"
-                                    "2:\n"
-                                    "ldr r0,[r6,r4]\n"
-                                    "cmp r0,r5\n"
-                                    "beq 5f\n"
-                                    "adds r4,#4\n"
-                                    "subs r1,#1\n"
-                                    "bne 2b\n"
-                                    "3:\n"
-                                    "movs r0,#200\n"
-                                    "adds r6,r6,r0\n"
-                                    "subs r7,#1\n"
-                                    "bne 1b\n"
-                                    "ldr r4,[sp,#0]\n"
-                                    "adds r0,r4,#0\n"
-                                    "mov lr,pc\n"
-                                    "bx r4\n"
-                                    "4:\n"
-                                    "pop {r0,r4,r6,r7,pc}\n"
-                                    "5:\n"
-                                    "bl exe6_battle_obj_char_move2\n"
-                                    "b 4b\n"
-                                    "6:\n"
-                                    "adds r1,r0,#0\n"
-                                    "mov lr,pc\n"
-                                    "bx r1\n"
-                                    ".balign 4\n"
-                                    "7:\n"
-                                    "pop {r7}\n"
-                                    "ldr r0,=0x0800372A + 1\n"
-                                    "mov lr,pc\n"
-                                    "bx r0\n"
-                                    "ldr r0,=0x08003206 + 1\n"
-                                    "bx r0\n");
+          "pop {r0,r1,r2,r3,r4,r6,r7}\n"
+          "lsrs r1,r1,#1\n"
+          "lsls r1,r1,#1\n"
+          "bl exe6_battle_obj_char_move2\n"
+          "2:\n"
+          "pop {r7}\n"
+          "ldr r0,=0x0800372A + 1\n"
+          "mov lr,pc\n"
+          "bx r0\n"
+          "push {r0}\n"
+          "ldr r0,=0x08003206 + 1\n"
+          "mov lr,r0\n"
+          "pop {r0}\n"
+          "mov pc,lr\n");
 }
 
 static void lock_opponent(Exe6Obj *self) {

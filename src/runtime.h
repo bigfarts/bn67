@@ -3,11 +3,6 @@
 
 #include "abi.h"
 
-#define EXE6_BATTLE_STATE \
-    ((Exe6BattleState *)(uintptr_t)0x0203CA70u)
-#define EXE6_CHIP_QUEUE \
-    ((Exe6ChipQueue *)(uintptr_t)0x0203CDB0u)
-
 #define EXE6_LINK_OBJ_ID(main) EXE6_JOIN(__exe6_object_id_, main)
 #define EXE6_LINK_SPRITE_ID(archive) EXE6_JOIN(__exe6_sprite_id_, archive)
 #define EXE6_LINK_SPRITE_GROUP(archive) EXE6_JOIN(__exe6_sprite_group_, archive)
@@ -147,6 +142,7 @@
         EXE6_STRINGIFY(address) "__" EXE6_STRINGIFY(symbol) \
     )
 
+/* Section targets are entered with the original r1 pushed on the stack. */
 #define EXE6_PATCH_SECTION(address, symbol) \
     EXE6_METADATA_RECORD( \
         "section", \

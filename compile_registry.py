@@ -1016,10 +1016,13 @@ def emit_section_patches(packages: list[Package]) -> list[str]:
     lines = ["// Package-declared fixed section patches."]
     for package in packages:
         for patch in package.section_patches:
+            # Thumb-1 needs a low scratch register for this long jump. Preserve
+            # r1 for the target, whose entry contract starts by popping it.
             lines.extend(
                 [
                     f"// {package.name}: {patch.symbol}",
                     f".org 0x{patch.address:08X}",
+                    "    push {r1}",
                     f"    ldr r1,={patch.symbol} + 1",
                     "    bx r1",
                     "    .pool",

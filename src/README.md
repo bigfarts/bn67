@@ -97,9 +97,10 @@ EXE6_PATCH_POINTER(0x080EACD0, signalred_dust_sprite_table);
 ```
 
 `EXE6_PATCH_SECTION(address, symbol)` replaces native instructions with a
-Thumb trampoline to `symbol`. The target owns any displaced instructions and
-must continue or return according to that native call site; FolderBack's class-1
-dispatcher hook is an example.
+Thumb trampoline to `symbol`, with the original `r1` pushed on the stack. The
+target must pop `r1`, owns any displaced instructions, and must continue or
+return according to that native call site; FolderBack's class-1 dispatcher hook
+is an example.
 
 The attack macros name the native family lifecycle they register:
 

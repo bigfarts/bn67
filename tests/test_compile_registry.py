@@ -480,6 +480,10 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertNotIn("object_class_1_dispatch_table", assembly)
         self.assertNotIn("object_dispatch_interceptor_main:", assembly)
         self.assertIn("// Package-declared fixed section patches.", assembly)
+        self.assertIn(
+            "push {r1}\n    ldr r1,=folderback_type_1_main + 1",
+            assembly,
+        )
         self.assertIn("ldr r1,=folderback_type_1_main + 1", assembly)
         self.assertIn(".org 0x080031FA", assembly)
         folderback = (ROOT / "src/chips/folderback.c").read_text()
@@ -489,9 +493,43 @@ class PackageCompilerTests(unittest.TestCase):
         )
         self.assertNotIn("EXE6_PATCH_POINTER(0x08003224", folderback)
         self.assertNotIn("__exe6_object_kind", folderback)
-        self.assertIn("__exe6_object_id_folderback_controller_main", folderback)
+        self.assertIn("EXE6_OBJ_ID(folderback_controller_main)", folderback)
         self.assertNotIn("0x08003C9C", folderback)
+        self.assertIn("folderback_opponent_is_locked", folderback)
+        self.assertIn("const Exe6ObjectSlot *slots = EXE6_EFFECT_POOL_HEAD", folderback)
+        self.assertIn("EXE6_POOL_SLOT_COUNT", folderback)
+        self.assertIn("opponent->object_class", folderback)
+        self.assertIn("EXE6_OBJECT_CLASS_ENEMY", folderback)
+        self.assertIn('"bl folderback_opponent_is_locked\\n"', folderback)
+        self.assertNotIn('"ldr r6,=0x02036870\\n"', folderback)
+        self.assertIn('"pop {r1}\\n"', folderback)
+        self.assertIn('"push {r0,r1,r2,r3,r4,r6,r7}\\n"', folderback)
+        self.assertEqual(
+            folderback.count('"pop {r0,r1,r2,r3,r4,r6,r7}\\n"'),
+            2,
+        )
+        self.assertEqual(folderback.count('"lsrs r1,r1,#1\\n"'), 2)
+        self.assertEqual(folderback.count('"lsls r1,r1,#1\\n"'), 2)
+        for instruction in (
+            "push {r0}",
+            "ldr r0,=0x08003206 + 1",
+            "mov lr,r0",
+            "pop {r0}",
+            "mov pc,lr",
+        ):
+            self.assertIn(f'"{instruction}\\n"', folderback)
         runtime = (ROOT / "src/runtime.h").read_text()
+        abi = (ROOT / "src/abi.h").read_text()
+        self.assertIn("struct Exe6ObjectSlotFields", abi)
+        self.assertIn("sizeof(Exe6ObjectSlot) == 0xC8", abi)
+        self.assertIn("EXE6_ENEMY_POOL_HEAD", abi)
+        self.assertIn("EXE6_SHELL_POOL_HEAD", abi)
+        self.assertIn("EXE6_EFFECT_POOL_HEAD", abi)
+        self.assertIn("0x0203A9B0u", abi)
+        self.assertIn("0x0203CFE0u", abi)
+        self.assertIn("0x02036870u", abi)
+        self.assertIn("sizeof(Exe6EnemyObjectSlot) == 0xD8", abi)
+        self.assertIn("sizeof(Exe6ShellObjectSlot) == 0xD8", abi)
         self.assertNotIn("EXE6_POINTER_PATCH", runtime)
         self.assertIn("EXE6_PATCH_POINTER", runtime)
         self.assertIn("EXE6_PATCH_SECTION", runtime)

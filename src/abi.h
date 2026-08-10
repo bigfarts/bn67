@@ -16,6 +16,23 @@ typedef struct Exe6BattleContextFields Exe6BattleContext;
 typedef struct Exe6BattleContextFields Exe6BattleState;
 typedef struct Exe6ChipQueueFields Exe6ChipQueue;
 typedef struct Exe6RuntimeFields Exe6Runtime;
+typedef struct Exe6ObjectSlotFields Exe6ObjectSlot;
+typedef struct Exe6EnemyObjectSlotFields Exe6EnemyObjectSlot;
+typedef struct Exe6ShellObjectSlotFields Exe6ShellObjectSlot;
+
+enum Exe6ObjectClass {
+    EXE6_OBJECT_CLASS_ENEMY = 1,
+    EXE6_OBJECT_CLASS_SHELL = 3,
+    EXE6_OBJECT_CLASS_EFFECT = 4,
+};
+
+#define EXE6_ENEMY_POOL_HEAD \
+    ((Exe6EnemyObjectSlot *)(uintptr_t)0x0203A9B0u)
+#define EXE6_SHELL_POOL_HEAD \
+    ((Exe6ShellObjectSlot *)(uintptr_t)0x0203CFE0u)
+#define EXE6_EFFECT_POOL_HEAD \
+    ((Exe6ObjectSlot *)(uintptr_t)0x02036870u)
+#define EXE6_POOL_SLOT_COUNT ((size_t)32u)
 
 #define EXE6_PALETTE_BG_STAGING_00 ((uintptr_t)0x03001550u)
 #define EXE6_PALETTE_BG_STAGING_01 ((uintptr_t)0x03001570u)
@@ -84,6 +101,11 @@ typedef struct Exe6RuntimeFields Exe6Runtime;
 #define EXE6_PALETTE_OBJ_OUTPUT_0D ((uintptr_t)0x03001D00u)
 #define EXE6_PALETTE_OBJ_OUTPUT_0E ((uintptr_t)0x03001D20u)
 #define EXE6_PALETTE_OBJ_OUTPUT_0F ((uintptr_t)0x03001D40u)
+
+#define EXE6_BATTLE_STATE \
+    ((Exe6BattleState *)(uintptr_t)0x0203CA70u)
+#define EXE6_CHIP_QUEUE \
+    ((Exe6ChipQueue *)(uintptr_t)0x0203CDB0u)
 
 #define EXE6_JOIN_INNER(left, right) left##right
 #define EXE6_JOIN(left, right) EXE6_JOIN_INNER(left, right)
@@ -484,7 +506,9 @@ typedef struct __attribute__((packed, aligned(4))) Exe6ChipRecordFields {
 
 struct Exe6ObjFields {
     uint8_t header_flags;                // +0x00, EXE6_OBJ_FLAG_*
-    uint8_t unknown_01[3];
+    uint8_t object_id;                   // +0x01
+    uint8_t object_class;                // +0x02, low nibble
+    uint8_t unknown_03;
     union {
         Exe6ObjSpawnParameters spawn_parameters; // +0x04
         struct {
@@ -571,6 +595,21 @@ struct Exe6ObjFields {
     uint8_t work[0x20];                  // +0x60 through +0x7C
 };
 
+struct Exe6ObjectSlotFields {
+    Exe6Obj object;
+    uint8_t reserved[0xC8 - sizeof(Exe6Obj)];
+};
+
+struct Exe6EnemyObjectSlotFields {
+    Exe6Obj object;
+    uint8_t reserved[0xD8 - sizeof(Exe6Obj)];
+};
+
+struct Exe6ShellObjectSlotFields {
+    Exe6Obj object;
+    uint8_t reserved[0xD8 - sizeof(Exe6Obj)];
+};
+
 struct Exe6PlayerRuntimeFields {
     uint8_t type;                        // +0x00
     uint8_t unknown_01[6];
@@ -648,6 +687,14 @@ _Static_assert(
     offsetof(struct Exe6ObjFields, spawn_parameters) == 0x04,
     "obj spawn parameters offset"
 );
+_Static_assert(offsetof(struct Exe6ObjFields, object_id) == 0x01, "obj ID offset");
+_Static_assert(
+    offsetof(struct Exe6ObjFields, object_class) == 0x02,
+    "obj class offset"
+);
+_Static_assert(sizeof(Exe6ObjectSlot) == 0xC8, "native object slot layout");
+_Static_assert(sizeof(Exe6EnemyObjectSlot) == 0xD8, "native enemy slot layout");
+_Static_assert(sizeof(Exe6ShellObjectSlot) == 0xD8, "native shell slot layout");
 _Static_assert(offsetof(struct Exe6ObjFields, state_word) == 0x08, "obj state offset");
 _Static_assert(offsetof(struct Exe6ObjFields, variant) == 0x04, "obj variant offset");
 _Static_assert(offsetof(struct Exe6ObjFields, parameter) == 0x0E, "obj parameter offset");
