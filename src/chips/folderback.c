@@ -79,13 +79,15 @@ folderback_object_should_pause(const Exe6Obj *object) {
   return false;
 }
 
-BN67_PATCH_SECTION(0x080031FA, folderback_dispatch_main);
+// The class-1 dispatch table is relocated by the registry compiler, leaving
+// its original first two entries available for the section-patch relay.
+BN67_PATCH_SECTION(0x080031FA, 0x08003C9C, folderback_dispatch_main);
 
 NAKED void folderback_dispatch_main(void) {
   // Native object mains consume the dispatcher's live registers and flags.
   // Preserve them around the C predicate, then reproduce the final flag-setting
-  // shift from the native table lookup. The native advance routine also returns
-  // its object-list count in r0, so preserve it across the long jump back.
+  // shift from the native table lookup. Rejoin at the native pop/call sequence
+  // so paths which branch directly to it remain untouched.
   __asm__(".syntax unified\n"
           "pop {r1}\n"
           "push {r7}\n"
@@ -106,12 +108,8 @@ NAKED void folderback_dispatch_main(void) {
           "lsls r1,r1,#1\n"
           "bl exe6_battle_obj_char_move2\n"
           "2:\n"
-          "pop {r7}\n"
-          "ldr r0,=0x0800372A + 1\n"
-          "mov lr,pc\n"
-          "bx r0\n"
           "push {r0}\n"
-          "ldr r0,=0x08003206 + 1\n"
+          "ldr r0,=0x08003200 + 1\n"
           "mov lr,r0\n"
           "pop {r0}\n"
           "mov pc,lr\n");

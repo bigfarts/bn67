@@ -1,13 +1,18 @@
-#ifndef RUNTIME_H
-#define RUNTIME_H
+#ifndef BN67_RUNTIME_H
+#define BN67_RUNTIME_H
 
 #include "abi.h"
 
-#define BN67_LINK_OBJ_ID(main) EXE6_JOIN(__bn67_object_id_, main)
-#define BN67_LINK_SPRITE_ID(archive) EXE6_JOIN(__bn67_sprite_id_, archive)
-#define BN67_LINK_SPRITE_GROUP(archive) EXE6_JOIN(__bn67_sprite_group_, archive)
-#define BN67_LINK_SONG_ID(archive) EXE6_JOIN(__bn67_song_id_, archive)
-#define BN67_LINK_SONG_GROUP(archive) EXE6_JOIN(__bn67_song_group_, archive)
+#define BN67_JOIN_INNER(left, right) left##right
+#define BN67_JOIN(left, right) BN67_JOIN_INNER(left, right)
+#define BN67_STRINGIFY_INNER(value) #value
+#define BN67_STRINGIFY(value) BN67_STRINGIFY_INNER(value)
+
+#define BN67_LINK_OBJ_ID(main) BN67_JOIN(__bn67_object_id_, main)
+#define BN67_LINK_SPRITE_ID(archive) BN67_JOIN(__bn67_sprite_id_, archive)
+#define BN67_LINK_SPRITE_GROUP(archive) BN67_JOIN(__bn67_sprite_group_, archive)
+#define BN67_LINK_SONG_ID(archive) BN67_JOIN(__bn67_song_id_, archive)
+#define BN67_LINK_SONG_GROUP(archive) BN67_JOIN(__bn67_song_group_, archive)
 
 /* Metadata compilation runs before attack slots are allocated. */
 #ifndef BN67_ATTACK_FAMILY
@@ -53,14 +58,14 @@
 #define BN67_OBJ_BODY(obj_class, main) \
     BN67_METADATA_RECORD( \
         "object", \
-        EXE6_STRINGIFY(obj_class) "__" EXE6_STRINGIFY(main) \
+        BN67_STRINGIFY(obj_class) "__" BN67_STRINGIFY(main) \
     ); \
-    static USED void EXE6_JOIN(main, _fn)( \
+    static USED void BN67_JOIN(main, _fn)( \
         Exe6Obj *self, \
         Exe6ObjSpawnParameters spawn_parameters __attribute__((unused)) \
     ); \
-    EXE6_EXPORT_OBJ(main, EXE6_JOIN(main, _fn)) \
-    static USED void EXE6_JOIN(main, _fn)( \
+    EXE6_EXPORT_OBJ(main, BN67_JOIN(main, _fn)) \
+    static USED void BN67_JOIN(main, _fn)( \
         Exe6Obj *self, \
         Exe6ObjSpawnParameters spawn_parameters __attribute__((unused)) \
     )
@@ -78,9 +83,9 @@
 ) \
     BN67_METADATA_RECORD( \
         kind, \
-        EXE6_STRINGIFY(chip_id) "__" EXE6_STRINGIFY(main) \
+        BN67_STRINGIFY(chip_id) "__" BN67_STRINGIFY(main) \
     ); \
-    static USED return_type EXE6_JOIN(main, _fn)( \
+    static USED return_type BN67_JOIN(main, _fn)( \
         uint32_t block_x, \
         uint32_t block_y, \
         uint32_t parameter, \
@@ -89,8 +94,8 @@
         context_type context_name, \
         Exe6ObjSpawnParameters spawn_parameters \
     ); \
-    export(main, EXE6_JOIN(main, _fn)) \
-    static USED return_type EXE6_JOIN(main, _fn)( \
+    export(main, BN67_JOIN(main, _fn)) \
+    static USED return_type BN67_JOIN(main, _fn)( \
         uint32_t block_x, \
         uint32_t block_y, \
         uint32_t parameter, \
@@ -139,14 +144,15 @@
 #define BN67_PATCH_POINTER(address, symbol) \
     BN67_METADATA_RECORD( \
         "pointer", \
-        EXE6_STRINGIFY(address) "__" EXE6_STRINGIFY(symbol) \
+        BN67_STRINGIFY(address) "__" BN67_STRINGIFY(symbol) \
     )
 
 /* Section targets are entered with the original r1 pushed on the stack. */
-#define BN67_PATCH_SECTION(address, symbol) \
+#define BN67_PATCH_SECTION(address, relay_address, symbol) \
     BN67_METADATA_RECORD( \
         "section", \
-        EXE6_STRINGIFY(address) "__" EXE6_STRINGIFY(symbol) \
+        BN67_STRINGIFY(address) "__" BN67_STRINGIFY(relay_address) "__" \
+            BN67_STRINGIFY(symbol) \
     )
 
 /*
@@ -154,15 +160,15 @@
  * image; the final ROM assembly copies it over the chip ID's native slot.
  */
 #define BN67_CHIP_RECORD_SYMBOL(chip_id) \
-    EXE6_JOIN(bn67_chip_record_, chip_id)
+    BN67_JOIN(bn67_chip_record_, chip_id)
 
 #define BN67_CHIP_RECORD(chip_id) \
     BN67_METADATA_RECORD( \
         "chip", \
-        EXE6_STRINGIFY(chip_id) \
+        BN67_STRINGIFY(chip_id) \
     ); \
     USED const Exe6ChipRecord BN67_CHIP_RECORD_SYMBOL(chip_id) \
-        __attribute__((section(".rodata." EXE6_STRINGIFY(chip_id)), aligned(4))) =
+        __attribute__((section(".rodata." BN67_STRINGIFY(chip_id)), aligned(4))) =
 
 #ifdef BN67_METADATA_ONLY
 #define BN67_ASM_RESOURCE(name, contents) extern const uint8_t name[]
@@ -173,13 +179,13 @@
 #define BN67_ASM_RESOURCE(name, contents) \
     extern const uint8_t name[]; \
     __asm__( \
-        ".section .rodata." EXE6_STRINGIFY(name) ",\"a\",%progbits\n" \
+        ".section .rodata." BN67_STRINGIFY(name) ",\"a\",%progbits\n" \
         ".balign 4\n" \
-        ".global " EXE6_STRINGIFY(name) "\n" \
-        ".type " EXE6_STRINGIFY(name) ",%object\n" \
-        EXE6_STRINGIFY(name) ":\n" \
+        ".global " BN67_STRINGIFY(name) "\n" \
+        ".type " BN67_STRINGIFY(name) ",%object\n" \
+        BN67_STRINGIFY(name) ":\n" \
         contents \
-        ".size " EXE6_STRINGIFY(name) ",.-" EXE6_STRINGIFY(name) "\n" \
+        ".size " BN67_STRINGIFY(name) ",.-" BN67_STRINGIFY(name) "\n" \
         ".previous\n" \
     )
 
@@ -189,40 +195,40 @@
 #define BN67_RESOURCE_ALIAS(alias, target) \
     extern const uint8_t alias[]; \
     __asm__( \
-        ".global " EXE6_STRINGIFY(alias) "\n" \
-        ".type " EXE6_STRINGIFY(alias) ",%object\n" \
-        ".set " EXE6_STRINGIFY(alias) "," EXE6_STRINGIFY(target) "\n" \
+        ".global " BN67_STRINGIFY(alias) "\n" \
+        ".type " BN67_STRINGIFY(alias) ",%object\n" \
+        ".set " BN67_STRINGIFY(alias) "," BN67_STRINGIFY(target) "\n" \
     )
 
 #endif
 
 #define BN67_PCM(prefix, priority, voice, track, sample_path) \
-    ".byte 1,0," EXE6_STRINGIFY(priority) ",0\n" \
-    ".long " EXE6_STRINGIFY(EXE6_JOIN(prefix, _voicegroup)) "\n" \
-    ".long " EXE6_STRINGIFY(EXE6_JOIN(prefix, _track)) "\n" \
-    ".global " EXE6_STRINGIFY(EXE6_JOIN(prefix, _voicegroup)) "\n" \
-    EXE6_STRINGIFY(EXE6_JOIN(prefix, _voicegroup)) ":\n" \
-    ".byte " EXE6_STRINGIFY(voice) ",0x3C,0,0\n" \
-    ".long " EXE6_STRINGIFY(EXE6_JOIN(prefix, _sample)) "\n" \
+    ".byte 1,0," BN67_STRINGIFY(priority) ",0\n" \
+    ".long " BN67_STRINGIFY(BN67_JOIN(prefix, _voicegroup)) "\n" \
+    ".long " BN67_STRINGIFY(BN67_JOIN(prefix, _track)) "\n" \
+    ".global " BN67_STRINGIFY(BN67_JOIN(prefix, _voicegroup)) "\n" \
+    BN67_STRINGIFY(BN67_JOIN(prefix, _voicegroup)) ":\n" \
+    ".byte " BN67_STRINGIFY(voice) ",0x3C,0,0\n" \
+    ".long " BN67_STRINGIFY(BN67_JOIN(prefix, _sample)) "\n" \
     ".byte 0xFF,0,0xFF,0\n" \
-    ".global " EXE6_STRINGIFY(EXE6_JOIN(prefix, _track)) "\n" \
-    EXE6_STRINGIFY(EXE6_JOIN(prefix, _track)) ":\n" \
+    ".global " BN67_STRINGIFY(BN67_JOIN(prefix, _track)) "\n" \
+    BN67_STRINGIFY(BN67_JOIN(prefix, _track)) ":\n" \
     track \
     ".balign 4\n" \
-    ".global " EXE6_STRINGIFY(EXE6_JOIN(prefix, _sample)) "\n" \
-    EXE6_STRINGIFY(EXE6_JOIN(prefix, _sample)) ":\n" \
+    ".global " BN67_STRINGIFY(BN67_JOIN(prefix, _sample)) "\n" \
+    BN67_STRINGIFY(BN67_JOIN(prefix, _sample)) ":\n" \
     ".incbin \"" sample_path "\"\n"
 
 #define BN67_SONG(archive, contents) \
     extern const uint8_t BN67_LINK_SONG_ID(archive)[]; \
     extern const uint8_t BN67_LINK_SONG_GROUP(archive)[]; \
     BN67_ASM_RESOURCE(archive, contents); \
-    BN67_METADATA_RECORD("song", EXE6_STRINGIFY(archive))
+    BN67_METADATA_RECORD("song", BN67_STRINGIFY(archive))
 
 #define BN67_SPRITE(archive, path) \
     extern const uint8_t BN67_LINK_SPRITE_ID(archive)[]; \
     extern const uint8_t BN67_LINK_SPRITE_GROUP(archive)[]; \
     BN67_INCBIN(archive, path); \
-    BN67_METADATA_RECORD("sprite", EXE6_STRINGIFY(archive))
+    BN67_METADATA_RECORD("sprite", BN67_STRINGIFY(archive))
 
 #endif

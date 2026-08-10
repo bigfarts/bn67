@@ -98,11 +98,13 @@ BN67_PATCH_POINTER(0x080EACD0, signalred_dust_sprite_table);
 #endif
 ```
 
-`BN67_PATCH_SECTION(address, symbol)` replaces native instructions with a
-Thumb trampoline to `symbol`, with the original `r1` pushed on the stack. The
-target must pop `r1`, owns any displaced instructions, and must continue or
-return according to that native call site; FolderBack's class-1 dispatcher hook
-is an example.
+`BN67_PATCH_SECTION(address, relay_address, symbol)` replaces six bytes of
+native instructions with a Thumb call through an eight-byte, word-aligned relay
+at `relay_address`. That relay must be dead ROM within Thumb `bl` range of the
+patch site. The target is entered with the original `r1` pushed on the stack;
+it must pop `r1`, own any displaced instructions, and continue or return
+according to that native call site. FolderBack uses the original class-1 table
+after the registry relocates that table and its reference.
 
 The attack macros name the native family lifecycle they register:
 

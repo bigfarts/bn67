@@ -481,20 +481,22 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertNotIn("object_dispatch_interceptor_main:", assembly)
         self.assertIn("// Package-declared fixed section patches.", assembly)
         self.assertIn(
-            "push {r1}\n    ldr r1,=folderback_dispatch_main + 1",
+            ".org 0x080031FA\n"
+            "    push {r1}\n"
+            "    bl section_patch_folderback_dispatch_main_relay\n"
+            ".org 0x08003C9C\n"
+            "section_patch_folderback_dispatch_main_relay:",
             assembly,
         )
         self.assertIn("ldr r1,=folderback_dispatch_main + 1", assembly)
-        self.assertIn(".org 0x080031FA", assembly)
         folderback = (ROOT / "src/chips/folderback.c").read_text()
         self.assertIn(
-            "BN67_PATCH_SECTION(0x080031FA, folderback_dispatch_main)",
+            "BN67_PATCH_SECTION(0x080031FA, 0x08003C9C, folderback_dispatch_main)",
             folderback,
         )
         self.assertNotIn("BN67_PATCH_POINTER(0x08003224", folderback)
         self.assertNotIn("__bn67_object_kind", folderback)
         self.assertIn("BN67_OBJ_ID(folderback_controller_main)", folderback)
-        self.assertNotIn("0x08003C9C", folderback)
         self.assertIn("folderback_object_should_pause", folderback)
         self.assertIn("const Exe6ObjectSlot *slots = EXE6_EFFECT_POOL_HEAD", folderback)
         self.assertIn("EXE6_POOL_SLOT_COUNT", folderback)
@@ -517,12 +519,14 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertEqual(folderback.count('"lsls r1,r1,#1\\n"'), 2)
         for instruction in (
             "push {r0}",
-            "ldr r0,=0x08003206 + 1",
+            "ldr r0,=0x08003200 + 1",
             "mov lr,r0",
             "pop {r0}",
             "mov pc,lr",
         ):
             self.assertIn(f'"{instruction}\\n"', folderback)
+        self.assertNotIn("0x08003206", folderback)
+        self.assertNotIn("0x0800372A", folderback)
         runtime = (ROOT / "src/runtime.h").read_text()
         abi = (ROOT / "src/abi.h").read_text()
         self.assertIn("struct Exe6ObjectSlotFields", abi)
