@@ -509,16 +509,17 @@ Cross charged Buster attacks and chargeable Cross chip attacks share the
 base-plus-per-level damage scaler at `0x08012642`. Its helper at `0x0801265A`
 already calculates Attack levels through 10, but the caller reduces every
 value above 5 back to 5 before multiplying it by the attack's native increment.
-BlackWeapon skips only that second ceiling when the live raw Attack property is
-9 (displayed level 10). Native Attack levels 1 through 5 and other sources of
-temporary Attack bonuses retain the original ceiling; BlackWeapon's levels 6
-through 10 continue the same attack-specific damage progression for both
-charge paths. The charged-chip path at `0x0800FB54` dispatches its Cross power-
+The patch removes only that second ceiling, leaving the helper's level-10 cap
+in place. Attack levels 1 through 5 remain byte-for-byte equivalent, while
+levels 6 through 10 from BlackWeapon or stacked BusterUp chips continue the
+same attack-specific damage progression for both charge paths. The charged-
+chip path at `0x0800FB54` dispatches its Cross power-
 attack ID through `0x080117BA`, so it reaches this same scaler rather than a
 separate damage calculation. Power-attack IDs 3 and 4 are the Gregar and Falzar
-Beast Out rapid-Buster variants; BlackWeapon redirects their table entries at
-`0x080117E0` and `0x080117E4` so those two attacks also retain effective Attack
-levels 6 through 10 while BlackWeapon's raw Attack property remains 9.
+Beast Out rapid-Buster variants; the patch redirects their table entries at
+`0x080117E0` and `0x080117E4` so those two attacks also retain every effective
+Attack level from 6 through 10 regardless of whether BlackWeapon or BusterUp
+supplied it.
 
 The actor selects the current Navi sprite, hides the player, and renders
 animation 0 at the player's coordinates. Its 60-frame phase alternates every
@@ -531,8 +532,10 @@ palette, so merely repeating the slot number gives the wrong appearance. The
 port retains BN6's current-Navi sprite and animation, but queues Blue Moon's
 32-byte dark palette from ROM offset `0x21B7F4` into only the visual actor's
 assigned OBJ-palette bank on dark frames. The native BN6 sprite archive and
-global white-hit palette remain unchanged. There is no sound request anywhere
-in the BlackWeapon controller or actor path.
+global white-hit palette share that staging bank, so the actor saves the native
+palette before its first dark frame and restores it during both normal and
+forced teardown. There is no sound request anywhere in the BlackWeapon
+controller or actor path.
 
 Blue Moon contains only placeholder library art for the operation-battle chip.
 EXE4.5's complete BlackWeapon icon, 56x48 library image, and palette occupy ROM

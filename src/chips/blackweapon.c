@@ -21,9 +21,9 @@ BN67_PATCH_THUMB_POINTER(
 /*
  * Cross Buster charges and chargeable Cross chips share the native scaler at
  * 0x08012642. Its level helper already supports Attack 1 through 10, but the
- * caller clamps that result to 5. Skip that clamp only while BlackWeapon's
- * raw Attack level is active and retain the native base-plus-per-level
- * calculation for every other part of each charge attack.
+ * caller clamps that result to 5. Remove only that redundant clamp so
+ * BlackWeapon and each stacked BusterUp level retain the native
+ * base-plus-per-level calculation through Attack 10.
  */
 BN67_PATCH_SECTION(
     0x08012646,
@@ -98,17 +98,12 @@ NAKED void blackweapon_beast_attack_level_apply(void)
     __asm__(
         ".syntax unified\n"
         "push {lr}\n"
-        /* Preserve the native level-5 result unless Attack is raw level 9. */
-        "movs r1,#1\n"
-        "ldr r3,=0x08013775\n"
-        "mov lr,pc\n"
-        "bx r3\n"
-        "cmp r0,#9\n"
-        "bne 1f\n"
-        /* Recalculate the effective level with BN6's native level-10 helper. */
+        /* Extend only levels above 5; preserve the original result below it. */
         "ldr r3,=0x0801265B\n"
         "mov lr,pc\n"
         "bx r3\n"
+        "cmp r0,#5\n"
+        "ble 1f\n"
         "strh r0,[r7,#8]\n"
         "1:\n"
         "pop {pc}\n"
@@ -157,19 +152,6 @@ NAKED void blackweapon_attack_level_dispatch(void)
         "mov lr,pc\n"
         "bx r3\n"
         "adds r2,r0,#0\n"
-        /* Preserve BN6's level-5 ceiling unless BlackWeapon set Attack to 10. */
-        "cmp r2,#5\n"
-        "ble 1f\n"
-        "push {r2}\n"
-        "movs r1,#1\n"
-        "ldr r3,=0x08013775\n"
-        "mov lr,pc\n"
-        "bx r3\n"
-        "pop {r2}\n"
-        "cmp r0,#9\n"
-        "beq 1f\n"
-        "movs r2,#5\n"
-        "1:\n"
         /* Restore the scaler's base and per-level increment arguments. */
         "pop {r0,r1}\n"
         /* Rejoin at base + increment * level, after the old level-5 clamp. */
@@ -184,42 +166,88 @@ struct BlackWeaponControllerWork {
 };
 
 struct BlackWeaponVisualWork {
-    uint8_t owner_was_visible;
-    uint8_t dark_palette;
+    uint8_t white_palette[0x20];
 };
+
+_Static_assert(
+    sizeof(struct BlackWeaponVisualWork) == sizeof(((Exe6Obj *)0)->work),
+    "BlackWeapon visual work must hold one complete palette"
+);
+
+enum BlackWeaponVisualFlags {
+    BLACKWEAPON_VISUAL_OWNER_WAS_VISIBLE = 1 << 0,
+    BLACKWEAPON_VISUAL_PALETTE_SAVED = 1 << 1,
+};
+
+#define BLACKWEAPON_DARK_PALETTE_BANK 0x0Fu
+
+static void *blackweapon_palette_bank(uint32_t palette_bank)
+{
+    return (void *)(uintptr_t)(EXE6_SPRITE_PALETTE_STAGING_00
+        + palette_bank * 0x20u);
+}
 
 static void install_dark_palette(Exe6Obj *visual)
 {
-    const struct BlackWeaponVisualWork *work =
-        (const struct BlackWeaponVisualWork *)visual->work;
-    if (work->dark_palette == 0) {
-        return;
-    }
-
     const uint8_t *sprite = (const uint8_t *)visual
         + ((uint32_t)(visual->object_class >> 4) << 4);
     uint32_t palette_bank = (uint32_t)(sprite[0x15] >> 4);
+    if (palette_bank != BLACKWEAPON_DARK_PALETTE_BANK) {
+        return;
+    }
     exe6_mem_trans256(
         blackweapon_dark_palette,
-        (void *)(uintptr_t)(EXE6_SPRITE_PALETTE_STAGING_00
-            + palette_bank * 0x20u),
+        blackweapon_palette_bank(palette_bank),
         0x20
     );
+}
+
+static void save_white_palette(Exe6Obj *visual)
+{
+    struct BlackWeaponVisualWork *work =
+        (struct BlackWeaponVisualWork *)visual->work;
+    exe6_mem_trans256(
+        blackweapon_palette_bank(BLACKWEAPON_DARK_PALETTE_BANK),
+        work->white_palette,
+        sizeof(work->white_palette)
+    );
+    visual->aux_timer |= BLACKWEAPON_VISUAL_PALETTE_SAVED;
+}
+
+static void restore_white_palette(Exe6Obj *visual)
+{
+    if ((visual->aux_timer & BLACKWEAPON_VISUAL_PALETTE_SAVED) == 0) {
+        return;
+    }
+
+    const struct BlackWeaponVisualWork *work =
+        (const struct BlackWeaponVisualWork *)visual->work;
+    exe6_mem_trans256(
+        work->white_palette,
+        blackweapon_palette_bank(BLACKWEAPON_DARK_PALETTE_BANK),
+        sizeof(work->white_palette)
+    );
+    visual->aux_timer &= (uint16_t)~BLACKWEAPON_VISUAL_PALETTE_SAVED;
 }
 
 static void restore_owner(Exe6Obj *visual)
 {
     Exe6Obj *owner = visual->parent;
-    struct BlackWeaponVisualWork *work =
-        (struct BlackWeaponVisualWork *)visual->work;
-    if (owner != NULL && work->owner_was_visible != 0) {
+    if (owner != NULL
+        && (visual->aux_timer & BLACKWEAPON_VISUAL_OWNER_WAS_VISIBLE) != 0) {
         owner->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     }
 }
 
+static void restore_visual(Exe6Obj *visual)
+{
+    restore_white_palette(visual);
+    restore_owner(visual);
+}
+
 static void finish_visual(Exe6Obj *visual)
 {
-    restore_owner(visual);
+    restore_visual(visual);
     if (visual->completion != NULL) {
         *visual->completion = 0;
     }
@@ -246,14 +274,11 @@ static void visual_flash_update(Exe6Obj *visual)
         return;
     }
 
-    struct BlackWeaponVisualWork *work =
-        (struct BlackWeaponVisualWork *)visual->work;
-    work->dark_palette = (uint8_t)((visual->timer & 2u) != 0);
     exe6_obj_clt_set(exe6_obj_clt_link_get(owner));
 
     uint8_t *sprite = (uint8_t *)visual
         + ((uint32_t)(visual->object_class >> 4) << 4);
-    if (work->dark_palette != 0) {
+    if ((visual->timer & 2u) != 0) {
         sprite[0x15] = (uint8_t)((sprite[0x15] & 0x0Fu) | 0xF0u);
     } else {
         sprite[0x15] &= 0x0Fu;
@@ -302,10 +327,11 @@ static void visual_init(Exe6Obj *visual)
     exe6_obj_char_move();
     exe6_obj_flip_set(visual->owner);
 
-    struct BlackWeaponVisualWork *work =
-        (struct BlackWeaponVisualWork *)visual->work;
-    work->owner_was_visible =
-        (uint8_t)(owner->header_flags & EXE6_OBJ_FLAG_VISIBLE);
+    visual->aux_timer = 0;
+    if ((owner->header_flags & EXE6_OBJ_FLAG_VISIBLE) != 0) {
+        visual->aux_timer |= BLACKWEAPON_VISUAL_OWNER_WAS_VISIBLE;
+    }
+    save_white_palette(visual);
     owner->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
     visual->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     visual->timer = FLASH_FRAMES;
@@ -328,7 +354,7 @@ BN67_EFFECT(blackweapon_visual_main)
         }
         break;
     default:
-        restore_owner(self);
+        restore_visual(self);
         exe6_obj_move_delete();
         return;
     }
