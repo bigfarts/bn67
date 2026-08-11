@@ -326,6 +326,20 @@ class PackageCompilerTests(unittest.TestCase):
             self.assertNotIn(".generated.h", text, source)
             self.assertNotIn("BN67_PCM_SONG", text, source)
 
+    def test_explicit_battle_sprite_priorities_stay_behind_hud(self) -> None:
+        arguments = []
+        for source in (ROOT / "src/chips").rglob("*.c"):
+            arguments.extend(
+                argument.strip()
+                for argument in re.findall(
+                    r"exe6_obj_prio_set\(\s*([^()]+?)\s*\)",
+                    source.read_text(),
+                )
+            )
+
+        self.assertTrue(arguments)
+        self.assertEqual(set(arguments), {"EXE6_OBJ_PRIORITY_BATTLE"})
+
     def test_chip_records_are_linked_c_resources(self) -> None:
         gregar_config, gregar_packages = self.packages("gregar")
         falzar_config, falzar_packages = self.packages("falzar")

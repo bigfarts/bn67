@@ -659,10 +659,11 @@ preserves all five values so Up, Down, and Left retain their distinct beam
 transforms rather than collapsing to the yellow palette-only appearance.
 
 The BN6 port retains HeatMan's IDs `0xE3`-`0xE5` and uses a compiler-assigned
-family-`0x1B` subfamily. The actor and visible beam receive separate class-1 IDs. Both use foreground
-OAM priority 1, which places the beam in front of targets and field objects;
-the earlier-allocated actor still wins their same-priority overlap at the
-muzzle. LaserMan's row-hit objects receive their own class-3 ID. Blue Moon's hit region `0x0B` is not a
+family-`0x1B` subfamily. The actor and visible beam receive separate class-1
+IDs. Both use BN6's standard battle OAM priority 2, keeping them behind the
+Custom gauge and HUD; the earlier-allocated actor still wins their
+same-priority overlap at the muzzle. LaserMan's row-hit objects receive their
+own class-3 ID. Blue Moon's hit region `0x0B` is not a
 compatible attack mask in BN6, so the port seeds each hit with BN6's proven
 normal attack region 25 before using the native hit helpers. The final
 `FD` event uses SearchMan's exact working region-25 hit initialization

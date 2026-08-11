@@ -126,6 +126,9 @@ enum Exe6ObjectClass {
 #define EXE6_OBJ_FLAG_STOP_SPRITE_UPDATE 0x08
 #define EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING 0x10
 
+/* Native battle sprites use OAM priority 2, behind the Custom gauge and HUD. */
+#define EXE6_OBJ_PRIORITY_BATTLE 2
+
 /* Flags returned for the current sprite-animation frame. */
 #define EXE6_ANIMATION_FRAME_FLAG_END 0x80
 

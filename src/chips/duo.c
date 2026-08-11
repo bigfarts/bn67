@@ -105,8 +105,6 @@ static const uint8_t DUO_EXIT_PHASE = 16;
 static const uint8_t DUO_ACTOR_ANIMATION = 0;
 static const uint8_t DUO_FIST_ANIMATION_LEFT = 19;
 static const uint8_t DUO_FIST_ANIMATION_RIGHT = 18;
-/* Keep every Duo battle sprite behind BN6's Custom gauge and HUD. */
-static const uint8_t DUO_BATTLE_SPRITE_PRIORITY = 2;
 static const uint8_t DUO_FIST_ATTEMPTS = 17;
 static const uint8_t DUO_FIST_STEP_DELAY = 6;
 static const uint16_t DUO_PANEL_FRAMES = 40;
@@ -380,7 +378,7 @@ static void duo_begin_entry(Exe6Obj *self)
     exe6_obj_char_set();
     exe6_obj_no_shadow();
     duo_set_animation(self, DUO_ACTOR_ANIMATION);
-    exe6_obj_prio_set(DUO_BATTLE_SPRITE_PRIORITY);
+    exe6_obj_prio_set(EXE6_OBJ_PRIORITY_BATTLE);
     int32_t direction = (int32_t)exe6_calc_pl_em_dir_spd_for(self);
     self->x = -direction * DUO_ENTRY_X;
     self->y = DUO_SCREEN_Y;
@@ -499,7 +497,7 @@ static void duo_fist_init(Exe6Obj *self)
         ? DUO_FIST_ANIMATION_LEFT
         : DUO_FIST_ANIMATION_RIGHT;
     duo_set_animation(self, animation);
-    exe6_obj_prio_set(DUO_BATTLE_SPRITE_PRIORITY);
+    exe6_obj_prio_set(EXE6_OBJ_PRIORITY_BATTLE);
     exe6_obj_flip_set(exe6_enemy_flip_check());
     exe6_obj_clt_set(0);
     int32_t direction = (int32_t)exe6_calc_pl_em_dir_spd_for(self);

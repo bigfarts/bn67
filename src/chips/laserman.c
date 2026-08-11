@@ -357,7 +357,7 @@ static void actor_init(Exe6Obj *self)
     self->z = 0;
     exe6_obj_flip_set(exe6_enemy_flip_check());
     exe6_obj_clt_set(0);
-    exe6_obj_prio_set(1);
+    exe6_obj_prio_set(EXE6_OBJ_PRIORITY_BATTLE);
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     self->state_word = ACTIVE_STATE;
     self->phase = 0;
@@ -466,7 +466,7 @@ static void beam_init(Exe6Obj *self)
     exe6_obj_clt_set(
         self->variant == 0 || self->variant == 2 ? 0 : 10
     );
-    exe6_obj_prio_set(1);
+    exe6_obj_prio_set(EXE6_OBJ_PRIORITY_BATTLE);
     exe6_obj_col_efc_set(BEAM_SCALES[self->variant]);
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     self->state_word = ACTIVE_STATE;

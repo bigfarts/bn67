@@ -23,6 +23,13 @@ Native veneer names follow the recovered
 labels, with source-file prefixes removed and CamelCase normalized to the
 project's `exe6_lower_snake_case` convention.
 
+## Battle-sprite priority
+
+`exe6_obj_char_init()` initializes sprites at OAM priority 2, the native battle
+layer behind the Custom gauge and HUD. Any code that sets a battle sprite's
+priority explicitly must use `EXE6_OBJ_PRIORITY_BATTLE`; priorities 0 and 1 can
+draw over battle UI.
+
 ## Hit-effect visuals
 
 `exe6_battle_hit_hit_mark_set()` writes the one-byte visual selector at
