@@ -19,23 +19,3 @@
     mov r6,7
     eor r2,r6
     nop
-
-// Status Bug natively masks the RNG to choose one of four effects. Use the
-// nonnegative RNG and its remainder modulo three, then redirect the third
-// normal- and high-severity entries from green invulnerability to flashing.
-// The remaining outcomes are uniformly confused, blind, and flashing.
-.org 0x08013E7E
-    bl 0x08001532
-    mov r1,3
-    swi 6
-    add r1,r4
-    add r1,1
-    lsl r1,r1,2
-    ldr r0,[pc,8]
-    ldr r0,[r0,r1]
-
-.org 0x08013EA8
-    .dw 0x08013EE7
-
-.org 0x08013EB8
-    .dw 0x08013F15
