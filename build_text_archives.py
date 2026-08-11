@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 import struct
 from pathlib import Path
@@ -18,11 +18,88 @@ EXE6_EN_CHARSET = [" ", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "
 RECORD_END = 0xE6
 LINE_BREAK = 0xE9
 
-CHAR_TO_BYTE = {character: index for index, character in enumerate(EXE6_EN_CHARSET)}
-CHAR_TO_BYTE["\n"] = LINE_BREAK
-
 DESCRIPTION_HEADER = bytes((0xE8, 0x06, 0x01, 0x01, 0xF1, 0x00, 0x00))
 DESCRIPTION_FOOTER = bytes((0xE7, 0x01))
+
+
+@dataclass
+class PatriciaNode:
+    value: int | None = None
+    children: dict[str, tuple[str, PatriciaNode]] = field(default_factory=dict)
+
+
+class PatriciaTree:
+    def __init__(self, values: dict[str, int]) -> None:
+        self.root = PatriciaNode()
+        for token, value in values.items():
+            self.insert(token, value)
+
+    def insert(self, token: str, value: int) -> None:
+        if not token:
+            raise ValueError("Patricia tree tokens must not be empty")
+
+        node = self.root
+        remainder = token
+        while remainder:
+            edge = node.children.get(remainder[0])
+            if edge is None:
+                node.children[remainder[0]] = (
+                    remainder,
+                    PatriciaNode(value=value),
+                )
+                return
+
+            label, child = edge
+            shared = 0
+            while (
+                shared < len(label)
+                and shared < len(remainder)
+                and label[shared] == remainder[shared]
+            ):
+                shared += 1
+
+            if shared == len(label):
+                node = child
+                remainder = remainder[shared:]
+                continue
+
+            branch = PatriciaNode()
+            branch.children[label[shared]] = (label[shared:], child)
+            node.children[remainder[0]] = (label[:shared], branch)
+            remainder = remainder[shared:]
+            if remainder:
+                branch.children[remainder[0]] = (
+                    remainder,
+                    PatriciaNode(value=value),
+                )
+            else:
+                branch.value = value
+            return
+
+        node.value = value
+
+    def longest_prefix(self, text: str) -> tuple[str, int] | None:
+        node = self.root
+        index = 0
+        match: tuple[str, int] | None = None
+        while index < len(text):
+            edge = node.children.get(text[index])
+            if edge is None:
+                break
+            label, child = edge
+            if not text.startswith(label, index):
+                break
+            index += len(label)
+            node = child
+            if node.value is not None:
+                match = (text[:index], node.value)
+        return match
+
+
+CHARACTER_TREE = PatriciaTree(
+    {character: index for index, character in enumerate(EXE6_EN_CHARSET)}
+    | {"\n": LINE_BREAK}
+)
 
 
 @dataclass(frozen=True)
@@ -54,19 +131,16 @@ class PackageText:
 
 def encode_text(text: str) -> bytes:
     encoded = bytearray()
-    index = 0
-    tokens = sorted(CHAR_TO_BYTE, key=len, reverse=True)
-    while index < len(text):
-        token = next(
-            (candidate for candidate in tokens if text.startswith(candidate, index)),
-            None,
-        )
-        if token is None:
+    remaining = text
+    while remaining:
+        match = CHARACTER_TREE.longest_prefix(remaining)
+        if match is None:
             raise ValueError(
-                f"character at {text[index:]!r} is not in the BN6 English charset"
+                f"character at {remaining!r} is not in the BN6 English charset"
             )
-        encoded.append(CHAR_TO_BYTE[token])
-        index += len(token)
+        token, value = match
+        encoded.append(value)
+        remaining = remaining[len(token) :]
     return bytes(encoded)
 
 

@@ -224,6 +224,12 @@ class PackageCompilerTests(unittest.TestCase):
         )
         self.assertEqual(description.count(bytes((LINE_BREAK,))), 2)
 
+    def test_text_encoder_uses_longest_token_match(self) -> None:
+        self.assertEqual(
+            encode_text("[B][BX][bat]"),
+            bytes((0xB5, 0x41, 0xA0)),
+        )
+
     def test_registry_compiler_is_target_agnostic(self) -> None:
         compiler = (ROOT / "compile_registry.py").read_text().lower()
         self.assertNotIn("gregar", compiler)
