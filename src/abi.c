@@ -10,22 +10,33 @@
 #define STRINGIFY_INNER(value) #value
 #define STRINGIFY(value) STRINGIFY_INNER(value)
 
+/*
+ * BN6 callees preserve the high registers they use.  Tail-call ordinary
+ * r0-r2 ABI entries so the native return goes straight to the C caller; its
+ * BL already put an odd Thumb address in lr.  The far jump is unavoidable
+ * because linked C code is outside the Thumb-1 BL range of the base ROM.
+ */
 #define NATIVE_WRAPPER(name, address, return_type, arguments) \
     NAKED return_type name arguments \
     { \
         __asm__( \
             ".syntax unified\n" \
-            "push {r4-r7,lr}\n" \
-            "ldr r4,=" STRINGIFY(address) "+1\n" \
-            "mov r12,r4\n" \
-            "adr r4,1f\n" \
-            "adds r4,#1\n" \
-            "mov lr,r4\n" \
-            "ldr r4,[sp,#0]\n" \
+            "ldr r3,=" STRINGIFY(address) "+1\n" \
+            "bx r3\n" \
+        ); \
+    }
+
+/* Preserve a fourth C argument while borrowing r3 for the far target. */
+#define NATIVE_WRAPPER_R3(name, address, return_type, arguments) \
+    NAKED return_type name arguments \
+    { \
+        __asm__( \
+            ".syntax unified\n" \
+            "push {r3}\n" \
+            "ldr r3,=" STRINGIFY(address) "+1\n" \
+            "mov r12,r3\n" \
+            "pop {r3}\n" \
             "bx r12\n" \
-            ".balign 4\n" \
-            "1:\n" \
-            "pop {r4-r7,pc}\n" \
         ); \
     }
 
@@ -127,7 +138,7 @@ NATIVE_WRAPPER(exe6_battle_one_self_check, 0x0800A9EC, uint32_t, (uint32_t side)
 NATIVE_WRAPPER(exe6_yazirushi_trans, 0x0800AE90, void, (uint32_t duration, uint32_t animation))
 NATIVE_WRAPPER(exe6_em_set_flag_get, 0x0802D246, uint32_t, (void))
 NATIVE_WRAPPER(exe6_block_in_screen_check_sub, 0x0800CC72, uint32_t, (uint32_t x, uint32_t y))
-NATIVE_WRAPPER(exe6_block_move_check, 0x0800CC86, uint32_t, (uint32_t x, uint32_t y, uint32_t required_flags, uint32_t excluded_flags))
+NATIVE_WRAPPER_R3(exe6_block_move_check, 0x0800CC86, uint32_t, (uint32_t x, uint32_t y, uint32_t required_flags, uint32_t excluded_flags))
 NATIVE_WRAPPER(exe6_another_block_exist_check, 0x0800D5F0, uint32_t, (uint32_t x, uint32_t owner))
 NATIVE_WRAPPER(exe6_block_at, 0x0800C90A, Exe6Block *, (uint32_t x, uint32_t y))
 NATIVE_WRAPPER(exe6_block_status_get, 0x0800C8F8, uint32_t, (uint32_t x, uint32_t y))
@@ -184,7 +195,7 @@ NATIVE_WRAPPER(exe6_battle_report_flag_on, 0x08001382, void, (uint32_t control_f
 NATIVE_WRAPPER(exe6_battle_report_flag_off, 0x0800138E, void, (uint32_t control_flags))
 NATIVE_WRAPPER(exe6_battle_hit_open, 0x08019892, Exe6Hit *, (void))
 NATIVE_WRAPPER(exe6_battle_hit_close, 0x080198CE, void, (Exe6Hit *hit))
-NATIVE_WRAPPER(
+NATIVE_WRAPPER_R3(
     exe6_battle_hit_data_set,
     0x08019FB4,
     void,
