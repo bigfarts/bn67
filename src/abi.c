@@ -153,7 +153,12 @@ NATIVE_WRAPPER(
     Exe6NaviSelectChipWork *,
     (uint32_t side)
 )
-NATIVE_WRAPPER(exe6_navi_status_work_adrs_get, 0x08013682, uint8_t *, (uint32_t side))
+NATIVE_WRAPPER(
+    exe6_navi_status_work_adrs_get,
+    0x08013682,
+    Exe6NaviStatusWork *,
+    (uint32_t side)
+)
 NATIVE_WRAPPER(exe6_navi_status_set, 0x080136B0, void, (uint32_t side, uint32_t property, uint32_t value))
 NATIVE_WRAPPER(exe6_navi_status_get, 0x080136CC, uint32_t, (uint32_t side, uint32_t property))
 NATIVE_WRAPPER(exe6_battle_key_work_adrs_get, 0x0800A0F4, const uint8_t *, (uint32_t side))

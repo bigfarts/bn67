@@ -11,6 +11,7 @@
 typedef struct Exe6ObjFields Exe6Obj;
 typedef struct Exe6PlayerRuntimeFields Exe6PlayerRuntime;
 typedef struct Exe6NaviSelectChipWorkFields Exe6NaviSelectChipWork;
+typedef struct Exe6NaviStatusWorkFields Exe6NaviStatusWork;
 typedef struct Exe6HitFields Exe6Hit;
 typedef struct Exe6BattleContextFields Exe6BattleContext;
 typedef struct Exe6BattleContextFields Exe6BattleState;
@@ -652,6 +653,27 @@ struct Exe6NaviSelectChipWorkFields {
     uint8_t unknown_0e[0x42];
 };
 
+struct Exe6NaviStatusWorkFields {
+    uint8_t unknown_00[0x12];
+    uint8_t block_bug_action;             // +0x12
+    uint8_t block_bug_severity;           // +0x13
+    uint8_t buster_bug_severity;          // +0x14
+    uint8_t buster_bug_level;             // +0x15
+    uint8_t damage_hp_bug;                // +0x16
+    uint8_t unknown_17;
+    uint8_t battle_hp_bug;                // +0x18
+    uint8_t custom_hp_bug;                // +0x19
+    uint8_t color_bug;                    // +0x1A
+    uint8_t unknown_1b[0x09];
+    uint8_t emotion_bug;                  // +0x24
+    uint8_t unknown_25[0x0C];
+    uint8_t movement_bug;                 // +0x31
+    uint8_t unknown_32[0x22];
+    uint16_t custom_damage_bug;           // +0x54
+    uint8_t unknown_56[0x0D];
+    uint8_t custom_bug;                   // +0x63
+};
+
 struct Exe6HitFields {
     uint8_t enabled;                     // +0x00
     uint8_t region;                      // +0x01
@@ -792,6 +814,54 @@ _Static_assert(
 _Static_assert(
     sizeof(struct Exe6NaviSelectChipWorkFields) == 0x50,
     "selected chip work size"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, block_bug_action) == 0x12,
+    "Navi status block bug action offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, block_bug_severity) == 0x13,
+    "Navi status block bug severity offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, buster_bug_severity) == 0x14,
+    "Navi status Buster bug severity offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, buster_bug_level) == 0x15,
+    "Navi status Buster bug level offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, damage_hp_bug) == 0x16,
+    "Navi status damage HP bug offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, battle_hp_bug) == 0x18,
+    "Navi status battle HP bug offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, custom_hp_bug) == 0x19,
+    "Navi status Custom HP bug offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, color_bug) == 0x1A,
+    "Navi status color bug offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, emotion_bug) == 0x24,
+    "Navi status emotion bug offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, movement_bug) == 0x31,
+    "Navi status movement bug offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, custom_damage_bug) == 0x54,
+    "Navi status Custom Damage bug offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, custom_bug) == 0x63,
+    "Navi status Custom bug offset"
 );
 _Static_assert(
     offsetof(struct Exe6HitFields, region) == 0x01,
@@ -996,7 +1066,7 @@ void exe6_battle_report_flag_on(uint32_t control_flags);
 void exe6_battle_report_flag_off(uint32_t control_flags);
 
 Exe6Obj *exe6_get_navi_adrs(uint32_t side);
-uint8_t *exe6_navi_status_work_adrs_get(uint32_t side);
+Exe6NaviStatusWork *exe6_navi_status_work_adrs_get(uint32_t side);
 uint32_t exe6_navi_status_get(uint32_t side, uint32_t property);
 void exe6_navi_status_set(
     uint32_t side,

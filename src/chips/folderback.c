@@ -139,6 +139,20 @@ static void fill_local_custom_gauge(void) {
   exe6_sound_req(0x8F);
 }
 
+static void clear_loaded_hand(uint32_t owner) {
+  Exe6NaviSelectChipWork *selection =
+      exe6_navi_select_chip_work_adrs_get(owner);
+  uint8_t *bytes = (uint8_t *)selection;
+  for (size_t index = 0; index < sizeof(*selection); ++index) {
+    bytes[index] = 0;
+  }
+  for (size_t index = 0;
+       index < sizeof(selection->chip_ids) / sizeof(selection->chip_ids[0]);
+       ++index) {
+    selection->chip_ids[index] = UINT16_MAX;
+  }
+}
+
 static void restore_local_folder(Exe6Obj *self) {
   if (exe6_battle_one_self_check(self->owner) != 0) {
     return;
@@ -154,7 +168,10 @@ static void restore_local_folder(Exe6Obj *self) {
   context->tag_chips_available = 0;
   exe6_deck_shuffle_sub(EXE6_CHIP_QUEUE, 0, 0);
 
-  exe6_battle_select_chip_work_init();
+  /* The native initializer clears both players, but only this core restores
+   * the local user's Folder.  Clearing the opponent here loses their retained
+   * chips on one peer and desynchronizes the next time they fire one. */
+  clear_loaded_hand(self->owner);
 }
 
 static bool effect_update(Exe6Obj *self) {

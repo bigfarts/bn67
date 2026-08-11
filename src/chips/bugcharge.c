@@ -96,38 +96,40 @@ static const uint32_t PRESENT_HIT_VALUE = HIT_SELECTOR << 3;
 static const uint32_t EXTENDED_HIT_VALUE =
     PRESENT_HIT_VALUE << 8;
 
-static const uint8_t BYTE_PROPERTIES[] = {
-    0x13, 0x14, 0x16, 0x19, 0x18, 0x1A, 0x63,
-};
+static uint16_t clear_byte_bug(uint8_t *bug)
+{
+    if (*bug == 0) {
+        return 0;
+    }
+    *bug = 0;
+    return 1;
+}
+
+static uint16_t clear_damage_bug(uint16_t *bug)
+{
+    if (*bug == 0) {
+        return 0;
+    }
+    *bug = 0;
+    return 1;
+}
 
 static uint16_t count_and_clear_bugs(Exe6Obj *controller)
 {
-    uint8_t *properties = exe6_navi_status_work_adrs_get(controller->owner);
+    Exe6NaviStatusWork *properties =
+        exe6_navi_status_work_adrs_get(controller->owner);
     uint16_t count = 1;
 
-    if (properties[0x31] != 0) {
-        ++count;
-        properties[0x31] = 0;
-    }
-    for (size_t index = 0;
-         index < sizeof(BYTE_PROPERTIES) / sizeof(BYTE_PROPERTIES[0]);
-         ++index) {
-        uint8_t offset = BYTE_PROPERTIES[index];
-        if (properties[offset] != 0) {
-            ++count;
-            properties[offset] = 0;
-        }
-    }
-
-    uint16_t *halfword = (uint16_t *)(properties + 0x54);
-    if (*halfword != 0) {
-        ++count;
-        *halfword = 0;
-    }
-    if (properties[0x24] != 0) {
-        ++count;
-        properties[0x24] = 0;
-    }
+    count += clear_byte_bug(&properties->movement_bug);
+    count += clear_byte_bug(&properties->block_bug_severity);
+    count += clear_byte_bug(&properties->buster_bug_severity);
+    count += clear_byte_bug(&properties->damage_hp_bug);
+    count += clear_byte_bug(&properties->custom_hp_bug);
+    count += clear_byte_bug(&properties->battle_hp_bug);
+    count += clear_byte_bug(&properties->color_bug);
+    count += clear_byte_bug(&properties->custom_bug);
+    count += clear_damage_bug(&properties->custom_damage_bug);
+    count += clear_byte_bug(&properties->emotion_bug);
     exe6_cockpit_kokoro_navicus_bug_clear();
     return count;
 }

@@ -70,6 +70,12 @@ an entry. Its target substitutes the freeze wrapper only for class 1 and
 otherwise invokes that resolved entry directly; it does not duplicate a class
 table full of wrapper pointers.
 
+FolderBack's Folder restore runs only on the chip owner's local peer. Its hand
+reset therefore clears only that owner's `0x50`-byte selection-work block. The
+native initializer at `0x0800A954` clears both players' blocks; calling it from
+this local-only path erases the opponent's retained chips on just one peer and
+desynchronizes the battle when the opponent next uses one.
+
 BN67 runtime code and imported assets are allocated from file offset `0x800000`
 onward in an expanded 16 MiB image; exact addresses are selected by Armips.
 The object state machine, timers, reticle movement/input, five-shot loop, and
@@ -270,6 +276,10 @@ the nine byte fields and one halfword field cleared by BN6 BugFix at
 `0x080E5D04`: `0x31`, `0x13`, `0x14`, `0x16`, `0x24`, `0x19`, `0x18`,
 `0x1A`, `0x63`, and halfword `0x54`. A nonzero source value replaces the
 target only when it is larger, preserving a stronger bug already present.
+Block-bug severity `0x13` is transferred together with its action byte `0x12`;
+otherwise CrackStep's action is left at zero and the affected panel is changed
+to the empty-panel type. Buster-bug severity `0x14` likewise carries its level
+byte `0x15`, matching the paired writes in BN6's NaviCust setup.
 
 Blue Moon SFX `0x15D` has no exact BN6 match. Its one-track sequence, sample
 header, and complete `0x4A1`-byte PCM body at

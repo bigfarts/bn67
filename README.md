@@ -134,10 +134,11 @@ Gregar deliberately keeps CrossDiv's original menu art.
 
 Replaces the dormant Falzar Giga chip with BN3 FolderBack in both versions.
 It restores every used chip to the user's equipped Folder, including
-FolderBack itself, clears the current hand, reshuffles through BN6's native
-Folder setup, and immediately reopens Custom. A consumed Regular Chip returns
-as an ordinary chip rather than regaining its Regular designation. The ending
-ports BN3's SFX 0x120 rumble, 0x46-frame shake and alternating white flash,
+FolderBack itself, clears only the user's current hand, reshuffles through
+BN6's native Folder setup, and immediately reopens Custom. A consumed Regular
+Chip returns as an ordinary chip rather than regaining its Regular
+designation. The ending ports BN3's SFX 0x120 rumble, 0x46-frame shake and
+alternating white flash,
 then shows a full Custom Gauge for 20 frames before the native Custom window
 opens with its normal sound. Its wildcard code, 99 MB cost, icon,
 center-cropped library art, palette, name, and description come from BN3 Blue.

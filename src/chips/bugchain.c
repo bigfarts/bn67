@@ -56,57 +56,62 @@ static const uint16_t EFFECT_FRAMES = 60;
 static const uint16_t VISUAL_FRAMES = 50;
 static const uint16_t SOUND_FRAME = 42;
 
-enum BugPropertyOffset {
-    MOVEMENT_BUG_PROPERTY_OFFSET = 0x31,
-    BLOCK_BUG_PROPERTY_OFFSET = 0x13,
-    BUSTER_BUG_PROPERTY_OFFSET = 0x14,
-    DAMAGE_HP_BUG_PROPERTY_OFFSET = 0x16,
-    CUSTOM_DAMAGE_BUG_PROPERTY_OFFSET = 0x54,
-    EMOTION_BUG_PROPERTY_OFFSET = 0x24,
-    CUSTOM_HP_BUG_PROPERTY_OFFSET = 0x19,
-    BATTLE_HP_BUG_PROPERTY_OFFSET = 0x18,
-    COLOR_BUG_PROPERTY_OFFSET = 0x1A,
-    CUSTOM_BUG_PROPERTY_OFFSET = 0x63,
-};
-
-static const uint8_t BYTE_PROPERTIES[] = {
-    MOVEMENT_BUG_PROPERTY_OFFSET,
-    BLOCK_BUG_PROPERTY_OFFSET,
-    BUSTER_BUG_PROPERTY_OFFSET,
-    DAMAGE_HP_BUG_PROPERTY_OFFSET,
-    EMOTION_BUG_PROPERTY_OFFSET,
-    CUSTOM_HP_BUG_PROPERTY_OFFSET,
-    BATTLE_HP_BUG_PROPERTY_OFFSET,
-    COLOR_BUG_PROPERTY_OFFSET,
-    CUSTOM_BUG_PROPERTY_OFFSET,
-};
+static bool transfer_bug(uint8_t source, uint8_t *target)
+{
+    if (source == 0 || source <= *target) {
+        return false;
+    }
+    *target = source;
+    return true;
+}
 
 static void transfer_bugs(Exe6Obj *controller)
 {
     uint32_t source_side = controller->owner;
-    uint8_t *source = exe6_navi_status_work_adrs_get(source_side);
-    uint8_t *target = exe6_navi_status_work_adrs_get(source_side ^ 1u);
+    Exe6NaviStatusWork *source =
+        exe6_navi_status_work_adrs_get(source_side);
+    Exe6NaviStatusWork *target =
+        exe6_navi_status_work_adrs_get(source_side ^ 1u);
 
-    for (size_t index = 0;
-         index < sizeof(BYTE_PROPERTIES) / sizeof(BYTE_PROPERTIES[0]);
-         ++index) {
-        size_t offset = BYTE_PROPERTIES[index];
-        uint8_t value = source[offset];
-        if (value != 0 && value > target[offset]) {
-            target[offset] = value;
-        }
+    transfer_bug(source->movement_bug, &target->movement_bug);
+    transfer_bug(source->damage_hp_bug, &target->damage_hp_bug);
+    transfer_bug(source->emotion_bug, &target->emotion_bug);
+    transfer_bug(source->custom_hp_bug, &target->custom_hp_bug);
+    transfer_bug(source->battle_hp_bug, &target->battle_hp_bug);
+    transfer_bug(source->color_bug, &target->color_bug);
+    transfer_bug(source->custom_bug, &target->custom_bug);
+
+    /*
+     * Block and Buster bugs each have a companion byte that describes the
+     * effect selected by their severity byte.  Copy the pair together when
+     * BugChain replaces the target's weaker bug; copying only the severity
+     * makes a CrackStep bug use action zero (an empty panel), and can leave a
+     * Buster bug with a level belonging to the target's old severity.
+     */
+    if (transfer_bug(
+        source->block_bug_severity,
+        &target->block_bug_severity
+    )) {
+        target->block_bug_action = source->block_bug_action;
+    }
+
+    if (transfer_bug(
+        source->buster_bug_severity,
+        &target->buster_bug_severity
+    )) {
+        target->buster_bug_level = source->buster_bug_level;
     }
 
     /*
      * Custom Damage stores an HP-loss amount; the other bugs store byte
      * severities.
      */
-    uint16_t source_value =
-        *(uint16_t *)(source + CUSTOM_DAMAGE_BUG_PROPERTY_OFFSET);
-    uint16_t *target_value =
-        (uint16_t *)(target + CUSTOM_DAMAGE_BUG_PROPERTY_OFFSET);
-    if (source_value != 0 && source_value > *target_value) {
-        *target_value = source_value;
+    uint16_t source_damage = source->custom_damage_bug;
+    if (
+        source_damage != 0
+        && source_damage > target->custom_damage_bug
+    ) {
+        target->custom_damage_bug = source_damage;
     }
 }
 
