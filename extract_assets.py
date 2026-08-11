@@ -27,6 +27,8 @@ BN3_IMAGE_WIDTH = 64
 BN3_IMAGE_HEIGHT = 56
 EXE6_IMAGE_WIDTH = 56
 EXE6_IMAGE_HEIGHT = 48
+EXE6_ICON_SIZE = 16
+EXE6_ICON_BORDER_INDEX = 5
 
 # Duo is one of BN4's two event chips.  Its chip record points at the event
 # loader's EWRAM cache instead of directly at ROM, so the image and palette
@@ -156,6 +158,19 @@ def encode_4bpp_tiles(pixels: list[list[int]]) -> bytes:
     return bytes(encoded)
 
 
+def normalize_exe6_icon_border(icon: bytes) -> bytes:
+    """Remap a source icon's inner frame to EXE6's shared palette index."""
+    pixels = decode_4bpp_tiles(icon, EXE6_ICON_SIZE, EXE6_ICON_SIZE)
+    first = 1
+    last = EXE6_ICON_SIZE - 2
+    for coordinate in range(first, last + 1):
+        pixels[first][coordinate] = EXE6_ICON_BORDER_INDEX
+        pixels[last][coordinate] = EXE6_ICON_BORDER_INDEX
+        pixels[coordinate][first] = EXE6_ICON_BORDER_INDEX
+        pixels[coordinate][last] = EXE6_ICON_BORDER_INDEX
+    return encode_4bpp_tiles(pixels)
+
+
 def extract_folderback_art(rom: bytes) -> tuple[bytes, bytes, bytes]:
     """Extract BN3 FolderBack menu art and crop it to BN6's chip-art size."""
     record = BN3_CHIP_DATA + BN3_FOLDERBACK_ID * BN3_CHIP_RECORD_SIZE
@@ -178,7 +193,7 @@ def extract_folderback_art(rom: bytes) -> tuple[bytes, bytes, bytes]:
         row[crop_x:crop_x + EXE6_IMAGE_WIDTH]
         for row in pixels[crop_y:crop_y + EXE6_IMAGE_HEIGHT]
     ]
-    return icon, encode_4bpp_tiles(cropped), palette
+    return normalize_exe6_icon_border(icon), encode_4bpp_tiles(cropped), palette
 
 
 ASSETS = (

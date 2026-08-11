@@ -1,6 +1,12 @@
 import unittest
 
-from extract_assets import ASSETS, decompress_gba_lz77
+from extract_assets import (
+    ASSETS,
+    decode_4bpp_tiles,
+    decompress_gba_lz77,
+    encode_4bpp_tiles,
+    normalize_exe6_icon_border,
+)
 
 
 class ExtractAssetsTests(unittest.TestCase):
@@ -49,6 +55,25 @@ class ExtractAssetsTests(unittest.TestCase):
         outputs = {asset.output for asset in ASSETS}
         self.assertNotIn("laserman-icon.bin", outputs)
         self.assertNotIn("searchman-icon.bin", outputs)
+
+    def test_exe6_icon_border_uses_shared_palette_index(self) -> None:
+        pixels = [[3] * 16 for _ in range(16)]
+        for coordinate in range(16):
+            pixels[0][coordinate] = 9
+            pixels[15][coordinate] = 9
+            pixels[coordinate][0] = 9
+            pixels[coordinate][15] = 9
+        icon = normalize_exe6_icon_border(encode_4bpp_tiles(pixels))
+        normalized = decode_4bpp_tiles(icon, 16, 16)
+
+        self.assertTrue(all(pixel == 9 for pixel in normalized[0]))
+        self.assertTrue(all(pixel == 9 for pixel in normalized[15]))
+        for coordinate in range(1, 15):
+            self.assertEqual(normalized[1][coordinate], 5)
+            self.assertEqual(normalized[14][coordinate], 5)
+            self.assertEqual(normalized[coordinate][1], 5)
+            self.assertEqual(normalized[coordinate][14], 5)
+        self.assertEqual(normalized[2][2], 3)
 
 
 if __name__ == "__main__":
