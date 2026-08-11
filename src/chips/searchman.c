@@ -156,11 +156,11 @@ static const Exe6HitType HIT_SELECTOR =
     EXE6_HIT_TYPE_STANDARD_TARGET;
 static const uint32_t PRESENT_HIT_REGION = HIT_SELECTOR << 3;
 
-struct Exe6SearchmanActorWork {
+struct SearchmanActorWork {
     uint32_t scale;                      // +0x60
 };
 
-struct Exe6SearchmanReticleWork {
+struct SearchmanReticleWork {
     Exe6Obj *player;                      // +0x60
     uint32_t alternate;                  // +0x64
 };
@@ -182,8 +182,8 @@ static void set_animation(Exe6Obj *self, uint8_t animation)
 
 static void pulse_scale(Exe6Obj *self)
 {
-    struct Exe6SearchmanActorWork *work =
-        (struct Exe6SearchmanActorWork *)self->work;
+    struct SearchmanActorWork *work =
+        (struct SearchmanActorWork *)self->work;
     exe6_obj_col_efc_set(work->scale * 1057u);
 }
 
@@ -205,8 +205,8 @@ static void actor_destroy(Exe6Obj *self)
 
 static void appear(Exe6Obj *self)
 {
-    struct Exe6SearchmanActorWork *work =
-        (struct Exe6SearchmanActorWork *)self->work;
+    struct SearchmanActorWork *work =
+        (struct SearchmanActorWork *)self->work;
     if (self->substate == 0) {
         work->scale = 0x1F;
         exe6_sound_req(0x94);
@@ -273,8 +273,8 @@ static void spawn_reticle(Exe6Obj *actor, Exe6Obj *player, uint32_t alternate)
     if (reticle == NULL) {
         return;
     }
-    struct Exe6SearchmanReticleWork *work =
-        (struct Exe6SearchmanReticleWork *)reticle->work;
+    struct SearchmanReticleWork *work =
+        (struct SearchmanReticleWork *)reticle->work;
     work->player = player;
     reticle->owner_word = actor->owner_word;
     work->alternate = alternate;
@@ -433,8 +433,8 @@ static void actor_init(Exe6Obj *self)
 
 static bool reticle_key_pressed(const Exe6Obj *self, uint16_t mask)
 {
-    const struct Exe6SearchmanReticleWork *work =
-        (const struct Exe6SearchmanReticleWork *)self->work;
+    const struct SearchmanReticleWork *work =
+        (const struct SearchmanReticleWork *)self->work;
     return (work->player->runtime_data->input & mask) == mask;
 }
 
@@ -598,8 +598,8 @@ static void reticle_update(Exe6Obj *self)
 
 static void reticle_init(Exe6Obj *self)
 {
-    struct Exe6SearchmanReticleWork *work =
-        (struct Exe6SearchmanReticleWork *)self->work;
+    struct SearchmanReticleWork *work =
+        (struct SearchmanReticleWork *)self->work;
     uint32_t group = BN67_SPRITE_GROUP(searchman_reticle_sprite);
     uint32_t sprite = BN67_SPRITE_ID(searchman_reticle_sprite);
     if (work->alternate != 0) {

@@ -105,7 +105,7 @@ static const uint8_t STRIKE_PATTERNS[] = {
     2, 1, 2,
 };
 
-struct Exe6SavedNaviFields {
+struct SavedNaviFields {
     uint8_t id;
     uint8_t parameter;
     uint16_t offset;
@@ -113,7 +113,7 @@ struct Exe6SavedNaviFields {
     uint32_t properties;
 };
 
-struct Exe6DeathphoenixWork {
+struct DeathphoenixWork {
     uint32_t pattern_row;                // +0x60
     uint8_t recycle_completion;          // +0x64
     uint8_t reserved_65[3];
@@ -123,7 +123,7 @@ struct Exe6DeathphoenixWork {
 };
 
 _Static_assert(
-    offsetof(struct Exe6DeathphoenixWork, pattern_column) == 0x18,
+    offsetof(struct DeathphoenixWork, pattern_column) == 0x18,
     "DeathPhoenix work layout"
 );
 
@@ -188,8 +188,8 @@ static void build_block_list(
 
 static void actor_init(Exe6Obj *self)
 {
-    struct Exe6DeathphoenixWork *work =
-        (struct Exe6DeathphoenixWork *)self->work;
+    struct DeathphoenixWork *work =
+        (struct DeathphoenixWork *)self->work;
     exe6_battle_obj_char_init(
         0x00010000u
         | (BN67_SPRITE_GROUP(deathphoenix_battle_sprite) << 8)
@@ -246,8 +246,8 @@ static void wait_before_strikes(Exe6Obj *self)
     }
     self->timer = 0;
     self->aux_timer = 0;
-    struct Exe6DeathphoenixWork *work =
-        (struct Exe6DeathphoenixWork *)self->work;
+    struct DeathphoenixWork *work =
+        (struct DeathphoenixWork *)self->work;
     work->pattern_row = 0;
     work->pattern_column = 0;
     set_phase(self, STRIKES_PHASE);
@@ -295,8 +295,8 @@ static void spawn_strike_for_block(
 
 static void strikes(Exe6Obj *self)
 {
-    struct Exe6DeathphoenixWork *work =
-        (struct Exe6DeathphoenixWork *)self->work;
+    struct DeathphoenixWork *work =
+        (struct DeathphoenixWork *)self->work;
     if (timer_positive_after_decrement(self)) {
         return;
     }
@@ -334,8 +334,8 @@ static void wait_after_strikes(Exe6Obj *self)
 
 static bool saved_navi_is_available(void)
 {
-    const struct Exe6SavedNaviFields *saved =
-        (const struct Exe6SavedNaviFields *)SAVED_NAVI_ADDRESS;
+    const struct SavedNaviFields *saved =
+        (const struct SavedNaviFields *)SAVED_NAVI_ADDRESS;
     return saved->data != 0 && saved->id != UINT8_MAX;
 }
 
@@ -374,12 +374,12 @@ static void recycle_intro(Exe6Obj *self)
 
 static void recycle_invoke(Exe6Obj *self)
 {
-    struct Exe6DeathphoenixWork *work =
-        (struct Exe6DeathphoenixWork *)self->work;
+    struct DeathphoenixWork *work =
+        (struct DeathphoenixWork *)self->work;
     uint8_t *completion = &work->recycle_completion;
     if (self->substate == 0) {
-        const struct Exe6SavedNaviFields *saved =
-            (const struct Exe6SavedNaviFields *)SAVED_NAVI_ADDRESS;
+        const struct SavedNaviFields *saved =
+            (const struct SavedNaviFields *)SAVED_NAVI_ADDRESS;
         const uintptr_t *dispatch = *(const uintptr_t *const *)
             SAVED_NAVI_DISPATCH_REFERENCE;
         Exe6Obj *owner = self->parent;

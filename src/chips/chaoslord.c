@@ -82,31 +82,31 @@ static const Exe6BlockDamageProperties DAMAGE_PROPERTIES = {
     .target_hit_type = EXE6_HIT_TYPE_STANDARD_TARGET,
     .self_hit_type = EXE6_HIT_TYPE_15,
 };
-struct Exe6BurstEntry {
+struct BurstEntry {
     int8_t x;
     int8_t y;
     uint8_t palette;
 };
 
-struct Exe6AttackSpriteEntry {
+struct AttackSpriteEntry {
     uint8_t group;
     uint8_t index;
     uint8_t animation;
     uint8_t palette;
 };
 
-struct Exe6BlockOffset {
+struct BlockOffset {
     int8_t x;
     int8_t y;
 };
 
-struct Exe6ChaoslordControllerWork {
+struct ChaoslordControllerWork {
     uint32_t scale_low;                  // +0x60
     uint32_t scale_middle;               // +0x64
     uint32_t scale_high;                 // +0x68
 };
 
-struct Exe6ChaoslordBurstWork {
+struct ChaoslordBurstWork {
     int32_t radius;                      // +0x60
     int32_t radius_step;                 // +0x64
     int32_t center_x;                    // +0x68
@@ -115,11 +115,11 @@ struct Exe6ChaoslordBurstWork {
     uint32_t elevated;                   // +0x74
 };
 
-struct Exe6ChaoslordImpactWork {
+struct ChaoslordImpactWork {
     uint8_t blocks[9];                   // +0x60
 };
 
-static const struct Exe6BurstEntry BURST_TABLE[] = {
+static const struct BurstEntry BURST_TABLE[] = {
     { 0x30, -0x13, 1 },
     { 0x03, -0x16, 0 },
     { 0x0A, -0x34, 0 },
@@ -133,7 +133,7 @@ static const struct Exe6BurstEntry BURST_TABLE[] = {
 };
 
 /* BN6 block pattern 0x11, used to find room for the entrance. */
-static const struct Exe6BlockOffset ENTRANCE_BLOCK_PATTERN[] = {
+static const struct BlockOffset ENTRANCE_BLOCK_PATTERN[] = {
     { 0, 0 },
     { 0, -1 },
     { 0, 1 },
@@ -143,7 +143,7 @@ static const struct Exe6BlockOffset ENTRANCE_BLOCK_PATTERN[] = {
 };
 
 /* BN6 block pattern 0x0F, used by the native type-4 impact effect. */
-static const struct Exe6BlockOffset IMPACT_BLOCK_PATTERN[] = {
+static const struct BlockOffset IMPACT_BLOCK_PATTERN[] = {
     { 0, 0 },
     { 0, -1 },
     { 0, 1 },
@@ -155,7 +155,7 @@ static const struct Exe6BlockOffset IMPACT_BLOCK_PATTERN[] = {
     { -1, -1 },
 };
 
-static const struct Exe6AttackSpriteEntry ATTACK_SPRITE_TABLE[] = {
+static const struct AttackSpriteEntry ATTACK_SPRITE_TABLE[] = {
     { 0x14, 0x08, 0x00, 0x02 },
     { 0x14, 0x19, 0x00, 0x00 },
 };
@@ -175,8 +175,8 @@ static void set_phase(Exe6Obj *self, uint8_t phase)
 
 static uint32_t packed_scale(Exe6Obj *self)
 {
-    struct Exe6ChaoslordControllerWork *work =
-        (struct Exe6ChaoslordControllerWork *)self->work;
+    struct ChaoslordControllerWork *work =
+        (struct ChaoslordControllerWork *)self->work;
     return work->scale_low
         | (work->scale_middle << 5)
         | (work->scale_high << 10);
@@ -331,8 +331,8 @@ static Exe6Obj *spawn_burst(
         return NULL;
     }
     burst->parent = controller;
-    struct Exe6ChaoslordBurstWork *work =
-        (struct Exe6ChaoslordBurstWork *)burst->work;
+    struct ChaoslordBurstWork *work =
+        (struct ChaoslordBurstWork *)burst->work;
     work->vector = vector;
     burst->owner_word = controller->owner_word;
     burst->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
@@ -483,8 +483,8 @@ static void controller_init(Exe6Obj *self)
 
     self->timer = INTRO_FRAMES;
     self->velocity_x = direction * 0x00009D89;
-    struct Exe6ChaoslordControllerWork *work =
-        (struct Exe6ChaoslordControllerWork *)self->work;
+    struct ChaoslordControllerWork *work =
+        (struct ChaoslordControllerWork *)self->work;
     work->scale_low = 5;
     work->scale_middle = 1;
     work->scale_high = 0x17;
@@ -511,7 +511,7 @@ static void controller_phase_intro(Exe6Obj *self)
     int32_t y = (int32_t)(uint32_t)(coordinates >> 32) + (27 << 16);
 
     for (uint32_t index = 0; index < sizeof(BURST_TABLE) / sizeof(BURST_TABLE[0]); ++index) {
-        const struct Exe6BurstEntry *entry = &BURST_TABLE[index];
+        const struct BurstEntry *entry = &BURST_TABLE[index];
         int16_t vector_x = (int16_t)(entry->x * direction);
         int16_t vector_y = entry->y;
         uint32_t vector = ((uint32_t)(uint16_t)vector_x << 16)
@@ -584,8 +584,8 @@ static void controller_phase_approach(Exe6Obj *self)
             exe6_obj_col_efc_set(0x00007FFF);
         }
     } else if (timer <= 0x24 && (timer & 3u) == 0) {
-        struct Exe6ChaoslordControllerWork *work =
-            (struct Exe6ChaoslordControllerWork *)self->work;
+        struct ChaoslordControllerWork *work =
+            (struct ChaoslordControllerWork *)self->work;
         work->scale_low = work->scale_low >= 2 ? work->scale_low - 2 : 0;
         work->scale_middle =
             work->scale_middle >= 2 ? work->scale_middle - 2 : 0;
@@ -691,7 +691,7 @@ static void attack_set_sprite(Exe6Obj *self, uint32_t stage)
     uint32_t animation;
     uint32_t palette;
     if (stage < 2) {
-        const struct Exe6AttackSpriteEntry *entry = &ATTACK_SPRITE_TABLE[stage];
+        const struct AttackSpriteEntry *entry = &ATTACK_SPRITE_TABLE[stage];
         group = entry->group;
         index = entry->index;
         animation = entry->animation;
@@ -761,8 +761,8 @@ static void spawn_impact_effect(Exe6Obj *self)
     }
 
     effect->aux_timer = 1;
-    struct Exe6ChaoslordImpactWork *work =
-        (struct Exe6ChaoslordImpactWork *)effect->work;
+    struct ChaoslordImpactWork *work =
+        (struct ChaoslordImpactWork *)effect->work;
     uint8_t *blocks = work->blocks;
     uint8_t count = 0;
     int32_t direction = 1 - (int32_t)(self->owner * 2u);
@@ -1040,8 +1040,8 @@ BN67_EFFECT(chaoslord_aura_main)
 static void burst_set_position(Exe6Obj *self)
 {
     const int16_t *sine = (const int16_t *)chaoslord_trig_table;
-    struct Exe6ChaoslordBurstWork *work =
-        (struct Exe6ChaoslordBurstWork *)self->work;
+    struct ChaoslordBurstWork *work =
+        (struct ChaoslordBurstWork *)self->work;
     uint8_t angle = self->animation_state;
     int32_t radius = work->radius;
     self->x = work->center_x
@@ -1054,8 +1054,8 @@ static void burst_set_position(Exe6Obj *self)
 
 static void burst_update(Exe6Obj *self)
 {
-    struct Exe6ChaoslordBurstWork *work =
-        (struct Exe6ChaoslordBurstWork *)self->work;
+    struct ChaoslordBurstWork *work =
+        (struct ChaoslordBurstWork *)self->work;
     int32_t direction = -exe6_calc_pl_em_spd();
     uint8_t lifetime = self->variant;
     if (lifetime == 0x14) {
@@ -1089,8 +1089,8 @@ static void burst_update(Exe6Obj *self)
 
 static void burst_init(Exe6Obj *self)
 {
-    struct Exe6ChaoslordBurstWork *work =
-        (struct Exe6ChaoslordBurstWork *)self->work;
+    struct ChaoslordBurstWork *work =
+        (struct ChaoslordBurstWork *)self->work;
     exe6_obj_char_init(
         0x80,
         BN67_SPRITE_GROUP(chaoslord_aura_sprite),

@@ -59,7 +59,7 @@ static const Exe6BlockDamageProperties DAMAGE_PROPERTIES = {
     .self_hit_type = EXE6_HIT_TYPE_1A,
 };
 
-struct Exe6JealousyWork {
+struct JealousyWork {
     uint32_t remaining_attacks;          // +0x60
 };
 
@@ -174,8 +174,8 @@ static void delete_phase(Exe6Obj *controller)
 
 static void pulse_phase(Exe6Obj *controller)
 {
-    struct Exe6JealousyWork *work =
-        (struct Exe6JealousyWork *)controller->work;
+    struct JealousyWork *work =
+        (struct JealousyWork *)controller->work;
     uint16_t timer = (uint16_t)(controller->timer - 1u);
     controller->timer = timer;
     if (timer != 0) {
@@ -190,8 +190,8 @@ static void pulse_phase(Exe6Obj *controller)
 
 static void effect_init(Exe6Obj *controller)
 {
-    struct Exe6JealousyWork *work =
-        (struct Exe6JealousyWork *)controller->work;
+    struct JealousyWork *work =
+        (struct JealousyWork *)controller->work;
     exe6_mem_task_trans_set256(
         jealousy_effect_tiles,
         (void *)TILES_DESTINATION,

@@ -155,13 +155,13 @@ static const uint16_t BEAM_FRAMES = 60;
 static const Exe6HitType HIT_SELECTOR =
     EXE6_HIT_TYPE_STANDARD_TARGET;
 
-struct Exe6LasermanHitWork {
+struct LasermanHitWork {
     uint32_t reserved[5];
     uint32_t command_stream;             // +0x74
 };
 
 _Static_assert(
-    offsetof(struct Exe6LasermanHitWork, command_stream) == 0x14,
+    offsetof(struct LasermanHitWork, command_stream) == 0x14,
     "LaserMan hit work layout"
 );
 
@@ -380,8 +380,8 @@ static void spawn_hit(
     if (hit == NULL) {
         return;
     }
-    struct Exe6LasermanHitWork *work =
-        (struct Exe6LasermanHitWork *)hit->work;
+    struct LasermanHitWork *work =
+        (struct LasermanHitWork *)hit->work;
     hit->block_x = (uint8_t)block_x;
     hit->block_y = (uint8_t)block_y;
     hit->animation_word = command;
@@ -579,8 +579,8 @@ static void refresh_target_player(Exe6Obj *hit, uint16_t command)
 
 static void apply_selected_command(Exe6Obj *hit)
 {
-    struct Exe6LasermanHitWork *work =
-        (struct Exe6LasermanHitWork *)hit->work;
+    struct LasermanHitWork *work =
+        (struct LasermanHitWork *)hit->work;
     const uint16_t *stream = COMMAND_STREAMS[work->command_stream];
     for (size_t index = 0;; ++index) {
         uint16_t command = stream[index];
