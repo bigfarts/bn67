@@ -1074,24 +1074,8 @@ void exe6_navi_status_set(
     uint32_t property,
     uint32_t value
 );
-uint32_t exe6_get_cur_pet_navi_stats_byte(
-    uint32_t navi,
-    uint32_t property
-);
-void exe6_set_cur_pet_navi_stats_byte(
-    uint32_t navi,
-    uint32_t property,
-    uint32_t value
-);
-uint32_t exe6_get_special_navi_stats_byte(
-    uint32_t unused,
-    uint32_t property
-);
-void exe6_set_special_navi_stats_byte(
-    uint32_t unused,
-    uint32_t property,
-    uint32_t value
-);
+uint8_t *exe6_cur_pet_navi_stats_adrs_get(uint32_t navi);
+uint8_t *exe6_special_navi_stats_adrs_get(uint32_t index);
 const uint8_t *exe6_battle_key_work_adrs_get(uint32_t side);
 void exe6_battle_hit_status_flag_off(
     Exe6Obj *player,

@@ -153,93 +153,6 @@ static void clear_loaded_hand(uint32_t owner) {
   }
 }
 
-enum FolderDesignationProperty {
-  EQUIPPED_FOLDER_PROPERTY = 0x2D,
-  FIRST_REGULAR_CHIP_PROPERTY = 0x2E,
-  FIRST_TAG_CHIP_PROPERTY = 0x56,
-  FOLDER_COUNT = 3,
-};
-
-struct FolderDesignations {
-  uint8_t folder;
-  uint8_t regular_chip;
-  uint8_t tag_chips[2];
-};
-
-static struct FolderDesignations suppress_saved_folder_designations(
-    uint32_t navi) {
-  struct FolderDesignations saved;
-  saved.folder = (uint8_t)exe6_get_cur_pet_navi_stats_byte(
-      navi, EQUIPPED_FOLDER_PROPERTY);
-  if (saved.folder >= FOLDER_COUNT) {
-    return saved;
-  }
-  uint32_t regular_property = FIRST_REGULAR_CHIP_PROPERTY + saved.folder;
-  uint32_t tag_property = FIRST_TAG_CHIP_PROPERTY + 2u * saved.folder;
-  saved.regular_chip =
-      (uint8_t)exe6_get_cur_pet_navi_stats_byte(navi, regular_property);
-  saved.tag_chips[0] =
-      (uint8_t)exe6_get_cur_pet_navi_stats_byte(navi, tag_property);
-  saved.tag_chips[1] =
-      (uint8_t)exe6_get_cur_pet_navi_stats_byte(navi, tag_property + 1u);
-  exe6_set_cur_pet_navi_stats_byte(navi, regular_property, UINT8_MAX);
-  exe6_set_cur_pet_navi_stats_byte(navi, tag_property, UINT8_MAX);
-  exe6_set_cur_pet_navi_stats_byte(navi, tag_property + 1u, UINT8_MAX);
-  return saved;
-}
-
-static void restore_saved_folder_designations(
-    uint32_t navi,
-    const struct FolderDesignations *saved) {
-  if (saved->folder >= FOLDER_COUNT) {
-    return;
-  }
-  uint32_t regular_property = FIRST_REGULAR_CHIP_PROPERTY + saved->folder;
-  uint32_t tag_property = FIRST_TAG_CHIP_PROPERTY + 2u * saved->folder;
-  exe6_set_cur_pet_navi_stats_byte(
-      navi, regular_property, saved->regular_chip);
-  exe6_set_cur_pet_navi_stats_byte(
-      navi, tag_property, saved->tag_chips[0]);
-  exe6_set_cur_pet_navi_stats_byte(
-      navi, tag_property + 1u, saved->tag_chips[1]);
-}
-
-static struct FolderDesignations suppress_special_folder_designations(void) {
-  struct FolderDesignations saved;
-  saved.folder = (uint8_t)exe6_get_special_navi_stats_byte(
-      0, EQUIPPED_FOLDER_PROPERTY);
-  if (saved.folder >= FOLDER_COUNT) {
-    return saved;
-  }
-  uint32_t regular_property = FIRST_REGULAR_CHIP_PROPERTY + saved.folder;
-  uint32_t tag_property = FIRST_TAG_CHIP_PROPERTY + 2u * saved.folder;
-  saved.regular_chip =
-      (uint8_t)exe6_get_special_navi_stats_byte(0, regular_property);
-  saved.tag_chips[0] =
-      (uint8_t)exe6_get_special_navi_stats_byte(0, tag_property);
-  saved.tag_chips[1] =
-      (uint8_t)exe6_get_special_navi_stats_byte(0, tag_property + 1u);
-  exe6_set_special_navi_stats_byte(0, regular_property, UINT8_MAX);
-  exe6_set_special_navi_stats_byte(0, tag_property, UINT8_MAX);
-  exe6_set_special_navi_stats_byte(0, tag_property + 1u, UINT8_MAX);
-  return saved;
-}
-
-static void restore_special_folder_designations(
-    const struct FolderDesignations *saved) {
-  if (saved->folder >= FOLDER_COUNT) {
-    return;
-  }
-  uint32_t regular_property = FIRST_REGULAR_CHIP_PROPERTY + saved->folder;
-  uint32_t tag_property = FIRST_TAG_CHIP_PROPERTY + 2u * saved->folder;
-  exe6_set_special_navi_stats_byte(
-      0, regular_property, saved->regular_chip);
-  exe6_set_special_navi_stats_byte(
-      0, tag_property, saved->tag_chips[0]);
-  exe6_set_special_navi_stats_byte(
-      0, tag_property + 1u, saved->tag_chips[1]);
-}
-
 static void restore_local_folder(Exe6Obj *self) {
   if (exe6_battle_one_self_check(self->owner) != 0) {
     return;
@@ -247,23 +160,7 @@ static void restore_local_folder(Exe6Obj *self) {
 
   Exe6BattleContext *context = exe6_runtime()->battle_context;
 
-  /* Native Folder setup reads Regular/Tag indices from one of these two Navi
-   * stat profiles, depending on the battle configuration.  Hide the indices
-   * in both profiles for the duration of setup so neither path can pin those
-   * chips before the one native shuffle. */
-  uint32_t navi = exe6_get_cur_pet_navi();
-  struct FolderDesignations saved =
-      suppress_saved_folder_designations(navi);
-  struct FolderDesignations special =
-      suppress_special_folder_designations();
-
-  /* Rebuild and shuffle the restored Folder once.  battle_chip_set() already
-   * performs the native deck shuffle; shuffling EXE6_CHIP_QUEUE again here
-   * changes both the draw order and RNG stream a second time. */
   exe6_battle_chip_set();
-
-  restore_saved_folder_designations(navi, &saved);
-  restore_special_folder_designations(&special);
 
   /* FolderBack does not restore consumed Regular/Tag designations. */
   context->regular_chip_available = 0;

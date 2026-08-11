@@ -163,28 +163,16 @@ NATIVE_WRAPPER(
 NATIVE_WRAPPER(exe6_navi_status_set, 0x080136B0, void, (uint32_t side, uint32_t property, uint32_t value))
 NATIVE_WRAPPER(exe6_navi_status_get, 0x080136CC, uint32_t, (uint32_t side, uint32_t property))
 NATIVE_WRAPPER(
-    exe6_set_cur_pet_navi_stats_byte,
-    0x0801379E,
-    void,
-    (uint32_t navi, uint32_t property, uint32_t value)
+    exe6_cur_pet_navi_stats_adrs_get,
+    0x0801401E,
+    uint8_t *,
+    (uint32_t navi)
 )
 NATIVE_WRAPPER(
-    exe6_get_cur_pet_navi_stats_byte,
-    0x080137B6,
-    uint32_t,
-    (uint32_t navi, uint32_t property)
-)
-NATIVE_WRAPPER(
-    exe6_set_special_navi_stats_byte,
-    0x08013864,
-    void,
-    (uint32_t unused, uint32_t property, uint32_t value)
-)
-NATIVE_WRAPPER(
-    exe6_get_special_navi_stats_byte,
-    0x08013884,
-    uint32_t,
-    (uint32_t unused, uint32_t property)
+    exe6_special_navi_stats_adrs_get,
+    0x08013854,
+    uint8_t *,
+    (uint32_t index)
 )
 NATIVE_WRAPPER(exe6_battle_key_work_adrs_get, 0x0800A0F4, const uint8_t *, (uint32_t side))
 NATIVE_WRAPPER(exe6_cockpit_set_custom_gauge_value, 0x0801DFA2, void, (uint32_t value))
