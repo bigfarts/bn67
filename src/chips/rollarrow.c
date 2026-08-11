@@ -37,7 +37,9 @@ BN67_CHIP_RECORD(0x018) {
     .chip_class = EXE6_CHIP_CLASS_STANDARD,
     .mb = 32,
     .behavior = {
-        .effect_flags = 0x43,
+        .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
+                        EXE6_CHIP_EFFECT_FLAG_ATTACK |
+                        EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x94,
         .family = BN67_ATTACK_FAMILY(rollarrow_attack_main),
         .subfamily = BN67_ATTACK_SUBFAMILY(rollarrow_attack_main),
@@ -73,7 +75,9 @@ BN67_CHIP_RECORD(0x019) {
     .chip_class = EXE6_CHIP_CLASS_STANDARD,
     .mb = 38,
     .behavior = {
-        .effect_flags = 0x43,
+        .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
+                        EXE6_CHIP_EFFECT_FLAG_ATTACK |
+                        EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x94,
         .family = BN67_ATTACK_FAMILY(rollarrow_attack_main),
         .subfamily = BN67_ATTACK_SUBFAMILY(rollarrow_attack_main),
@@ -109,7 +113,9 @@ BN67_CHIP_RECORD(0x01a) {
     .chip_class = EXE6_CHIP_CLASS_STANDARD,
     .mb = 44,
     .behavior = {
-        .effect_flags = 0x43,
+        .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
+                        EXE6_CHIP_EFFECT_FLAG_ATTACK |
+                        EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x94,
         .family = BN67_ATTACK_FAMILY(rollarrow_attack_main),
         .subfamily = BN67_ATTACK_SUBFAMILY(rollarrow_attack_main),

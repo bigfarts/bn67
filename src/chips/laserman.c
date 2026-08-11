@@ -50,7 +50,10 @@ BN67_CHIP_RECORD(0x0e3) {
     .chip_class = EXE6_CHIP_CLASS_MEGA,
     .mb = 60,
     .behavior = {
-        .effect_flags = 0x47,
+        .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
+                        EXE6_CHIP_EFFECT_FLAG_ATTACK |
+                        EXE6_CHIP_EFFECT_FLAG_NAVI |
+                        EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x8A,
         .family = BN67_ATTACK_FAMILY(laserman_attack_main),
         .subfamily = BN67_ATTACK_SUBFAMILY(laserman_attack_main),
@@ -86,7 +89,10 @@ BN67_CHIP_RECORD(0x0e4) {
     .chip_class = EXE6_CHIP_CLASS_MEGA,
     .mb = 80,
     .behavior = {
-        .effect_flags = 0x47,
+        .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
+                        EXE6_CHIP_EFFECT_FLAG_ATTACK |
+                        EXE6_CHIP_EFFECT_FLAG_NAVI |
+                        EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x8A,
         .family = BN67_ATTACK_FAMILY(laserman_attack_main),
         .subfamily = BN67_ATTACK_SUBFAMILY(laserman_attack_main),
@@ -122,7 +128,10 @@ BN67_CHIP_RECORD(0x0e5) {
     .chip_class = EXE6_CHIP_CLASS_MEGA,
     .mb = 80,
     .behavior = {
-        .effect_flags = 0x47,
+        .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
+                        EXE6_CHIP_EFFECT_FLAG_ATTACK |
+                        EXE6_CHIP_EFFECT_FLAG_NAVI |
+                        EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x8A,
         .family = BN67_ATTACK_FAMILY(laserman_attack_main),
         .subfamily = BN67_ATTACK_SUBFAMILY(laserman_attack_main),

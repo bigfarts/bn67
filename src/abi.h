@@ -470,6 +470,23 @@ enum Exe6ChipClass {
     EXE6_CHIP_CLASS_PROGRAM_ADVANCE = 0x04,
 };
 
+enum Exe6ChipEffectFlag {
+    // Makes the chip dim/time-freeze and allows it to be used as a cut-in.
+    EXE6_CHIP_EFFECT_FLAG_DIMMING = 0x01,
+    // Marks an offensive chip whose power receives the standard attack bonus.
+    EXE6_CHIP_EFFECT_FLAG_ATTACK = 0x02,
+    // Marks a Navi summon and makes its power receive the Navi-chip bonus.
+    EXE6_CHIP_EFFECT_FLAG_NAVI = 0x04,
+    EXE6_CHIP_EFFECT_FLAG_CHIP_TRADER = 0x08,
+    EXE6_CHIP_EFFECT_FLAG_VARIABLE_POWER_DISPLAY = 0x10,
+    // Legacy DarkChip category; no stock BN6 chip record sets this bit.
+    EXE6_CHIP_EFFECT_FLAG_DARK_CHIP = 0x20,
+    // Makes the chip available in this version and visible in the library.
+    EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE = 0x40,
+    // Calculates and caches chip-specific power when preparing the chip.
+    EXE6_CHIP_EFFECT_FLAG_DYNAMIC_POWER = 0x80,
+};
+
 typedef struct __attribute__((packed)) Exe6ChipSpawnParametersFields {
     uint8_t variant;
     uint8_t subvariant;
@@ -478,7 +495,7 @@ typedef struct __attribute__((packed)) Exe6ChipSpawnParametersFields {
 } Exe6ChipSpawnParameters;
 
 typedef struct __attribute__((packed)) Exe6ChipBehaviorFields {
-    uint8_t effect_flags;                // +0x09
+    uint8_t effect_flags;                // +0x09, EXE6_CHIP_EFFECT_FLAG_*
     uint8_t counter_settings;            // +0x0A
     uint8_t family;                      // +0x0B
     uint8_t subfamily;                   // +0x0C

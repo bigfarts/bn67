@@ -25,7 +25,7 @@ BN67_CHIP_RECORD(0x0c6){
     .mb = 99,
     .behavior =
         {
-            .effect_flags = 0x40,
+            .effect_flags = EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
             .counter_settings = 0x00,
             .family = BN67_ATTACK_FAMILY(folderback_attack_main),
             .subfamily = BN67_ATTACK_SUBFAMILY(folderback_attack_main),

@@ -23,7 +23,9 @@ BN67_CHIP_RECORD(0x0bf) {
     .chip_class = EXE6_CHIP_CLASS_STANDARD,
     .mb = 60,
     .behavior = {
-        .effect_flags = 0x43,
+        .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
+                        EXE6_CHIP_EFFECT_FLAG_ATTACK |
+                        EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x8A,
         .family = BN67_ATTACK_FAMILY(jealousy_attack_main),
         .subfamily = BN67_ATTACK_SUBFAMILY(jealousy_attack_main),

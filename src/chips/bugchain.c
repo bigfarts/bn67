@@ -29,7 +29,8 @@ BN67_CHIP_RECORD(0x0be) {
     .chip_class = EXE6_CHIP_CLASS_STANDARD,
     .mb = 59,
     .behavior = {
-        .effect_flags = 0x41,
+        .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
+                        EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x00,
         .family = BN67_ATTACK_FAMILY(bugchain_attack_main),
         .subfamily = BN67_ATTACK_SUBFAMILY(bugchain_attack_main),

@@ -34,12 +34,14 @@ BN67_SONG(
 );
 
 #if FALZAR
-#define BUGCHARGE_EFFECT_FLAGS 0x01
+#define BUGCHARGE_EFFECT_FLAGS EXE6_CHIP_EFFECT_FLAG_TIME_FREEZE
 #define BUGCHARGE_ICON ((const uint8_t *)0x0872C594u)
 #define BUGCHARGE_IMAGE ((const uint8_t *)0x08721B34u)
 #define BUGCHARGE_PALETTE ((const uint8_t *)0x087255B4u)
 #else
-#define BUGCHARGE_EFFECT_FLAGS 0x41
+#define BUGCHARGE_EFFECT_FLAGS                                           \
+    (EXE6_CHIP_EFFECT_FLAG_TIME_FREEZE |                                \
+     EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE)
 #define BUGCHARGE_ICON bugcharge_icon
 #define BUGCHARGE_IMAGE bugcharge_image
 #define BUGCHARGE_PALETTE bugcharge_palette

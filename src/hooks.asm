@@ -19,3 +19,13 @@
     mov r6,7
     eor r2,r6
     nop
+
+// Status Bug dispatches one of four native handlers for each severity. Replace
+// only the normal- and high-severity green-invulnerability entries with their
+// corresponding flashing handlers. Keep the native selector at 0x08013E7E
+// intact: rewriting its RNG path can hang while applying battle-start bugs.
+.org 0x08013EA8
+    .dw 0x08013EE7
+
+.org 0x08013EB8
+    .dw 0x08013F15

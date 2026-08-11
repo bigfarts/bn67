@@ -33,7 +33,10 @@ BN67_CHIP_RECORD(0x107) {
     .chip_class = EXE6_CHIP_CLASS_MEGA,
     .mb = 52,
     .behavior = {
-        .effect_flags = 0x47,
+        .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
+                        EXE6_CHIP_EFFECT_FLAG_ATTACK |
+                        EXE6_CHIP_EFFECT_FLAG_NAVI |
+                        EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x8A,
         .family = BN67_ATTACK_FAMILY(searchman_attack_main),
         .subfamily = BN67_ATTACK_SUBFAMILY(searchman_attack_main),
@@ -69,7 +72,10 @@ BN67_CHIP_RECORD(0x108) {
     .chip_class = EXE6_CHIP_CLASS_MEGA,
     .mb = 64,
     .behavior = {
-        .effect_flags = 0x47,
+        .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
+                        EXE6_CHIP_EFFECT_FLAG_ATTACK |
+                        EXE6_CHIP_EFFECT_FLAG_NAVI |
+                        EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x8A,
         .family = BN67_ATTACK_FAMILY(searchman_attack_main),
         .subfamily = BN67_ATTACK_SUBFAMILY(searchman_attack_main),
@@ -105,7 +111,10 @@ BN67_CHIP_RECORD(0x109) {
     .chip_class = EXE6_CHIP_CLASS_MEGA,
     .mb = 86,
     .behavior = {
-        .effect_flags = 0x47,
+        .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
+                        EXE6_CHIP_EFFECT_FLAG_ATTACK |
+                        EXE6_CHIP_EFFECT_FLAG_NAVI |
+                        EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x8A,
         .family = BN67_ATTACK_FAMILY(searchman_attack_main),
         .subfamily = BN67_ATTACK_SUBFAMILY(searchman_attack_main),

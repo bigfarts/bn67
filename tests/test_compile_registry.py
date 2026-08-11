@@ -458,7 +458,7 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertEqual(signalred.attack.kind, "persistent_attack")
         folderback = next(package for package in packages if package.name == "folderback")
         self.assertIsNotNone(folderback.attack)
-        self.assertEqual(folderback.attack.kind, "ephemeral_attack")
+        self.assertEqual(folderback.attack.kind, "persistent_attack")
 
     def test_ephemeral_attack_pool_follows_the_native_table(self) -> None:
         expected_references = {
@@ -567,8 +567,9 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn("folderback_object_should_pause", folderback)
         self.assertEqual(folderback.count("exe6_battle_chip_set();"), 1)
         self.assertNotIn("exe6_deck_shuffle_sub(", folderback)
-        self.assertIn("suppress_folder_designations", folderback)
-        self.assertIn("exe6_special_navi_stats_adrs_get", folderback)
+        self.assertIn("selection->active_chip_index = 0;", folderback)
+        self.assertIn("selection->loaded_chip_count = 0;", folderback)
+        self.assertNotIn("sizeof(*selection)", folderback)
         self.assertIn("const Exe6ObjectSlot *slots = EXE6_EFFECT_POOL_HEAD", folderback)
         self.assertIn("EXE6_POOL_SLOT_COUNT", folderback)
         self.assertIn("object->object_class", folderback)
