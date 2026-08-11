@@ -107,6 +107,7 @@ enum Exe6ObjectClass {
 #define EXE6_PALETTE_OBJ_OUTPUT_0D ((uintptr_t)0x03001D00u)
 #define EXE6_PALETTE_OBJ_OUTPUT_0E ((uintptr_t)0x03001D20u)
 #define EXE6_PALETTE_OBJ_OUTPUT_0F ((uintptr_t)0x03001D40u)
+#define EXE6_SPRITE_PALETTE_STAGING_00 ((uintptr_t)0x03001550u)
 
 #define EXE6_BATTLE_STATE \
     ((Exe6BattleState *)(uintptr_t)0x0203CA70u)
@@ -957,6 +958,7 @@ _Static_assert(
 Exe6Runtime *exe6_runtime(void);
 void exe6_sound_req(uint32_t sound);
 void exe6_obj_char_init(uint32_t mode, uint32_t group, uint32_t index);
+void exe6_obj_current_navi_char_init(void);
 void exe6_obj_shadow_set(void);
 void exe6_obj_char_set(void);
 void exe6_obj_char_move(void);
@@ -986,6 +988,7 @@ void exe6_pos_to_block(void);
 void exe6_obj_move_delete(void);
 void exe6_obj_invoke(Exe6Obj *obj, uintptr_t entry);
 void exe6_mem_task_trans_set256(const void *source, void *destination, uint32_t size);
+void exe6_mem_trans256(const void *source, void *destination, uint32_t size);
 void exe6_col_fade_set(
     uint32_t unused,
     uint32_t color,

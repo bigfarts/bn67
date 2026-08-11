@@ -485,6 +485,52 @@ DeathPhoenix is installed at chip ID `0x134` in both versions. Falzar repoints
 the three menu-art fields to BN5's assets; Gregar leaves those fields
 byte-for-byte equal to the original CrossDiv record.
 
+## BlackWeapon port
+
+Blue Moon's BlackWeapon is chip record `0x121` (index 289). Family `0x0C`,
+subfamily `0x4B` enters wrapper `0x080EAC82`, creates type-4 controller `0x7E`
+at `0x080EAC08`, and opens type-1 actor `0x5A` at `0x080CC948`. The actor's
+init is `0x080CC96C`; its two animation phases are `0x080CCA18` and
+`0x080CCA54`.
+
+The final phase writes four exact BN4 Navi-status values: offset `0x0E = 6`,
+offset `0x2B = 1`, and offsets `0x06/0x07 = 4`. The first value makes BN4's
+native battle loop remove 1 HP every 6 active frames while HP is above 1;
+`0x2B` makes the ordinary Buster damage calculation return 10; and `0x06/0x07`
+are the maximum Buster Speed and Charge values. The port translates those
+semantics to BN6 status offsets `0x01 = 9`, `0x02/0x03 = 4`, and `0x18 = 8`.
+BN6 normally indexes status `0x18` through the period table addressed by the
+pointer at `0x080102A0`; the replacement table leaves native entries 0 through
+7 (`0,40,35,30,25,20,15,10`) unchanged and adds private entry 8 with period 6.
+This lets native HP-bug processing provide BN4's cadence without changing any
+ordinary BN6 bug level.
+
+The actor selects the current Navi sprite, hides the player, and renders
+animation 0 at the player's coordinates. Its 60-frame phase alternates every
+two frames between palette slots 0 and 1, followed by a 30-frame hold before
+restoring the player and applying the status values. In Blue Moon's MegaMan
+archive, slot 1 is a near-black silhouette with dark red/purple highlights.
+Blue Moon sends those values to its object-palette setter at `0x08002DEC`, not
+its color-effect setter. BN6's corresponding current-Navi slot is a white-hit
+palette, so merely repeating the slot number gives the wrong appearance. The
+port retains BN6's current-Navi sprite and animation, but queues Blue Moon's
+32-byte dark palette from ROM offset `0x21B7F4` into only the visual actor's
+assigned OBJ-palette bank on dark frames. The native BN6 sprite archive and
+global white-hit palette remain unchanged. There is no sound request anywhere
+in the BlackWeapon controller or actor path.
+
+Blue Moon contains only placeholder library art for the operation-battle chip.
+EXE4.5's complete BlackWeapon icon, 56x48 library image, and palette occupy ROM
+offsets `0x7640B0`, `0x755CF0`, and `0x75CEF0`, with lengths `0x80`, `0x540`,
+and `0x20`. Gregar copies those three assets without palette conversion.
+
+Bass is chip ID `0x12D` in both editions. Only that record is replaced;
+BassAnly at `0x132` is untouched. The Bass record becomes a 64 MB, code-B Null
+GigaChip, preserves its original version-availability split, and uses the
+Blue Moon behavior and animation in both ROMs. Gregar repoints its three
+menu-art fields to EXE4.5's assets, while Falzar leaves those fields
+byte-for-byte equal to the original Bass record.
+
 ## Exe6Runtime QA
 
 The exact emulator procedure for selecting BN5 DeathPhoenix (`0x13A`) and

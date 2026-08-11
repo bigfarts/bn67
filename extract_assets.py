@@ -197,6 +197,12 @@ def extract_folderback_art(rom: bytes) -> tuple[bytes, bytes, bytes]:
 
 
 ASSETS = (
+    # EXE4.5: BlackWeapon's Advance Battle Chip menu art. Unlike the BN4
+    # operation-battle placeholder, EXE4.5 contains the complete library art.
+    Asset("exe45", "blackweapon-icon.bin", 0x7640B0, 0x80),
+    Asset("exe45", "blackweapon-image.bin", 0x755CF0, 0x540),
+    Asset("exe45", "blackweapon-palette.bin", 0x75CEF0, 0x20),
+
     # BN3 Blue: FolderBack's original rumble sample. Its menu art is decoded
     # and cropped separately below because BN3 stores it at 64x56, not 56x48.
     Asset("bn3_blue", "folderback-rumble-sample.bin", 0x215B68, 0x354E),
@@ -233,6 +239,10 @@ ASSETS = (
     Asset("bn4_blue_moon", "signalred-palette.bin", 0x73FAEC, 0x20),
     Asset("bn4_blue_moon", "signalred-battle-sprite.bin", 0x381C30, 0x694),
     Asset("bn4_blue_moon", "signalred-spawn-sample.bin", 0x17C834, 0x891),
+
+    # BN4 Blue Moon: BlackWeapon's near-black MegaMan palette. The same
+    # 16-color palette is repeated for the relevant animation groups.
+    Asset("bn4_blue_moon", "blackweapon-dark-palette.bin", 0x21B7F4, 0x20),
 
     # BN4 Blue Moon: BugChain menu art, aura, and SFX 0x15D sample.
     Asset("bn4_blue_moon", "bugchain-icon.bin", 0x74626C, 0x80),
@@ -391,6 +401,7 @@ def main() -> None:
     parser.add_argument("--exe6-falzar", required=True, type=Path)
     parser.add_argument("--bn4-blue-moon", required=True, type=Path)
     parser.add_argument("--bn3-blue", required=True, type=Path)
+    parser.add_argument("--exe45", required=True, type=Path)
     args = parser.parse_args()
 
     rom_paths = {
@@ -400,6 +411,7 @@ def main() -> None:
         "exe6_falzar": args.exe6_falzar,
         "bn4_blue_moon": args.bn4_blue_moon,
         "bn3_blue": args.bn3_blue,
+        "exe45": args.exe45,
     }
     roms = {name: path.read_bytes() for name, path in rom_paths.items()}
     count, total_bytes = extract_assets(roms, args.output_dir)

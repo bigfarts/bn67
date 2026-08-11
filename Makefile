@@ -19,6 +19,7 @@ BN6_GREGAR_ROM ?=
 BN6_FALZAR_ROM ?=
 BN4_BLUE_MOON_ROM ?=
 BN3_BLUE_ROM ?=
+EXE45_ROM ?=
 
 # GNU Make's wildcard does not recurse, so walk every directory beneath src.
 recursive_wildcard = $(foreach path,$(wildcard $1*),$(call recursive_wildcard,$(path)/,$2) $(filter $(subst *,%,$2),$(path)))
@@ -54,8 +55,9 @@ check-roms:
 	   [ -z "$(BN6_GREGAR_ROM)" ] || \
 	   [ -z "$(BN6_FALZAR_ROM)" ] || \
 	   [ -z "$(BN4_BLUE_MOON_ROM)" ] || \
-	   [ -z "$(BN3_BLUE_ROM)" ]; then \
-		echo "usage: make BN5_PROTOMAN_ROM=... BN6_GREGAR_ROM=... BN6_FALZAR_ROM=... BN4_BLUE_MOON_ROM=... BN3_BLUE_ROM=... [BN5_COLONEL_ROM=...]" >&2; \
+	   [ -z "$(BN3_BLUE_ROM)" ] || \
+	   [ -z "$(EXE45_ROM)" ]; then \
+		echo "usage: make BN5_PROTOMAN_ROM=... BN6_GREGAR_ROM=... BN6_FALZAR_ROM=... BN4_BLUE_MOON_ROM=... BN3_BLUE_ROM=... EXE45_ROM=... [BN5_COLONEL_ROM=...]" >&2; \
 		exit 2; \
 	fi; \
 	if ! command -v "$(ARMIPS)" >/dev/null 2>&1; then \
@@ -78,7 +80,8 @@ check-roms:
 	check_sha256 "$(BN6_GREGAR_ROM)" 572e113eeb53bb29cd9ff8acb9db265cfd48c5e509c8d0e6420b58e71e442cf2; \
 	check_sha256 "$(BN6_FALZAR_ROM)" a37c1028adb72082b51e142321fa437967bc54b6f46730a53f6581ad455ad670; \
 	check_sha256 "$(BN4_BLUE_MOON_ROM)" 63ea187c792f4bfcd077f92c3a509fa09ed422993aee9480c39dfdf6a561c5c1; \
-	check_sha256 "$(BN3_BLUE_ROM)" 8c6767788f99dc9e2af0c9d75513b227c7c42d6d452d6165c8e08850af78e273
+	check_sha256 "$(BN3_BLUE_ROM)" 8c6767788f99dc9e2af0c9d75513b227c7c42d6d452d6165c8e08850af78e273; \
+	check_sha256 "$(EXE45_ROM)" 588a77da006fb0dca0c8addbcc316d7bd4b1c3a42db24750bcfe17b170ac5ef8
 
 $(BUILD_DIR) $(DIST_DIR):
 	@mkdir -p "$@"
@@ -96,7 +99,8 @@ $(ASSET_STAMP): $(PATCH_DIR)/extract_assets.py | check-roms $(BUILD_DIR)
 		--exe6-gregar "$(BN6_GREGAR_ROM)" \
 		--exe6-falzar "$(BN6_FALZAR_ROM)" \
 		--bn4-blue-moon "$(BN4_BLUE_MOON_ROM)" \
-		--bn3-blue "$(BN3_BLUE_ROM)"
+		--bn3-blue "$(BN3_BLUE_ROM)" \
+		--exe45 "$(EXE45_ROM)"
 	@touch "$@"
 
 EDITIONS := gregar falzar
@@ -218,7 +222,7 @@ clean:
 	rm -rf "$(BUILD_DIR)" "$(DIST_DIR)" "$(TANGOPATCH_SRC)/roms"
 
 help:
-	@echo "make BN5_PROTOMAN_ROM=... BN5_COLONEL_ROM=... BN6_GREGAR_ROM=... BN6_FALZAR_ROM=... BN4_BLUE_MOON_ROM=... BN3_BLUE_ROM=..."
+	@echo "make BN5_PROTOMAN_ROM=... BN5_COLONEL_ROM=... BN6_GREGAR_ROM=... BN6_FALZAR_ROM=... BN4_BLUE_MOON_ROM=... BN3_BLUE_ROM=... EXE45_ROM=..."
 	@echo ""
 	@echo "Targets:"
 	@echo "  all      Build and create optional patch packages (default)"

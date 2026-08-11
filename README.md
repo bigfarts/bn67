@@ -16,6 +16,17 @@ rebuilt wholesale rather than patching individual native atlas cells.
 AntiNavi retains its native BN6 behavior, codes, and metadata, but its MB cost
 is reduced from 50 MB to 33 MB in both versions.
 
+### BlakWeap
+
+Replaces Bass in both versions with Blue Moon's BlackWeapon behavior; BassAnly
+is unchanged. The 64 MB, Null-element GigaChip uses code B, sets Buster damage
+to 10, maxes Buster Speed and Charge, and drains 1 HP every 6 active battle
+frames without reducing the user below 1 HP. Its original animation replaces
+the user with an idle clone that flickers for 60 frames and holds for 30; the
+effect has no dedicated sound. Gregar imports BlackWeapon's complete icon,
+library art, and palette from EXE4.5, while Falzar retains the native Bass-slot
+art.
+
 ### RollArrow
 
 Replaces TrainArrow1, TrainArrow2, and TrainArrow3 with Blue Moon's RollArrow
@@ -152,7 +163,8 @@ shared actor/beam archive, and SignalRed's menu art and battle sprite from Blue
 Moon; Jealousy's menu/overlay graphics and BugCharge's menu and Gospel-head
 assets from BN5; FolderBack's BN3 menu art and original rumble PCM; plus the full BN5
 SearchMan actor archive, both scope/reticle archives, the chip icon, and the
-56x48 library artwork. The SearchMan variant library-art palettes are:
+56x48 library artwork; and BlackWeapon's menu art from EXE4.5. The SearchMan
+variant library-art palettes are:
 
 - base: BN5 base palette (blue background)
 - EX: unchanged SearchMan foreground with a custom yellow background
@@ -216,7 +228,7 @@ Requirements: Make, `armips`, Python 3, the Arm GNU toolchain
 (`arm-none-eabi-gcc`, `objcopy`, and `nm`), and optionally `flips` for BPS
 output.
 
-Pass the five source ROM paths as Make variables:
+Pass the six source ROM paths as Make variables:
 
 ```sh
 make \
@@ -224,7 +236,8 @@ make \
   BN6_GREGAR_ROM=/path/to/bn6-gregar.srl \
   BN6_FALZAR_ROM=/path/to/bn6-falzar.srl \
   BN4_BLUE_MOON_ROM=/path/to/bn4-blue-moon.srl \
-  BN3_BLUE_ROM=/path/to/bn3-blue.srl
+  BN3_BLUE_ROM=/path/to/bn3-blue.srl \
+  EXE45_ROM=/path/to/exe4.5.gba
 ```
 
 `BN5_COLONEL_ROM` defaults to `exe5k_rom_k_e.srl` beside the Team ProtoMan
@@ -239,6 +252,7 @@ Supported source SHA-256 hashes:
 - BN6 Falzar: `a37c1028adb72082b51e142321fa437967bc54b6f46730a53f6581ad455ad670`
 - BN4 Blue Moon: `63ea187c792f4bfcd077f92c3a509fa09ed422993aee9480c39dfdf6a561c5c1`
 - BN3 Blue: `8c6767788f99dc9e2af0c9d75513b227c7c42d6d452d6165c8e08850af78e273`
+- EXE4.5 English: `588a77da006fb0dca0c8addbcc316d7bd4b1c3a42db24750bcfe17b170ac5ef8`
 
 Patched ROM copies are written under `build/`. If `flips` is available, BPS
 patches are written under `dist/`. If `tango-patch` is also available, the two

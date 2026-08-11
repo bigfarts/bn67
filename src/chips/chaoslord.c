@@ -10,6 +10,7 @@ BN67_INCBIN(chaoslord_icon, "build/chaoslord-icon.bin");
 BN67_INCBIN(chaoslord_image, "build/chaoslord-image.bin");
 BN67_INCBIN(chaoslord_palette, "build/chaoslord-palette.bin");
 #endif
+
 BN67_INCBIN(chaoslord_trig_table, "build/chaoslord-trig.bin");
 
 #if FALZAR
