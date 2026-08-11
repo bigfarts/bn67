@@ -160,11 +160,13 @@ static void restore_local_folder(Exe6Obj *self) {
 
   Exe6BattleContext *context = exe6_runtime()->battle_context;
 
+  uint8_t regular_chip_available = context->regular_chip_available;
+  uint8_t tag_chips_available = context->tag_chips_available;
+
   exe6_battle_chip_set();
 
-  /* FolderBack does not restore consumed Regular/Tag designations. */
-  context->regular_chip_available = 0;
-  context->tag_chips_available = 0;
+  context->regular_chip_available = regular_chip_available;
+  context->tag_chips_available = tag_chips_available;
 
   /* The native initializer clears both players, but only this core restores
    * the local user's Folder.  Clearing the opponent here loses their retained
