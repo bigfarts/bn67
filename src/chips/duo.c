@@ -43,14 +43,14 @@ BN67_INCBIN(duo_palette, "build/duo-palette.bin");
 
 #if FALZAR
 #define DUO_EFFECT_FLAGS                                                  \
-    (EXE6_CHIP_EFFECT_FLAG_TIME_FREEZE | EXE6_CHIP_EFFECT_FLAG_ATTACK | \
+    (EXE6_CHIP_EFFECT_FLAG_DIMMING | EXE6_CHIP_EFFECT_FLAG_ATTACK | \
      EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE)
 #define DUO_ICON duo_icon
 #define DUO_IMAGE duo_image
 #define DUO_PALETTE duo_palette
 #else
 #define DUO_EFFECT_FLAGS                                               \
-    (EXE6_CHIP_EFFECT_FLAG_TIME_FREEZE | EXE6_CHIP_EFFECT_FLAG_ATTACK)
+    (EXE6_CHIP_EFFECT_FLAG_DIMMING | EXE6_CHIP_EFFECT_FLAG_ATTACK)
 #define DUO_ICON ((const uint8_t *)0x0872A350u)
 #define DUO_IMAGE ((const uint8_t *)0x0871EAB0u)
 #define DUO_PALETTE ((const uint8_t *)0x08723490u)

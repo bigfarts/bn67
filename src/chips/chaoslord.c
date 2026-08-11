@@ -14,13 +14,13 @@ BN67_INCBIN(chaoslord_trig_table, "build/chaoslord-trig.bin");
 
 #if FALZAR
 #define CHAOSLORD_EFFECT_FLAGS                                        \
-    (EXE6_CHIP_EFFECT_FLAG_TIME_FREEZE | EXE6_CHIP_EFFECT_FLAG_ATTACK)
+    (EXE6_CHIP_EFFECT_FLAG_DIMMING | EXE6_CHIP_EFFECT_FLAG_ATTACK)
 #define CHAOSLORD_ICON ((const uint8_t *)0x0872C414u)
 #define CHAOSLORD_IMAGE ((const uint8_t *)0x08720B74u)
 #define CHAOSLORD_PALETTE ((const uint8_t *)0x08725554u)
 #else
 #define CHAOSLORD_EFFECT_FLAGS                                           \
-    (EXE6_CHIP_EFFECT_FLAG_TIME_FREEZE | EXE6_CHIP_EFFECT_FLAG_ATTACK | \
+    (EXE6_CHIP_EFFECT_FLAG_DIMMING | EXE6_CHIP_EFFECT_FLAG_ATTACK | \
      EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE)
 #define CHAOSLORD_ICON chaoslord_icon
 #define CHAOSLORD_IMAGE chaoslord_image

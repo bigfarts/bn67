@@ -11,14 +11,14 @@ BN67_INCBIN(deathphoenix_palette, "build/deathphoenix-palette.bin");
 
 #if FALZAR
 #define DEATHPHOENIX_EFFECT_FLAGS                                           \
-    (EXE6_CHIP_EFFECT_FLAG_TIME_FREEZE | EXE6_CHIP_EFFECT_FLAG_ATTACK |    \
+    (EXE6_CHIP_EFFECT_FLAG_DIMMING | EXE6_CHIP_EFFECT_FLAG_ATTACK |         \
      EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE)
 #define DEATHPHOENIX_ICON deathphoenix_icon
 #define DEATHPHOENIX_IMAGE deathphoenix_image
 #define DEATHPHOENIX_PALETTE deathphoenix_palette
 #else
 #define DEATHPHOENIX_EFFECT_FLAGS                                        \
-    (EXE6_CHIP_EFFECT_FLAG_TIME_FREEZE | EXE6_CHIP_EFFECT_FLAG_ATTACK)
+    (EXE6_CHIP_EFFECT_FLAG_DIMMING | EXE6_CHIP_EFFECT_FLAG_ATTACK)
 #define DEATHPHOENIX_ICON ((const uint8_t *)0x0872A3D0u)
 #define DEATHPHOENIX_IMAGE ((const uint8_t *)0x0871EFF0u)
 #define DEATHPHOENIX_PALETTE ((const uint8_t *)0x087234B0u)
