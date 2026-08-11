@@ -3,15 +3,6 @@
 
 .definelabel object_free,              0x08003458
 
-.macro engine_call,target
-    push {r4}
-    ldr r4,=target + 1
-    mov r12,r4
-    pop {r4}
-    mov lr,pc
-    bx r12
-.endmacro
-
 .macro copy_c_data,address,symbol,size
     .org address
     .if falzar
