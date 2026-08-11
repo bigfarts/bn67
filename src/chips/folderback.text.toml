@@ -1,5 +1,5 @@
-[chip-names-1]
-"0x39" = "FoldrBak"
+[chip-names-0]
+"0xC6" = "FoldrBak"
 
-[chip-descriptions-1]
-"0x39" = ["Restores", "all chips", "& folders"]
+[chip-descriptions-0]
+"0xC6" = ["Restores", "all chips", "& folders"]

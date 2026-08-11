@@ -82,11 +82,6 @@ static const Exe6BlockDamageProperties DAMAGE_PROPERTIES = {
     .target_hit_type = EXE6_HIT_TYPE_STANDARD_TARGET,
     .self_hit_type = EXE6_HIT_TYPE_15,
 };
-#if FALZAR
-static const uintptr_t BLOCK_DAMAGE_MAIN = 0x080C53C1;
-#else
-static const uintptr_t BLOCK_DAMAGE_MAIN = 0x080C6C31;
-#endif
 struct Exe6BurstEntry {
     int8_t x;
     int8_t y;
@@ -814,7 +809,6 @@ static void attack_impact(Exe6Obj *self)
             | (self->header_flags
                 & EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING)
         );
-        exe6_obj_invoke(damage, BLOCK_DAMAGE_MAIN);
     }
     attack_apply_blocks(self);
     exe6_camera_quake_set(3, 0x14);
