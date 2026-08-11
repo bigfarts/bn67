@@ -958,7 +958,6 @@ _Static_assert(
 Exe6Runtime *exe6_runtime(void);
 void exe6_sound_req(uint32_t sound);
 void exe6_obj_char_init(uint32_t mode, uint32_t group, uint32_t index);
-void exe6_obj_current_navi_char_init(void);
 void exe6_obj_shadow_set(void);
 void exe6_obj_char_set(void);
 void exe6_obj_char_move(void);

@@ -521,21 +521,22 @@ Beast Out rapid-Buster variants; the patch redirects their table entries at
 Attack level from 6 through 10 regardless of whether BlackWeapon or BusterUp
 supplied it.
 
-The actor selects the current Navi sprite, hides the player, and renders
-animation 0 at the player's coordinates. Its 60-frame phase alternates every
-two frames between palette slots 0 and 1, followed by a 30-frame hold before
-restoring the player and applying the status values. In Blue Moon's MegaMan
-archive, slot 1 is a near-black silhouette with dark red/purple highlights.
+The visual controller keeps the live player sprite visible so Cross and Beast
+forms retain their exact current appearance. Its 60-frame phase alternates
+every two frames between the player's assigned palette bank and a reserved
+dark bank, followed by a 30-frame hold before applying the status values. In
+Blue Moon's MegaMan archive, slot 1 is a near-black silhouette with dark
+red/purple highlights.
 Blue Moon sends those values to its object-palette setter at `0x08002DEC`, not
 its color-effect setter. BN6's corresponding current-Navi slot is a white-hit
 palette, so merely repeating the slot number gives the wrong appearance. The
-port retains BN6's current-Navi sprite and animation, but queues Blue Moon's
-32-byte dark palette from ROM offset `0x21B7F4` into only the visual actor's
-assigned OBJ-palette bank on dark frames. The native BN6 sprite archive and
-global white-hit palette share that staging bank, so the actor saves the native
+The port queues Blue Moon's 32-byte dark palette from ROM offset `0x21B7F4`
+into the reserved OBJ-palette bank on dark frames while leaving the current
+player sprite and form intact. The native BN6 sprite archive and global
+white-hit palette share that staging bank, so the controller saves the native
 palette before its first dark frame and restores it during both normal and
 forced teardown. There is no sound request anywhere in the BlackWeapon
-controller or actor path.
+controller or visual path.
 
 Blue Moon contains only placeholder library art for the operation-battle chip.
 EXE4.5's complete BlackWeapon icon, 56x48 library image, and palette occupy ROM

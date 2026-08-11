@@ -25,8 +25,9 @@ active battle frames without reducing the user below 1 HP. Cross charged
 Buster attacks, chargeable Cross chip attacks, and the two Beast Out rapid-
 Buster variants now scale continuously through all 10 Buster Attack levels;
 this includes levels 6 through 10 reached by stacking BusterUp. Its original
-animation replaces the user with an idle clone that flickers for 60 frames and holds for
-30; the effect has no dedicated sound. Gregar imports BlackWeapon's complete
+animation flickers the user's current form for 60 frames and holds for 30;
+active Cross and Beast forms remain visible throughout. The effect has no
+dedicated sound. Gregar imports BlackWeapon's complete
 icon, library art, and palette from EXE4.5, while Falzar retains the native
 Bass-slot art.
 

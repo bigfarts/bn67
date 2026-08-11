@@ -175,23 +175,51 @@ _Static_assert(
 );
 
 enum BlackWeaponVisualFlags {
-    BLACKWEAPON_VISUAL_OWNER_WAS_VISIBLE = 1 << 0,
-    BLACKWEAPON_VISUAL_PALETTE_SAVED = 1 << 1,
+    BLACKWEAPON_VISUAL_PALETTE_SAVED = 1 << 0,
 };
 
 #define BLACKWEAPON_DARK_PALETTE_BANK 0x0Fu
+#define EXE6_SPRITE_PALETTE_BANK_MASK 0xF0u
+#define EXE6_SPRITE_PALETTE_BANK_SHIFT 4u
+#define EXE6_SPRITE_PALETTE_ATTRIBUTE 0x15u
 
-static void *blackweapon_palette_bank(uint32_t palette_bank)
+static uint8_t *blackweapon_palette_bank(uint8_t palette_bank)
 {
-    return (void *)(uintptr_t)(EXE6_SPRITE_PALETTE_STAGING_00
-        + palette_bank * 0x20u);
+    return (uint8_t *)(uintptr_t)(EXE6_SPRITE_PALETTE_STAGING_00
+        + (uintptr_t)palette_bank * 0x20u);
+}
+
+static uint8_t *object_sprite(Exe6Obj *object)
+{
+    return (uint8_t *)object + (object->object_class & 0xF0u);
+}
+
+static uint8_t object_palette_bank_get(Exe6Obj *object)
+{
+    return (uint8_t)(
+        object_sprite(object)[EXE6_SPRITE_PALETTE_ATTRIBUTE]
+        >> EXE6_SPRITE_PALETTE_BANK_SHIFT
+    );
+}
+
+static void object_palette_bank_set(Exe6Obj *object, uint8_t palette_bank)
+{
+    uint8_t *attribute =
+        &object_sprite(object)[EXE6_SPRITE_PALETTE_ATTRIBUTE];
+    *attribute = (uint8_t)(
+        (*attribute & (uint8_t)~EXE6_SPRITE_PALETTE_BANK_MASK)
+        | (palette_bank << EXE6_SPRITE_PALETTE_BANK_SHIFT)
+    );
 }
 
 static void install_dark_palette(Exe6Obj *visual)
 {
-    const uint8_t *sprite = (const uint8_t *)visual
-        + ((uint32_t)(visual->object_class >> 4) << 4);
-    uint32_t palette_bank = (uint32_t)(sprite[0x15] >> 4);
+    Exe6Obj *owner = visual->parent;
+    if (owner == NULL) {
+        return;
+    }
+
+    uint8_t palette_bank = object_palette_bank_get(owner);
     if (palette_bank != BLACKWEAPON_DARK_PALETTE_BANK) {
         return;
     }
@@ -230,19 +258,22 @@ static void restore_white_palette(Exe6Obj *visual)
     visual->aux_timer &= (uint16_t)~BLACKWEAPON_VISUAL_PALETTE_SAVED;
 }
 
-static void restore_owner(Exe6Obj *visual)
+static void restore_owner_palette(Exe6Obj *visual)
 {
     Exe6Obj *owner = visual->parent;
-    if (owner != NULL
-        && (visual->aux_timer & BLACKWEAPON_VISUAL_OWNER_WAS_VISIBLE) != 0) {
-        owner->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
+    if (owner == NULL) {
+        return;
+    }
+
+    if (object_palette_bank_get(owner) == BLACKWEAPON_DARK_PALETTE_BANK) {
+        object_palette_bank_set(owner, visual->palette);
     }
 }
 
 static void restore_visual(Exe6Obj *visual)
 {
     restore_white_palette(visual);
-    restore_owner(visual);
+    restore_owner_palette(visual);
 }
 
 static void finish_visual(Exe6Obj *visual)
@@ -254,18 +285,6 @@ static void finish_visual(Exe6Obj *visual)
     visual->state_word = 8;
 }
 
-static void copy_owner_position(Exe6Obj *visual)
-{
-    Exe6Obj *owner = visual->parent;
-    if (owner == NULL) {
-        finish_visual(visual);
-        return;
-    }
-    visual->x = owner->x;
-    visual->y = owner->y;
-    visual->z = owner->z;
-}
-
 static void visual_flash_update(Exe6Obj *visual)
 {
     Exe6Obj *owner = visual->parent;
@@ -274,16 +293,15 @@ static void visual_flash_update(Exe6Obj *visual)
         return;
     }
 
-    exe6_obj_clt_set(exe6_obj_clt_link_get(owner));
-
-    uint8_t *sprite = (uint8_t *)visual
-        + ((uint32_t)(visual->object_class >> 4) << 4);
-    if ((visual->timer & 2u) != 0) {
-        sprite[0x15] = (uint8_t)((sprite[0x15] & 0x0Fu) | 0xF0u);
-    } else {
-        sprite[0x15] &= 0x0Fu;
+    uint8_t palette_bank = object_palette_bank_get(owner);
+    if (palette_bank != BLACKWEAPON_DARK_PALETTE_BANK) {
+        visual->palette = palette_bank;
     }
-    copy_owner_position(visual);
+    uint8_t next_palette_bank = (visual->timer & 2u) != 0
+        ? BLACKWEAPON_DARK_PALETTE_BANK
+        : visual->palette;
+    object_palette_bank_set(owner, next_palette_bank);
+    exe6_obj_invoke(owner, (uintptr_t)exe6_battle_obj_char_move2);
 
     uint16_t timer = (uint16_t)(visual->timer - 1u);
     visual->timer = timer;
@@ -295,9 +313,8 @@ static void visual_flash_update(Exe6Obj *visual)
 
 static void visual_hold_update(Exe6Obj *visual)
 {
-    copy_owner_position(visual);
-    /* phase shares state_word, so compare only the state byte here. */
-    if (visual->state != 4) {
+    if (visual->parent == NULL) {
+        finish_visual(visual);
         return;
     }
 
@@ -317,23 +334,9 @@ static void visual_init(Exe6Obj *visual)
     }
 
     visual->owner_word = owner->owner_word;
-    exe6_obj_current_navi_char_init();
-    exe6_obj_char_set();
-    exe6_obj_shadow_set();
-    exe6_obj_clt_set(exe6_obj_clt_link_get(owner));
-    visual->animation_word = 0;
-    exe6_obj_dma_seq_set(0);
-    exe6_obj_char_set();
-    exe6_obj_char_move();
-    exe6_obj_flip_set(visual->owner);
-
     visual->aux_timer = 0;
-    if ((owner->header_flags & EXE6_OBJ_FLAG_VISIBLE) != 0) {
-        visual->aux_timer |= BLACKWEAPON_VISUAL_OWNER_WAS_VISIBLE;
-    }
+    visual->palette = object_palette_bank_get(owner);
     save_white_palette(visual);
-    owner->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
-    visual->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     visual->timer = FLASH_FRAMES;
     visual->phase = 0;
     visual->state_word = 4;
@@ -358,7 +361,6 @@ BN67_EFFECT(blackweapon_visual_main)
         exe6_obj_move_delete();
         return;
     }
-    exe6_battle_obj_char_move2();
     install_dark_palette(self);
 }
 

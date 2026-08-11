@@ -104,37 +104,6 @@ NATIVE_WRAPPER(exe6_obj_char_set, 0x080026A4, void, (void))
 NATIVE_WRAPPER(exe6_obj_char_move, 0x080026C4, void, (void))
 NATIVE_WRAPPER(exe6_obj_char_init, 0x080026E4, void, (uint32_t mode, uint32_t group, uint32_t index))
 
-/*
- * Resolve the current side's form/Navi through the same native selector used
- * by BN6's player actors, then initialize the calling object with that sprite.
- * The selector returns its sprite group/index in r1/r2.
- */
-NAKED void exe6_obj_current_navi_char_init(void)
-{
-    __asm__(
-        ".syntax unified\n"
-        "push {r4-r7,lr}\n"
-        "ldr r3,=0x0800FCE5\n"
-        "mov r12,r3\n"
-        "adr r3,1f\n"
-        "adds r3,#1\n"
-        "mov lr,r3\n"
-        "bx r12\n"
-        ".balign 4\n"
-        "1:\n"
-        "movs r0,#0x80\n"
-        "ldr r3,=0x080026E5\n"
-        "mov r12,r3\n"
-        "adr r3,2f\n"
-        "adds r3,#1\n"
-        "mov lr,r3\n"
-        "bx r12\n"
-        ".balign 4\n"
-        "2:\n"
-        "pop {r4-r7,pc}\n"
-    );
-}
-
 NATIVE_WRAPPER(exe6_obj_dma_seq_set, 0x08002DA4, void, (uint32_t animation))
 NATIVE_WRAPPER(exe6_obj_clt_set, 0x08002D80, void, (uint32_t palette))
 NATIVE_WRAPPER(exe6_obj_flash_set, 0x08002DB0, void, (void))
