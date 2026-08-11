@@ -71,17 +71,17 @@ otherwise invokes that resolved entry directly; it does not duplicate a class
 table full of wrapper pointers.
 
 FolderBack's Folder restore runs only on the chip owner's local peer. Its hand
-reset therefore clears only that owner's `0x50`-byte selection-work block. The
-native initializer at `0x0800A954` clears both players' blocks; calling it from
-this local-only path erases the opponent's retained chips on just one peer and
-desynchronizes the battle when the opponent next uses one.
+reset therefore clears only that owner's two hand counters and six loaded-chip
+IDs. The rest of the `0x50`-byte selection-work block is Custom-screen state;
+zeroing it makes later chips render blank. The native initializer at
+`0x0800A954` clears both players' blocks; calling it from this local-only path
+erases the opponent's retained chips on just one peer and desynchronizes the
+battle when the opponent next uses one.
 The restore calls BN6's Folder setup at `0x0800A318`, which already shuffles the
 rebuilt 30-chip queue. It does not call the shuffle routine a second time;
 doing so changes both the restored draw order and the shared RNG stream twice.
-Before calling the native setup, FolderBack temporarily masks the equipped
-Regular and Tag indices in both NaviStats sources that setup can consult. This
-prevents the returned Regular Chip or Tag pair from being pinned to privileged
-positions while retaining the player's saved Folder configuration afterward.
+The native setup retains the equipped Regular and Tag designations and pins
+any still-available designated chips to their privileged positions.
 
 BN67 runtime code and imported assets are allocated from file offset `0x800000`
 onward in an expanded 16 MiB image; exact addresses are selected by Armips.
