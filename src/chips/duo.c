@@ -231,13 +231,6 @@ static void duo_prepare_targets(Exe6Obj *self)
         );
     }
 
-    if (work->primary_target == 0) {
-        int32_t direction = (int32_t)exe6_calc_pl_em_dir_spd_for(self);
-        uint32_t block_x = (uint32_t)(3 + direction * 2);
-        work->primary_target = (uint8_t)(block_x | (2u << 4));
-        duo_mark_target_area(work, self->owner, block_x, 2);
-    }
-
     work->last_target = 0;
     work->first_target_pending = 1;
 }
