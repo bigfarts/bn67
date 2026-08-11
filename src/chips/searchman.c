@@ -174,7 +174,7 @@ struct SearchmanReticleWork {
     uint32_t alternate;                  // +0x64
 };
 
-static bool timer_positive_after_decrement(Exe6Obj *self)
+static bool timer_expired(Exe6Obj *self)
 {
     int32_t timer = (int32_t)self->timer - 1;
     self->timer = (uint16_t)timer;
@@ -248,7 +248,7 @@ static void wait_for_block(Exe6Obj *self)
         self->substate = 4;
         return;
     }
-    if (timer_positive_after_decrement(self)) {
+    if (!timer_expired(self)) {
         return;
     }
     if (exe6_block_move_check(
@@ -347,7 +347,7 @@ static void fire_tick(Exe6Obj *self)
         spawn_hit(self, delete_shot);
     }
 
-    if (timer_positive_after_decrement(self)) {
+    if (!timer_expired(self)) {
         return;
     }
     --self->animation_state;
@@ -377,7 +377,7 @@ static void shot_cooldown(Exe6Obj *self)
         self->substate = 4;
         return;
     }
-    if (!timer_positive_after_decrement(self)) {
+    if (timer_expired(self)) {
         self->phase = EXIT_PHASE;
         self->phase_timer = 0;
     }
@@ -402,7 +402,7 @@ static void exit_phase(Exe6Obj *self)
         self->phase_timer_low = 4;
         return;
     }
-    if (!timer_positive_after_decrement(self)) {
+    if (timer_expired(self)) {
         self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
         self->state_word = ACTOR_DESTROY_STATE;
     }
@@ -585,7 +585,7 @@ static void reticle_locked(Exe6Obj *self)
             self->parent->subvariant = 1;
         }
     }
-    if (!timer_positive_after_decrement(self)) {
+    if (timer_expired(self)) {
         self->state = ACTOR_DESTROY_STATE;
     }
 }
