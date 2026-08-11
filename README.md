@@ -19,13 +19,16 @@ is reduced from 50 MB to 33 MB in both versions.
 ### BlakWeap
 
 Replaces Bass in both versions with Blue Moon's BlackWeapon behavior; BassAnly
-is unchanged. The 64 MB, Null-element GigaChip uses code B, sets Buster damage
-to 10, maxes Buster Speed and Charge, and drains 1 HP every 6 active battle
-frames without reducing the user below 1 HP. Its original animation replaces
-the user with an idle clone that flickers for 60 frames and holds for 30; the
-effect has no dedicated sound. Gregar imports BlackWeapon's complete icon,
-library art, and palette from EXE4.5, while Falzar retains the native Bass-slot
-art.
+is unchanged. The 64 MB, Null-element GigaChip uses code B, sets Buster Attack
+to level 10 while Rapid and Charge remain at level 5, and drains 1 HP every 6
+active battle frames without reducing the user below 1 HP. While that
+Attack-10 status is active, Cross charged Buster attacks and chargeable Cross
+chip attacks use all 10 Buster Attack levels instead of stopping at level 5;
+the two Beast Out rapid-Buster variants do as well. Its original animation
+replaces the user with an idle clone that flickers for 60 frames and holds for
+30; the effect has no dedicated sound. Gregar imports BlackWeapon's complete
+icon, library art, and palette from EXE4.5, while Falzar retains the native
+Bass-slot art.
 
 ### RollArrow
 

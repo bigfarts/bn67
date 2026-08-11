@@ -15,6 +15,9 @@ from typing import Any
 NAME_RE = re.compile(r"^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$")
 SNAKE_CASE_RE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 POINTER_METADATA_RE = re.compile(r"^pointer__(0[xX][0-9A-Fa-f]+)__([a-z][a-z0-9_]*)$")
+THUMB_POINTER_METADATA_RE = re.compile(
+    r"^thumb_pointer__(0[xX][0-9A-Fa-f]+)__([a-z][a-z0-9_]*)$"
+)
 SECTION_METADATA_RE = re.compile(
     r"^section__(0[xX][0-9A-Fa-f]+)__(0[xX][0-9A-Fa-f]+)__([a-z][a-z0-9_]*)$"
 )
@@ -149,6 +152,7 @@ class AttackAllocation:
 class PointerPatch:
     symbol: str
     address: int
+    thumb: bool = False
 
 
 @dataclass(frozen=True)
@@ -627,7 +631,17 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         if not symbol.startswith(prefix):
             raise PackageError(f"{package.name}: invalid metadata symbol {symbol}")
         body = symbol[len(prefix) :]
+        thumb_pointer = THUMB_POINTER_METADATA_RE.fullmatch(body)
         pointer = POINTER_METADATA_RE.fullmatch(body)
+        if thumb_pointer is not None:
+            address_text, patch_symbol = thumb_pointer.groups()
+            address = checked_int(int(address_text, 0), 0, 0xFFFFFFFF, symbol)
+            if SNAKE_CASE_RE.fullmatch(patch_symbol) is None:
+                raise PackageError(
+                    f"{package.name}: patch symbol {patch_symbol} must be snake_case"
+                )
+            pointer_patches.append(PointerPatch(patch_symbol, address, True))
+            continue
         if pointer is not None:
             address_text, patch_symbol = pointer.groups()
             address = checked_int(int(address_text, 0), 0, 0xFFFFFFFF, symbol)
@@ -1009,11 +1023,12 @@ def emit_pointer_patches(packages: list[Package]) -> list[str]:
     lines = ["// Package-declared fixed pointer patches."]
     for package in packages:
         for patch in package.pointer_patches:
+            value = f"{patch.symbol} + 1" if patch.thumb else patch.symbol
             lines.extend(
                 [
                     f"// {package.name}: {patch.symbol}",
                     f".org 0x{patch.address:08X}",
-                    f"    .dw {patch.symbol}",
+                    f"    .dw {value}",
                 ]
             )
     return lines

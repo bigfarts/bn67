@@ -8,6 +8,29 @@ BN67_ASM_RESOURCE(
 );
 BN67_PATCH_POINTER(0x080102A0, blackweapon_hp_bug_periods);
 
+/* Power-attack IDs 3 and 4 are the two Beast Out rapid-Buster variants. */
+BN67_PATCH_THUMB_POINTER(
+    0x080117E0,
+    blackweapon_beast_buster_id3_dispatch
+);
+BN67_PATCH_THUMB_POINTER(
+    0x080117E4,
+    blackweapon_beast_buster_id4_dispatch
+);
+
+/*
+ * Cross Buster charges and chargeable Cross chips share the native scaler at
+ * 0x08012642. Its level helper already supports Attack 1 through 10, but the
+ * caller clamps that result to 5. Skip that clamp only while BlackWeapon's
+ * raw Attack level is active and retain the native base-plus-per-level
+ * calculation for every other part of each charge attack.
+ */
+BN67_PATCH_SECTION(
+    0x08012646,
+    0x0801264C,
+    blackweapon_attack_level_dispatch
+);
+
 #if !FALZAR
 BN67_INCBIN(blackweapon_icon, "build/blackweapon-icon.bin");
 BN67_INCBIN(blackweapon_image, "build/blackweapon-image.bin");
@@ -69,6 +92,92 @@ static const uint8_t BUSTER_STAT_MAX = 4;
 static const uint8_t BLACKWEAPON_HP_BUG = 8;
 static const uint16_t FLASH_FRAMES = 60;
 static const uint16_t HOLD_FRAMES = 30;
+
+NAKED void blackweapon_beast_attack_level_apply(void)
+{
+    __asm__(
+        ".syntax unified\n"
+        "push {lr}\n"
+        /* Preserve the native level-5 result unless Attack is raw level 9. */
+        "movs r1,#1\n"
+        "ldr r3,=0x08013775\n"
+        "mov lr,pc\n"
+        "bx r3\n"
+        "cmp r0,#9\n"
+        "bne 1f\n"
+        /* Recalculate the effective level with BN6's native level-10 helper. */
+        "ldr r3,=0x0801265B\n"
+        "mov lr,pc\n"
+        "bx r3\n"
+        "strh r0,[r7,#8]\n"
+        "1:\n"
+        "pop {pc}\n"
+        ".pool\n"
+    );
+}
+
+NAKED void blackweapon_beast_buster_id3_dispatch(void)
+{
+    __asm__(
+        ".syntax unified\n"
+        "push {lr}\n"
+        "ldr r3,=0x08011AF3\n"
+        "mov lr,pc\n"
+        "bx r3\n"
+        "push {r0}\n"
+        "bl blackweapon_beast_attack_level_apply\n"
+        "pop {r0,pc}\n"
+        ".pool\n"
+    );
+}
+
+NAKED void blackweapon_beast_buster_id4_dispatch(void)
+{
+    __asm__(
+        ".syntax unified\n"
+        "push {lr}\n"
+        "ldr r3,=0x08011B4B\n"
+        "mov lr,pc\n"
+        "bx r3\n"
+        "push {r0}\n"
+        "bl blackweapon_beast_attack_level_apply\n"
+        "pop {r0,pc}\n"
+        ".pool\n"
+    );
+}
+
+NAKED void blackweapon_attack_level_dispatch(void)
+{
+    __asm__(
+        ".syntax unified\n"
+        /* Discard the section patch's saved r1. */
+        "pop {r1}\n"
+        /* Run BN6's native Attack-level helper, whose own ceiling is 10. */
+        "ldr r3,=0x0801265B\n"
+        "mov lr,pc\n"
+        "bx r3\n"
+        "adds r2,r0,#0\n"
+        /* Preserve BN6's level-5 ceiling unless BlackWeapon set Attack to 10. */
+        "cmp r2,#5\n"
+        "ble 1f\n"
+        "push {r2}\n"
+        "movs r1,#1\n"
+        "ldr r3,=0x08013775\n"
+        "mov lr,pc\n"
+        "bx r3\n"
+        "pop {r2}\n"
+        "cmp r0,#9\n"
+        "beq 1f\n"
+        "movs r2,#5\n"
+        "1:\n"
+        /* Restore the scaler's base and per-level increment arguments. */
+        "pop {r0,r1}\n"
+        /* Rejoin at base + increment * level, after the old level-5 clamp. */
+        "ldr r3,=0x08012655\n"
+        "bx r3\n"
+        ".pool\n"
+    );
+}
 
 struct BlackWeaponControllerWork {
     uint8_t visual_active;

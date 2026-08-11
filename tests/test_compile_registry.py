@@ -556,6 +556,28 @@ class PackageCompilerTests(unittest.TestCase):
             assembly,
         )
         self.assertIn("ldr r1,=folderback_dispatch_main + 1", assembly)
+        self.assertIn(
+            ".org 0x08012646\n"
+            "    push {r1}\n"
+            "    bl section_patch_blackweapon_attack_level_dispatch_relay\n"
+            ".org 0x0801264C\n"
+            "section_patch_blackweapon_attack_level_dispatch_relay:",
+            assembly,
+        )
+        self.assertIn(
+            "ldr r1,=blackweapon_attack_level_dispatch + 1",
+            assembly,
+        )
+        self.assertIn(
+            ".org 0x080117E0\n"
+            "    .dw blackweapon_beast_buster_id3_dispatch + 1",
+            assembly,
+        )
+        self.assertIn(
+            ".org 0x080117E4\n"
+            "    .dw blackweapon_beast_buster_id4_dispatch + 1",
+            assembly,
+        )
         folderback = (ROOT / "src/chips/folderback.c").read_text()
         self.assertIn(
             "BN67_PATCH_SECTION(0x080031FA, 0x08003C9C, folderback_dispatch_main)",
@@ -613,6 +635,7 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn("sizeof(Exe6ShellObjectSlot) == 0xD8", abi)
         self.assertNotIn("BN67_POINTER_PATCH", runtime)
         self.assertIn("BN67_PATCH_POINTER", runtime)
+        self.assertIn("BN67_PATCH_THUMB_POINTER", runtime)
         self.assertIn("BN67_PATCH_SECTION", runtime)
         self.assertNotRegex(runtime, r"(?m)^#define EXE6_")
 

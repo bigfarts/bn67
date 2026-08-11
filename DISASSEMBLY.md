@@ -505,6 +505,21 @@ pointer at `0x080102A0`; the replacement table leaves native entries 0 through
 This lets native HP-bug processing provide BN4's cadence without changing any
 ordinary BN6 bug level.
 
+Cross charged Buster attacks and chargeable Cross chip attacks share the
+base-plus-per-level damage scaler at `0x08012642`. Its helper at `0x0801265A`
+already calculates Attack levels through 10, but the caller reduces every
+value above 5 back to 5 before multiplying it by the attack's native increment.
+BlackWeapon skips only that second ceiling when the live raw Attack property is
+9 (displayed level 10). Native Attack levels 1 through 5 and other sources of
+temporary Attack bonuses retain the original ceiling; BlackWeapon's levels 6
+through 10 continue the same attack-specific damage progression for both
+charge paths. The charged-chip path at `0x0800FB54` dispatches its Cross power-
+attack ID through `0x080117BA`, so it reaches this same scaler rather than a
+separate damage calculation. Power-attack IDs 3 and 4 are the Gregar and Falzar
+Beast Out rapid-Buster variants; BlackWeapon redirects their table entries at
+`0x080117E0` and `0x080117E4` so those two attacks also retain effective Attack
+levels 6 through 10 while BlackWeapon's raw Attack property remains 9.
+
 The actor selects the current Navi sprite, hides the player, and renders
 animation 0 at the player's coordinates. Its 60-frame phase alternates every
 two frames between palette slots 0 and 1, followed by a 30-frame hold before

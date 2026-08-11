@@ -147,6 +147,13 @@
         BN67_STRINGIFY(address) "__" BN67_STRINGIFY(symbol) \
     )
 
+/* Patch a native function-pointer table with the target's Thumb address. */
+#define BN67_PATCH_THUMB_POINTER(address, symbol) \
+    BN67_METADATA_RECORD( \
+        "thumb_pointer", \
+        BN67_STRINGIFY(address) "__" BN67_STRINGIFY(symbol) \
+    )
+
 /* Section targets are entered with the original r1 pushed on the stack. */
 #define BN67_PATCH_SECTION(address, relay_address, symbol) \
     BN67_METADATA_RECORD( \

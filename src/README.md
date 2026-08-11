@@ -98,6 +98,9 @@ BN67_PATCH_POINTER(0x080EACD0, signalred_dust_sprite_table);
 #endif
 ```
 
+Use `BN67_PATCH_THUMB_POINTER(address, symbol)` for native function-pointer
+tables; it writes `symbol + 1` so the indirect branch remains in Thumb state.
+
 `BN67_PATCH_SECTION(address, relay_address, symbol)` replaces six bytes of
 native instructions with a Thumb call through an eight-byte, word-aligned relay
 at `relay_address`. That relay must be dead ROM within Thumb `bl` range of the
