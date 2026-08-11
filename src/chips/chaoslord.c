@@ -401,12 +401,12 @@ static Exe6Obj *spawn_attack_obj(
     return attack;
 }
 
-static void delete_live_objs(void)
+static void delete_obstacles(void)
 {
-    Exe6Obj **objs = exe6_runtime()->battle_context->live_objs;
-    for (uint32_t index = 0; index < 8; ++index) {
-        if (objs[index] != NULL) {
-            objs[index]->hp = 0;
+    Exe6Obj **obstacles = exe6_runtime()->battle_context->obstacles;
+    for (size_t index = 0; index < EXE6_OBSTACLE_SLOT_COUNT; ++index) {
+        if (obstacles[index] != NULL) {
+            obstacles[index]->hp = 0;
         }
     }
 }
@@ -442,7 +442,7 @@ static bool entrance_has_block(
 static void controller_init(Exe6Obj *self)
 {
     exe6_sound_req(0x94);
-    delete_live_objs();
+    delete_obstacles();
 
     uint32_t side = self->owner ^ self->owner_aux;
     uint32_t search_x = side * 5u + 1u;

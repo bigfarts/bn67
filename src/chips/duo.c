@@ -139,6 +139,8 @@ struct DuoWork {
     uint8_t first_target_pending;
     uint8_t shots_remaining;
     uint8_t fists_spawned;
+    uint8_t panels_saved;
+    uint8_t saved_panel_active[6];
 };
 
 static bool timer_expired(Exe6Obj *self)
@@ -348,16 +350,33 @@ static void duo_begin_exit(Exe6Obj *self)
     self->phase = DUO_EXIT_PHASE;
 }
 
-static void duo_set_panels(uint32_t owner, bool visible)
+static void duo_set_panels(Exe6Obj *self, bool visible)
 {
-    uint32_t first_x = owner * 4u + 1u;
+    struct DuoWork *work = (struct DuoWork *)self->work;
+    uint32_t first_x = self->owner * 4u + 1u;
+    size_t saved_index = 0;
     for (uint32_t block_x = first_x; block_x < first_x + 2u; ++block_x) {
         for (uint32_t block_y = 1; block_y <= 3; ++block_y) {
-            if (visible) {
-                exe6_block_draw_enable(block_x, block_y);
-            } else {
-                exe6_block_draw_disable(block_x, block_y);
+            Exe6Block *block = exe6_block_at(block_x, block_y);
+            if (work->panels_saved == 0) {
+                work->saved_panel_active[saved_index] = block->active;
             }
+            block->active = visible
+                ? work->saved_panel_active[saved_index]
+                : 0;
+            ++saved_index;
+        }
+    }
+    work->panels_saved = 1;
+}
+
+static void duo_break_obstacles(void)
+{
+    Exe6BattleContext *battle = exe6_runtime()->battle_context;
+    for (size_t index = 0; index < EXE6_OBSTACLE_SLOT_COUNT; ++index) {
+        Exe6Obj *obstacle = battle->obstacles[index];
+        if (obstacle != NULL) {
+            obstacle->hp = 0;
         }
     }
 }
@@ -378,7 +397,7 @@ static void duo_begin_entry(Exe6Obj *self)
     self->y = DUO_SCREEN_Y;
     self->z = 0;
     self->velocity_x = direction * DUO_ENTRY_VELOCITY;
-    exe6_obj_flip_set(0);
+    exe6_obj_flip_set(exe6_enemy_flip_check());
     exe6_obj_clt_set(0);
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     self->timer = DUO_ENTRY_STEPS;
@@ -390,7 +409,7 @@ static void duo_actor_update(Exe6Obj *self)
 {
     switch (self->phase) {
     case DUO_PANEL_PHASE:
-        duo_set_panels(self->owner, (self->timer & 4u) != 0);
+        duo_set_panels(self, (self->timer & 4u) != 0);
         if (timer_expired(self)) {
             duo_begin_entry(self);
         }
@@ -447,6 +466,7 @@ static void duo_actor_init(Exe6Obj *self)
     self->block_y = 2;
     self->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
     self->timer = DUO_PANEL_FRAMES;
+    ((struct DuoWork *)self->work)->panels_saved = 0;
     self->state_word = DUO_ACTIVE_STATE;
     self->phase = DUO_PANEL_PHASE;
     duo_actor_update(self);
@@ -454,7 +474,7 @@ static void duo_actor_init(Exe6Obj *self)
 
 static void duo_actor_destroy(Exe6Obj *self)
 {
-    duo_set_panels(self->owner, true);
+    duo_set_panels(self, true);
     if (self->completion != NULL) {
         *self->completion = 0;
     }
@@ -491,7 +511,7 @@ static void duo_fist_init(Exe6Obj *self)
         : DUO_FIST_ANIMATION_RIGHT;
     duo_set_animation(self, animation);
     exe6_obj_prio_set(DUO_BATTLE_SPRITE_PRIORITY);
-    exe6_obj_flip_set(0);
+    exe6_obj_flip_set(exe6_enemy_flip_check());
     exe6_obj_clt_set(0);
     int32_t direction = (int32_t)exe6_calc_pl_em_dir_spd_for(self);
     self->x -= direction * DUO_FIST_X_OFFSET;
@@ -576,6 +596,7 @@ BN67_EFFECT(duo_fist_main)
 
 BN67_SUMMON_ATTACK(0x133, duo_attack_main)
 {
+    duo_break_obstacles();
     Exe6Obj *actor = exe6_em_open(
         BN67_OBJ_ID(duo_actor_main), spawn_parameters
     );

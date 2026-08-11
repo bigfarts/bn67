@@ -19,6 +19,7 @@ typedef struct Exe6RuntimeFields Exe6Runtime;
 typedef struct Exe6ObjectSlotFields Exe6ObjectSlot;
 typedef struct Exe6EnemyObjectSlotFields Exe6EnemyObjectSlot;
 typedef struct Exe6ShellObjectSlotFields Exe6ShellObjectSlot;
+typedef struct Exe6BlockFields Exe6Block;
 
 enum Exe6ObjectClass {
     EXE6_OBJECT_CLASS_ENEMY = 1,
@@ -33,6 +34,10 @@ enum Exe6ObjectClass {
 #define EXE6_EFFECT_POOL_HEAD \
     ((Exe6ObjectSlot *)(uintptr_t)0x02036870u)
 #define EXE6_POOL_SLOT_COUNT ((size_t)32u)
+#define EXE6_BLOCKS \
+    ((Exe6Block *)(uintptr_t)0x02039AE0u)
+#define EXE6_BLOCK_ROW_WIDTH ((size_t)8u)
+#define EXE6_OBSTACLE_SLOT_COUNT ((size_t)6u)
 
 #define EXE6_PALETTE_BG_STAGING_00 ((uintptr_t)0x03001550u)
 #define EXE6_PALETTE_BG_STAGING_01 ((uintptr_t)0x03001570u)
@@ -610,6 +615,27 @@ struct Exe6ShellObjectSlotFields {
     uint8_t reserved[0xD8 - sizeof(Exe6Obj)];
 };
 
+struct Exe6BlockFields {
+    uint8_t active;                      // +0x00
+    uint8_t terrain_animation_state;     // +0x01
+    uint8_t terrain_state;               // +0x02
+    uint8_t owner;                       // +0x03
+    uint8_t original_owner;              // +0x04
+    uint8_t unknown_05;
+    uint8_t rendered_terrain_state;      // +0x06
+    uint8_t rendered_owner;              // +0x07
+    uint8_t unknown_08[2];
+    uint8_t block_x;                     // +0x0A
+    uint8_t block_y;                     // +0x0B
+    uint8_t edge_flags;                  // +0x0C
+    uint8_t transition_pending;          // +0x0D
+    uint16_t unknown_0e;
+    uint16_t animation_timer;            // +0x10
+    uint16_t unknown_12;
+    uint32_t status_flags;               // +0x14
+    uint8_t unknown_18[8];
+};
+
 struct Exe6PlayerRuntimeFields {
     uint8_t type;                        // +0x00
     uint8_t unknown_01[6];
@@ -649,8 +675,8 @@ struct Exe6BattleContextFields {
     uint8_t tag_chips_available;                     // +0x44
     uint8_t unknown_45[0x3B];
     Exe6Obj *battle_units[2][4];             // +0x80
-    Exe6Obj *live_objs[8];                   // +0xA0
-    uint8_t unknown_c0[0x10];
+    Exe6Obj *obstacles[EXE6_OBSTACLE_SLOT_COUNT]; // +0xA0
+    uint8_t unknown_b8[0x18];
     Exe6Obj *active_units[2][4];             // +0xD0
 };
 
@@ -695,6 +721,26 @@ _Static_assert(
 _Static_assert(sizeof(Exe6ObjectSlot) == 0xC8, "native object slot layout");
 _Static_assert(sizeof(Exe6EnemyObjectSlot) == 0xD8, "native enemy slot layout");
 _Static_assert(sizeof(Exe6ShellObjectSlot) == 0xD8, "native shell slot layout");
+_Static_assert(
+    sizeof(Exe6Block) == 0x20,
+    "native block layout"
+);
+_Static_assert(
+    offsetof(Exe6Block, active) == 0,
+    "block active offset"
+);
+_Static_assert(
+    offsetof(Exe6Block, rendered_terrain_state) == 0x06,
+    "block rendered terrain offset"
+);
+_Static_assert(
+    offsetof(Exe6Block, rendered_owner) == 0x07,
+    "block rendered owner offset"
+);
+_Static_assert(
+    offsetof(Exe6Block, edge_flags) == 0x0C,
+    "block edge flags offset"
+);
 _Static_assert(offsetof(struct Exe6ObjFields, state_word) == 0x08, "obj state offset");
 _Static_assert(offsetof(struct Exe6ObjFields, variant) == 0x04, "obj variant offset");
 _Static_assert(offsetof(struct Exe6ObjFields, parameter) == 0x0E, "obj parameter offset");
@@ -805,8 +851,8 @@ _Static_assert(
     "battle context unit offset"
 );
 _Static_assert(
-    offsetof(struct Exe6BattleContextFields, live_objs) == 0xA0,
-    "battle context live obj offset"
+    offsetof(struct Exe6BattleContextFields, obstacles) == 0xA0,
+    "battle context obstacle offset"
 );
 _Static_assert(
     offsetof(struct Exe6BattleContextFields, active_units) == 0xD0,
@@ -903,12 +949,11 @@ uint32_t exe6_block_move_check(
     uint32_t excluded_flags
 );
 uint32_t exe6_another_block_exist_check(uint32_t x, uint32_t owner);
+Exe6Block *exe6_block_at(uint32_t x, uint32_t y);
 uint32_t exe6_block_status_get(uint32_t x, uint32_t y);
 void exe6_block_flash(uint32_t x, uint32_t y);
 void exe6_block_crack_set(uint32_t x, uint32_t y);
 void exe6_block_out_set3(uint32_t x, uint32_t y);
-void exe6_block_draw_disable(uint32_t x, uint32_t y);
-void exe6_block_draw_enable(uint32_t x, uint32_t y);
 uint64_t exe6_get_block_pos(uint32_t x, uint32_t y);
 uint32_t exe6_block_in_screen_check(void);
 uint32_t exe6_calc_degree(int32_t y, int32_t x);
