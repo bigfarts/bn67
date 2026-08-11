@@ -1,4 +1,5 @@
 #include "abi.h"
+#include "common.h"
 #include "runtime.h"
 
 BN67_USE_SONG(common_navi_summon_song);
@@ -146,13 +147,6 @@ static const int32_t PROJECTILE_SPEED = 0x00070000;
 static const uint8_t PROJECTILE_BLOCKS = 8;
 static const Exe6HitType PROJECTILE_HIT_TYPE =
     EXE6_HIT_TYPE_DELETE_ACTIVE_CHIP_ATTACK;
-
-static bool timer_expired(Exe6Obj *self)
-{
-    int32_t timer = (int32_t)self->timer - 1;
-    self->timer = (uint16_t)timer;
-    return timer < 0;
-}
 
 static void set_animation(Exe6Obj *self, uint32_t animation)
 {

@@ -1,3 +1,4 @@
+#include "common.h"
 #include "runtime.h"
 
 BN67_USE_SONG(common_navi_summon_song);
@@ -232,13 +233,6 @@ static const uint32_t BEAM_SCALES[] = {
     0x00000000,
     0x0000B9C0,
 };
-
-static bool timer_expired(Exe6Obj *self)
-{
-    int32_t timer = (int32_t)self->timer - 1;
-    self->timer = (uint16_t)timer;
-    return timer < 0;
-}
 
 static void set_animation(Exe6Obj *self, uint8_t animation)
 {

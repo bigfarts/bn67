@@ -1,3 +1,4 @@
+#include "common.h"
 #include "runtime.h"
 
 BN67_SPRITE(duo_battle_sprite, "build/duo-battle-sprite.bin");
@@ -144,13 +145,6 @@ struct DuoWork {
     uint8_t panels_saved;
     uint8_t saved_panel_active[6];
 };
-
-static bool timer_expired(Exe6Obj *self)
-{
-    int32_t timer = (int32_t)self->timer - 1;
-    self->timer = (uint16_t)timer;
-    return timer < 0;
-}
 
 static void duo_set_animation(Exe6Obj *self, uint32_t animation)
 {

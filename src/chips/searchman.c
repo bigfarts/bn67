@@ -1,4 +1,5 @@
 #include "abi.h"
+#include "common.h"
 #include "runtime.h"
 
 BN67_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
@@ -173,13 +174,6 @@ struct SearchmanReticleWork {
     Exe6Obj *player;                      // +0x60
     uint32_t alternate;                  // +0x64
 };
-
-static bool timer_expired(Exe6Obj *self)
-{
-    int32_t timer = (int32_t)self->timer - 1;
-    self->timer = (uint16_t)timer;
-    return timer > 0;
-}
 
 static void set_animation(Exe6Obj *self, uint8_t animation)
 {
