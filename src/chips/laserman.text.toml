@@ -4,6 +4,6 @@
 "0xE5" = "LaserMn[SP]"
 
 [chip-descriptions-0]
-"0xE3" = ["A laser", "pierces", "1 thru"]
-"0xE4" = ["A laser", "pierces", "1 thru"]
-"0xE5" = ["A laser", "pierces", "1 thru"]
+"0xE3" = "A laser\npierces\n1 thru"
+"0xE4" = "A laser\npierces\n1 thru"
+"0xE5" = "A laser\npierces\n1 thru"

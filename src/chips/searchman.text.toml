@@ -4,6 +4,6 @@
 "0x09" = "SerchMn[SP]"
 
 [chip-descriptions-1]
-"0x07" = ["Aim", "and fire", "5 shots"]
-"0x08" = ["Aim", "and fire", "5 shots"]
-"0x09" = ["Aim", "and fire", "5 shots"]
+"0x07" = "Aim\nand fire\n5 shots"
+"0x08" = "Aim\nand fire\n5 shots"
+"0x09" = "Aim\nand fire\n5 shots"

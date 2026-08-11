@@ -2,4 +2,4 @@
 "0xC1" = "SignlRed"
 
 [chip-descriptions-0]
-"0xC1" = ["Enmy chip", "is no use", "while red"]
+"0xC1" = "Enmy chip\nis no use\nwhile red"

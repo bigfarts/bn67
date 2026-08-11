@@ -2,4 +2,4 @@
 "0xBF" = "Jealousy"
 
 [chip-descriptions-0]
-"0xBF" = ["More dmg", "if enemy", "has chip"]
+"0xBF" = "More dmg\nif enemy\nhas chip"

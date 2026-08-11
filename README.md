@@ -264,7 +264,7 @@ generated assembly repoints every configured consumer.
 "0x07" = "SerchMan"
 
 [chip-descriptions-1]
-"0x07" = ["Aim", "and fire", "5 shots"]
+"0x07" = "Aim\nand fire\n5 shots"
 ```
 
 These tables live in `searchman.text.toml`; untouched entries remain unchanged.

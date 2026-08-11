@@ -211,7 +211,7 @@ are direct top-level tables; there is no `text.` prefix:
 "0x31" = "BugCharg"
 
 [chip-descriptions-1]
-"0x31" = ["All your", "bugs will", "attack!"]
+"0x31" = "All your\nbugs will\nattack!"
 ```
 
 Allocation is deterministic: attacks are ordered by their explicit

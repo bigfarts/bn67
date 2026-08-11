@@ -8,7 +8,15 @@ import tempfile
 import tomllib
 import unittest
 
-from build_text_archives import build_archive
+from build_text_archives import (
+    LINE_BREAK,
+    RECORD_END,
+    build_archive,
+    encode_description,
+    encode_name,
+    encode_text,
+    load_package_text,
+)
 from compile_registry import (
     PackageError,
     discover_packages,
@@ -166,6 +174,56 @@ class PackageCompilerTests(unittest.TestCase):
             with self.assertRaisesRegex(PackageError, "invalid offset-table size"):
                 text_archive_entry_count(root, "text.bin", "archive")
 
+    def test_package_text_records_end_with_the_record_delimiter(self) -> None:
+        manifest = {
+            "archives": [
+                {
+                    "name": "names",
+                    "source": "names",
+                    "source_index": 0,
+                    "encoding": "name",
+                },
+                {
+                    "name": "descriptions",
+                    "source": "descriptions",
+                    "source_index": 0,
+                    "encoding": "description",
+                },
+            ],
+            "entries": [
+                {
+                    "package": "test",
+                    "archive": "names",
+                    "index": 0,
+                    "value": "BugCharg",
+                },
+                {
+                    "package": "test",
+                    "archive": "descriptions",
+                    "index": 0,
+                    "value": "All your\nbugs will\nattack!",
+                },
+            ],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "text.json"
+            path.write_text(json.dumps(manifest))
+            package_text = load_package_text(path)
+
+        name = package_text.changes["names"][0]
+        description = package_text.changes["descriptions"][0]
+        self.assertNotEqual(encode_name("BugCharg")[-1], RECORD_END)
+        self.assertNotEqual(
+            encode_description("All your\nbugs will\nattack!")[-1], RECORD_END
+        )
+        self.assertEqual(name[-1], RECORD_END)
+        self.assertEqual(description[-1], RECORD_END)
+        self.assertEqual(
+            encode_text("bugs\nattack"),
+            encode_text("bugs") + bytes((LINE_BREAK,)) + encode_text("attack"),
+        )
+        self.assertEqual(description.count(bytes((LINE_BREAK,))), 2)
+
     def test_registry_compiler_is_target_agnostic(self) -> None:
         compiler = (ROOT / "compile_registry.py").read_text().lower()
         self.assertNotIn("gregar", compiler)
@@ -297,7 +355,7 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertEqual(text_entries[("chip-names-1", 0x31)], "BugCharg")
         self.assertEqual(
             text_entries[("chip-descriptions-1", 0x31)],
-            ("All your", "bugs will", "attack!"),
+            "All your\nbugs will\nattack!",
         )
 
         self.assertIn("// bugcharge: chip 0x131", assembly)

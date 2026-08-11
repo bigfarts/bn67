@@ -15,17 +15,14 @@ from pathlib import Path
 EXE6_EN_CHARSET = [" ", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "*", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "[RV]", "[BX]", "[EX]", "[SP]", "[FZ]", "ウ", "ア", "イ", "オ", "エ", "ケ", "コ", "カ", "ク", "キ", "セ", "サ", "ソ", "シ", "ス", "テ", "ト", "ツ", "タ", "チ", "ネ", "ノ", "ヌ", "ナ", "ニ", "ヒ", "ヘ", "ホ", "ハ", "フ", "ミ", "マ", "メ", "ム", "モ", "ヤ", "ヨ", "ユ", "ロ", "ル", "リ", "レ", "ラ", "ン", "熱", "斗", "ワ", "ヲ", "ギ", "ガ", "ゲ", "ゴ", "グ", "ゾ", "ジ", "ゼ", "ズ", "ザ", "デ", "ド", "ヅ", "ダ", "ヂ", "ベ", "ビ", "ボ", "バ", "ブ", "ピ", "パ", "ペ", "プ", "ポ", "ゥ", "ァ", "ィ", "ォ", "ェ", "ュ", "ヴ", "ッ", "ョ", "ャ", "-", "×", "=", ":", "%", "?", "+", "█", "[bat]", "ー", "!", "&", ",", "゜", ".", "・", ";", "'", "\"", "~", "/", "(", ")", "「", "」", "�", "_", "ƶ", "[L]", "[B]", "[R]", "[A]", "あ", "い", "け", "く", "き", "こ", "か", "せ", "そ", "す", "さ", "し", "つ", "と", "て", "た", "ち", "ね", "の", "な", "ぬ", "に", "へ", "ふ", "ほ", "は", "ひ", "め", "む", "み", "も", "ま", "ゆ", "よ", "や", "る", "ら", "り", "ろ", "れ", "[END]", "ん", "を", "わ", "研", "げ", "ぐ", "ご", "が", "ぎ", "ぜ", "ず", "じ", "ぞ", "ざ", "で", "ど", "づ", "だ", "ぢ", "べ", "ば", "び", "ぼ", "ぶ", "ぽ", "ぷ", "ぴ", "ぺ", "ぱ", "ぅ", "ぁ", "ぃ", "ぉ", "ぇ", "ゅ", "ょ", "っ", "ゃ", "容", "量", "全", "木", "[MB]", "無", "現", "実", "[circle]", "×", "緑", "道", "不", "止", "彩", "起", "父", "集", "院", "一", "二", "三", "四", "五", "六", "七", "八", "陽", "十", "百", "千", "万", "脳", "上", "下", "左", "右", "手", "来", "日", "目", "月", "獣", "各", "人", "入", "出", "山", "口", "光", "電", "気", "綾", "科", "次", "名", "前", "学", "校", "省", "祐", "室", "世", "界", "高", "朗", "枚", "野", "悪", "路", "闇", "大", "小", "中", "自", "分", "間", "系", "花", "問", "究", "門", "城", "王", "兄", "化", "葉", "行", "街", "屋", "水", "見", "終", "新", "桜", "先", "生", "長", "今", "了", "点", "井", "子", "言", "太", "属", "風", "会", "性", "持", "時", "勝", "赤", "代", "年", "火", "改", "計", "画", "職", "体", "波", "回", "外", "地", "員", "正", "造", "値", "合", "戦", "川", "秋", "原", "町", "晴", "用", "金", "郎", "作", "数", "方", "社", "攻", "撃", "力", "同", "武", "何", "発", "少", "教", "以", "白", "早", "暮", "面", "組", "後", "文", "字", "本", "階", "明", "才", "者", "向", "犬", "々", "ヶ", "連", "射", "舟", "戸", "切", "土", "炎", "伊", "夫", "鉄", "国", "男", "天", "老", "師", "堀", "杉", "士", "悟", "森", "霧", "麻", "剛", "垣", "★", "[bracket1]", "[bracket2]", "[.]"]
 # fmt: on
 
-CHAR_TO_BYTE = {character: index for index, character in enumerate(EXE6_EN_CHARSET)}
-# BN6's English ampersand glyph is at charset index 0xA3. The compact
-# leading-character table above intentionally omits the intervening Japanese
-# glyphs, so map the punctuation used by imported descriptions explicitly.
-CHAR_TO_BYTE["!"] = 0xA2
-CHAR_TO_BYTE["&"] = 0xA3
-
-NAME_END = 0xE6
+RECORD_END = 0xE6
 LINE_BREAK = 0xE9
+
+CHAR_TO_BYTE = {character: index for index, character in enumerate(EXE6_EN_CHARSET)}
+CHAR_TO_BYTE["\n"] = LINE_BREAK
+
 DESCRIPTION_HEADER = bytes((0xE8, 0x06, 0x01, 0x01, 0xF1, 0x00, 0x00))
-DESCRIPTION_FOOTER = bytes((0xE7, 0x01, NAME_END))
+DESCRIPTION_FOOTER = bytes((0xE7, 0x01))
 
 
 @dataclass(frozen=True)
@@ -74,12 +71,11 @@ def encode_text(text: str) -> bytes:
 
 
 def encode_name(text: str) -> bytes:
-    return encode_text(text) + bytes((NAME_END,))
+    return encode_text(text)
 
 
-def encode_description(*lines: str) -> bytes:
-    body = bytes((LINE_BREAK,)).join(encode_text(line) for line in lines)
-    return DESCRIPTION_HEADER + body + DESCRIPTION_FOOTER
+def encode_description(text: str) -> bytes:
+    return DESCRIPTION_HEADER + encode_text(text) + DESCRIPTION_FOOTER
 
 
 def load_package_text(path: Path) -> PackageText:
@@ -157,13 +153,12 @@ def load_package_text(path: Path) -> PackageText:
                     raise ValueError("value must be a string")
                 encoded = encode_name(value)
             else:
-                if not isinstance(value, list) or not all(
-                    isinstance(line, str) for line in value
-                ):
-                    raise ValueError("value must be a string array")
-                encoded = encode_description(*value)
+                if not isinstance(value, str):
+                    raise ValueError("value must be a string")
+                encoded = encode_description(value)
         except ValueError as exc:
             raise ValueError(f"{context} ({package}): {exc}") from exc
+        encoded += bytes((RECORD_END,))
         if entry_index in changes[archive_name]:
             raise ValueError(
                 f"{context}: duplicate text target {archive_name}[0x{entry_index:X}]"
@@ -192,7 +187,7 @@ def read_archive(rom: bytes, offset: int) -> list[bytes]:
         if index + 1 < entry_count:
             finish = offset + offsets[index + 1]
         else:
-            terminator = rom.find(b"\xe6", start)
+            terminator = rom.find(bytes((RECORD_END,)), start)
             if terminator < 0:
                 raise ValueError(f"unterminated final archive entry at 0x{start:X}")
             finish = terminator + 1

@@ -121,7 +121,7 @@ class TextResource:
     package: str
     archive: str
     index: int
-    value: str | tuple[str, ...]
+    value: str
 
 
 @dataclass(frozen=True)
@@ -561,20 +561,11 @@ def load_package(source_path: Path, config: Config) -> Package:
                     f"{entry_context}: text index must be between 0 and "
                     f"0x{archive.native_entries - 1:X}"
                 )
-            if isinstance(value, str) and value:
-                normalized: str | tuple[str, ...] = value
-            elif (
-                isinstance(value, list)
-                and value
-                and all(isinstance(line, str) and line for line in value)
-            ):
-                normalized = tuple(value)
-            else:
+            if not isinstance(value, str) or not value:
                 raise PackageError(
-                    f"{entry_context}: replacement must be a non-empty string "
-                    "or string array"
+                    f"{entry_context}: replacement must be a non-empty string"
                 )
-            text.append(TextResource(name, archive_name, entry_index, normalized))
+            text.append(TextResource(name, archive_name, entry_index, value))
 
     return Package(
         name,
@@ -1165,7 +1156,7 @@ def generate_text_manifest(config: Config, packages: list[Package]) -> str:
             "package": item.package,
             "archive": item.archive,
             "index": item.index,
-            "value": list(item.value) if isinstance(item.value, tuple) else item.value,
+            "value": item.value,
         }
         for package in packages
         for item in package.text

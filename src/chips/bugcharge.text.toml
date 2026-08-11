@@ -2,4 +2,4 @@
 "0x31" = "BugCharg"
 
 [chip-descriptions-1]
-"0x31" = ["All your", "bugs will", "attack!"]
+"0x31" = "All your\nbugs will\nattack!"

@@ -4,6 +4,6 @@
 "0x1A" = "RollAro3"
 
 [chip-descriptions-0]
-"0x18" = ["RollArrow", "destroys", "chips"]
-"0x19" = ["RollArrow", "destroys", "chips"]
-"0x1A" = ["RollArrow", "destroys", "chips"]
+"0x18" = "RollArrow\ndestroys\nchips"
+"0x19" = "RollArrow\ndestroys\nchips"
+"0x1A" = "RollArrow\ndestroys\nchips"
