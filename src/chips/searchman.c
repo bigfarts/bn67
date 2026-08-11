@@ -31,7 +31,7 @@ BN67_CHIP_RECORD(0x107) {
     .rarity = 2,
     .element = EXE6_CHIP_ELEMENT_CURSOR,
     .chip_class = EXE6_CHIP_CLASS_MEGA,
-    .mb = 42,
+    .mb = 52,
     .behavior = {
         .effect_flags = 0x47,
         .counter_settings = 0x8A,

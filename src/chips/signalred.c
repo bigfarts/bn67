@@ -42,7 +42,7 @@ BN67_CHIP_RECORD(0x0c1) {
     .rarity = 4,
     .element = EXE6_CHIP_ELEMENT_OBSTACLE,
     .chip_class = EXE6_CHIP_CLASS_STANDARD,
-    .mb = 61,
+    .mb = 80,
     .behavior = {
         .effect_flags = 0x41,
         .counter_settings = 0x00,
