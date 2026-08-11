@@ -143,10 +143,8 @@ static void fill_local_custom_gauge(void) {
 static void clear_loaded_hand(uint32_t owner) {
   Exe6NaviSelectChipWork *selection =
       exe6_navi_select_chip_work_adrs_get(owner);
-  uint8_t *bytes = (uint8_t *)selection;
-  for (size_t index = 0; index < sizeof(*selection); ++index) {
-    bytes[index] = 0;
-  }
+  selection->active_chip_index = 0;
+  selection->loaded_chip_count = 0;
   for (size_t index = 0;
        index < sizeof(selection->chip_ids) / sizeof(selection->chip_ids[0]);
        ++index) {
