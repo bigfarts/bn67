@@ -157,6 +157,10 @@ enum Exe6ObjectClass {
 #define EXE6_HIT_SECONDARY_FLAG_DUST_SUCTION_SIDE_0 0x00100000
 #define EXE6_HIT_SECONDARY_FLAG_DUST_SUCTION_SIDE_1 0x00200000
 
+/* HitData.HitModifierBase/Final (+0x0E/+0x0F). */
+#define EXE6_HIT_MODIFIER_STAGGER 0x01
+#define EXE6_HIT_MODIFIER_FIXED_INVULNERABILITY 0x02
+
 /*
  * HitData.Region (+0x01) values used by generic block damage.
  * CENTERED_3X3 is the nine-entry offset list centered on the origin.
@@ -703,7 +707,12 @@ struct Exe6HitFields {
     uint8_t region;                      // +0x01
     uint8_t unknown_02[0x07];
     uint8_t hit_effect;                  // +0x09, Exe6HitEffect
-    uint8_t unknown_0a[0x66];
+    uint8_t unknown_0a[0x04];
+    uint8_t base_hit_modifier;           // +0x0E, EXE6_HIT_MODIFIER_*
+    uint8_t final_hit_modifier;          // +0x0F, EXE6_HIT_MODIFIER_*
+    uint8_t unknown_10[0x14];
+    uint16_t fixed_invulnerability_timer; // +0x24
+    uint8_t unknown_26[0x4A];
     Exe6HitTypeFlag received_hit_flags;         // +0x70, EXE6_RECEIVED_HIT_FLAG_*
     uint8_t unknown_74[0x0C];
     uint16_t final_damage;               // +0x80
@@ -925,6 +934,18 @@ _Static_assert(
 _Static_assert(
     offsetof(struct Exe6HitFields, hit_effect) == 0x09,
     "hit effect offset"
+);
+_Static_assert(
+    offsetof(struct Exe6HitFields, base_hit_modifier) == 0x0E,
+    "base hit modifier offset"
+);
+_Static_assert(
+    offsetof(struct Exe6HitFields, final_hit_modifier) == 0x0F,
+    "final hit modifier offset"
+);
+_Static_assert(
+    offsetof(struct Exe6HitFields, fixed_invulnerability_timer) == 0x24,
+    "fixed invulnerability timer offset"
 );
 _Static_assert(
     offsetof(struct Exe6HitFields, received_hit_flags) == 0x70,

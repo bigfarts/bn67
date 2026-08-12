@@ -20,6 +20,15 @@
     eor r2,r6
     nop
 
+// AquaNeedle normally requests stagger and fixed invulnerability (0x03).
+// Keep stagger (0x01), but do not make its target flash after being hit.
+.if falzar
+    .org 0x080CE5BE
+.else
+    .org 0x080CFE2E
+.endif
+    mov r3,0x01
+
 // Status Bug dispatches one of four native handlers for each severity. Replace
 // only the normal- and high-severity green-invulnerability entries with their
 // corresponding flashing handlers. Keep the native selector at 0x08013E7E

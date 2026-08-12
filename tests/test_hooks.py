@@ -7,6 +7,21 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class GlobalHookTests(unittest.TestCase):
+    def test_aquaneedle_keeps_stagger_without_fixed_invulnerability(self) -> None:
+        hooks = (ROOT / "src/hooks.asm").read_text()
+
+        self.assertRegex(
+            hooks,
+            re.compile(
+                r"(?m)^\.if falzar\n"
+                r"    \.org 0x080CE5BE\n"
+                r"\.else\n"
+                r"    \.org 0x080CFE2E\n"
+                r"\.endif\n"
+                r"    mov r3,0x01$"
+            ),
+        )
+
     def test_status_bug_replaces_only_green_invulnerability_entries(self) -> None:
         hooks = (ROOT / "src/hooks.asm").read_text()
 
