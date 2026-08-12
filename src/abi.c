@@ -107,6 +107,7 @@ NATIVE_WRAPPER(exe6_obj_char_init, 0x080026E4, void, (uint32_t mode, uint32_t gr
 NATIVE_WRAPPER(exe6_obj_dma_seq_set, 0x08002DA4, void, (uint32_t animation))
 NATIVE_WRAPPER(exe6_obj_clt_set, 0x08002D80, void, (uint32_t palette))
 NATIVE_WRAPPER(exe6_obj_flash_set, 0x08002DB0, void, (void))
+NATIVE_WRAPPER(exe6_obj_flash_reset, 0x08002DD8, void, (void))
 NATIVE_WRAPPER(exe6_obj_clt_link_get, 0x08002D8C, uint32_t, (Exe6Obj *obj))
 NATIVE_WRAPPER(exe6_obj_col_efc_set, 0x08002ED0, void, (uint32_t scale))
 NATIVE_WRAPPER(exe6_obj_col_efc_link_get, 0x08002EDC, uint32_t, (Exe6Obj *obj))

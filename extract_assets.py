@@ -222,6 +222,13 @@ ASSETS = (
     Asset("bn5_protoman", "searchman-reticle-alt.bin", 0x358410, 0x5B8),
     Asset("bn5_protoman", "searchman-reticle.bin", 0x3589C8, 0x460),
 
+    # BN5: NumberMan's library art, full Navi archive, and animated die.
+    Asset("bn5_colonel", "numberman-image.bin", 0x72AD24, 0x540),
+    Asset("bn5_colonel", "numberman-pal-base.bin", 0x735804, 0x20),
+    Asset("bn5_colonel", "numberman-pal-sp.bin", 0x735824, 0x20),
+    Asset("bn5_colonel", "numberman-battle-sprite.bin", 0x2918A0, 0x8824),
+    Asset("bn5_colonel", "numberman-die-sprite.bin", 0x2F8D08, 0x16A0),
+
     # BN5 ProtoMan: ChaosLord menu art and complete controller assets. The
     # teardown slice intentionally starts on the archive header at 0x389E68.
     Asset("bn5_protoman", "chaoslord-icon.bin", 0x749C38, 0x80),

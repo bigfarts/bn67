@@ -1004,6 +1004,7 @@ void exe6_obj_dma_seq_set(uint32_t animation);
 void exe6_obj_flip_set(uint32_t flip);
 void exe6_obj_clt_set(uint32_t palette);
 void exe6_obj_flash_set(void);
+void exe6_obj_flash_reset(void);
 void exe6_obj_col_efc_set(uint32_t scale);
 void exe6_obj_prio_set(uint32_t priority);
 uint32_t exe6_obj_seq_info_get(void);

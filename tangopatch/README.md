@@ -72,6 +72,18 @@ entire loaded hand.
 - `SearchMan EX S`: 40 damage per shot
 - `SearchMan SP S`: 75 damage per shot
 
+### NumberMan
+
+**Replaces:** ChargeMan, ChargeMan EX, ChargeMan SP
+
+NumberMan's BN5 actor and die are available in both versions. He throws the
+die three panels ahead, shows a random face from 1 to 6, and then hits the
+centered 3x3 area for the rolled face times the listed power.
+
+- `NumberMan N/*`: 30 base power, 30-180 damage
+- `NumberMan EX N`: 40 base power, 40-240 damage
+- `NumberMan SP N`: 90 base power, 90-540 damage
+
 ### LaserMan
 
 **Replaces:** HeatMan, HeatMan EX, HeatMan SP

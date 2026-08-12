@@ -326,11 +326,11 @@ class PackageCompilerTests(unittest.TestCase):
             self.assertNotIn(".generated.h", text, source)
             self.assertNotIn("BN67_PCM_SONG", text, source)
 
-    def test_explicit_battle_sprite_priorities_stay_behind_hud(self) -> None:
+    def test_explicit_battle_sprite_priorities_are_intentional(self) -> None:
         arguments = []
         for source in (ROOT / "src/chips").rglob("*.c"):
             arguments.extend(
-                argument.strip()
+                (source.name, argument.strip())
                 for argument in re.findall(
                     r"exe6_obj_prio_set\(\s*([^()]+?)\s*\)",
                     source.read_text(),
@@ -338,7 +338,8 @@ class PackageCompilerTests(unittest.TestCase):
             )
 
         self.assertTrue(arguments)
-        self.assertEqual(set(arguments), {"EXE6_OBJ_PRIORITY_BATTLE"})
+        foreground = [item for item in arguments if item[1] != "EXE6_OBJ_PRIORITY_BATTLE"]
+        self.assertEqual(foreground, [("numberman.c", "DIE_PRIORITY")])
 
     def test_chip_records_are_linked_c_resources(self) -> None:
         gregar_config, gregar_packages = self.packages("gregar")
@@ -467,6 +468,9 @@ class PackageCompilerTests(unittest.TestCase):
         searchman = next(package for package in packages if package.name == "searchman")
         self.assertIsNotNone(searchman.attack)
         self.assertEqual(searchman.attack.kind, "summon_attack")
+        numberman = next(package for package in packages if package.name == "numberman")
+        self.assertIsNotNone(numberman.attack)
+        self.assertEqual(numberman.attack.kind, "summon_attack")
         signalred = next(package for package in packages if package.name == "signalred")
         self.assertIsNotNone(signalred.attack)
         self.assertEqual(signalred.attack.kind, "persistent_attack")
@@ -553,6 +557,56 @@ class PackageCompilerTests(unittest.TestCase):
             }
             self.assertEqual(text_entries[("chip-names-1", 0x2F)], "BlakWeap")
             self.assertIn(("chip-descriptions-1", 0x2F), text_entries)
+
+    def test_numberman_replaces_chargeman_slots(self) -> None:
+        source = (ROOT / "src/chips/numberman.c").read_text()
+        self.assertEqual(source.count("BN67_CHIP_RECORD("), 3)
+        self.assertIn("BN67_CHIP_RECORD(0x0ef)", source)
+        self.assertIn("BN67_CHIP_RECORD(0x0f0)", source)
+        self.assertIn("BN67_CHIP_RECORD(0x0f1)", source)
+        self.assertIn(
+            "BN67_SUMMON_ATTACK(0x0ef, numberman_attack_main)",
+            source,
+        )
+        self.assertIn("static const uint8_t DIE_ROLLS[16]", source)
+        self.assertIn("EXE6_HIT_REGION_CENTERED_3X3", source)
+        self.assertIn("EXE6_HIT_REGION_CURRENT_BLOCK", source)
+        self.assertIn("die->attack = actor->attack", source)
+        self.assertIn(
+            "multiply_attack(self->attack, self->variant)",
+            source,
+        )
+        self.assertIn("numberman_explosion_song", source)
+        self.assertIn(".short 0x7EF4,0x75E9,0x44C1", source)
+        self.assertIn("static const uint16_t FLIGHT_FRAMES = 43", source)
+        self.assertIn("static const uint16_t APPEAR_FRAMES = 4", source)
+        self.assertIn("static const int32_t DIE_INITIAL_Z_VELOCITY = 4 << 16", source)
+        self.assertIn("static const int32_t DIE_GRAVITY = -0x3000", source)
+        self.assertIn("exe6_obj_prio_set(DIE_PRIORITY)", source)
+        self.assertIn("BN67_SPRITE_GROUP(numberman_battle_sprite)", source)
+
+        for variant in ("gregar", "falzar"):
+            _, packages = self.packages(variant)
+            numberman = next(
+                package for package in packages if package.name == "numberman"
+            )
+            self.assertEqual(
+                [chip.chip_id for chip in numberman.chips],
+                [0x0EF, 0x0F0, 0x0F1],
+            )
+            self.assertEqual(numberman.attack.chip_id, 0x0EF)
+            text_entries = {
+                (entry.archive, entry.index): entry.value
+                for entry in numberman.text
+            }
+            self.assertEqual(
+                text_entries[("chip-names-0", 0xEF)],
+                "NumbrMan",
+            )
+            self.assertEqual(
+                text_entries[("chip-descriptions-0", 0xEF)],
+                "Bomb 3\nahead!\nHits 9sq",
+            )
 
     def test_protoman_uses_native_delta_ray(self) -> None:
         source = (ROOT / "src/chips/protoman.c").read_text()

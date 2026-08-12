@@ -66,6 +66,16 @@ entire loaded hand.
 - `SerchMnEX S`: 40 damage per shot
 - `SerchMnSP S`: 75 damage per shot
 
+### NumberMan
+
+Replaces ChargeMan, ChargeMan EX, and ChargeMan SP with NumberMan from Battle
+Network 5. He throws a die three panels ahead; the displayed face from 1 to 6
+multiplies the chip's power, then the die explodes over the centered 3x3 area.
+
+- `NumbrMan N/*`: 30 base power, 30-180 damage
+- `NumbrMnEX N`: 40 base power, 40-240 damage
+- `NumbrMnSP N`: 90 base power, 90-540 damage
+
 ### LaserMan
 
 Replaces HeatMan, HeatMan EX, and HeatMan SP with Blue Moon's LaserMan. The
@@ -183,7 +193,8 @@ shared actor/beam archive, and SignalRed's menu art and battle sprite from Blue
 Moon; Jealousy's menu/overlay graphics and BugCharge's menu and Gospel-head
 assets from BN5; FolderBack's BN3 menu art and original rumble PCM; plus the full BN5
 SearchMan actor archive, both scope/reticle archives, the chip icon, and the
-56x48 library artwork; and BlackWeapon's menu art from EXE4.5. The SearchMan
+56x48 library artwork; NumberMan's actor and die archives and library art; and
+BlackWeapon's menu art from EXE4.5. The SearchMan
 variant library-art palettes are:
 
 - base: BN5 base palette (blue background)
@@ -196,6 +207,11 @@ art palettes remain distinct.
 The first 13 nontransparent palette entries used for SearchMan's foreground
 are byte-identical in all three variants. Only the three background entries
 differ.
+
+NumberMan Base keeps BN5's dark background, EX preserves the same foreground
+with a blue background, and SP uses BN5's SP background palette. BN6's native
+summon, throw, landing, and final-blast cues are byte-identical to BN5. The
+slightly different BN5 explosion sequence is imported separately.
 
 See [DISASSEMBLY.md](DISASSEMBLY.md) for the native BN5 object chain and BN6
 hook locations.
