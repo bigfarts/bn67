@@ -27,15 +27,15 @@ BN67_SONG(
 );
 
 #if FALZAR
-#define NUMBERMAN_ICON ((const uint8_t *)0x0872BE14u)
-#define NUMBERMAN_LIBRARY_FLAGS 0x01
-#define NUMBERMAN_LIBRARY_NUMBER_BASE 0x0F
-#define NUMBERMAN_LIBRARY_SORT_BASE 0x00FE
+#define ICON ((const uint8_t *)0x0872BE14u)
+#define LIBRARY_FLAGS 0x01
+#define LIBRARY_NUMBER_BASE 0x0F
+#define LIBRARY_SORT_BASE 0x00FE
 #else
-#define NUMBERMAN_ICON ((const uint8_t *)0x08729D50u)
-#define NUMBERMAN_LIBRARY_FLAGS 0x00
-#define NUMBERMAN_LIBRARY_NUMBER_BASE 0x13
-#define NUMBERMAN_LIBRARY_SORT_BASE 0x00EF
+#define ICON ((const uint8_t *)0x08729D50u)
+#define LIBRARY_FLAGS 0x00
+#define LIBRARY_NUMBER_BASE 0x13
+#define LIBRARY_SORT_BASE 0x00EF
 #endif
 
 BN67_CHIP_RECORD(0x0ef) {
@@ -64,15 +64,15 @@ BN67_CHIP_RECORD(0x0ef) {
         .object_spawn = {0},
         .delay = 0,
     },
-    .library_number = NUMBERMAN_LIBRARY_NUMBER_BASE,
-    .library_flags = NUMBERMAN_LIBRARY_FLAGS,
+    .library_number = LIBRARY_NUMBER_BASE,
+    .library_flags = LIBRARY_FLAGS,
     .library_lock_on_type = 0x00,
     .alphabetical_sort = 0,
     .power = 30,
-    .library_sort_order = NUMBERMAN_LIBRARY_SORT_BASE,
+    .library_sort_order = LIBRARY_SORT_BASE,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = NUMBERMAN_ICON,
+    .icon = ICON,
     .image = numberman_image,
     .palette = numberman_palette_base,
 };
@@ -103,15 +103,15 @@ BN67_CHIP_RECORD(0x0f0) {
         .object_spawn = { .variant = 3 },
         .delay = 0,
     },
-    .library_number = NUMBERMAN_LIBRARY_NUMBER_BASE + 1,
-    .library_flags = NUMBERMAN_LIBRARY_FLAGS,
+    .library_number = LIBRARY_NUMBER_BASE + 1,
+    .library_flags = LIBRARY_FLAGS,
     .library_lock_on_type = 0x00,
     .alphabetical_sort = 0,
     .power = 40,
-    .library_sort_order = NUMBERMAN_LIBRARY_SORT_BASE + 1,
+    .library_sort_order = LIBRARY_SORT_BASE + 1,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = NUMBERMAN_ICON,
+    .icon = ICON,
     .image = numberman_image,
     .palette = numberman_palette_ex,
 };
@@ -142,31 +142,39 @@ BN67_CHIP_RECORD(0x0f1) {
         .object_spawn = { .variant = 4 },
         .delay = 0,
     },
-    .library_number = NUMBERMAN_LIBRARY_NUMBER_BASE + 2,
-    .library_flags = NUMBERMAN_LIBRARY_FLAGS,
+    .library_number = LIBRARY_NUMBER_BASE + 2,
+    .library_flags = LIBRARY_FLAGS,
     .library_lock_on_type = 0x00,
     .alphabetical_sort = 0,
     .power = 90,
-    .library_sort_order = NUMBERMAN_LIBRARY_SORT_BASE + 2,
+    .library_sort_order = LIBRARY_SORT_BASE + 2,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = NUMBERMAN_ICON,
+    .icon = ICON,
     .image = numberman_image,
     .palette = numberman_palette_sp,
 };
 
-static const uint8_t ACTIVE_STATE = 4;
-static const uint8_t DESTROY_STATE = 8;
-static const uint8_t APPEAR_PHASE = 0;
-static const uint8_t WAIT_PHASE = 4;
-static const uint8_t THROW_PHASE = 8;
-static const uint8_t WAIT_FOR_DIE_PHASE = 12;
-static const uint8_t EXIT_PHASE = 16;
-static const uint8_t FLIGHT_PHASE = 0;
-static const uint8_t BOUNCE_PHASE = 4;
-static const uint8_t ROLL_PHASE = 8;
-static const uint8_t EXPLODE_PHASE = 12;
-static const uint8_t CONTACT_PHASE = 16;
+enum ActorPhase {
+    ACTOR_PHASE_APPEAR,
+    ACTOR_PHASE_WAIT = 4,
+    ACTOR_PHASE_THROW = 8,
+    ACTOR_PHASE_WAIT_FOR_DIE = 12,
+    ACTOR_PHASE_EXIT = 16,
+};
+
+enum DiePhase {
+    DIE_PHASE_FLIGHT,
+    DIE_PHASE_BOUNCE = 4,
+    DIE_PHASE_ROLL = 8,
+    DIE_PHASE_EXPLODE = 12,
+    DIE_PHASE_CONTACT = 16,
+};
+
+enum UpdateStep {
+    UPDATE_STEP_INIT,
+    UPDATE_STEP_ACTIVE = 4,
+};
 static const uint16_t APPEAR_FRAMES = 4;
 static const uint16_t WAIT_FRAMES = 40;
 static const uint16_t THROW_FRAMES = 10;
@@ -202,34 +210,34 @@ static const uint8_t DIE_ROLLS[16] = {
     4, 4, 5, 4, 5, 5, 6, 6,
 };
 
-struct NumbermanActorWork {
+struct ActorWork {
     uint8_t die_active;
 };
 
 static void actor_appear(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == UPDATE_STEP_INIT) {
         set_animation(self, 3);
         exe6_sound_req(0x94);
         self->timer = APPEAR_FRAMES;
-        self->substate = 4;
+        self->substate = UPDATE_STEP_ACTIVE;
     }
 
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     if (decrement_timer(&self->timer) <= 0) {
-        set_phase(self, WAIT_PHASE);
+        set_phase(self, ACTOR_PHASE_WAIT);
     }
 }
 
 static void actor_wait(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == UPDATE_STEP_INIT) {
         set_animation(self, 0);
         self->timer = WAIT_FRAMES;
-        self->substate = 4;
+        self->substate = UPDATE_STEP_ACTIVE;
     }
     if (decrement_timer(&self->timer) <= 0) {
-        set_phase(self, THROW_PHASE);
+        set_phase(self, ACTOR_PHASE_THROW);
     }
 }
 
@@ -247,8 +255,7 @@ static uint32_t multiply_attack(uint32_t attack, uint32_t multiplier)
 
 static void spawn_die(Exe6Obj *actor)
 {
-    struct NumbermanActorWork *work =
-        (struct NumbermanActorWork *)actor->work;
+    struct ActorWork *work = (struct ActorWork *)actor->work;
     int32_t direction = (int32_t)exe6_calc_pl_em_dir_spd_for(actor);
     uint32_t target_x = (uint32_t)(
         (int32_t)actor->block_x + direction * (int32_t)DIE_DISTANCE
@@ -291,59 +298,58 @@ static void spawn_die(Exe6Obj *actor)
 
 static void actor_throw(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == UPDATE_STEP_INIT) {
         set_animation(self, 6);
         exe6_sound_req(0xB2);
         self->timer = THROW_FRAMES;
-        self->substate = 4;
+        self->substate = UPDATE_STEP_ACTIVE;
     }
     if (decrement_timer(&self->timer) >= 0) {
         return;
     }
 
     spawn_die(self);
-    set_phase(self, WAIT_FOR_DIE_PHASE);
+    set_phase(self, ACTOR_PHASE_WAIT_FOR_DIE);
 }
 
 static void actor_wait_for_die(Exe6Obj *self)
 {
-    struct NumbermanActorWork *work =
-        (struct NumbermanActorWork *)self->work;
+    struct ActorWork *work = (struct ActorWork *)self->work;
     if (work->die_active != 0) {
         return;
     }
-    if (self->substate == 0) {
+    if (self->substate == UPDATE_STEP_INIT) {
         self->timer = AFTER_ROLL_FRAMES;
-        self->substate = 4;
+        self->substate = UPDATE_STEP_ACTIVE;
         return;
     }
     if (decrement_timer(&self->timer) < 0) {
-        set_phase(self, EXIT_PHASE);
+        set_phase(self, ACTOR_PHASE_EXIT);
     }
 }
 
 static void actor_exit(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == UPDATE_STEP_INIT) {
         set_animation(self, 4);
         self->timer = EXIT_FRAMES;
-        self->substate = 4;
+        self->substate = UPDATE_STEP_ACTIVE;
     }
     if (decrement_timer(&self->timer) <= 0) {
         self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
-        self->state_word = DESTROY_STATE;
+        self->state_word = EXE6_OBJECT_STATE_DESTROY;
     }
 }
 
 static void actor_update(Exe6Obj *self)
 {
-    if (self->phase == APPEAR_PHASE) {
+    if (self->phase == ACTOR_PHASE_APPEAR) {
         actor_appear(self);
-    } else if (self->phase == WAIT_PHASE) {
+    } else if (self->phase == ACTOR_PHASE_WAIT) {
         actor_wait(self);
-    } else if (self->phase == THROW_PHASE) {
+    } else if (self->phase == ACTOR_PHASE_THROW) {
         actor_throw(self);
-    } else if (self->phase == WAIT_FOR_DIE_PHASE) {
+    } else if (self->phase == ACTOR_PHASE_WAIT_FOR_DIE) {
         actor_wait_for_die(self);
     } else {
         actor_exit(self);
@@ -365,8 +371,8 @@ static void actor_init(Exe6Obj *self)
     self->z = 0;
     exe6_obj_flip_set(exe6_enemy_flip_check());
     exe6_obj_prio_set(EXE6_OBJ_PRIORITY_BATTLE);
-    self->state_word = ACTIVE_STATE;
-    set_phase(self, APPEAR_PHASE);
+    self->state_word = EXE6_OBJECT_STATE_ACTIVE;
+    set_phase(self, ACTOR_PHASE_APPEAR);
 }
 
 static void die_finish(Exe6Obj *self)
@@ -380,8 +386,8 @@ static void die_begin_bounce(Exe6Obj *self)
     self->block_y = self->target_block_y;
     exe6_block_to_pos();
     self->z = 0;
-    self->phase = BOUNCE_PHASE;
-    self->substate = 0;
+    self->phase = DIE_PHASE_BOUNCE;
+    self->substate = UPDATE_STEP_INIT;
 }
 
 static void die_leave_field(Exe6Obj *self)
@@ -391,7 +397,7 @@ static void die_leave_field(Exe6Obj *self)
     if (completion != NULL) {
         *completion = 0;
     }
-    self->state_word = DESTROY_STATE;
+    self->state_word = EXE6_OBJECT_STATE_DESTROY;
 }
 
 static bool object_is_on_die_panel(Exe6Obj *self, Exe6Obj *target)
@@ -530,7 +536,7 @@ static void die_explode(Exe6Obj *self)
     if (completion != NULL) {
         *completion = 0;
     }
-    self->state_word = DESTROY_STATE;
+    self->state_word = EXE6_OBJECT_STATE_DESTROY;
 }
 
 static void die_contact_explode(Exe6Obj *self)
@@ -542,38 +548,38 @@ static void die_contact_explode(Exe6Obj *self)
     if (completion != NULL) {
         *completion = 0;
     }
-    self->state_word = DESTROY_STATE;
+    self->state_word = EXE6_OBJECT_STATE_DESTROY;
 }
 
 static void die_bounce(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == UPDATE_STEP_INIT) {
         self->velocity_z = DIE_BOUNCE_Z_VELOCITY;
         exe6_sound_req(0x115);
-        self->substate = 4;
+        self->substate = UPDATE_STEP_ACTIVE;
     }
 
     self->velocity_z += DIE_GRAVITY;
     self->z += self->velocity_z;
     if (self->z <= 0) {
         self->z = 0;
-        self->phase = ROLL_PHASE;
-        self->substate = 0;
+        self->phase = DIE_PHASE_ROLL;
+        self->substate = UPDATE_STEP_INIT;
     }
 }
 
 static void die_show_roll(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == UPDATE_STEP_INIT) {
         set_animation(self, (uint8_t)(self->variant - 1u));
         self->timer = ROLL_FRAMES;
-        self->substate = 4;
+        self->substate = UPDATE_STEP_ACTIVE;
     }
 
     if (decrement_timer(&self->timer) < 0) {
         exe6_obj_flash_reset();
-        self->phase = EXPLODE_PHASE;
-        self->substate = 0;
+        self->phase = DIE_PHASE_EXPLODE;
+        self->substate = UPDATE_STEP_INIT;
         return;
     }
     exe6_obj_flash_reset();
@@ -584,18 +590,18 @@ static void die_show_roll(Exe6Obj *self)
 
 static void die_update(Exe6Obj *self)
 {
-    if (self->phase == FLIGHT_PHASE) {
+    if (self->phase == DIE_PHASE_FLIGHT) {
         die_flight(self);
-        if (self->state == ACTIVE_STATE
+        if (self->state == EXE6_OBJECT_STATE_ACTIVE
             && self->z < DIE_CONTACT_HEIGHT
             && die_lands_on_target(self)) {
-            self->phase = CONTACT_PHASE;
+            self->phase = DIE_PHASE_CONTACT;
         }
-    } else if (self->phase == BOUNCE_PHASE) {
+    } else if (self->phase == DIE_PHASE_BOUNCE) {
         die_bounce(self);
-    } else if (self->phase == ROLL_PHASE) {
+    } else if (self->phase == DIE_PHASE_ROLL) {
         die_show_roll(self);
-    } else if (self->phase == EXPLODE_PHASE) {
+    } else if (self->phase == DIE_PHASE_EXPLODE) {
         die_explode(self);
     } else {
         die_contact_explode(self);
@@ -615,18 +621,18 @@ static void die_init(Exe6Obj *self)
     set_animation(self, 6);
     exe6_obj_prio_set(DIE_PRIORITY);
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
-    self->state_word = ACTIVE_STATE;
+    self->state_word = EXE6_OBJECT_STATE_ACTIVE;
     self->aux_timer = FLIGHT_FRAMES;
-    self->phase = FLIGHT_PHASE;
-    self->substate = 4;
+    self->phase = DIE_PHASE_FLIGHT;
+    self->substate = UPDATE_STEP_ACTIVE;
     die_update(self);
 }
 
 BN67_SHELL(numberman_die_main)
 {
-    if (self->state == 0) {
+    if (self->state == EXE6_OBJECT_STATE_INIT) {
         die_init(self);
-    } else if (self->state == ACTIVE_STATE) {
+    } else if (self->state == EXE6_OBJECT_STATE_ACTIVE) {
         die_update(self);
     } else {
         die_finish(self);
@@ -635,9 +641,9 @@ BN67_SHELL(numberman_die_main)
 
 BN67_ENEMY(numberman_actor_main)
 {
-    if (self->state == 0) {
+    if (self->state == EXE6_OBJECT_STATE_INIT) {
         actor_init(self);
-    } else if (self->state == ACTIVE_STATE) {
+    } else if (self->state == EXE6_OBJECT_STATE_ACTIVE) {
         actor_update(self);
     } else {
         actor_destroy(self);

@@ -54,11 +54,18 @@ static const uint32_t WHITE_FLASH = 0x00006318;
 static const uint16_t IMPACT_FRAMES = 0x46;
 static const uint16_t RESTORED_FRAMES = 0x14;
 
-struct FolderBackControllerWork {
+enum EffectStep {
+  EFFECT_STEP_IMPACT,
+  EFFECT_STEP_FLASH = 4,
+  EFFECT_STEP_RESTORE = 8,
+  EFFECT_STEP_WAIT = 12,
+};
+
+struct ControllerWork {
   uint16_t held_custom_gauge;
 };
 
-_Static_assert(sizeof(struct FolderBackControllerWork) <=
+_Static_assert(sizeof(struct ControllerWork) <=
                    sizeof(((Exe6Obj *)0)->work),
                "FolderBack controller work exceeds object work storage");
 
@@ -141,14 +148,12 @@ static void impact(void) {
 }
 
 static void hold_local_custom_gauge(Exe6Obj *self) {
-  struct FolderBackControllerWork *work =
-      (struct FolderBackControllerWork *)self->work;
+  struct ControllerWork *work = (struct ControllerWork *)self->work;
   exe6_cockpit_set_custom_gauge_value(work->held_custom_gauge);
 }
 
 static void fill_local_custom_gauge(Exe6Obj *self) {
-  struct FolderBackControllerWork *work =
-      (struct FolderBackControllerWork *)self->work;
+  struct ControllerWork *work = (struct ControllerWork *)self->work;
   work->held_custom_gauge = FULL_GAUGE;
   exe6_cockpit_set_custom_gauge_value(FULL_GAUGE);
   exe6_sound_req(0x8F);
@@ -198,23 +203,23 @@ static void restore_local_folder(Exe6Obj *self) {
 
 static bool effect_update(Exe6Obj *self) {
   switch (self->phase_timer_low) {
-  case 0:
+  case EFFECT_STEP_IMPACT:
     self->timer = IMPACT_FRAMES;
-    self->phase_timer_low = 4;
+    self->phase_timer_low = EFFECT_STEP_FLASH;
     impact();
     apply_white_flash(self);
     break;
-  case 4:
+  case EFFECT_STEP_FLASH:
     if (--self->timer == 0) {
       restore_palette();
-      self->phase_timer_low = 8;
+      self->phase_timer_low = EFFECT_STEP_RESTORE;
     } else {
       apply_white_flash(self);
     }
     break;
-  case 8:
+  case EFFECT_STEP_RESTORE:
     self->timer = RESTORED_FRAMES;
-    self->phase_timer_low = 0x0C;
+    self->phase_timer_low = EFFECT_STEP_WAIT;
     fill_local_custom_gauge(self);
     restore_local_folder(self);
     break;
@@ -249,15 +254,14 @@ static void delete_controller(Exe6Obj *self) {
 }
 
 BN67_EFFECT(folderback_controller_main) {
-  struct FolderBackControllerWork *work =
-      (struct FolderBackControllerWork *)self->work;
-  if (self->state == 0) {
+  struct ControllerWork *work = (struct ControllerWork *)self->work;
+  if (self->state == EXE6_OBJECT_STATE_INIT) {
     /* Link battles advance the displayed cockpit gauge directly.  Their
      * operation-work gauge can remain zero even while Custom is charged. */
     work->held_custom_gauge =
         (uint16_t)exe6_cockpit_get_custom_gauge_value();
-    self->state_word = 4;
-  } else if (self->state != 4) {
+    self->state_word = EXE6_OBJECT_STATE_ACTIVE;
+  } else if (self->state != EXE6_OBJECT_STATE_ACTIVE) {
     delete_controller(self);
     return;
   }

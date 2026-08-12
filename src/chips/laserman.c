@@ -27,15 +27,15 @@ BN67_SONG(
 );
 
 #if FALZAR
-#define LASERMAN_ICON ((const uint8_t *)0x0872BE14u)
-#define LASERMAN_LIBRARY_FLAGS 0x01
-#define LASERMAN_LIBRARY_NUMBER_BASE 0x03
-#define LASERMAN_LIBRARY_SORT_BASE 0x00F2
+#define ICON ((const uint8_t *)0x0872BE14u)
+#define LIBRARY_FLAGS 0x01
+#define LIBRARY_NUMBER_BASE 0x03
+#define LIBRARY_SORT_BASE 0x00F2
 #else
-#define LASERMAN_ICON ((const uint8_t *)0x08729D50u)
-#define LASERMAN_LIBRARY_FLAGS 0x00
-#define LASERMAN_LIBRARY_NUMBER_BASE 0x07
-#define LASERMAN_LIBRARY_SORT_BASE 0x00E3
+#define ICON ((const uint8_t *)0x08729D50u)
+#define LIBRARY_FLAGS 0x00
+#define LIBRARY_NUMBER_BASE 0x07
+#define LIBRARY_SORT_BASE 0x00E3
 #endif
 
 BN67_CHIP_RECORD(0x0e3) {
@@ -64,15 +64,15 @@ BN67_CHIP_RECORD(0x0e3) {
         .object_spawn = {0},
         .delay = 0,
     },
-    .library_number = LASERMAN_LIBRARY_NUMBER_BASE,
-    .library_flags = LASERMAN_LIBRARY_FLAGS,
+    .library_number = LIBRARY_NUMBER_BASE,
+    .library_flags = LIBRARY_FLAGS,
     .library_lock_on_type = 0x00,
     .alphabetical_sort = 0,
     .power = 100,
-    .library_sort_order = LASERMAN_LIBRARY_SORT_BASE,
+    .library_sort_order = LIBRARY_SORT_BASE,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = LASERMAN_ICON,
+    .icon = ICON,
     .image = laserman_image,
     .palette = laserman_palette_base,
 };
@@ -103,15 +103,15 @@ BN67_CHIP_RECORD(0x0e4) {
         .object_spawn = { .variant = 3 },
         .delay = 0,
     },
-    .library_number = LASERMAN_LIBRARY_NUMBER_BASE + 1,
-    .library_flags = LASERMAN_LIBRARY_FLAGS,
+    .library_number = LIBRARY_NUMBER_BASE + 1,
+    .library_flags = LIBRARY_FLAGS,
     .library_lock_on_type = 0x00,
     .alphabetical_sort = 0,
     .power = 150,
-    .library_sort_order = LASERMAN_LIBRARY_SORT_BASE + 1,
+    .library_sort_order = LIBRARY_SORT_BASE + 1,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = LASERMAN_ICON,
+    .icon = ICON,
     .image = laserman_image,
     .palette = laserman_palette_ex,
 };
@@ -142,21 +142,19 @@ BN67_CHIP_RECORD(0x0e5) {
         .object_spawn = { .variant = 4 },
         .delay = 0,
     },
-    .library_number = LASERMAN_LIBRARY_NUMBER_BASE + 2,
-    .library_flags = LASERMAN_LIBRARY_FLAGS,
+    .library_number = LIBRARY_NUMBER_BASE + 2,
+    .library_flags = LIBRARY_FLAGS,
     .library_lock_on_type = 0x00,
     .alphabetical_sort = 0,
     .power = 200,
-    .library_sort_order = LASERMAN_LIBRARY_SORT_BASE + 2,
+    .library_sort_order = LIBRARY_SORT_BASE + 2,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = LASERMAN_ICON,
+    .icon = ICON,
     .image = laserman_image,
     .palette = laserman_palette_sp,
 };
 
-static const uint8_t ACTIVE_STATE = 4;
-static const uint8_t DESTROY_STATE = 8;
 static const uint8_t HIT_VISUAL = 25;
 static const uint16_t WAIT_FRAMES = 20;
 static const uint16_t RAISE_FRAMES = 30;
@@ -165,13 +163,36 @@ static const uint16_t BEAM_FRAMES = 60;
 static const Exe6HitType HIT_SELECTOR =
     EXE6_HIT_TYPE_STANDARD_TARGET;
 
-struct LasermanHitWork {
+enum ActorPhase {
+    ACTOR_PHASE_WAIT,
+    ACTOR_PHASE_ATTACK = 4,
+};
+
+enum ActorAttackStep {
+    ACTOR_ATTACK_STEP_INIT,
+    ACTOR_ATTACK_STEP_RAISE = 4,
+    ACTOR_ATTACK_STEP_FIRE = 8,
+    ACTOR_ATTACK_STEP_LOWER = 12,
+};
+
+enum BeamPhase {
+    BEAM_PHASE_FORM,
+    BEAM_PHASE_ACTIVE = 4,
+    BEAM_PHASE_DISAPPEAR = 8,
+};
+
+enum ChargeShotRestoreState {
+    CHARGE_SHOT_RESTORE_INACTIVE,
+    CHARGE_SHOT_RESTORE_ACTIVE,
+};
+
+struct HitWork {
     uint32_t reserved[5];
     uint32_t command_stream;             // +0x74
 };
 
 _Static_assert(
-    offsetof(struct LasermanHitWork, command_stream) == 0x14,
+    offsetof(struct HitWork, command_stream) == 0x14,
     "LaserMan hit work layout"
 );
 
@@ -271,39 +292,39 @@ static void spawn_laser(Exe6Obj *actor)
 
 static void actor_attack(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == ACTOR_ATTACK_STEP_INIT) {
         set_animation_immediate(self, 2);
         self->timer = RAISE_FRAMES;
-        self->substate = 4;
+        self->substate = ACTOR_ATTACK_STEP_RAISE;
         return;
     }
-    if (self->substate == 4) {
+    if (self->substate == ACTOR_ATTACK_STEP_RAISE) {
         read_command(self);
         if (decrement_timer(&self->timer) < 0) {
             set_animation_immediate(self, 3);
             spawn_laser(self);
             exe6_sound_req(BN67_SONG_ID(laserman_fire_song));
             self->timer = LASER_FRAMES;
-            self->substate = 8;
+            self->substate = ACTOR_ATTACK_STEP_FIRE;
         }
         return;
     }
-    if (self->substate == 8) {
+    if (self->substate == ACTOR_ATTACK_STEP_FIRE) {
         if (decrement_timer(&self->timer) < 0) {
             set_animation_immediate(self, 4);
-            self->substate = 12;
+            self->substate = ACTOR_ATTACK_STEP_LOWER;
         }
         return;
     }
     if ((exe6_obj_seq_info_get()
             & EXE6_ANIMATION_FRAME_FLAG_END) != 0) {
-        self->state_word = DESTROY_STATE;
+        self->state_word = EXE6_OBJECT_STATE_DESTROY;
     }
 }
 
 static void actor_update(Exe6Obj *self)
 {
-    if (self->phase == 0) {
+    if (self->phase == ACTOR_PHASE_WAIT) {
         if (decrement_timer(&self->timer) >= 0) {
             return;
         }
@@ -313,11 +334,11 @@ static void actor_update(Exe6Obj *self)
                 EXE6_BLOCK_FLAG_SOLID,
                 0
             ) == 0) {
-            self->state_word = DESTROY_STATE;
+            self->state_word = EXE6_OBJECT_STATE_DESTROY;
             return;
         }
-        self->phase = 4;
-        self->substate = 0;
+        self->phase = ACTOR_PHASE_ATTACK;
+        self->substate = ACTOR_ATTACK_STEP_INIT;
         return;
     }
     actor_attack(self);
@@ -339,9 +360,9 @@ static void actor_init(Exe6Obj *self)
     exe6_obj_clt_set(0);
     exe6_obj_prio_set(EXE6_OBJ_PRIORITY_BATTLE);
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
-    self->state_word = ACTIVE_STATE;
-    self->phase = 0;
-    self->substate = 0;
+    self->state_word = EXE6_OBJECT_STATE_ACTIVE;
+    self->phase = ACTOR_PHASE_WAIT;
+    self->substate = ACTOR_ATTACK_STEP_INIT;
     self->timer = WAIT_FRAMES;
     exe6_sound_req(BN67_SONG_ID(common_navi_summon_song));
 }
@@ -363,8 +384,7 @@ static void spawn_hit(
     if (hit == NULL) {
         return;
     }
-    struct LasermanHitWork *work =
-        (struct LasermanHitWork *)hit->work;
+    struct HitWork *work = (struct HitWork *)hit->work;
     hit->block_x = (uint8_t)block_x;
     hit->block_y = (uint8_t)block_y;
     hit->animation_word = command;
@@ -372,7 +392,7 @@ static void spawn_hit(
     hit->owner_word = beam->owner_word;
     hit->attack = command == COMMAND_MARKER ? beam->attack : 0;
     if (command != COMMAND_MARKER) {
-        hit->phase_timer_low = 0;
+        hit->phase_timer_low = CHARGE_SHOT_RESTORE_INACTIVE;
     }
     hit->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
 }
@@ -404,28 +424,28 @@ static void beam_command_tick(Exe6Obj *self)
 
 static void beam_update(Exe6Obj *self)
 {
-    if (self->phase == 0) {
+    if (self->phase == BEAM_PHASE_FORM) {
         if ((exe6_obj_seq_info_get()
                 & EXE6_ANIMATION_FRAME_FLAG_END) != 0) {
             set_animation_immediate(self, 18);
             self->animation_state = 0;
             self->removal_state = 0;
             self->timer = BEAM_FRAMES;
-            self->phase = 4;
+            self->phase = BEAM_PHASE_ACTIVE;
         }
         return;
     }
-    if (self->phase == 4) {
+    if (self->phase == BEAM_PHASE_ACTIVE) {
         beam_command_tick(self);
         if (decrement_timer(&self->timer) < 0) {
             set_animation_immediate(self, 19);
-            self->phase = 8;
+            self->phase = BEAM_PHASE_DISAPPEAR;
         }
         return;
     }
     if ((exe6_obj_seq_info_get()
             & EXE6_ANIMATION_FRAME_FLAG_END) != 0) {
-        self->state_word = DESTROY_STATE;
+        self->state_word = EXE6_OBJECT_STATE_DESTROY;
     }
 }
 
@@ -449,8 +469,8 @@ static void beam_init(Exe6Obj *self)
     exe6_obj_prio_set(EXE6_OBJ_PRIORITY_BATTLE);
     exe6_obj_col_efc_set(BEAM_SCALES[self->variant]);
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
-    self->state_word = ACTIVE_STATE;
-    self->phase = 0;
+    self->state_word = EXE6_OBJECT_STATE_ACTIVE;
+    self->phase = BEAM_PHASE_FORM;
 }
 
 static void apply_command_effect(Exe6Obj *hit, uint16_t command)
@@ -499,7 +519,7 @@ static void apply_command_effect(Exe6Obj *hit, uint16_t command)
         if (player != NULL) {
             Exe6PlayerRuntime *runtime = player->runtime_data;
             if (runtime->active_power_attack == current) {
-                hit->phase_timer_low = 1;
+                hit->phase_timer_low = CHARGE_SHOT_RESTORE_ACTIVE;
             }
         }
         exe6_navi_status_set(target_side, 4, 0);
@@ -530,7 +550,7 @@ static void refresh_target_player(Exe6Obj *hit, uint16_t command)
     Exe6PlayerRuntime *runtime = player->runtime_data;
     enum CommandEffect effect = (enum CommandEffect)(uint8_t)command;
     if (effect == COMMAND_EFFECT_RESTORE_CHARGE_SHOT) {
-        if (hit->phase_timer_low != 0) {
+        if (hit->phase_timer_low == CHARGE_SHOT_RESTORE_ACTIVE) {
             runtime->active_power_attack =
                 (uint8_t)exe6_navi_status_get(target_side, 5);
         }
@@ -562,8 +582,7 @@ static void refresh_target_player(Exe6Obj *hit, uint16_t command)
 
 static void apply_selected_command(Exe6Obj *hit)
 {
-    struct LasermanHitWork *work =
-        (struct LasermanHitWork *)hit->work;
+    struct HitWork *work = (struct HitWork *)hit->work;
     const uint16_t *stream = COMMAND_STREAMS[work->command_stream];
     for (size_t index = 0;; ++index) {
         uint16_t command = stream[index];
@@ -598,7 +617,7 @@ static bool hit_init(Exe6Obj *self)
     );
     exe6_battle_hit_hit_mark_set(EXE6_HIT_EFFECT_NORMAL);
     exe6_battle_hit_set(0, self->variant);
-    self->state_word = ACTIVE_STATE;
+    self->state_word = EXE6_OBJECT_STATE_ACTIVE;
     return true;
 }
 
@@ -623,9 +642,9 @@ static void hit_update(Exe6Obj *self)
 
 BN67_SHELL(laserman_hit_main)
 {
-    if (self->state == 0) {
+    if (self->state == EXE6_OBJECT_STATE_INIT) {
         (void)hit_init(self);
-    } else if (self->state == ACTIVE_STATE) {
+    } else if (self->state == EXE6_OBJECT_STATE_ACTIVE) {
         hit_update(self);
     } else {
         exe6_obj_move_delete();
@@ -634,9 +653,9 @@ BN67_SHELL(laserman_hit_main)
 
 BN67_ENEMY(laserman_beam_main)
 {
-    if (self->state == 0) {
+    if (self->state == EXE6_OBJECT_STATE_INIT) {
         beam_init(self);
-    } else if (self->state == ACTIVE_STATE) {
+    } else if (self->state == EXE6_OBJECT_STATE_ACTIVE) {
         beam_update(self);
     } else {
         exe6_obj_move_delete();
@@ -647,9 +666,9 @@ BN67_ENEMY(laserman_beam_main)
 
 BN67_ENEMY(laserman_actor_main)
 {
-    if (self->state == 0) {
+    if (self->state == EXE6_OBJECT_STATE_INIT) {
         actor_init(self);
-    } else if (self->state == ACTIVE_STATE) {
+    } else if (self->state == EXE6_OBJECT_STATE_ACTIVE) {
         actor_update(self);
     } else {
         actor_destroy(self);

@@ -11,18 +11,18 @@ BN67_INCBIN(deathphoenix_palette, "build/deathphoenix-palette.bin");
 #endif
 
 #if FALZAR
-#define DEATHPHOENIX_EFFECT_FLAGS                                           \
+#define EFFECT_FLAGS                                                        \
     (EXE6_CHIP_EFFECT_FLAG_DIMMING | EXE6_CHIP_EFFECT_FLAG_ATTACK |         \
      EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE)
-#define DEATHPHOENIX_ICON deathphoenix_icon
-#define DEATHPHOENIX_IMAGE deathphoenix_image
-#define DEATHPHOENIX_PALETTE deathphoenix_palette
+#define ICON deathphoenix_icon
+#define IMAGE deathphoenix_image
+#define PALETTE deathphoenix_palette
 #else
-#define DEATHPHOENIX_EFFECT_FLAGS                                        \
+#define EFFECT_FLAGS                                                     \
     (EXE6_CHIP_EFFECT_FLAG_DIMMING | EXE6_CHIP_EFFECT_FLAG_ATTACK)
-#define DEATHPHOENIX_ICON ((const uint8_t *)0x0872A3D0u)
-#define DEATHPHOENIX_IMAGE ((const uint8_t *)0x0871EFF0u)
-#define DEATHPHOENIX_PALETTE ((const uint8_t *)0x087234B0u)
+#define ICON ((const uint8_t *)0x0872A3D0u)
+#define IMAGE ((const uint8_t *)0x0871EFF0u)
+#define PALETTE ((const uint8_t *)0x087234B0u)
 #endif
 
 BN67_CHIP_RECORD(0x134) {
@@ -38,7 +38,7 @@ BN67_CHIP_RECORD(0x134) {
     .chip_class = EXE6_CHIP_CLASS_GIGA,
     .mb = 93,
     .behavior = {
-        .effect_flags = DEATHPHOENIX_EFFECT_FLAGS,
+        .effect_flags = EFFECT_FLAGS,
         .counter_settings = 0x94,
         .family = BN67_ATTACK_FAMILY(deathphoenix_attack_main),
         .subfamily = BN67_ATTACK_SUBFAMILY(deathphoenix_attack_main),
@@ -56,23 +56,48 @@ BN67_CHIP_RECORD(0x134) {
     .library_sort_order = 0x0134,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = DEATHPHOENIX_ICON,
-    .image = DEATHPHOENIX_IMAGE,
-    .palette = DEATHPHOENIX_PALETTE,
+    .icon = ICON,
+    .image = IMAGE,
+    .palette = PALETTE,
 };
 
-static const uint8_t ACTIVE_STATE = 4;
-static const uint8_t DESTROY_STATE = 8;
-static const uint8_t APPEAR_PHASE = 4;
-static const uint8_t WAIT_BEFORE_PHASE = 8;
-static const uint8_t STRIKES_PHASE = 12;
-static const uint8_t WAIT_AFTER_PHASE = 16;
-static const uint8_t DISAPPEAR_PHASE = 20;
-static const uint8_t RECYCLE_PHASE = 24;
-static const uint8_t RECYCLE_INVOKE_STEP = 4;
-static const uint8_t RECYCLE_WAIT_STEP = 8;
-static const uint8_t RECYCLE_CLEANUP_STEP = 12;
-static const uint8_t STRIKE_ATTACK_PHASE = 8;
+enum ActorPhase {
+    ACTOR_PHASE_INIT,
+    ACTOR_PHASE_APPEAR = 4,
+    ACTOR_PHASE_WAIT_BEFORE = 8,
+    ACTOR_PHASE_STRIKES = 12,
+    ACTOR_PHASE_WAIT_AFTER = 16,
+    ACTOR_PHASE_DISAPPEAR = 20,
+    ACTOR_PHASE_RECYCLE = 24,
+};
+
+enum UpdateStep {
+    UPDATE_STEP_INIT,
+    UPDATE_STEP_ACTIVE = 4,
+};
+
+enum RecycleStep {
+    RECYCLE_STEP_INTRO,
+    RECYCLE_STEP_INVOKE = 4,
+    RECYCLE_STEP_WAIT = 8,
+    RECYCLE_STEP_CLEANUP = 12,
+};
+
+enum StrikePhase {
+    STRIKE_PHASE_INIT,
+    STRIKE_PHASE_LEAD_IN = 4,
+    STRIKE_PHASE_ATTACK = 8,
+};
+
+enum PulseStep {
+    PULSE_STEP_INIT,
+    PULSE_STEP_ACTIVE,
+};
+
+enum FlamePhase {
+    FLAME_PHASE_DELAY,
+    FLAME_PHASE_MOTION = 4,
+};
 static const uint8_t STRIKE_COUNT = 12;
 static const uint8_t PULSES_PER_STRIKE = 10;
 static const uint16_t APPEAR_FRAMES = 16;
@@ -117,7 +142,7 @@ struct SavedNaviFields {
     uint32_t properties;
 };
 
-struct DeathphoenixWork {
+struct ActorWork {
     uint32_t pattern_row;                // +0x60
     uint8_t recycle_completion;          // +0x64
     uint8_t reserved_65[3];
@@ -127,14 +152,14 @@ struct DeathphoenixWork {
 };
 
 _Static_assert(
-    offsetof(struct DeathphoenixWork, pattern_column) == 0x18,
+    offsetof(struct ActorWork, pattern_column) == 0x18,
     "DeathPhoenix work layout"
 );
 
 static void finish(Exe6Obj *self)
 {
     *self->completion = 0;
-    self->state_word = DESTROY_STATE;
+    self->state_word = EXE6_OBJECT_STATE_DESTROY;
 }
 
 static void build_block_list(
@@ -172,8 +197,7 @@ static void build_block_list(
 
 static void actor_init(Exe6Obj *self)
 {
-    struct DeathphoenixWork *work =
-        (struct DeathphoenixWork *)self->work;
+    struct ActorWork *work = (struct ActorWork *)self->work;
     exe6_battle_obj_char_init(
         0x00010000u
         | (BN67_SPRITE_GROUP(deathphoenix_battle_sprite) << 8)
@@ -191,22 +215,22 @@ static void actor_init(Exe6Obj *self)
     build_block_list(self, 1, work->blocks[0]);
     build_block_list(self, 2, work->blocks[1]);
     build_block_list(self, 3, work->blocks[2]);
-    self->state_word = ACTIVE_STATE;
+    self->state_word = EXE6_OBJECT_STATE_ACTIVE;
 }
 
 static void begin(Exe6Obj *self)
 {
     (void)exe6_set_shl03_ev(1, 1, 0, 0, INTRO_PROPERTIES, 0, 0);
-    set_phase(self, APPEAR_PHASE);
+    set_phase(self, ACTOR_PHASE_APPEAR);
 }
 
 static void appear(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == UPDATE_STEP_INIT) {
         self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
         exe6_sound_req(0x94);
         self->timer = 0;
-        self->substate = 4;
+        self->substate = UPDATE_STEP_ACTIVE;
     }
 
     uint32_t blend = (uint32_t)self->timer + 1u;
@@ -216,25 +240,24 @@ static void appear(Exe6Obj *self)
         return;
     }
     exe6_obj_bld_reset();
-    set_phase(self, WAIT_BEFORE_PHASE);
+    set_phase(self, ACTOR_PHASE_WAIT_BEFORE);
 }
 
 static void wait_before_strikes(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == UPDATE_STEP_INIT) {
         self->timer = BEFORE_STRIKES_FRAMES;
-        self->substate = 4;
+        self->substate = UPDATE_STEP_ACTIVE;
     }
     if (decrement_timer(&self->timer) > 0) {
         return;
     }
     self->timer = 0;
     self->aux_timer = 0;
-    struct DeathphoenixWork *work =
-        (struct DeathphoenixWork *)self->work;
+    struct ActorWork *work = (struct ActorWork *)self->work;
     work->pattern_row = 0;
     work->pattern_column = 0;
-    set_phase(self, STRIKES_PHASE);
+    set_phase(self, ACTOR_PHASE_STRIKES);
 }
 
 static void strike_spawn(
@@ -279,8 +302,7 @@ static void spawn_strike_for_block(
 
 static void strikes(Exe6Obj *self)
 {
-    struct DeathphoenixWork *work =
-        (struct DeathphoenixWork *)self->work;
+    struct ActorWork *work = (struct ActorWork *)self->work;
     if (decrement_timer(&self->timer) > 0) {
         return;
     }
@@ -301,18 +323,18 @@ static void strikes(Exe6Obj *self)
         ++work->pattern_column;
     }
     if (++self->aux_timer >= STRIKE_COUNT) {
-        set_phase(self, WAIT_AFTER_PHASE);
+        set_phase(self, ACTOR_PHASE_WAIT_AFTER);
     }
 }
 
 static void wait_after_strikes(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == UPDATE_STEP_INIT) {
         self->timer = AFTER_STRIKES_FRAMES;
-        self->substate = 4;
+        self->substate = UPDATE_STEP_ACTIVE;
     }
     if (decrement_timer(&self->timer) <= 0) {
-        set_phase(self, DISAPPEAR_PHASE);
+        set_phase(self, ACTOR_PHASE_DISAPPEAR);
     }
 }
 
@@ -325,10 +347,10 @@ static bool saved_navi_is_available(void)
 
 static void disappear(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == UPDATE_STEP_INIT) {
         self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
         self->timer = APPEAR_FRAMES;
-        self->substate = 4;
+        self->substate = UPDATE_STEP_ACTIVE;
     }
     if (decrement_timer(&self->timer) >= 0) {
         exe6_obj_bld_set(self->timer);
@@ -338,7 +360,7 @@ static void disappear(Exe6Obj *self)
     self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
     exe6_obj_bld_reset();
     if (self->parent->hp != 0 && saved_navi_is_available()) {
-        set_phase(self, RECYCLE_PHASE);
+        set_phase(self, ACTOR_PHASE_RECYCLE);
     } else {
         finish(self);
     }
@@ -346,22 +368,21 @@ static void disappear(Exe6Obj *self)
 
 static void recycle_intro(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == UPDATE_STEP_INIT) {
         exe6_set_efc0c(self->parent, 1);
         self->timer = RECYCLE_WAIT_FRAMES;
-        self->substate = 4;
+        self->substate = UPDATE_STEP_ACTIVE;
     }
     if (decrement_timer(&self->timer) < 0) {
-        self->phase_timer = RECYCLE_INVOKE_STEP;
+        self->phase_timer = RECYCLE_STEP_INVOKE;
     }
 }
 
 static void recycle_invoke(Exe6Obj *self)
 {
-    struct DeathphoenixWork *work =
-        (struct DeathphoenixWork *)self->work;
+    struct ActorWork *work = (struct ActorWork *)self->work;
     uint8_t *completion = &work->recycle_completion;
-    if (self->substate == 0) {
+    if (self->substate == UPDATE_STEP_INIT) {
         const struct SavedNaviFields *saved =
             (const struct SavedNaviFields *)SAVED_NAVI_ADDRESS;
         const uintptr_t *dispatch = *(const uintptr_t *const *)
@@ -377,31 +398,31 @@ static void recycle_invoke(Exe6Obj *self)
             saved->properties,
             completion
         );
-        self->substate = 4;
+        self->substate = UPDATE_STEP_ACTIVE;
     }
     if (*completion == 0) {
-        self->phase_timer = RECYCLE_WAIT_STEP;
+        self->phase_timer = RECYCLE_STEP_WAIT;
     }
 }
 
 static void recycle_wait(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == UPDATE_STEP_INIT) {
         self->timer = RECYCLE_WAIT_FRAMES;
-        self->substate = 4;
+        self->substate = UPDATE_STEP_ACTIVE;
     }
     if (decrement_timer(&self->timer) < 0) {
-        self->phase_timer = RECYCLE_CLEANUP_STEP;
+        self->phase_timer = RECYCLE_STEP_CLEANUP;
     }
 }
 
 static void recycle_update(Exe6Obj *self)
 {
-    if (self->phase_timer_low == 0) {
+    if (self->phase_timer_low == RECYCLE_STEP_INTRO) {
         recycle_intro(self);
-    } else if (self->phase_timer_low == RECYCLE_INVOKE_STEP) {
+    } else if (self->phase_timer_low == RECYCLE_STEP_INVOKE) {
         recycle_invoke(self);
-    } else if (self->phase_timer_low == RECYCLE_WAIT_STEP) {
+    } else if (self->phase_timer_low == RECYCLE_STEP_WAIT) {
         recycle_wait(self);
     } else {
         finish(self);
@@ -411,22 +432,22 @@ static void recycle_update(Exe6Obj *self)
 static void actor_update(Exe6Obj *self)
 {
     switch (self->phase) {
-    case 0:
+    case ACTOR_PHASE_INIT:
         begin(self);
         break;
-    case APPEAR_PHASE:
+    case ACTOR_PHASE_APPEAR:
         appear(self);
         break;
-    case WAIT_BEFORE_PHASE:
+    case ACTOR_PHASE_WAIT_BEFORE:
         wait_before_strikes(self);
         break;
-    case STRIKES_PHASE:
+    case ACTOR_PHASE_STRIKES:
         strikes(self);
         break;
-    case WAIT_AFTER_PHASE:
+    case ACTOR_PHASE_WAIT_AFTER:
         wait_after_strikes(self);
         break;
-    case DISAPPEAR_PHASE:
+    case ACTOR_PHASE_DISAPPEAR:
         disappear(self);
         break;
     default:
@@ -494,18 +515,18 @@ static void strike_attack(Exe6Obj *self)
         );
     }
 
-    if (self->phase_timer_low == 0) {
-        self->phase_timer_low = 1;
+    if (self->phase_timer_low == PULSE_STEP_INIT) {
+        self->phase_timer_low = PULSE_STEP_ACTIVE;
         flame_spawn(self, self->variant);
         self->timer = PULSE_FRAMES;
     }
     if (decrement_timer(&self->timer) > 0) {
         return;
     }
-    self->phase_timer_low = 0;
+    self->phase_timer_low = PULSE_STEP_INIT;
     if (++self->substate >= PULSES_PER_STRIKE) {
         self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
-        self->state_word = DESTROY_STATE;
+        self->state_word = EXE6_OBJECT_STATE_DESTROY;
     }
 }
 
@@ -522,16 +543,16 @@ static void strike_lead_in(Exe6Obj *self)
         return;
     }
     self->aux_timer = 0;
-    set_phase(self, STRIKE_ATTACK_PHASE);
+    set_phase(self, STRIKE_PHASE_ATTACK);
     exe6_sound_req(0x145);
 }
 
 static void strike_update(Exe6Obj *self)
 {
-    if (self->phase == 0) {
+    if (self->phase == STRIKE_PHASE_INIT) {
         self->timer = STRIKE_LEAD_FRAMES;
-        set_phase(self, 4);
-    } else if (self->phase == 4) {
+        set_phase(self, STRIKE_PHASE_LEAD_IN);
+    } else if (self->phase == STRIKE_PHASE_LEAD_IN) {
         strike_lead_in(self);
     } else {
         strike_attack(self);
@@ -550,14 +571,14 @@ static void strike_init(Exe6Obj *self)
     exe6_block_to_pos();
     self->z = 0;
     exe6_sound_req(0x144);
-    self->state_word = ACTIVE_STATE;
+    self->state_word = EXE6_OBJECT_STATE_ACTIVE;
     strike_update(self);
 }
 
 static void flame_motion(Exe6Obj *self)
 {
-    if (self->phase_timer_low == 0) {
-        self->phase_timer_low = 1;
+    if (self->phase_timer_low == PULSE_STEP_INIT) {
+        self->phase_timer_low = PULSE_STEP_ACTIVE;
         self->variant_word = 0;
         self->timer = FLAME_MOTION_FRAMES;
         self->animation_state_word = 0x0800;
@@ -580,19 +601,19 @@ static void flame_motion(Exe6Obj *self)
     int32_t height = sine[angle >> 8];
     self->z = (height * 20 << 8) + 0x00040000;
     if (decrement_timer(&self->timer) <= 0) {
-        self->state_word = DESTROY_STATE;
+        self->state_word = EXE6_OBJECT_STATE_DESTROY;
     }
 }
 
 static void flame_update(Exe6Obj *self)
 {
-    if (self->phase == 0) {
-        if (self->phase_timer_low == 0) {
-            self->phase_timer_low = 1;
+    if (self->phase == FLAME_PHASE_DELAY) {
+        if (self->phase_timer_low == PULSE_STEP_INIT) {
+            self->phase_timer_low = PULSE_STEP_ACTIVE;
             self->timer = FLAME_DELAY_FRAMES;
         }
         if (decrement_timer(&self->timer) <= 0) {
-            set_phase(self, 4);
+            set_phase(self, FLAME_PHASE_MOTION);
         }
     } else {
         flame_motion(self);
@@ -614,14 +635,14 @@ static void flame_init(Exe6Obj *self)
     exe6_obj_no_shadow();
     exe6_obj_clt_set(0);
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
-    self->state_word = ACTIVE_STATE;
+    self->state_word = EXE6_OBJECT_STATE_ACTIVE;
 }
 
 BN67_EFFECT(deathphoenix_flame_main)
 {
-    if (self->state == 0) {
+    if (self->state == EXE6_OBJECT_STATE_INIT) {
         flame_init(self);
-    } else if (self->state == ACTIVE_STATE) {
+    } else if (self->state == EXE6_OBJECT_STATE_ACTIVE) {
         flame_update(self);
     } else {
         exe6_obj_move_delete();
@@ -631,9 +652,9 @@ BN67_EFFECT(deathphoenix_flame_main)
 
 BN67_EFFECT(deathphoenix_strike_main)
 {
-    if (self->state == 0) {
+    if (self->state == EXE6_OBJECT_STATE_INIT) {
         strike_init(self);
-    } else if (self->state == ACTIVE_STATE) {
+    } else if (self->state == EXE6_OBJECT_STATE_ACTIVE) {
         strike_update(self);
     } else {
         exe6_obj_move_delete();
@@ -643,9 +664,9 @@ BN67_EFFECT(deathphoenix_strike_main)
 
 BN67_ENEMY(deathphoenix_actor_main)
 {
-    if (self->state == 0) {
+    if (self->state == EXE6_OBJECT_STATE_INIT) {
         actor_init(self);
-    } else if (self->state == ACTIVE_STATE) {
+    } else if (self->state == EXE6_OBJECT_STATE_ACTIVE) {
         actor_update(self);
     } else {
         exe6_obj_move_delete();

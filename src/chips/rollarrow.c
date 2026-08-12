@@ -148,6 +148,18 @@ static const uint8_t PROJECTILE_BLOCKS = 8;
 static const Exe6HitType PROJECTILE_HIT_TYPE =
     EXE6_HIT_TYPE_DELETE_ACTIVE_CHIP_ATTACK;
 
+enum ActorPhase {
+    ACTOR_PHASE_WAIT,
+    ACTOR_PHASE_FIRE = 4,
+    ACTOR_PHASE_EXIT = 8,
+};
+
+enum ActorStep {
+    ACTOR_STEP_INIT,
+    ACTOR_STEP_HOLD = 4,
+    ACTOR_STEP_DISAPPEAR = 8,
+};
+
 static void spawn_projectile(Exe6Obj *actor)
 {
     Exe6Obj *projectile = exe6_shl_open(
@@ -177,61 +189,61 @@ static void spawn_projectile(Exe6Obj *actor)
 
 static void actor_wait(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == ACTOR_STEP_INIT) {
         set_animation_immediate(self, 0);
         self->timer = WAIT_FRAMES;
-        self->substate = 4;
+        self->substate = ACTOR_STEP_HOLD;
     }
     if (decrement_timer(&self->timer) < 0) {
-        self->phase = 4;
-        self->substate = 0;
+        self->phase = ACTOR_PHASE_FIRE;
+        self->substate = ACTOR_STEP_INIT;
     }
 }
 
 static void actor_fire(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == ACTOR_STEP_INIT) {
         set_animation_immediate(self, 7);
         exe6_sound_req(BN67_SONG_ID(rollarrow_fire_song));
         spawn_projectile(self);
         self->timer = FIRE_HOLD_FRAMES;
-        self->substate = 4;
+        self->substate = ACTOR_STEP_HOLD;
     }
     if (decrement_timer(&self->timer) < 0) {
-        self->phase = 8;
-        self->substate = 0;
+        self->phase = ACTOR_PHASE_EXIT;
+        self->substate = ACTOR_STEP_INIT;
     }
 }
 
 static void actor_exit(Exe6Obj *self)
 {
-    if (self->substate == 0) {
+    if (self->substate == ACTOR_STEP_INIT) {
         set_animation_immediate(self, 0);
         self->timer = POST_SHOT_FRAMES;
-        self->substate = 4;
+        self->substate = ACTOR_STEP_HOLD;
         return;
     }
-    if (self->substate == 4) {
+    if (self->substate == ACTOR_STEP_HOLD) {
         if (decrement_timer(&self->timer) < 0) {
             set_animation_immediate(self, 4);
             self->timer = EXIT_FRAMES;
-            self->substate = 8;
+            self->substate = ACTOR_STEP_DISAPPEAR;
         }
         return;
     }
     if (decrement_timer(&self->timer) < 0) {
         self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
-        self->state_word = 8;
+        self->state_word = EXE6_OBJECT_STATE_DESTROY;
     }
 }
 
 static void actor_update(Exe6Obj *self)
 {
     switch (self->phase) {
-    case 0:
+    case ACTOR_PHASE_WAIT:
         actor_wait(self);
         break;
-    case 4:
+    case ACTOR_PHASE_FIRE:
         actor_fire(self);
         break;
     default:
@@ -255,18 +267,18 @@ static void actor_init(Exe6Obj *self)
     exe6_obj_flip_set(exe6_enemy_flip_check());
     exe6_obj_clt_set(0);
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
-    self->state_word = 4;
-    self->substate = 0;
+    self->state_word = EXE6_OBJECT_STATE_ACTIVE;
+    self->substate = ACTOR_STEP_INIT;
     exe6_sound_req(BN67_SONG_ID(common_navi_summon_song));
 }
 
 BN67_ENEMY(rollarrow_actor_main)
 {
     switch (self->state) {
-    case 0:
+    case EXE6_OBJECT_STATE_INIT:
         actor_init(self);
         break;
-    case 4:
+    case EXE6_OBJECT_STATE_ACTIVE:
         actor_update(self);
         break;
     default:
@@ -322,7 +334,7 @@ static bool projectile_init(Exe6Obj *self)
     self->target_block_x = (uint8_t)(
         self->block_x + (int32_t)exe6_calc_pl_em_dir_spd_for(self)
     );
-    self->state_word = 4;
+    self->state_word = EXE6_OBJECT_STATE_ACTIVE;
     return true;
 }
 
@@ -373,12 +385,12 @@ static bool projectile_update(Exe6Obj *self)
 BN67_SHELL(rollarrow_arrow_main)
 {
     switch (self->state) {
-    case 0:
+    case EXE6_OBJECT_STATE_INIT:
         if (!projectile_init(self)) {
             return;
         }
         break;
-    case 4:
+    case EXE6_OBJECT_STATE_ACTIVE:
         if (!projectile_update(self)) {
             return;
         }

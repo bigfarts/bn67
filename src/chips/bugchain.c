@@ -57,6 +57,11 @@ static const uint16_t EFFECT_FRAMES = 60;
 static const uint16_t VISUAL_FRAMES = 50;
 static const uint16_t SOUND_FRAME = 42;
 
+enum EffectStep {
+    EFFECT_STEP_INIT,
+    EFFECT_STEP_ACTIVE = 4,
+};
+
 static bool transfer_bug(uint8_t source, uint8_t *target)
 {
     if (source == 0 || source <= *target) {
@@ -135,10 +140,10 @@ static void effect_update(
     Exe6ObjSpawnParameters spawn_parameters
 )
 {
-    if (controller->substate == 0) {
+    if (controller->substate == EFFECT_STEP_INIT) {
         if ((exe6_em_set_flag_get() & EXE6_BATTLE_CONFIG_FLAG_LINK) == 0) {
-            controller->phase = 0x0C;
-            controller->phase_timer = 0;
+            controller->phase = EXE6_EVENT_CHIP_PHASE_OUTRO;
+            controller->phase_timer = EFFECT_STEP_INIT;
             return;
         }
 
@@ -151,15 +156,15 @@ static void effect_update(
             spawn_visual(player, spawn_parameters);
         }
         controller->timer = EFFECT_FRAMES;
-        controller->substate = 4;
+        controller->substate = EFFECT_STEP_ACTIVE;
     }
 
     uint16_t timer = (uint16_t)(controller->timer - 1u);
     controller->timer = timer;
     if ((int16_t)timer < 0) {
         transfer_bugs(controller);
-        controller->phase = 0x0C;
-        controller->phase_timer = 0;
+        controller->phase = EXE6_EVENT_CHIP_PHASE_OUTRO;
+        controller->phase_timer = EFFECT_STEP_INIT;
     }
 }
 
@@ -169,13 +174,13 @@ static void update(
 )
 {
     switch (controller->phase) {
-    case 0:
+    case EXE6_EVENT_CHIP_PHASE_FADE:
         exe6_event_chip_common_fade();
         break;
-    case 4:
+    case EXE6_EVENT_CHIP_PHASE_TELOP:
         exe6_event_chip_common_telop();
         break;
-    case 8:
+    case EXE6_EVENT_CHIP_PHASE_EFFECT:
         effect_update(controller, spawn_parameters);
         break;
     default:
@@ -187,10 +192,10 @@ static void update(
 BN67_EFFECT(bugchain_controller_main)
 {
     switch (self->state) {
-    case 0:
+    case EXE6_OBJECT_STATE_INIT:
         exe6_event_chip_common_init();
         break;
-    case 4:
+    case EXE6_OBJECT_STATE_ACTIVE:
         update(self, spawn_parameters);
         break;
     default:
@@ -219,7 +224,7 @@ static void visual_update(Exe6Obj *visual)
     uint16_t timer = (uint16_t)(visual->timer - 1u);
     visual->timer = timer;
     if ((int16_t)timer < 0) {
-        visual->state_word = 8;
+        visual->state_word = EXE6_OBJECT_STATE_DESTROY;
     }
     copy_coords(visual);
 }
@@ -241,17 +246,17 @@ static void visual_init(Exe6Obj *visual)
     exe6_obj_flip_set(visual->owner);
     visual->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     visual->timer = VISUAL_FRAMES;
-    visual->state_word = 4;
+    visual->state_word = EXE6_OBJECT_STATE_ACTIVE;
     visual_update(visual);
 }
 
 BN67_EFFECT(bugchain_visual_main)
 {
     switch (self->state) {
-    case 0:
+    case EXE6_OBJECT_STATE_INIT:
         visual_init(self);
         break;
-    case 4:
+    case EXE6_OBJECT_STATE_ACTIVE:
         visual_update(self);
         break;
     default:

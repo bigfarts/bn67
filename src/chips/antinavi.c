@@ -1,13 +1,13 @@
 #include "runtime.h"
 
 #if FALZAR
-#define ANTINAVI_ICON ((const uint8_t *)0x0872B594u)
-#define ANTINAVI_IMAGE ((const uint8_t *)0x08716374u)
-#define ANTINAVI_PALETTE ((const uint8_t *)0x08724C54u)
+#define ICON ((const uint8_t *)0x0872B594u)
+#define IMAGE ((const uint8_t *)0x08716374u)
+#define PALETTE ((const uint8_t *)0x08724C54u)
 #else
-#define ANTINAVI_ICON ((const uint8_t *)0x087294D0u)
-#define ANTINAVI_IMAGE ((const uint8_t *)0x087142B0u)
-#define ANTINAVI_PALETTE ((const uint8_t *)0x08722B90u)
+#define ICON ((const uint8_t *)0x087294D0u)
+#define IMAGE ((const uint8_t *)0x087142B0u)
+#define PALETTE ((const uint8_t *)0x08722B90u)
 #endif
 
 BN67_CHIP_RECORD(0x0ba) {
@@ -43,7 +43,7 @@ BN67_CHIP_RECORD(0x0ba) {
     .library_sort_order = 0x00BC,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = ANTINAVI_ICON,
-    .image = ANTINAVI_IMAGE,
-    .palette = ANTINAVI_PALETTE,
+    .icon = ICON,
+    .image = IMAGE,
+    .palette = PALETTE,
 };

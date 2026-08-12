@@ -35,15 +35,16 @@ BN67_SONG(
 );
 
 #if FALZAR
-#define BUGCHARGE_EFFECT_FLAGS EXE6_CHIP_EFFECT_FLAG_DIMMING
-#define BUGCHARGE_ICON ((const uint8_t *)0x0872C594u)
-#define BUGCHARGE_IMAGE ((const uint8_t *)0x08721B34u)
-#define BUGCHARGE_PALETTE ((const uint8_t *)0x087255B4u)
+#define EFFECT_FLAGS EXE6_CHIP_EFFECT_FLAG_DIMMING
+#define ICON ((const uint8_t *)0x0872C594u)
+#define IMAGE ((const uint8_t *)0x08721B34u)
+#define PALETTE ((const uint8_t *)0x087255B4u)
 #else
-#define BUGCHARGE_EFFECT_FLAGS EXE6_CHIP_EFFECT_FLAG_DIMMING | EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE
-#define BUGCHARGE_ICON bugcharge_icon
-#define BUGCHARGE_IMAGE bugcharge_image
-#define BUGCHARGE_PALETTE bugcharge_palette
+#define EFFECT_FLAGS \
+    (EXE6_CHIP_EFFECT_FLAG_DIMMING | EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE)
+#define ICON bugcharge_icon
+#define IMAGE bugcharge_image
+#define PALETTE bugcharge_palette
 #endif
 
 BN67_CHIP_RECORD(0x131) {
@@ -59,7 +60,7 @@ BN67_CHIP_RECORD(0x131) {
     .chip_class = EXE6_CHIP_CLASS_GIGA,
     .mb = 77,
     .behavior = {
-        .effect_flags = BUGCHARGE_EFFECT_FLAGS,
+        .effect_flags = EFFECT_FLAGS,
         .counter_settings = 0x8B,
         .family = BN67_ATTACK_FAMILY(bugcharge_attack_main),
         .subfamily = BN67_ATTACK_SUBFAMILY(bugcharge_attack_main),
@@ -77,16 +78,16 @@ BN67_CHIP_RECORD(0x131) {
     .library_sort_order = 0x0131,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = BUGCHARGE_ICON,
-    .image = BUGCHARGE_IMAGE,
-    .palette = BUGCHARGE_PALETTE,
+    .icon = ICON,
+    .image = IMAGE,
+    .palette = PALETTE,
 };
 
-static const uint8_t ACTIVE_STATE = 4;
-static const uint8_t EFFECT_PHASE = 8;
-static const uint8_t OUTRO_PHASE = 0x0C;
-static const uint8_t FIRE_SUBSTATE = 4;
-static const uint8_t COOLDOWN_SUBSTATE = 8;
+enum EffectStep {
+    EFFECT_STEP_INIT,
+    EFFECT_STEP_FIRE = 4,
+    EFFECT_STEP_COOLDOWN = 8,
+};
 static const uint8_t GOSPEL_VISUAL = 25;
 static const uint16_t CHARGE_FRAMES = 39;
 static const uint16_t SHOT_INTERVAL = 14;
@@ -161,7 +162,7 @@ static void head_init(Exe6Obj *self)
     exe6_obj_char_move();
     exe6_obj_flip_set(exe6_enemy_flip_check());
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
-    self->state_word = ACTIVE_STATE;
+    self->state_word = EXE6_OBJECT_STATE_ACTIVE;
     head_set_position(self);
 }
 
@@ -227,12 +228,12 @@ static void effect_update(
     Exe6ObjSpawnParameters spawn_parameters
 )
 {
-    if (self->substate == 0) {
+    if (self->substate == EFFECT_STEP_INIT) {
         self->timer = count_and_clear_bugs(self);
         spawn_charge_head(self, spawn_parameters);
         exe6_sound_req(BN67_SONG_ID(bugcharge_charge_song));
         self->aux_timer = CHARGE_FRAMES;
-        self->substate = FIRE_SUBSTATE;
+        self->substate = EFFECT_STEP_FIRE;
         return;
     }
 
@@ -241,7 +242,7 @@ static void effect_update(
         return;
     }
 
-    if (self->substate == FIRE_SUBSTATE) {
+    if (self->substate == EFFECT_STEP_FIRE) {
         exe6_sound_req(BN67_SONG_ID(bugcharge_fire_song));
         spawn_gospel(self);
         exe6_camera_quake_set(2, 20);
@@ -249,13 +250,13 @@ static void effect_update(
             self->aux_timer = SHOT_INTERVAL;
         } else {
             self->aux_timer = FINAL_COOLDOWN;
-            self->substate = COOLDOWN_SUBSTATE;
+            self->substate = EFFECT_STEP_COOLDOWN;
         }
         return;
     }
 
-    self->phase = OUTRO_PHASE;
-    self->phase_timer = 0;
+    self->phase = EXE6_EVENT_CHIP_PHASE_OUTRO;
+    self->phase_timer = EFFECT_STEP_INIT;
 }
 
 static void controller_update(
@@ -263,11 +264,11 @@ static void controller_update(
     Exe6ObjSpawnParameters spawn_parameters
 )
 {
-    if (self->phase == 0) {
+    if (self->phase == EXE6_EVENT_CHIP_PHASE_FADE) {
         exe6_event_chip_common_fade();
-    } else if (self->phase == 4) {
+    } else if (self->phase == EXE6_EVENT_CHIP_PHASE_TELOP) {
         exe6_event_chip_common_telop();
-    } else if (self->phase == EFFECT_PHASE) {
+    } else if (self->phase == EXE6_EVENT_CHIP_PHASE_EFFECT) {
         effect_update(self, spawn_parameters);
     } else {
         exe6_event_chip_common_end();
@@ -306,7 +307,7 @@ static bool hit_init(Exe6Obj *self)
     hit->region = 1;
     exe6_battle_hit_hit_mark_set(EXE6_HIT_EFFECT_FIRE);
     exe6_battle_hit_set(0, PRESENT_HIT_VALUE);
-    self->state_word = ACTIVE_STATE;
+    self->state_word = EXE6_OBJECT_STATE_ACTIVE;
     return true;
 }
 
@@ -394,7 +395,7 @@ static bool gospel_init(Exe6Obj *self)
     exe6_battle_hit_status_change_set(0, PRESENT_HIT_VALUE);
     exe6_battle_hit_set(0, EXTENDED_HIT_VALUE);
     self->animation_state = 8;
-    self->state_word = ACTIVE_STATE;
+    self->state_word = EXE6_OBJECT_STATE_ACTIVE;
     return true;
 }
 
@@ -435,11 +436,11 @@ static bool gospel_update(Exe6Obj *self)
 
 BN67_SHELL(bugcharge_hit_main)
 {
-    if (self->state == 0) {
+    if (self->state == EXE6_OBJECT_STATE_INIT) {
         if (!hit_init(self)) {
             return;
         }
-    } else if (self->state == ACTIVE_STATE) {
+    } else if (self->state == EXE6_OBJECT_STATE_ACTIVE) {
         hit_update(self);
         return;
     } else {
@@ -451,11 +452,11 @@ BN67_SHELL(bugcharge_hit_main)
 
 BN67_SHELL(bugcharge_gospel_main)
 {
-    if (self->state == 0) {
+    if (self->state == EXE6_OBJECT_STATE_INIT) {
         if (!gospel_init(self) || !gospel_update(self)) {
             return;
         }
-    } else if (self->state == ACTIVE_STATE) {
+    } else if (self->state == EXE6_OBJECT_STATE_ACTIVE) {
         if (!gospel_update(self)) {
             return;
         }
@@ -468,9 +469,9 @@ BN67_SHELL(bugcharge_gospel_main)
 
 BN67_EFFECT(bugcharge_head_main)
 {
-    if (self->state == 0) {
+    if (self->state == EXE6_OBJECT_STATE_INIT) {
         head_init(self);
-    } else if (self->state == ACTIVE_STATE) {
+    } else if (self->state == EXE6_OBJECT_STATE_ACTIVE) {
         if (!head_update(self)) {
             return;
         }
@@ -483,9 +484,9 @@ BN67_EFFECT(bugcharge_head_main)
 
 BN67_EFFECT(bugcharge_controller_main)
 {
-    if (self->state == 0) {
+    if (self->state == EXE6_OBJECT_STATE_INIT) {
         exe6_event_chip_common_init();
-    } else if (self->state == ACTIVE_STATE) {
+    } else if (self->state == EXE6_OBJECT_STATE_ACTIVE) {
         controller_update(self, spawn_parameters);
     } else {
         exe6_event_chip_common_exit();

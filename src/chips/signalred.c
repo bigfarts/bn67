@@ -87,6 +87,16 @@ static const uint32_t DESTROY_EFFECT = 0x00;
 static const int32_t DESTROY_EFFECT_HEIGHT = 0x00100000;
 static const uint32_t DESTROY_SFX = 0x70;
 
+enum LightState {
+    LIGHT_STATE_RED,
+    LIGHT_STATE_GREEN = 4,
+};
+
+enum LaunchStep {
+    LAUNCH_STEP_INIT,
+    LAUNCH_STEP_ACTIVE = 4,
+};
+
 static uint32_t opponent_chip_enable_flag(const Exe6Obj *obj)
 {
     return obj->owner == 0
@@ -114,7 +124,7 @@ static void obj_animate(Exe6Obj *obj)
 static void obj_begin_destroy(Exe6Obj *obj)
 {
     obj->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
-    obj->state_word = 8;
+    obj->state_word = EXE6_OBJECT_STATE_DESTROY;
 }
 
 static void obj_begin_damage_destroy(Exe6Obj *obj)
@@ -171,7 +181,7 @@ static void play_green_sound(Exe6Obj *obj)
 
 static void obj_turn_green(Exe6Obj *obj)
 {
-    obj->animation_state = 4;
+    obj->animation_state = LIGHT_STATE_GREEN;
     obj->animation = 1;
     exe6_obj_dma_seq_set(1);
     exe6_obj_char_set();
@@ -188,13 +198,13 @@ static void obj_cycle_update(Exe6Obj *obj)
         obj_animate(obj);
         return;
     }
-    if (obj->animation_state == 0) {
+    if (obj->animation_state == LIGHT_STATE_RED) {
         obj_turn_green(obj);
         obj_animate(obj);
         return;
     }
 
-    obj->animation_state = 0;
+    obj->animation_state = LIGHT_STATE_RED;
     obj->animation = 0;
     exe6_obj_dma_seq_set(0);
     exe6_obj_char_set();
@@ -326,10 +336,9 @@ static void obj_init(Exe6Obj *obj)
         return;
     }
 
-    obj->animation_state = 0;
-    obj->substate = 0;
+    obj->animation_state = LIGHT_STATE_RED;
     obj->removal_state = INITIAL_REMOVAL_FLAGS;
-    obj->state_word = 4;
+    obj->state_word = EXE6_OBJECT_STATE_ACTIVE;
     exe6_battle_obj_char_move();
 }
 
@@ -368,30 +377,30 @@ static Exe6Obj *spawn_persistent(Exe6Obj *controller)
 
 static void launch_effect(Exe6Obj *controller)
 {
-    if (controller->substate == 0) {
+    if (controller->substate == LAUNCH_STEP_INIT) {
         (void)spawn_persistent(controller);
         controller->timer = 30;
-        controller->substate = 4;
+        controller->substate = LAUNCH_STEP_ACTIVE;
     }
 
     uint16_t timer = (uint16_t)(controller->timer - 1u);
     controller->timer = timer;
     if (timer == 0) {
-        controller->phase = 0x0C;
-        controller->phase_timer = 0;
+        controller->phase = EXE6_EVENT_CHIP_PHASE_OUTRO;
+        controller->phase_timer = LAUNCH_STEP_INIT;
     }
 }
 
 static void update(Exe6Obj *controller)
 {
     switch (controller->phase) {
-    case 0:
+    case EXE6_EVENT_CHIP_PHASE_FADE:
         exe6_event_chip_common_fade();
         break;
-    case 4:
+    case EXE6_EVENT_CHIP_PHASE_TELOP:
         exe6_event_chip_common_telop();
         break;
-    case 8:
+    case EXE6_EVENT_CHIP_PHASE_EFFECT:
         launch_effect(controller);
         break;
     default:
@@ -403,10 +412,10 @@ static void update(Exe6Obj *controller)
 BN67_EFFECT(signalred_controller_main)
 {
     switch (self->state) {
-    case 0:
+    case EXE6_OBJECT_STATE_INIT:
         exe6_event_chip_common_init();
         break;
-    case 4:
+    case EXE6_OBJECT_STATE_ACTIVE:
         update(self);
         break;
     default:
@@ -418,10 +427,10 @@ BN67_EFFECT(signalred_controller_main)
 BN67_SHELL(signalred_obj_main)
 {
     switch (self->state) {
-    case 0:
+    case EXE6_OBJECT_STATE_INIT:
         obj_init(self);
         break;
-    case 4:
+    case EXE6_OBJECT_STATE_ACTIVE:
         obj_update(self);
         break;
     default:

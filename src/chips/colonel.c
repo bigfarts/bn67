@@ -1,22 +1,22 @@
 #include "runtime.h"
 
 /* CrossDivide selects the alternate mode of Colonel's native summon. */
-#define COLONEL_FAMILY 0x1B
-#define COLONEL_SUBFAMILY 0x11
+#define FAMILY 0x1B
+#define SUBFAMILY 0x11
 #define CROSSDIVIDE_ANIMATION_STATE 0x01
 
 #if FALZAR
-#define COLONEL_ICON ((const uint8_t *)0x0872BE14u)
-#define COLONEL_IMAGE ((const uint8_t *)0x087200F4u)
-#define COLONEL_PALETTE_BASE ((const uint8_t *)0x087254D4u)
-#define COLONEL_PALETTE_EX ((const uint8_t *)0x087254F4u)
-#define COLONEL_PALETTE_SP ((const uint8_t *)0x08725514u)
+#define ICON ((const uint8_t *)0x0872BE14u)
+#define IMAGE ((const uint8_t *)0x087200F4u)
+#define PALETTE_BASE ((const uint8_t *)0x087254D4u)
+#define PALETTE_EX ((const uint8_t *)0x087254F4u)
+#define PALETTE_SP ((const uint8_t *)0x08725514u)
 #else
-#define COLONEL_ICON ((const uint8_t *)0x08729D50u)
-#define COLONEL_IMAGE ((const uint8_t *)0x0871E030u)
-#define COLONEL_PALETTE_BASE ((const uint8_t *)0x08723410u)
-#define COLONEL_PALETTE_EX ((const uint8_t *)0x08723430u)
-#define COLONEL_PALETTE_SP ((const uint8_t *)0x08723450u)
+#define ICON ((const uint8_t *)0x08729D50u)
+#define IMAGE ((const uint8_t *)0x0871E030u)
+#define PALETTE_BASE ((const uint8_t *)0x08723410u)
+#define PALETTE_EX ((const uint8_t *)0x08723430u)
+#define PALETTE_SP ((const uint8_t *)0x08723450u)
 #endif
 
 BN67_CHIP_RECORD(0x110) {
@@ -37,8 +37,8 @@ BN67_CHIP_RECORD(0x110) {
                         EXE6_CHIP_EFFECT_FLAG_NAVI |
                         EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x8A,
-        .family = COLONEL_FAMILY,
-        .subfamily = COLONEL_SUBFAMILY,
+        .family = FAMILY,
+        .subfamily = SUBFAMILY,
         .dark_soul_usage = 0x00,
         .unknown_0e = 0x00,
         .lock_on = 0x00,
@@ -53,9 +53,9 @@ BN67_CHIP_RECORD(0x110) {
     .library_sort_order = 0x0110,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = COLONEL_ICON,
-    .image = COLONEL_IMAGE,
-    .palette = COLONEL_PALETTE_BASE,
+    .icon = ICON,
+    .image = IMAGE,
+    .palette = PALETTE_BASE,
 };
 
 BN67_CHIP_RECORD(0x111) {
@@ -76,8 +76,8 @@ BN67_CHIP_RECORD(0x111) {
                         EXE6_CHIP_EFFECT_FLAG_NAVI |
                         EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x8A,
-        .family = COLONEL_FAMILY,
-        .subfamily = COLONEL_SUBFAMILY,
+        .family = FAMILY,
+        .subfamily = SUBFAMILY,
         .dark_soul_usage = 0x00,
         .unknown_0e = 0x00,
         .lock_on = 0x00,
@@ -92,9 +92,9 @@ BN67_CHIP_RECORD(0x111) {
     .library_sort_order = 0x0111,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = COLONEL_ICON,
-    .image = COLONEL_IMAGE,
-    .palette = COLONEL_PALETTE_EX,
+    .icon = ICON,
+    .image = IMAGE,
+    .palette = PALETTE_EX,
 };
 
 BN67_CHIP_RECORD(0x112) {
@@ -115,8 +115,8 @@ BN67_CHIP_RECORD(0x112) {
                         EXE6_CHIP_EFFECT_FLAG_NAVI |
                         EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x8A,
-        .family = COLONEL_FAMILY,
-        .subfamily = COLONEL_SUBFAMILY,
+        .family = FAMILY,
+        .subfamily = SUBFAMILY,
         .dark_soul_usage = 0x00,
         .unknown_0e = 0x00,
         .lock_on = 0x00,
@@ -131,7 +131,7 @@ BN67_CHIP_RECORD(0x112) {
     .library_sort_order = 0x0112,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = COLONEL_ICON,
-    .image = COLONEL_IMAGE,
-    .palette = COLONEL_PALETTE_SP,
+    .icon = ICON,
+    .image = IMAGE,
+    .palette = PALETTE_SP,
 };

@@ -38,17 +38,17 @@ BN67_INCBIN(blackweapon_palette, "build/blackweapon-palette.bin");
 #endif
 
 #if FALZAR
-#define BLACKWEAPON_EFFECT_FLAGS EXE6_CHIP_EFFECT_FLAG_DIMMING
-#define BLACKWEAPON_ICON ((const uint8_t *)0x0872C494u)
-#define BLACKWEAPON_IMAGE ((const uint8_t *)0x087210B4u)
-#define BLACKWEAPON_PALETTE ((const uint8_t *)0x08725574u)
+#define EFFECT_FLAGS EXE6_CHIP_EFFECT_FLAG_DIMMING
+#define ICON ((const uint8_t *)0x0872C494u)
+#define IMAGE ((const uint8_t *)0x087210B4u)
+#define PALETTE ((const uint8_t *)0x08725574u)
 #else
-#define BLACKWEAPON_EFFECT_FLAGS                                        \
+#define EFFECT_FLAGS                                                    \
     (EXE6_CHIP_EFFECT_FLAG_DIMMING |                                    \
      EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE)
-#define BLACKWEAPON_ICON blackweapon_icon
-#define BLACKWEAPON_IMAGE blackweapon_image
-#define BLACKWEAPON_PALETTE blackweapon_palette
+#define ICON blackweapon_icon
+#define IMAGE blackweapon_image
+#define PALETTE blackweapon_palette
 #endif
 
 BN67_CHIP_RECORD(0x12f) {
@@ -64,7 +64,7 @@ BN67_CHIP_RECORD(0x12f) {
     .chip_class = EXE6_CHIP_CLASS_GIGA,
     .mb = 64,
     .behavior = {
-        .effect_flags = BLACKWEAPON_EFFECT_FLAGS,
+        .effect_flags = EFFECT_FLAGS,
         .counter_settings = 0,
         .family = BN67_ATTACK_FAMILY(blackweapon_attack_main),
         .subfamily = BN67_ATTACK_SUBFAMILY(blackweapon_attack_main),
@@ -82,16 +82,26 @@ BN67_CHIP_RECORD(0x12f) {
     .library_sort_order = 0x012f,
     .library_gate_usage = 1,
     .dark_chip_id = UINT8_MAX,
-    .icon = BLACKWEAPON_ICON,
-    .image = BLACKWEAPON_IMAGE,
-    .palette = BLACKWEAPON_PALETTE,
+    .icon = ICON,
+    .image = IMAGE,
+    .palette = PALETTE,
 };
 
 static const uint8_t BUSTER_ATTACK_LEVEL_10 = 9;
 static const uint8_t BUSTER_STAT_MAX = 4;
-static const uint8_t BLACKWEAPON_HP_BUG = 8;
+static const uint8_t HP_BUG = 8;
 static const uint16_t FLASH_FRAMES = 60;
 static const uint16_t HOLD_FRAMES = 30;
+
+enum VisualPhase {
+    VISUAL_PHASE_FLASH,
+    VISUAL_PHASE_HOLD = 4,
+};
+
+enum EffectStep {
+    EFFECT_STEP_INIT,
+    EFFECT_STEP_WAIT_FOR_VISUAL = 4,
+};
 
 NAKED void blackweapon_beast_attack_level_apply(void)
 {
@@ -161,24 +171,24 @@ NAKED void blackweapon_attack_level_dispatch(void)
     );
 }
 
-struct BlackWeaponControllerWork {
+struct ControllerWork {
     uint8_t visual_active;
 };
 
-struct BlackWeaponVisualWork {
+struct VisualWork {
     uint8_t white_palette[0x20];
 };
 
 _Static_assert(
-    sizeof(struct BlackWeaponVisualWork) == sizeof(((Exe6Obj *)0)->work),
+    sizeof(struct VisualWork) == sizeof(((Exe6Obj *)0)->work),
     "BlackWeapon visual work must hold one complete palette"
 );
 
-enum BlackWeaponVisualFlags {
-    BLACKWEAPON_VISUAL_PALETTE_SAVED = 1 << 0,
+enum VisualFlags {
+    VISUAL_PALETTE_SAVED = 1 << 0,
 };
 
-#define BLACKWEAPON_DARK_PALETTE_BANK 0x0Fu
+#define DARK_PALETTE_BANK 0x0Fu
 #define EXE6_SPRITE_PALETTE_BANK_MASK 0xF0u
 #define EXE6_SPRITE_PALETTE_BANK_SHIFT 4u
 #define EXE6_SPRITE_PALETTE_ATTRIBUTE 0x15u
@@ -220,7 +230,7 @@ static void install_dark_palette(Exe6Obj *visual)
     }
 
     uint8_t palette_bank = object_palette_bank_get(owner);
-    if (palette_bank != BLACKWEAPON_DARK_PALETTE_BANK) {
+    if (palette_bank != DARK_PALETTE_BANK) {
         return;
     }
     exe6_mem_trans256(
@@ -232,30 +242,28 @@ static void install_dark_palette(Exe6Obj *visual)
 
 static void save_white_palette(Exe6Obj *visual)
 {
-    struct BlackWeaponVisualWork *work =
-        (struct BlackWeaponVisualWork *)visual->work;
+    struct VisualWork *work = (struct VisualWork *)visual->work;
     exe6_mem_trans256(
-        blackweapon_palette_bank(BLACKWEAPON_DARK_PALETTE_BANK),
+        blackweapon_palette_bank(DARK_PALETTE_BANK),
         work->white_palette,
         sizeof(work->white_palette)
     );
-    visual->aux_timer |= BLACKWEAPON_VISUAL_PALETTE_SAVED;
+    visual->aux_timer |= VISUAL_PALETTE_SAVED;
 }
 
 static void restore_white_palette(Exe6Obj *visual)
 {
-    if ((visual->aux_timer & BLACKWEAPON_VISUAL_PALETTE_SAVED) == 0) {
+    if ((visual->aux_timer & VISUAL_PALETTE_SAVED) == 0) {
         return;
     }
 
-    const struct BlackWeaponVisualWork *work =
-        (const struct BlackWeaponVisualWork *)visual->work;
+    const struct VisualWork *work = (const struct VisualWork *)visual->work;
     exe6_mem_trans256(
         work->white_palette,
-        blackweapon_palette_bank(BLACKWEAPON_DARK_PALETTE_BANK),
+        blackweapon_palette_bank(DARK_PALETTE_BANK),
         sizeof(work->white_palette)
     );
-    visual->aux_timer &= (uint16_t)~BLACKWEAPON_VISUAL_PALETTE_SAVED;
+    visual->aux_timer &= (uint16_t)~VISUAL_PALETTE_SAVED;
 }
 
 static void restore_owner_palette(Exe6Obj *visual)
@@ -265,7 +273,7 @@ static void restore_owner_palette(Exe6Obj *visual)
         return;
     }
 
-    if (object_palette_bank_get(owner) == BLACKWEAPON_DARK_PALETTE_BANK) {
+    if (object_palette_bank_get(owner) == DARK_PALETTE_BANK) {
         object_palette_bank_set(owner, visual->palette);
     }
 }
@@ -282,7 +290,7 @@ static void finish_visual(Exe6Obj *visual)
     if (visual->completion != NULL) {
         *visual->completion = 0;
     }
-    visual->state_word = 8;
+    visual->state_word = EXE6_OBJECT_STATE_DESTROY;
 }
 
 static void visual_flash_update(Exe6Obj *visual)
@@ -294,11 +302,11 @@ static void visual_flash_update(Exe6Obj *visual)
     }
 
     uint8_t palette_bank = object_palette_bank_get(owner);
-    if (palette_bank != BLACKWEAPON_DARK_PALETTE_BANK) {
+    if (palette_bank != DARK_PALETTE_BANK) {
         visual->palette = palette_bank;
     }
     uint8_t next_palette_bank = (visual->timer & 2u) != 0
-        ? BLACKWEAPON_DARK_PALETTE_BANK
+        ? DARK_PALETTE_BANK
         : visual->palette;
     object_palette_bank_set(owner, next_palette_bank);
     exe6_obj_invoke(owner, (uintptr_t)exe6_battle_obj_char_move2);
@@ -307,7 +315,7 @@ static void visual_flash_update(Exe6Obj *visual)
     visual->timer = timer;
     if ((int16_t)timer < 0) {
         visual->timer = HOLD_FRAMES;
-        visual->phase = 4;
+        visual->phase = VISUAL_PHASE_HOLD;
     }
 }
 
@@ -338,19 +346,19 @@ static void visual_init(Exe6Obj *visual)
     visual->palette = object_palette_bank_get(owner);
     save_white_palette(visual);
     visual->timer = FLASH_FRAMES;
-    visual->phase = 0;
-    visual->state_word = 4;
+    visual->phase = VISUAL_PHASE_FLASH;
+    visual->state_word = EXE6_OBJECT_STATE_ACTIVE;
     visual_flash_update(visual);
 }
 
 BN67_EFFECT(blackweapon_visual_main)
 {
     switch (self->state) {
-    case 0:
+    case EXE6_OBJECT_STATE_INIT:
         visual_init(self);
         break;
-    case 4:
-        if (self->phase == 0) {
+    case EXE6_OBJECT_STATE_ACTIVE:
+        if (self->phase == VISUAL_PHASE_FLASH) {
             visual_flash_update(self);
         } else {
             visual_hold_update(self);
@@ -369,8 +377,7 @@ static void spawn_visual(
     Exe6ObjSpawnParameters spawn_parameters
 )
 {
-    struct BlackWeaponControllerWork *work =
-        (struct BlackWeaponControllerWork *)controller->work;
+    struct ControllerWork *work = (struct ControllerWork *)controller->work;
     work->visual_active = 0;
 
     Exe6Obj *visual = exe6_efc_open(
@@ -393,10 +400,10 @@ static void apply_blackweapon(Exe6Obj *controller)
         exe6_navi_status_set(side, 1, BUSTER_ATTACK_LEVEL_10);
         exe6_navi_status_set(side, 2, BUSTER_STAT_MAX);
         exe6_navi_status_set(side, 3, BUSTER_STAT_MAX);
-        exe6_navi_status_set(side, 0x18, BLACKWEAPON_HP_BUG);
+        exe6_navi_status_set(side, 0x18, HP_BUG);
     }
-    controller->phase = 0x0C;
-    controller->phase_timer = 0;
+    controller->phase = EXE6_EVENT_CHIP_PHASE_OUTRO;
+    controller->phase_timer = EFFECT_STEP_INIT;
 }
 
 static void effect_update(
@@ -404,30 +411,29 @@ static void effect_update(
     Exe6ObjSpawnParameters spawn_parameters
 )
 {
-    struct BlackWeaponControllerWork *work =
-        (struct BlackWeaponControllerWork *)controller->work;
-    if (controller->substate == 0) {
+    struct ControllerWork *work = (struct ControllerWork *)controller->work;
+    if (controller->substate == EFFECT_STEP_INIT) {
         spawn_visual(controller, spawn_parameters);
-        controller->substate = 4;
+        controller->substate = EFFECT_STEP_WAIT_FOR_VISUAL;
     }
     if (work->visual_active == 0) {
         apply_blackweapon(controller);
     }
 }
 
-static void blackweapon_update(
+static void controller_update(
     Exe6Obj *controller,
     Exe6ObjSpawnParameters spawn_parameters
 )
 {
     switch (controller->phase) {
-    case 0:
+    case EXE6_EVENT_CHIP_PHASE_FADE:
         exe6_event_chip_common_fade();
         break;
-    case 4:
+    case EXE6_EVENT_CHIP_PHASE_TELOP:
         exe6_event_chip_common_telop();
         break;
-    case 8:
+    case EXE6_EVENT_CHIP_PHASE_EFFECT:
         effect_update(controller, spawn_parameters);
         break;
     default:
@@ -439,11 +445,11 @@ static void blackweapon_update(
 BN67_EFFECT(blackweapon_controller_main)
 {
     switch (self->state) {
-    case 0:
+    case EXE6_OBJECT_STATE_INIT:
         exe6_event_chip_common_init();
         break;
-    case 4:
-        blackweapon_update(self, spawn_parameters);
+    case EXE6_OBJECT_STATE_ACTIVE:
+        controller_update(self, spawn_parameters);
         break;
     default:
         exe6_event_chip_common_exit();

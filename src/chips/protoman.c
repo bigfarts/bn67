@@ -6,17 +6,17 @@
 #define DELTARAY_ANIMATION_STATE 0x0C
 
 #if FALZAR
-#define PROTOMAN_ICON ((const uint8_t *)0x0872BE14u)
-#define PROTOMAN_IMAGE ((const uint8_t *)0x0871ACF4u)
-#define PROTOMAN_PALETTE_BASE ((const uint8_t *)0x08724ED4u)
-#define PROTOMAN_PALETTE_EX ((const uint8_t *)0x08724EF4u)
-#define PROTOMAN_PALETTE_SP ((const uint8_t *)0x08724F14u)
+#define ICON ((const uint8_t *)0x0872BE14u)
+#define IMAGE ((const uint8_t *)0x0871ACF4u)
+#define PALETTE_BASE ((const uint8_t *)0x08724ED4u)
+#define PALETTE_EX ((const uint8_t *)0x08724EF4u)
+#define PALETTE_SP ((const uint8_t *)0x08724F14u)
 #else
-#define PROTOMAN_ICON ((const uint8_t *)0x08729D50u)
-#define PROTOMAN_IMAGE ((const uint8_t *)0x08718C30u)
-#define PROTOMAN_PALETTE_BASE ((const uint8_t *)0x08722E10u)
-#define PROTOMAN_PALETTE_EX ((const uint8_t *)0x08722E30u)
-#define PROTOMAN_PALETTE_SP ((const uint8_t *)0x08722E50u)
+#define ICON ((const uint8_t *)0x08729D50u)
+#define IMAGE ((const uint8_t *)0x08718C30u)
+#define PALETTE_BASE ((const uint8_t *)0x08722E10u)
+#define PALETTE_EX ((const uint8_t *)0x08722E30u)
+#define PALETTE_SP ((const uint8_t *)0x08722E50u)
 #endif
 
 BN67_CHIP_RECORD(0x0e0) {
@@ -53,9 +53,9 @@ BN67_CHIP_RECORD(0x0e0) {
     .library_sort_order = 0x00E0,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = PROTOMAN_ICON,
-    .image = PROTOMAN_IMAGE,
-    .palette = PROTOMAN_PALETTE_BASE,
+    .icon = ICON,
+    .image = IMAGE,
+    .palette = PALETTE_BASE,
 };
 
 BN67_CHIP_RECORD(0x0e1) {
@@ -92,9 +92,9 @@ BN67_CHIP_RECORD(0x0e1) {
     .library_sort_order = 0x00E1,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = PROTOMAN_ICON,
-    .image = PROTOMAN_IMAGE,
-    .palette = PROTOMAN_PALETTE_EX,
+    .icon = ICON,
+    .image = IMAGE,
+    .palette = PALETTE_EX,
 };
 
 BN67_CHIP_RECORD(0x0e2) {
@@ -131,7 +131,7 @@ BN67_CHIP_RECORD(0x0e2) {
     .library_sort_order = 0x00E2,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = PROTOMAN_ICON,
-    .image = PROTOMAN_IMAGE,
-    .palette = PROTOMAN_PALETTE_SP,
+    .icon = ICON,
+    .image = IMAGE,
+    .palette = PALETTE_SP,
 };

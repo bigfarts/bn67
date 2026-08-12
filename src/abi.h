@@ -29,6 +29,19 @@ enum Exe6ObjectClass {
     EXE6_OBJECT_CLASS_EFFECT = 4,
 };
 
+enum Exe6ObjectState {
+    EXE6_OBJECT_STATE_INIT = 0,
+    EXE6_OBJECT_STATE_ACTIVE = 4,
+    EXE6_OBJECT_STATE_DESTROY = 8,
+};
+
+enum Exe6EventChipPhase {
+    EXE6_EVENT_CHIP_PHASE_FADE = 0,
+    EXE6_EVENT_CHIP_PHASE_TELOP = 4,
+    EXE6_EVENT_CHIP_PHASE_EFFECT = 8,
+    EXE6_EVENT_CHIP_PHASE_OUTRO = 12,
+};
+
 #define EXE6_ENEMY_POOL_HEAD \
     ((Exe6EnemyObjectSlot *)(uintptr_t)0x0203A9B0u)
 #define EXE6_SHELL_POOL_HEAD \

@@ -54,6 +54,17 @@ static const uint16_t DELETE_FRAMES = 90;
 static const uint16_t OVERLAY_LAST_FRAME = 20;
 static const uint32_t GAUGE_FULL = 0x4000;
 
+enum DeleteStep {
+    DELETE_STEP_INIT,
+    DELETE_STEP_ACTIVE = 4,
+};
+
+enum EffectStep {
+    EFFECT_STEP_INIT,
+    EFFECT_STEP_PULSE = 4,
+    EFFECT_STEP_DELETE = 8,
+};
+
 static const Exe6BlockDamageProperties DAMAGE_PROPERTIES = {
     .region = EXE6_HIT_REGION_CURRENT_BLOCK,
     .hit_effect = EXE6_HIT_EFFECT_SMALL_IMPACT,
@@ -61,7 +72,7 @@ static const Exe6BlockDamageProperties DAMAGE_PROPERTIES = {
     .self_hit_type = EXE6_HIT_TYPE_1A,
 };
 
-struct JealousyWork {
+struct ControllerWork {
     uint32_t remaining_attacks;          // +0x60
 };
 
@@ -155,9 +166,9 @@ static void refresh_delete_overlay(Exe6Obj *controller)
 
 static void delete_phase(Exe6Obj *controller)
 {
-    if (controller->substate == 0) {
+    if (controller->substate == DELETE_STEP_INIT) {
         controller->timer = DELETE_FRAMES;
-        controller->substate = 4;
+        controller->substate = DELETE_STEP_ACTIVE;
     }
     if (controller->timer >= OVERLAY_LAST_FRAME) {
         refresh_delete_overlay(controller);
@@ -170,14 +181,13 @@ static void delete_phase(Exe6Obj *controller)
     }
 
     finish_delete(controller);
-    controller->phase = 0x0C;
-    controller->phase_timer = 0;
+    controller->phase = EXE6_EVENT_CHIP_PHASE_OUTRO;
+    controller->phase_timer = EFFECT_STEP_INIT;
 }
 
 static void pulse_phase(Exe6Obj *controller)
 {
-    struct JealousyWork *work =
-        (struct JealousyWork *)controller->work;
+    struct ControllerWork *work = (struct ControllerWork *)controller->work;
     uint16_t timer = (uint16_t)(controller->timer - 1u);
     controller->timer = timer;
     if (timer != 0) {
@@ -186,14 +196,13 @@ static void pulse_phase(Exe6Obj *controller)
 
     controller->timer = PULSE_DELAY;
     if (attack_field(controller) == 0 || --work->remaining_attacks == 0) {
-        controller->phase_timer = 8;
+        controller->phase_timer = EFFECT_STEP_DELETE;
     }
 }
 
 static void effect_init(Exe6Obj *controller)
 {
-    struct JealousyWork *work =
-        (struct JealousyWork *)controller->work;
+    struct ControllerWork *work = (struct ControllerWork *)controller->work;
     exe6_mem_task_trans_set256(
         jealousy_effect_tiles,
         (void *)TILES_DESTINATION,
@@ -207,20 +216,20 @@ static void effect_init(Exe6Obj *controller)
 
     work->remaining_attacks = max_loaded_chips(controller);
     if (work->remaining_attacks == 0) {
-        controller->phase_timer = 8;
+        controller->phase_timer = EFFECT_STEP_DELETE;
         return;
     }
     controller->timer = 1;
-    controller->phase_timer = 4;
+    controller->phase_timer = EFFECT_STEP_PULSE;
 }
 
 static void effect_update(Exe6Obj *controller)
 {
     switch (controller->phase_timer) {
-    case 0:
+    case EFFECT_STEP_INIT:
         effect_init(controller);
         break;
-    case 4:
+    case EFFECT_STEP_PULSE:
         pulse_phase(controller);
         break;
     default:
@@ -232,13 +241,13 @@ static void effect_update(Exe6Obj *controller)
 static void update(Exe6Obj *controller)
 {
     switch (controller->phase) {
-    case 0:
+    case EXE6_EVENT_CHIP_PHASE_FADE:
         exe6_event_chip_common_fade();
         break;
-    case 4:
+    case EXE6_EVENT_CHIP_PHASE_TELOP:
         exe6_event_chip_common_telop();
         break;
-    case 8:
+    case EXE6_EVENT_CHIP_PHASE_EFFECT:
         effect_update(controller);
         break;
     default:
@@ -250,10 +259,10 @@ static void update(Exe6Obj *controller)
 BN67_EFFECT(jealousy_controller_main)
 {
     switch (self->state) {
-    case 0:
+    case EXE6_OBJECT_STATE_INIT:
         exe6_event_chip_common_init();
         break;
-    case 4:
+    case EXE6_OBJECT_STATE_ACTIVE:
         update(self);
         break;
     default:
