@@ -551,12 +551,13 @@ EXE4.5's complete BlackWeapon icon, 56x48 library image, and palette occupy ROM
 offsets `0x7640B0`, `0x755CF0`, and `0x75CEF0`, with lengths `0x80`, `0x540`,
 and `0x20`. Gregar copies those three assets without palette conversion.
 
-Bass is chip ID `0x12D` in both editions. Only that record is replaced;
-BassAnly at `0x132` is untouched. The Bass record becomes a 64 MB, code-B Null
-GigaChip, preserves its original version-availability split, and uses the
-Blue Moon behavior and animation in both ROMs. Gregar repoints its three
-menu-art fields to EXE4.5's assets, while Falzar leaves those fields
-byte-for-byte equal to the original Bass record.
+DeltaRay is chip ID `0x12F` in both editions. Only that record is replaced;
+Bass at `0x12D` and BassAnly at `0x132` are untouched. The DeltaRay record
+becomes a 64 MB, code-B Null GigaChip, preserves its original
+version-availability split, and uses the Blue Moon behavior and animation in
+both ROMs. Gregar repoints its three menu-art fields to EXE4.5's assets, while
+Falzar leaves those fields byte-for-byte equal to the original DeltaRay
+record.
 
 ## Exe6Runtime QA
 

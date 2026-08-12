@@ -25,9 +25,10 @@ codes, MB cost, Navi-chip classification, and artwork. Base, EX, and SP deal
 
 ### BlakWeap
 
-Replaces Bass in both versions with Blue Moon's BlackWeapon behavior; BassAnly
-is unchanged. The 64 MB, Null-element GigaChip uses code B, sets Buster Attack
-to level 10 while Rapid and Charge remain at level 5, and drains 1 HP every 6
+Replaces DeltaRay (`0x12F`) in both versions with Blue Moon's BlackWeapon
+behavior; Bass and BassAnly are unchanged. The 64 MB, Null-element GigaChip
+uses code B, sets Buster Attack to level 10 while Rapid and Charge remain at
+level 5, and drains 1 HP every 6
 active battle frames without reducing the user below 1 HP. Cross charged
 Buster attacks, chargeable Cross chip attacks, and the two Beast Out rapid-
 Buster variants now scale continuously through all 10 Buster Attack levels;
@@ -36,7 +37,7 @@ animation flickers the user's current form for 60 frames and holds for 30;
 active Cross and Beast forms remain visible throughout. The effect has no
 dedicated sound. Gregar imports BlackWeapon's complete
 icon, library art, and palette from EXE4.5, while Falzar retains the native
-Bass-slot art.
+DeltaRay-slot art.
 
 ### RollArrow
 

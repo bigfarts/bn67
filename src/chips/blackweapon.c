@@ -39,9 +39,9 @@ BN67_INCBIN(blackweapon_palette, "build/blackweapon-palette.bin");
 
 #if FALZAR
 #define BLACKWEAPON_EFFECT_FLAGS EXE6_CHIP_EFFECT_FLAG_DIMMING
-#define BLACKWEAPON_ICON ((const uint8_t *)0x0872C394u)
-#define BLACKWEAPON_IMAGE ((const uint8_t *)0x08720634u)
-#define BLACKWEAPON_PALETTE ((const uint8_t *)0x08725534u)
+#define BLACKWEAPON_ICON ((const uint8_t *)0x0872C494u)
+#define BLACKWEAPON_IMAGE ((const uint8_t *)0x087210B4u)
+#define BLACKWEAPON_PALETTE ((const uint8_t *)0x08725574u)
 #else
 #define BLACKWEAPON_EFFECT_FLAGS                                        \
     (EXE6_CHIP_EFFECT_FLAG_DIMMING |                                    \
@@ -51,7 +51,7 @@ BN67_INCBIN(blackweapon_palette, "build/blackweapon-palette.bin");
 #define BLACKWEAPON_PALETTE blackweapon_palette
 #endif
 
-BN67_CHIP_RECORD(0x12d) {
+BN67_CHIP_RECORD(0x12f) {
     .codes = {
         EXE6_CHIP_CODE_B,
         EXE6_CHIP_CODE_NONE,
@@ -79,7 +79,7 @@ BN67_CHIP_RECORD(0x12d) {
     .library_lock_on_type = 0,
     .alphabetical_sort = 0,
     .power = 0,
-    .library_sort_order = 0x012d,
+    .library_sort_order = 0x012f,
     .library_gate_usage = 1,
     .dark_chip_id = UINT8_MAX,
     .icon = BLACKWEAPON_ICON,
@@ -451,7 +451,7 @@ BN67_EFFECT(blackweapon_controller_main)
     }
 }
 
-BN67_PERSISTENT_ATTACK(0x12d, blackweapon_attack_main)
+BN67_PERSISTENT_ATTACK(0x12f, blackweapon_attack_main)
 {
     Exe6Obj *controller = exe6_efc_open(
         BN67_OBJ_ID(blackweapon_controller_main), spawn_parameters

@@ -529,6 +529,30 @@ class PackageCompilerTests(unittest.TestCase):
                 0x1D,
             )
 
+    def test_blackweapon_replaces_delta_ray_slot(self) -> None:
+        source = (ROOT / "src/chips/blackweapon.c").read_text()
+        self.assertIn("BN67_CHIP_RECORD(0x12f)", source)
+        self.assertIn(
+            "BN67_PERSISTENT_ATTACK(0x12f, blackweapon_attack_main)",
+            source,
+        )
+        self.assertIn(".library_sort_order = 0x012f", source)
+        self.assertNotIn("BN67_CHIP_RECORD(0x12d)", source)
+
+        for variant in ("gregar", "falzar"):
+            _, packages = self.packages(variant)
+            blackweapon = next(
+                package for package in packages if package.name == "blackweapon"
+            )
+            self.assertEqual([chip.chip_id for chip in blackweapon.chips], [0x12F])
+            self.assertEqual(blackweapon.attack.chip_id, 0x12F)
+            text_entries = {
+                (entry.archive, entry.index): entry.value
+                for entry in blackweapon.text
+            }
+            self.assertEqual(text_entries[("chip-names-1", 0x2F)], "BlakWeap")
+            self.assertIn(("chip-descriptions-1", 0x2F), text_entries)
+
     def test_protoman_uses_native_delta_ray(self) -> None:
         source = (ROOT / "src/chips/protoman.c").read_text()
         self.assertEqual(source.count("BN67_CHIP_RECORD("), 3)
