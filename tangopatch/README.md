@@ -27,7 +27,14 @@ Navi chip classification, and artwork are unchanged.
 
 - `ProtoMan B/*`: 80 damage
 - `ProtoMan EX B`: 100 damage
-- `ProtoMan SP B`: 180 damage
+- `ProtoMan SP B`: 200 damage
+
+### Colonel
+
+Colonel, Colonel EX, and Colonel SP use BN6's native Cross Divide attack
+instead of their normal screen-splitting summon. Their original codes, MB
+costs, Navi chip classification, artwork, and power are unchanged. Their chip
+descriptions now identify the Cross Divide attack.
 
 ### Black Weapon
 
