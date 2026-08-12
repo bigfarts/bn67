@@ -16,6 +16,13 @@ rebuilt wholesale rather than patching individual native atlas cells.
 AntiNavi retains its native BN6 behavior, codes, and metadata, but its MB cost
 is reduced from 50 MB to 33 MB in both versions.
 
+### ProtoMan
+
+ProtoMan, ProtoMan EX, and ProtoMan SP now use BN6's native DeltaRay attack
+instead of their normal WideSword summon. Each chip retains its original
+codes, MB cost, Navi-chip classification, and artwork. Base, EX, and SP deal
+80, 100, and 180 damage respectively.
+
 ### BlakWeap
 
 Replaces Bass in both versions with Blue Moon's BlackWeapon behavior; BassAnly

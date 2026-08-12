@@ -529,6 +529,41 @@ class PackageCompilerTests(unittest.TestCase):
                 0x1D,
             )
 
+    def test_protoman_uses_native_delta_ray(self) -> None:
+        source = (ROOT / "src/chips/protoman.c").read_text()
+        self.assertEqual(source.count("BN67_CHIP_RECORD("), 3)
+        self.assertIn("BN67_CHIP_RECORD(0x0e0)", source)
+        self.assertIn("BN67_CHIP_RECORD(0x0e1)", source)
+        self.assertIn("BN67_CHIP_RECORD(0x0e2)", source)
+        self.assertEqual(source.count(".family = DELTARAY_FAMILY"), 3)
+        self.assertEqual(source.count(".subfamily = DELTARAY_SUBFAMILY"), 3)
+        self.assertRegex(source, r"(?m)^    \.power = 80,$")
+        self.assertRegex(source, r"(?m)^    \.power = 100,$")
+        self.assertRegex(source, r"(?m)^    \.power = 180,$")
+        self.assertEqual(
+            source.count(
+                ".object_spawn = { .animation_state = "
+                "DELTARAY_ANIMATION_STATE }"
+            ),
+            3,
+        )
+
+        for variant in ("gregar", "falzar"):
+            config, packages = self.packages(variant)
+            protoman = next(
+                package for package in packages if package.name == "protoman"
+            )
+            self.assertEqual(
+                [chip.chip_id for chip in protoman.chips],
+                [0x0E0, 0x0E1, 0x0E2],
+            )
+            assembly = "\n".join(emit_chip_records(config, packages))
+            for chip_id in range(0x0E0, 0x0E3):
+                self.assertIn(
+                    f"bn67_chip_record_0x{chip_id:03x}",
+                    assembly,
+                )
+
     def test_object_ids_are_compiler_allocated(self) -> None:
         config, packages = self.packages()
         allocations = validate_and_allocate(config, packages)
