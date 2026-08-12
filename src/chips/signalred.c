@@ -82,6 +82,7 @@ static const uint8_t STARTUP_PENDING_FLAG = 0x01;
 static const uint8_t HIT_DEFERRED_FLAG = 0x80;
 static const uint8_t INITIAL_REMOVAL_FLAGS =
     STARTUP_PENDING_FLAG | HIT_DEFERRED_FLAG;
+static const uint32_t PLACEMENT_FAILURE_EFFECT = 0x15;
 static const uint32_t DESTROY_EFFECT = 0x00;
 static const int32_t DESTROY_EFFECT_HEIGHT = 0x00100000;
 static const uint32_t DESTROY_SFX = 0x70;
@@ -126,6 +127,18 @@ static void obj_begin_damage_destroy(Exe6Obj *obj)
         DESTROY_EFFECT
     );
     exe6_sound_req(DESTROY_SFX);
+    obj_begin_destroy(obj);
+}
+
+static void obj_begin_placement_failure(Exe6Obj *obj)
+{
+    (void)exe6_set_efc00(
+        0,
+        obj->x,
+        obj->y,
+        obj->z + DESTROY_EFFECT_HEIGHT,
+        PLACEMENT_FAILURE_EFFECT
+    );
     obj_begin_destroy(obj);
 }
 
@@ -201,6 +214,15 @@ static void obj_normal_update(Exe6Obj *obj)
     obj->aux_timer = timer;
     if (timer != 0) {
         obj_animate(obj);
+        return;
+    }
+    if (exe6_block_move_check(
+            obj->block_x,
+            obj->block_y,
+            EXE6_BLOCK_FLAG_SOLID,
+            0
+        ) == 0) {
+        obj_begin_placement_failure(obj);
         return;
     }
     obj->removal_state &= (uint8_t)~STARTUP_PENDING_FLAG;
