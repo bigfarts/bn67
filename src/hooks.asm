@@ -29,6 +29,11 @@
 .endif
     mov r3,0x01
 
+// Link battles replace the saved Beast Out counter with a fresh starting
+// value. Give each player five Beast Out turns instead of the native three.
+.org 0x0800B1A2
+    mov r0,5
+
 // Status Bug dispatches one of four native handlers for each severity. Replace
 // only the normal- and high-severity green-invulnerability entries with their
 // corresponding flashing handlers. Keep the native selector at 0x08013E7E

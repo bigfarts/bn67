@@ -22,6 +22,7 @@ class Asset:
 BN3_ROM_BASE = 0x08000000
 BN3_CHIP_DATA = 0x11510
 BN3_CHIP_RECORD_SIZE = 0x20
+BN3_ROOK_ID = 0x99
 BN3_FOLDERBACK_ID = 0x12F
 BN3_IMAGE_WIDTH = 64
 BN3_IMAGE_HEIGHT = 56
@@ -171,11 +172,15 @@ def normalize_exe6_icon_border(icon: bytes) -> bytes:
     return encode_4bpp_tiles(pixels)
 
 
-def extract_folderback_art(rom: bytes) -> tuple[bytes, bytes, bytes]:
-    """Extract BN3 FolderBack menu art and crop it to BN6's chip-art size."""
-    record = BN3_CHIP_DATA + BN3_FOLDERBACK_ID * BN3_CHIP_RECORD_SIZE
+def extract_bn3_chip_art(
+    rom: bytes,
+    chip_id: int,
+    chip_name: str,
+) -> tuple[bytes, bytes, bytes]:
+    """Extract BN3 menu art and crop it to BN6's chip-art size."""
+    record = BN3_CHIP_DATA + chip_id * BN3_CHIP_RECORD_SIZE
     if record + BN3_CHIP_RECORD_SIZE > len(rom):
-        raise ValueError("BN3 FolderBack chip record is outside the ROM")
+        raise ValueError(f"BN3 {chip_name} chip record is outside the ROM")
     icon_offset = read_bn3_pointer(rom, record + 0x14)
     image_offset = read_bn3_pointer(rom, record + 0x18)
     palette_offset = read_bn3_pointer(rom, record + 0x1C)
@@ -184,7 +189,7 @@ def extract_folderback_art(rom: bytes) -> tuple[bytes, bytes, bytes]:
     source_image = rom[image_offset:image_offset + 0x700]
     palette = rom[palette_offset:palette_offset + 0x20]
     if len(icon) != 0x80 or len(source_image) != 0x700 or len(palette) != 0x20:
-        raise ValueError("BN3 FolderBack art is truncated")
+        raise ValueError(f"BN3 {chip_name} art is truncated")
 
     pixels = decode_4bpp_tiles(source_image, BN3_IMAGE_WIDTH, BN3_IMAGE_HEIGHT)
     crop_x = (BN3_IMAGE_WIDTH - EXE6_IMAGE_WIDTH) // 2
@@ -203,8 +208,13 @@ ASSETS = (
     Asset("exe45", "blackweapon-image.bin", 0x755CF0, 0x540),
     Asset("exe45", "blackweapon-palette.bin", 0x75CEF0, 0x20),
 
-    # BN3 Blue: FolderBack's original rumble sample. Its menu art is decoded
-    # and cropped separately below because BN3 stores it at 64x56, not 56x48.
+    # BN3 Blue: the shared group-0x10/id-0x3D chess-piece archive. Rook is
+    # animation 4; its menu art is decoded and cropped separately below because
+    # BN3 stores it at 64x56, not 56x48.
+    Asset("bn3_blue", "rook-battle-sprite.bin", 0x2CD434, 0x20A0),
+
+    # BN3 Blue: FolderBack's original rumble sample. Its menu art uses the
+    # same decoded-and-cropped path as Rook.
     Asset("bn3_blue", "folderback-rumble-sample.bin", 0x215B68, 0x354E),
 
     # BN5 ProtoMan: Jealousy menu art and chip-delete overlay.
@@ -324,6 +334,11 @@ ASSETS = (
     Asset("exe6_falzar", "sprite-group10-table-falzar.bin", 0x31FA4, 0x170),
     Asset("exe6_falzar", "sprite-group14-table-falzar.bin", 0x32114, 0x80),
 
+    # Native DustCross ammo sprite selectors. The registry appends imported
+    # obstacle sprites and redirects every suction/firing lookup to one table.
+    Asset("exe6_gregar", "dust-sprite-table-gregar.bin", 0xEAC00, 0x1E),
+    Asset("exe6_falzar", "dust-sprite-table-falzar.bin", 0xE98C0, 0x1E),
+
     # Complete native BN6 song tables, relocated before imported cues append.
     Asset("exe6_gregar", "song-table-gregar.bin", 0x159F48, 0xED0),
     Asset("exe6_falzar", "song-table-falzar.bin", 0x1583F8, 0xED0),
@@ -365,20 +380,24 @@ def extract_assets(roms: dict[str, bytes], output_dir: Path) -> tuple[int, int]:
                 raise ValueError(f"cannot decompress {asset.output}: {exc}") from exc
         outputs.append((asset.output, data))
 
-    folderback_outputs = zip(
-        (
-            "folderback-icon.bin",
-            "folderback-image.bin",
-            "folderback-palette.bin",
-        ),
-        extract_folderback_art(roms["bn3_blue"]),
-        strict=True,
-    )
-    for name, data in folderback_outputs:
-        if name in output_names:
-            raise ValueError(f"duplicate output name: {name}")
-        output_names.add(name)
-        outputs.append((name, data))
+    for prefix, chip_id, chip_name in (
+        ("rook", BN3_ROOK_ID, "Rook"),
+        ("folderback", BN3_FOLDERBACK_ID, "FolderBack"),
+    ):
+        chip_art_outputs = zip(
+            (
+                f"{prefix}-icon.bin",
+                f"{prefix}-image.bin",
+                f"{prefix}-palette.bin",
+            ),
+            extract_bn3_chip_art(roms["bn3_blue"], chip_id, chip_name),
+            strict=True,
+        )
+        for name, data in chip_art_outputs:
+            if name in output_names:
+                raise ValueError(f"duplicate output name: {name}")
+            output_names.add(name)
+            outputs.append((name, data))
 
     for name, data in (
         ("duo-image.bin", DUO_IMAGE),

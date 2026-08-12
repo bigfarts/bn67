@@ -57,6 +57,7 @@ class PackageCompilerTests(unittest.TestCase):
             fixed_tables = (
                 [item["native_table"] for item in raw["object_classes"]]
                 + [item["native_table"] for item in raw["sprite_groups"]]
+                + [raw["dust_sprites"]["native_table"]]
                 + [raw["songs"]["native_table"]]
                 + [item["native_table"] for item in raw["attack_pools"].values()]
             )
@@ -136,6 +137,15 @@ class PackageCompilerTests(unittest.TestCase):
                 config.songs.native_entries,
                 (self.fixture_root / raw["songs"]["native_table"]).stat().st_size
                 // 8,
+            )
+            self.assertNotIn("native_entries", raw["dust_sprites"])
+            self.assertEqual(
+                config.dust_sprites.native_entries,
+                (
+                    self.fixture_root
+                    / raw["dust_sprites"]["native_table"]
+                ).stat().st_size
+                // 2,
             )
             for kind, pool in config.attack_pools.items():
                 self.assertEqual(pool.family, raw["attack_pools"][kind]["family"])
@@ -294,6 +304,35 @@ class PackageCompilerTests(unittest.TestCase):
             f"0x{allocations.song_players['common_navi_summon_song']:X};",
             linker,
         )
+        self.assertIn(
+            "__bn67_dust_kind_signalred_battle_sprite = 0xF;",
+            linker,
+        )
+        self.assertIn(
+            "__bn67_dust_kind_rook_battle_sprite = 0xE;",
+            linker,
+        )
+        self.assertIn("dust_sprite_table:", assembly)
+        self.assertIn(
+            '.incbin "build/dust-sprite-table-gregar.bin"',
+            assembly,
+        )
+        signalred_group, signalred_id = allocations.sprites[
+            "signalred_battle_sprite"
+        ]
+        rook_group, rook_id = allocations.sprites["rook_battle_sprite"]
+        self.assertIn(
+            f".byte 0x{signalred_group:02X},0x{signalred_id:02X} "
+            "// 0x0F signalred_battle_sprite",
+            assembly,
+        )
+        self.assertIn(
+            f".byte 0x{rook_group:02X},0x{rook_id:02X} "
+            "// 0x0E rook_battle_sprite",
+            assembly,
+        )
+        self.assertIn(".org 0x080DCAE2\n    mov r0,0x0C", assembly)
+        self.assertNotIn("mov r1,0x1F", assembly)
         self.assertNotIn("LASERMAN_SUMMON_SONG", assembly)
         self.assertNotIn("ROLLARROW_SUMMON_SONG", assembly)
         self.assertIn(
@@ -305,6 +344,31 @@ class PackageCompilerTests(unittest.TestCase):
             (ROOT / "src/chips/rollarrow.c").read_text(),
         )
         self.assertNotIn(".definelabel", assembly)
+
+    def test_dust_sprite_kinds_are_compiler_allocated(self) -> None:
+        config, packages = self.packages()
+        allocations = validate_and_allocate(config, packages)
+
+        self.assertIn(
+            "__bn67_meta__dust_sprite__rook_battle_sprite",
+            self.metadata["gregar"]["rook"],
+        )
+        self.assertIn(
+            "__bn67_meta__dust_sprite__signalred_battle_sprite",
+            self.metadata["gregar"]["signalred"],
+        )
+        self.assertFalse(
+            any(
+                "dust_sprite__0x" in symbol
+                for symbols in self.metadata["gregar"].values()
+                for symbol in symbols
+            )
+        )
+        self.assertEqual(allocations.dust_sprites["rook_battle_sprite"], 0x0E)
+        self.assertEqual(
+            allocations.dust_sprites["signalred_battle_sprite"],
+            0x0F,
+        )
 
     def test_sources_and_text_definition_files(self) -> None:
         self.assertFalse((ROOT / "packages").exists())
@@ -659,8 +723,8 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn("BN67_CHIP_RECORD(0x110)", source)
         self.assertIn("BN67_CHIP_RECORD(0x111)", source)
         self.assertIn("BN67_CHIP_RECORD(0x112)", source)
-        self.assertEqual(source.count(".family = COLONEL_FAMILY"), 3)
-        self.assertEqual(source.count(".subfamily = COLONEL_SUBFAMILY"), 3)
+        self.assertEqual(source.count(".family = FAMILY"), 3)
+        self.assertEqual(source.count(".subfamily = SUBFAMILY"), 3)
         self.assertEqual(
             source.count(
                 ".object_spawn = { .animation_state = "
@@ -906,6 +970,14 @@ class PackageCompilerTests(unittest.TestCase):
         group, sprite_id = allocations.sprites["signalred_battle_sprite"]
         self.assertIn(f"__bn67_sprite_group_signalred_battle_sprite = 0x{group:X};", linker)
         self.assertIn(f"__bn67_sprite_id_signalred_battle_sprite = 0x{sprite_id:X};", linker)
+        self.assertIn(
+            "__bn67_dust_kind_signalred_battle_sprite = 0xF;",
+            linker,
+        )
+        self.assertIn(
+            "__bn67_dust_kind_rook_battle_sprite = 0xE;",
+            linker,
+        )
         self.assertIn(
             f"__bn67_song_id_signalred_spawn_song = "
             f"0x{allocations.songs['signalred_spawn_song']:X};",

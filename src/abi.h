@@ -232,6 +232,8 @@ typedef enum Exe6HitTypeFlag {
     EXE6_HIT_TYPE_FLAG_00004000 = 0x00004000u,
     EXE6_HIT_TYPE_FLAG_00008000 = 0x00008000u,
     EXE6_HIT_TYPE_FLAG_00010000 = 0x00010000u,
+    /* Requests the native obstacle guard ping and its SFX. */
+    EXE6_HIT_TYPE_FLAG_GUARD_BLOCKED = 0x00020000u,
     EXE6_HIT_TYPE_FLAG_00040000 = 0x00040000u,
     EXE6_HIT_TYPE_FLAG_00080000 = 0x00080000u,
     EXE6_HIT_TYPE_FLAG_00100000 = 0x00100000u,
@@ -729,6 +731,7 @@ struct Exe6HitFields {
     Exe6HitTypeFlag received_hit_flags;         // +0x70, EXE6_RECEIVED_HIT_FLAG_*
     uint8_t unknown_74[0x0C];
     uint16_t final_damage;               // +0x80
+    uint16_t damage_buckets[5];          // +0x82..+0x8B
 };
 
 struct Exe6BattleContextFields {
@@ -968,6 +971,10 @@ _Static_assert(
     offsetof(struct Exe6HitFields, final_damage) == 0x80,
     "final hit damage offset"
 );
+_Static_assert(
+    offsetof(struct Exe6HitFields, damage_buckets) == 0x82,
+    "hit damage buckets offset"
+);
 _Static_assert(offsetof(Exe6BattleState, state) == 0, "battle state offset");
 _Static_assert(
     offsetof(Exe6BattleState, custom_screen_side) == 0x05,
@@ -1122,6 +1129,7 @@ void exe6_battle_hit_hit_mark_set(Exe6HitEffect effect);
 void exe6_battle_hit_status_change_set(uint32_t low, uint32_t high);
 void exe6_battle_hit_close(Exe6Hit *hit);
 void exe6_cube_hit_check(void);
+void exe6_cube_guard_mark_check(void);
 void exe6_enemy_life_sub(uint32_t damage);
 uint32_t exe6_rand(void);
 void exe6_cockpit_kokoro_navicus_bug_clear(void);

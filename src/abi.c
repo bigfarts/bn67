@@ -219,6 +219,7 @@ NATIVE_WRAPPER(exe6_battle_hit_hit_mark_set, 0x0801A140, void, (Exe6HitEffect ef
 NATIVE_WRAPPER(exe6_battle_hit_status_change_set, 0x0801A4D0, void, (uint32_t low, uint32_t high))
 NATIVE_WRAPPER(exe6_battle_hit_req_flag_get, 0x0801A180, uint32_t, (void))
 NATIVE_WRAPPER(exe6_cube_hit_check, 0x0801AD12, void, (void))
+NATIVE_WRAPPER(exe6_cube_guard_mark_check, 0x0800EB9E, void, (void))
 NATIVE_WRAPPER(exe6_battle_obj_char_move, 0x0801BBAC, void, (void))
 NATIVE_WRAPPER(exe6_battle_obj_char_move2, 0x0801BBF4, void, (void))
 NATIVE_WRAPPER(exe6_rand, 0x0800151C, uint32_t, (void))

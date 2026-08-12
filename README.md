@@ -2,6 +2,10 @@
 
 ## Changes
 
+### Beast Out
+
+Link battles start each player with five Beast Out turns instead of three.
+
 ### Title screen
 
 The gold `6` in both title logos now reads `67`. The finished, beveled `7` is
@@ -143,6 +147,18 @@ each moving head begins on the front block with BN5's native hit timing.
 Gregar uses the imported BugCharge menu art; Falzar retains the inaccessible
 BugRSword-slot art.
 
+### Rook
+
+Replaces Attack+10 with BN3 Rook while leaving AntiSword unchanged. Rook is a
+30 MB Obstacle-element StandardChip in codes D/N/U/*. It places Rook on the
+block in front of the user with 500 HP after a dimming cut-in and its native
+summon cue. Non-Break
+attacks are stopped without reducing that HP; Break attacks deal their normal
+damage, so they must deplete the full 500 HP rather than deleting Rook in one
+hit. Both versions import Rook's BN3 icon, center-cropped library art, palette,
+and original tower-shaped battle sprite. DustCross can suck Rook in and fire
+that same sprite as ammo, using the registry's shared DustCross selector table.
+
 ### SignlRed
 
 Replaces Navi+20 with the complete Blue Moon SignalRed behavior. The 100-HP
@@ -191,7 +207,8 @@ heart-arrow archives, summon and firing samples, BugChain's menu art and aura,
 LaserMan's menu art and palettes,
 shared actor/beam archive, and SignalRed's menu art and battle sprite from Blue
 Moon; Jealousy's menu/overlay graphics and BugCharge's menu and Gospel-head
-assets from BN5; FolderBack's BN3 menu art and original rumble PCM; plus the full BN5
+assets from BN5; Rook's BN3 menu art and battle sprite; FolderBack's BN3 menu
+art and original rumble PCM; plus the full BN5
 SearchMan actor archive, both scope/reticle archives, the chip icon, and the
 56x48 library artwork; NumberMan's actor and die archives and library art; and
 BlackWeapon's menu art from EXE4.5. The SearchMan

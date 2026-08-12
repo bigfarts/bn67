@@ -53,6 +53,22 @@ class SongConfig:
 
 
 @dataclass(frozen=True)
+class DustSpriteReclaim:
+    kind: int
+    alias: int
+    references: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class DustSpriteConfig:
+    native_table: str
+    native_entries: int
+    references: tuple[int, ...]
+    max_kind: int
+    reclaimed: tuple[DustSpriteReclaim, ...]
+
+
+@dataclass(frozen=True)
 class TextArchive:
     name: str
     region: int
@@ -97,6 +113,7 @@ class Config:
     variant: str
     object_classes: dict[int, ObjectClass]
     sprite_groups: dict[int, SpriteGroup]
+    dust_sprites: DustSpriteConfig
     songs: SongConfig
     text: TextConfig
     chips: ChipConfig
@@ -111,6 +128,11 @@ class ObjectResource:
 
 @dataclass(frozen=True)
 class SpriteResource:
+    archive: str
+
+
+@dataclass(frozen=True)
+class DustSpriteResource:
     archive: str
 
 
@@ -169,6 +191,7 @@ class Package:
     definitions: Path
     objects: tuple[ObjectResource, ...]
     sprites: tuple[SpriteResource, ...]
+    dust_sprites: tuple[DustSpriteResource, ...]
     songs: tuple[SongResource, ...]
     text: tuple[TextResource, ...]
     chips: tuple[ChipResource, ...]
@@ -181,6 +204,7 @@ class Package:
 class Allocations:
     objects: dict[int, dict[str, int]]
     sprites: dict[str, tuple[int, int]]
+    dust_sprites: dict[str, int]
     songs: dict[str, int]
     song_players: dict[str, int]
     attacks: dict[str, AttackAllocation]
@@ -297,6 +321,7 @@ def load_config(path: Path) -> Config:
             "variant",
             "object_classes",
             "sprite_groups",
+            "dust_sprites",
             "songs",
             "text",
             "chips",
@@ -384,6 +409,85 @@ def load_config(path: Path) -> Config:
             f"{path}: songs.native_table",
         ),
         require_int_array(songs_raw, "references", f"{path}: songs"),
+    )
+
+    dust_raw = require_table(raw, "dust_sprites", context)
+    check_keys(
+        dust_raw,
+        {"native_table", "references", "max_kind", "reclaimed"},
+        f"{path}: dust_sprites",
+    )
+    dust_table = require_str(
+        dust_raw, "native_table", f"{path}: dust_sprites"
+    )
+    dust_references = require_int_array(
+        dust_raw, "references", f"{path}: dust_sprites"
+    )
+    dust_max_kind = checked_int(
+        require_int(dust_raw, "max_kind", f"{path}: dust_sprites"),
+        0,
+        0x0F,
+        f"{path}: dust_sprites.max_kind",
+    )
+    if not dust_references or any(address % 4 for address in dust_references):
+        raise PackageError(
+            f"{path}: dust_sprites.references must be non-empty and word-aligned"
+        )
+    dust_native_entries = fixed_width_entry_count(
+        root,
+        dust_table,
+        2,
+        dust_max_kind + 1,
+        f"{path}: dust_sprites.native_table",
+    )
+    try:
+        dust_native_data = (root / dust_table).read_bytes()
+    except OSError as exc:
+        raise PackageError(
+            f"{path}: dust_sprites.native_table: cannot read {root / dust_table}: {exc}"
+        ) from exc
+    reclaimed: list[DustSpriteReclaim] = []
+    reclaimed_kinds: set[int] = set()
+    for index, item in enumerate(
+        require_table_array(dust_raw, "reclaimed", f"{path}: dust_sprites")
+    ):
+        item_context = f"{path}: dust_sprites.reclaimed[{index}]"
+        check_keys(item, {"kind", "alias", "references"}, item_context)
+        kind = checked_int(
+            require_int(item, "kind", item_context),
+            0,
+            dust_native_entries - 1,
+            f"{item_context}.kind",
+        )
+        alias = checked_int(
+            require_int(item, "alias", item_context),
+            0,
+            dust_native_entries - 1,
+            f"{item_context}.alias",
+        )
+        references = require_int_array(item, "references", item_context)
+        if not references or any(address % 2 for address in references):
+            raise PackageError(
+                f"{item_context}.references must be non-empty and halfword-aligned"
+            )
+        if kind in reclaimed_kinds:
+            raise PackageError(f"{item_context}: duplicate reclaimed kind 0x{kind:02X}")
+        if (
+            dust_native_data[kind * 2 : kind * 2 + 2]
+            != dust_native_data[alias * 2 : alias * 2 + 2]
+        ):
+            raise PackageError(
+                f"{item_context}: kind 0x{kind:02X} and alias 0x{alias:02X} "
+                "must use the same native sprite selector"
+            )
+        reclaimed_kinds.add(kind)
+        reclaimed.append(DustSpriteReclaim(kind, alias, references))
+    dust_sprites = DustSpriteConfig(
+        dust_table,
+        dust_native_entries,
+        dust_references,
+        dust_max_kind,
+        tuple(reclaimed),
     )
 
     chips_raw = require_table(raw, "chips", context)
@@ -508,6 +612,7 @@ def load_config(path: Path) -> Config:
         variant,
         object_classes,
         sprite_groups,
+        dust_sprites,
         songs,
         text,
         chips,
@@ -578,6 +683,7 @@ def load_package(source_path: Path, config: Config) -> Package:
         (),
         (),
         (),
+        (),
         tuple(text),
         (),
         None,
@@ -621,6 +727,7 @@ def check_snake_resource_label(package: str, label: str, suffix: str) -> None:
 def apply_metadata(package: Package, symbols: list[str]) -> Package:
     objects: list[ObjectResource] = []
     sprites: list[SpriteResource] = []
+    dust_sprites: list[DustSpriteResource] = []
     songs: list[SongResource] = []
     chips: list[ChipResource] = []
     attack: AttackResource | None = None
@@ -683,6 +790,9 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         elif kind == "sprite" and len(parts) == 2:
             check_snake_resource_label(package.name, parts[1], "_sprite")
             sprites.append(SpriteResource(parts[1]))
+        elif kind == "dust_sprite" and len(parts) == 2:
+            check_snake_resource_label(package.name, parts[1], "_sprite")
+            dust_sprites.append(DustSpriteResource(parts[1]))
         elif kind == "song" and len(parts) == 2:
             check_snake_resource_label(package.name, parts[1], "_song")
             songs.append(SongResource(parts[1]))
@@ -711,6 +821,7 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         package,
         objects=tuple(objects),
         sprites=tuple(sprites),
+        dust_sprites=tuple(dust_sprites),
         songs=tuple(songs),
         chips=tuple(chips),
         attack=attack,
@@ -742,9 +853,33 @@ def discover_packages(config: Config, metadata: dict[str, list[str]]) -> list[Pa
 def validate_and_allocate(config: Config, packages: list[Package]) -> Allocations:
     objects = [item for package in packages for item in package.objects]
     sprites = [item for package in packages for item in package.sprites]
+    dust_sprites = [item for package in packages for item in package.dust_sprites]
     songs = [item for package in packages for item in package.songs]
     text = [item for package in packages for item in package.text]
     chips = [item for package in packages for item in package.chips]
+
+    sprite_names = {item.archive for item in sprites}
+    dust_names: set[str] = set()
+    for item in dust_sprites:
+        if item.archive not in sprite_names:
+            raise PackageError(
+                f"{item.archive}: DustCross ammo must also be declared with BN67_SPRITE"
+            )
+        if item.archive in dust_names:
+            raise PackageError(f"{item.archive}: duplicate DustCross ammo declaration")
+        dust_names.add(item.archive)
+    dust_slots = sorted(item.kind for item in config.dust_sprites.reclaimed)
+    dust_slots.extend(
+        range(config.dust_sprites.native_entries, config.dust_sprites.max_kind + 1)
+    )
+    if len(dust_sprites) > len(dust_slots):
+        raise PackageError(
+            f"DustCross sprite table has {len(dust_slots)} custom slots for "
+            f"{len(dust_sprites)} registered sprites"
+        )
+    dust_allocations = {
+        item.archive: dust_slots[index] for index, item in enumerate(dust_sprites)
+    }
 
     for item in objects:
         if item.object_class not in config.object_classes:
@@ -827,6 +962,7 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
     return Allocations(
         object_allocations,
         sprite_allocations,
+        dust_allocations,
         song_allocations,
         song_players,
         attack_allocations,
@@ -895,6 +1031,11 @@ def generate_linker_values(packages: list[Package], allocations: Allocations) ->
             group, resource_id = allocations.sprites[item.archive]
             lines.append(f"__bn67_sprite_group_{item.archive} = 0x{group:X};")
             lines.append(f"__bn67_sprite_id_{item.archive} = 0x{resource_id:X};")
+        for item in package.dust_sprites:
+            lines.append(
+                f"__bn67_dust_kind_{item.archive} = "
+                f"0x{allocations.dust_sprites[item.archive]:X};"
+            )
         for item in package.songs:
             player = allocations.song_players[item.archive]
             song_id = allocations.songs[item.archive]
@@ -1096,6 +1237,64 @@ def emit_sprite_tables(
     return lines
 
 
+def emit_dust_sprite_table(
+    config: Config, packages: list[Package], allocations: Allocations
+) -> list[str]:
+    """Relocate DustCross selectors and append registered obstacle sprites."""
+    dust = config.dust_sprites
+    resources = {
+        allocations.dust_sprites[item.archive]: item
+        for package in packages
+        for item in package.dust_sprites
+    }
+    lines = ["// Compiler-owned DustCross ammo sprite table."]
+    for address in dust.references:
+        lines.extend([f".org 0x{address:08X}", "    .dw dust_sprite_table"])
+    for reclaimed in dust.reclaimed:
+        for address in reclaimed.references:
+            lines.extend(
+                [
+                    f".org 0x{address:08X}",
+                    f"    mov r0,0x{reclaimed.alias:02X}",
+                ]
+            )
+    lines.extend(
+        [
+            "",
+            ".autoregion",
+            ".align 4",
+            "dust_sprite_table:",
+        ]
+    )
+    native_cursor = 0
+    for kind, item in sorted(resources.items()):
+        if kind < dust.native_entries and native_cursor < kind:
+            lines.append(
+                f'    .incbin "{dust.native_table}",'
+                f"0x{native_cursor * 2:X},0x{(kind - native_cursor) * 2:X}"
+            )
+        elif kind >= dust.native_entries and native_cursor < dust.native_entries:
+            lines.append(
+                f'    .incbin "{dust.native_table}",'
+                f"0x{native_cursor * 2:X},0x{(dust.native_entries - native_cursor) * 2:X}"
+            )
+            native_cursor = dust.native_entries
+        if kind < dust.native_entries:
+            native_cursor = kind + 1
+        group, sprite_id = allocations.sprites[item.archive]
+        lines.append(
+            f"    .byte 0x{group:02X},0x{sprite_id:02X} "
+            f"// 0x{kind:02X} {item.archive}"
+        )
+    if native_cursor < dust.native_entries:
+        lines.append(
+            f'    .incbin "{dust.native_table}",'
+            f"0x{native_cursor * 2:X},0x{(dust.native_entries - native_cursor) * 2:X}"
+        )
+    lines.extend(["dust_sprite_table_end:", ".endautoregion"])
+    return lines
+
+
 def emit_song_table(
     config: Config, packages: list[Package], allocations: Allocations
 ) -> list[str]:
@@ -1198,6 +1397,8 @@ def generate(config: Config, packages: list[Package], allocations: Allocations) 
         emit_object_tables(config, packages, allocations),
         [""],
         emit_sprite_tables(config, packages, allocations),
+        [""],
+        emit_dust_sprite_table(config, packages, allocations),
         [""],
         emit_song_table(config, packages, allocations),
         [""],

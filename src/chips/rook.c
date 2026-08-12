@@ -1,109 +1,86 @@
 #include "runtime.h"
 
-BN67_SPRITE(signalred_battle_sprite, "build/signalred-battle-sprite.bin");
-BN67_DUST_SPRITE(signalred_battle_sprite);
-BN67_SONG(
-    signalred_spawn_song,
-    BN67_PCM(
-        signalred_spawn,
-        0x40,
-        0x08,
-        ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
-        ".byte 0xBE,0x7F,0xDC,0x3C,0x7F,0x8D,0xB1,0x00\n",
-        "build/signalred-spawn-sample.bin"
-    )
-);
-BN67_INCBIN(signalred_icon, "build/signalred-icon.bin");
-BN67_INCBIN(signalred_image, "build/signalred-image.bin");
-BN67_INCBIN(signalred_palette, "build/signalred-palette.bin");
+BN67_SPRITE(rook_battle_sprite, "build/rook-battle-sprite.bin");
+BN67_DUST_SPRITE(rook_battle_sprite);
+BN67_USE_SONG(signalred_spawn_song);
+BN67_INCBIN(rook_icon, "build/rook-icon.bin");
+BN67_INCBIN(rook_image, "build/rook-image.bin");
+BN67_INCBIN(rook_palette, "build/rook-palette.bin");
 
-BN67_CHIP_RECORD(0x0c1) {
+BN67_CHIP_RECORD(0x0c0) {
     .codes = {
-        EXE6_CHIP_CODE_S,
-        EXE6_CHIP_CODE_NONE,
-        EXE6_CHIP_CODE_NONE,
-        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_D,
+        EXE6_CHIP_CODE_N,
+        EXE6_CHIP_CODE_U,
+        EXE6_CHIP_CODE_ASTERISK,
     },
     .attack_element = 0,
-    .rarity = 4,
+    .rarity = 3,
     .element = EXE6_CHIP_ELEMENT_OBSTACLE,
     .chip_class = EXE6_CHIP_CLASS_STANDARD,
-    .mb = 80,
+    .mb = 30,
     .behavior = {
         .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
                         EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x00,
-        .family = BN67_ATTACK_FAMILY(signalred_attack_main),
-        .subfamily = BN67_ATTACK_SUBFAMILY(signalred_attack_main),
+        .family = BN67_ATTACK_FAMILY(rook_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(rook_attack_main),
         .dark_soul_usage = 0x0A,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
         .object_spawn = {0},
         .delay = 0,
     },
-    .library_number = 0x14,
-    .library_flags = 0xC4,
-    .library_lock_on_type = 0x40,
+    .library_number = 0xC4,
+    .library_flags = 0x80,
+    .library_lock_on_type = 0x00,
     .alphabetical_sort = 0,
     .power = 0,
-    .library_sort_order = 0x00C6,
-    .library_gate_usage = 0x01,
+    .library_sort_order = 0x00C4,
+    .library_gate_usage = 0x03,
     .dark_chip_id = UINT8_MAX,
-    .icon = signalred_icon,
-    .image = signalred_image,
-    .palette = signalred_palette,
+    .icon = rook_icon,
+    .image = rook_image,
+    .palette = rook_palette,
 };
 
-static const uint32_t GREEN_SFX = 0x00D1;
+static const uint16_t ROOK_HP = 500;
+static const uint16_t ROOK_LIFETIME = 0x0708;
 static const uint16_t STARTUP_TICKS = 3;
-static const uint16_t RED_TICKS = 420;
-static const uint16_t GREEN_TICKS = 50;
-static const uint16_t OBJ_HP = 100;
-static const Exe6HitType PASSIVE_HIT_TYPE =
-    EXE6_HIT_TYPE_13;
-static const Exe6HitType TARGET_HIT_TYPE =
-    EXE6_HIT_TYPE_14;
+static const uint8_t ROOK_ANIMATION = 4;
+static const Exe6HitType PASSIVE_HIT_TYPE = EXE6_HIT_TYPE_13;
+static const Exe6HitType TARGET_HIT_TYPE = EXE6_HIT_TYPE_14;
 static const uint8_t STARTUP_PENDING_FLAG = 0x01;
 static const uint8_t HIT_DEFERRED_FLAG = 0x80;
 static const uint8_t INITIAL_REMOVAL_FLAGS =
     STARTUP_PENDING_FLAG | HIT_DEFERRED_FLAG;
+static const uint8_t SPAWNER_SIDE_WORK = 0;
 static const uint32_t SPAWN_BLOB_EFFECT = 0x15;
 static const uint32_t DESTROY_EFFECT = 0x00;
 static const int32_t DESTROY_EFFECT_HEIGHT = 0x00100000;
 static const uint32_t DESTROY_SFX = 0x70;
-
-enum LightState {
-    LIGHT_STATE_RED,
-    LIGHT_STATE_GREEN = 4,
-};
 
 enum LaunchStep {
     LAUNCH_STEP_INIT,
     LAUNCH_STEP_ACTIVE = 4,
 };
 
-static uint32_t opponent_chip_enable_flag(const Exe6Obj *obj)
-{
-    return obj->owner == 0
-        ? EXE6_BATTLE_CONTROL_FLAG_SIDE_1_CHIPS_ENABLED
-        : EXE6_BATTLE_CONTROL_FLAG_SIDE_0_CHIPS_ENABLED;
-}
-
-static void enable_opponent_chips(Exe6Obj *obj)
-{
-    exe6_battle_report_flag_on(opponent_chip_enable_flag(obj));
-}
-
-static void disable_opponent_chips(Exe6Obj *obj)
-{
-    exe6_battle_report_flag_off(opponent_chip_enable_flag(obj));
-}
-
 static void obj_animate(Exe6Obj *obj)
 {
     (void)obj;
     exe6_battle_hit_set(0, PASSIVE_HIT_TYPE);
     exe6_battle_obj_char_move();
+}
+
+static void obj_show_spawn_blob(Exe6Obj *obj)
+{
+    (void)exe6_set_efc00(
+        0,
+        obj->x,
+        obj->y,
+        obj->z + DESTROY_EFFECT_HEIGHT,
+        SPAWN_BLOB_EFFECT
+    );
 }
 
 static void obj_begin_destroy(Exe6Obj *obj)
@@ -125,17 +102,6 @@ static void obj_begin_damage_destroy(Exe6Obj *obj)
     obj_begin_destroy(obj);
 }
 
-static void obj_show_spawn_blob(Exe6Obj *obj)
-{
-    (void)exe6_set_efc00(
-        0,
-        obj->x,
-        obj->y,
-        obj->z + DESTROY_EFFECT_HEIGHT,
-        SPAWN_BLOB_EFFECT
-    );
-}
-
 static void obj_begin_placement_failure(Exe6Obj *obj)
 {
     obj_show_spawn_blob(obj);
@@ -144,7 +110,6 @@ static void obj_begin_placement_failure(Exe6Obj *obj)
 
 static void obj_destroy(Exe6Obj *obj)
 {
-    enable_opponent_chips(obj);
     exe6_cube_delete();
     Exe6Hit *hit = obj->hit;
     if (hit != NULL) {
@@ -156,57 +121,10 @@ static void obj_destroy(Exe6Obj *obj)
     exe6_obj_move_delete();
 }
 
-static void play_spawn_sound(Exe6Obj *obj)
-{
-    exe6_sound_req(BN67_SONG_ID(signalred_spawn_song));
-    obj->aux_timer = RED_TICKS;
-    disable_opponent_chips(obj);
-}
-
-static void play_green_sound(Exe6Obj *obj)
-{
-    (void)obj;
-    exe6_sound_req(GREEN_SFX);
-}
-
-static void obj_turn_green(Exe6Obj *obj)
-{
-    obj->animation_state = LIGHT_STATE_GREEN;
-    obj->animation = 1;
-    exe6_obj_dma_seq_set(1);
-    exe6_obj_char_set();
-    obj->aux_timer = GREEN_TICKS;
-    enable_opponent_chips(obj);
-    play_green_sound(obj);
-}
-
-static void obj_cycle_update(Exe6Obj *obj)
-{
-    uint16_t timer = (uint16_t)(obj->aux_timer - 1u);
-    obj->aux_timer = timer;
-    if ((int16_t)timer >= 0) {
-        obj_animate(obj);
-        return;
-    }
-    if (obj->animation_state == LIGHT_STATE_RED) {
-        obj_turn_green(obj);
-        obj_animate(obj);
-        return;
-    }
-
-    obj->animation_state = LIGHT_STATE_RED;
-    obj->animation = 0;
-    exe6_obj_dma_seq_set(0);
-    exe6_obj_char_set();
-    obj->aux_timer = RED_TICKS;
-    disable_opponent_chips(obj);
-    obj_animate(obj);
-}
-
 static void obj_normal_update(Exe6Obj *obj)
 {
     if ((obj->removal_state & STARTUP_PENDING_FLAG) == 0) {
-        obj_cycle_update(obj);
+        obj_animate(obj);
         return;
     }
 
@@ -226,14 +144,29 @@ static void obj_normal_update(Exe6Obj *obj)
         return;
     }
     obj->removal_state &= (uint8_t)~STARTUP_PENDING_FLAG;
-    play_spawn_sound(obj);
+    exe6_sound_req(BN67_SONG_ID(signalred_spawn_song));
     obj_animate(obj);
 }
 
 static void obj_store_dust_ammo(Exe6Obj *obj)
 {
-    exe6_cube_set_dust_suikomi_efc(BN67_DUST_KIND(signalred_battle_sprite));
+    exe6_cube_set_dust_suikomi_efc(BN67_DUST_KIND(rook_battle_sprite));
     obj_destroy(obj);
+}
+
+static void obj_block_damage(Exe6Hit *hit)
+{
+    Exe6HitTypeFlag received = hit->received_hit_flags;
+    if ((received & EXE6_HIT_TYPE_FLAG_GUARD_BLOCKED) == 0) {
+        hit->received_hit_flags =
+            received | EXE6_HIT_TYPE_FLAG_GUARD_BLOCKED;
+        exe6_cube_guard_mark_check();
+        hit->received_hit_flags = received;
+    }
+    hit->final_damage = 0;
+    for (uint32_t i = 0; i < 5; i++) {
+        hit->damage_buckets[i] = 0;
+    }
 }
 
 static void obj_update(Exe6Obj *obj)
@@ -263,12 +196,19 @@ static void obj_update(Exe6Obj *obj)
 
     exe6_cube_hit_check();
     exe6_cube_life_span_check();
+
     Exe6Hit *hit = obj->hit;
     uint32_t damage = hit->final_damage;
     if (damage != 0) {
-        exe6_obj_flash_set();
-        exe6_enemy_life_sub(damage);
+        if ((hit->received_hit_flags &
+             EXE6_HIT_TYPE_FLAG_GUARD_PIERCING) != 0) {
+            exe6_obj_flash_set();
+            exe6_enemy_life_sub(damage);
+        } else {
+            obj_block_damage(hit);
+        }
     }
+
     if (exe6_battle_end_check() != 0) {
         obj_begin_destroy(obj);
         return;
@@ -283,7 +223,9 @@ static void obj_update(Exe6Obj *obj)
     }
 
     uint32_t secondary_flags = exe6_battle_hit_req_flag_get();
-    if ((secondary_flags & (EXE6_HIT_SECONDARY_FLAG_DUST_SUCTION_SIDE_0 | EXE6_HIT_SECONDARY_FLAG_DUST_SUCTION_SIDE_1)) != 0) {
+    if ((secondary_flags &
+         (EXE6_HIT_SECONDARY_FLAG_DUST_SUCTION_SIDE_0 |
+          EXE6_HIT_SECONDARY_FLAG_DUST_SUCTION_SIDE_1)) != 0) {
         obj_store_dust_ammo(obj);
         return;
     }
@@ -305,29 +247,30 @@ static void obj_init(Exe6Obj *obj)
 
     exe6_obj_char_init(
         0x80,
-        BN67_SPRITE_GROUP(signalred_battle_sprite),
-        BN67_SPRITE_ID(signalred_battle_sprite)
+        BN67_SPRITE_GROUP(rook_battle_sprite),
+        BN67_SPRITE_ID(rook_battle_sprite)
     );
     exe6_obj_shadow_set();
-    obj->animation_word = 0;
-    exe6_obj_dma_seq_set(0);
+    obj->animation_word = ROOK_ANIMATION;
+    exe6_obj_dma_seq_set(ROOK_ANIMATION);
     exe6_obj_char_set();
+    exe6_obj_clt_set(0);
     exe6_obj_char_move();
-    exe6_obj_flip_set(obj->owner);
+    exe6_obj_flip_set(obj->work[SPAWNER_SIDE_WORK] ^ 1u);
     exe6_block_to_pos();
-    /* Animation 0 includes SignalRed's native materialization frames. */
+    /* Animation 4 begins with BN3 Rook's own gray materialization frames. */
     obj->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
 
-    obj->hp = OBJ_HP;
-    obj->max_hp = OBJ_HP;
+    obj->hp = ROOK_HP;
+    obj->max_hp = ROOK_HP;
     obj->aux_timer = STARTUP_TICKS;
-    obj->timer = 0x0960;
+    obj->timer = ROOK_LIFETIME;
     if (exe6_battle_hit_open() == NULL) {
         obj_destroy(obj);
         return;
     }
 
-    obj->animation_state = LIGHT_STATE_RED;
+    obj->animation_state = 0;
     obj->removal_state = INITIAL_REMOVAL_FLAGS;
     obj->state_word = EXE6_OBJECT_STATE_ACTIVE;
     exe6_battle_obj_char_move();
@@ -345,7 +288,7 @@ static Exe6Obj *spawn_persistent(Exe6Obj *controller)
 
     uint64_t coordinates = exe6_get_block_pos(block_x, block_y);
     Exe6Obj *obj = exe6_shl_open(
-        BN67_OBJ_ID(signalred_obj_main),
+        BN67_OBJ_ID(rook_obj_main),
         (int32_t)(uint32_t)coordinates,
         (int32_t)(uint32_t)(coordinates >> 32),
         0,
@@ -359,10 +302,13 @@ static Exe6Obj *spawn_persistent(Exe6Obj *controller)
     obj->block_y = (uint8_t)block_y;
     uint8_t owner_side = owner->owner;
     obj->owner = owner_side;
+    obj->work[SPAWNER_SIDE_WORK] = owner_side;
     obj->parent = owner;
     obj->attack = controller->attack;
+    obj->chip_data = controller->chip_data;
     obj->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
-    exe6_cube_entry(obj, owner_side, 1);
+    /* Slot 0 is the engine's two-entry obstacle queue for each side. */
+    exe6_cube_entry(obj, owner_side, 0);
     return obj;
 }
 
@@ -382,7 +328,7 @@ static void launch_effect(Exe6Obj *controller)
     }
 }
 
-static void update(Exe6Obj *controller)
+static void controller_update(Exe6Obj *controller)
 {
     switch (controller->phase) {
     case EXE6_EVENT_CHIP_PHASE_FADE:
@@ -400,14 +346,14 @@ static void update(Exe6Obj *controller)
     }
 }
 
-BN67_EFFECT(signalred_controller_main)
+BN67_EFFECT(rook_controller_main)
 {
     switch (self->state) {
     case EXE6_OBJECT_STATE_INIT:
         exe6_event_chip_common_init();
         break;
     case EXE6_OBJECT_STATE_ACTIVE:
-        update(self);
+        controller_update(self);
         break;
     default:
         exe6_event_chip_common_exit();
@@ -415,7 +361,7 @@ BN67_EFFECT(signalred_controller_main)
     }
 }
 
-BN67_SHELL(signalred_obj_main)
+BN67_SHELL(rook_obj_main)
 {
     switch (self->state) {
     case EXE6_OBJECT_STATE_INIT:
@@ -430,10 +376,10 @@ BN67_SHELL(signalred_obj_main)
     }
 }
 
-BN67_PERSISTENT_ATTACK(0x0C1, signalred_attack_main)
+BN67_PERSISTENT_ATTACK(0x0c0, rook_attack_main)
 {
     Exe6Obj *controller = exe6_efc_open(
-        BN67_OBJ_ID(signalred_controller_main), spawn_parameters
+        BN67_OBJ_ID(rook_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;

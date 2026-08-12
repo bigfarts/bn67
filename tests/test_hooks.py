@@ -7,6 +7,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class GlobalHookTests(unittest.TestCase):
+    def test_link_battles_start_with_five_beast_turns(self) -> None:
+        hooks = (ROOT / "src/hooks.asm").read_text()
+
+        self.assertRegex(
+            hooks,
+            re.compile(r"(?m)^\.org 0x0800B1A2\n    mov r0,5$"),
+        )
+
     def test_aquaneedle_keeps_stagger_without_fixed_invulnerability(self) -> None:
         hooks = (ROOT / "src/hooks.asm").read_text()
 

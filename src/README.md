@@ -93,17 +93,22 @@ BN67_SUMMON_ATTACK(0x107, searchman_attack_main)
 }
 ```
 
-Target-specific pointer addresses use the same macro behind the normal C
-preprocessor; the metadata pass receives the same definition as the final C
-build:
+`BN67_DUST_SPRITE(archive)` adds a registered sprite to the compiler-owned
+DustCross ammo selector table. Use `BN67_DUST_KIND(archive)` when calling
+`exe6_cube_set_dust_suikomi_efc`; the compiler allocates its four-bit ammo kind.
+Target-specific table references and any safely reclaimed native aliases live
+in the edition config instead of individual chip sources.
 
 ```c
-#if FALZAR
-BN67_PATCH_POINTER(0x080E9990, signalred_dust_sprite_table);
-#else
-BN67_PATCH_POINTER(0x080EACD0, signalred_dust_sprite_table);
-#endif
+BN67_SPRITE(rook_battle_sprite, "build/rook-battle-sprite.bin");
+BN67_DUST_SPRITE(rook_battle_sprite);
+
+exe6_cube_set_dust_suikomi_efc(BN67_DUST_KIND(rook_battle_sprite));
 ```
+
+Target-specific pointer addresses use `BN67_PATCH_POINTER` behind the normal C
+preprocessor; the metadata pass receives the same definition as the final C
+build.
 
 Use `BN67_PATCH_THUMB_POINTER(address, symbol)` for native function-pointer
 tables; it writes `symbol + 1` so the indirect branch remains in Thumb state.

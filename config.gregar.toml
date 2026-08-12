@@ -35,6 +35,16 @@ number = 0x14
 references = [0x08031CD8]
 native_table = "build/sprite-group14-table-gregar.bin"
 
+[dust_sprites]
+native_table = "build/dust-sprite-table-gregar.bin"
+references = [0x08012010, 0x08012014, 0x080EACD0]
+max_kind = 0x0F
+
+[[dust_sprites.reclaimed]]
+kind = 0x0E
+alias = 0x0C
+references = [0x080DCAE2]
+
 [attack_pools.persistent_attack]
 family = 0x15
 native_table = "build/attack-family15-table-gregar.bin"

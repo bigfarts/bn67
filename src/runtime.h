@@ -11,6 +11,7 @@
 #define BN67_LINK_OBJ_ID(main) BN67_JOIN(__bn67_object_id_, main)
 #define BN67_LINK_SPRITE_ID(archive) BN67_JOIN(__bn67_sprite_id_, archive)
 #define BN67_LINK_SPRITE_GROUP(archive) BN67_JOIN(__bn67_sprite_group_, archive)
+#define BN67_LINK_DUST_KIND(archive) BN67_JOIN(__bn67_dust_kind_, archive)
 #define BN67_LINK_SONG_ID(archive) BN67_JOIN(__bn67_song_id_, archive)
 #define BN67_LINK_SONG_GROUP(archive) BN67_JOIN(__bn67_song_group_, archive)
 
@@ -29,6 +30,8 @@
     ((uint32_t)(uintptr_t)BN67_LINK_SPRITE_ID(archive))
 #define BN67_SPRITE_GROUP(archive) \
     ((uint32_t)(uintptr_t)BN67_LINK_SPRITE_GROUP(archive))
+#define BN67_DUST_KIND(archive) \
+    ((uint32_t)(uintptr_t)BN67_LINK_DUST_KIND(archive))
 #define BN67_SONG_ID(archive) \
     ((uint32_t)(uintptr_t)BN67_LINK_SONG_ID(archive))
 #define BN67_SONG_GROUP(archive) \
@@ -237,5 +240,10 @@
     extern const uint8_t BN67_LINK_SPRITE_GROUP(archive)[]; \
     BN67_INCBIN(archive, path); \
     BN67_METADATA_RECORD("sprite", BN67_STRINGIFY(archive))
+
+/* Register an imported sprite as a DustCross ammo kind. */
+#define BN67_DUST_SPRITE(archive) \
+    extern const uint8_t BN67_LINK_DUST_KIND(archive)[]; \
+    BN67_METADATA_RECORD("dust_sprite", BN67_STRINGIFY(archive))
 
 #endif

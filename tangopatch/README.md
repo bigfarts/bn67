@@ -2,6 +2,10 @@
 
 ## Behavior Changes
 
+### Beast Out
+
+Link battles start each player with five Beast Out turns instead of three.
+
 ### Status Bug
 
 The normal- and high-severity green invulnerability outcomes now use their
@@ -166,6 +170,19 @@ during the activation freeze, and destruction produces a visible break effect.
 Its activation flags do not advertise Image Invisibility to Rush, and its passive
 field hit does not trigger Beat or traps. Dimming cut-ins do not stall either
 peer.
+
+### Rook
+
+**Replaces:** Attack +10
+
+BN3 Rook is available in both versions while Anti Sword remains unchanged.
+The 30 MB, Obstacle-element Standard chip uses codes D/N/U/* and places a
+500-HP Rook on the block in front of the user after a dimming cut-in and its
+native summon cue. It blocks non-Break attacks
+without losing HP. Break attacks deal normal damage and must deplete all 500
+HP; they do not delete it automatically. Both versions use Rook's original
+BN3 chip art, palette, and tower-shaped battle sprite. Dust Cross can suck it
+in and fire that same sprite as ammo.
 
 ### Duo
 
