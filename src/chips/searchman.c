@@ -175,14 +175,6 @@ struct SearchmanReticleWork {
     uint32_t alternate;                  // +0x64
 };
 
-static void set_animation(Exe6Obj *self, uint8_t animation)
-{
-    self->animation = animation;
-    self->palette = 0;
-    exe6_obj_dma_seq_set(animation);
-    exe6_obj_char_set();
-}
-
 static void pulse_scale(Exe6Obj *self)
 {
     struct SearchmanActorWork *work =
@@ -195,15 +187,6 @@ static void actor_animate(Exe6Obj *self)
     (void)self;
     exe6_battle_obj_char_move2();
     pulse_scale(self);
-}
-
-static void actor_destroy(Exe6Obj *self)
-{
-    uint8_t *completion = self->completion;
-    if (completion != NULL) {
-        *completion = 0;
-    }
-    exe6_obj_move_delete();
 }
 
 static void appear(Exe6Obj *self)
@@ -242,7 +225,7 @@ static void wait_for_block(Exe6Obj *self)
         self->substate = 4;
         return;
     }
-    if (!timer_expired(self)) {
+    if (decrement_timer(&self->timer) >= 0) {
         return;
     }
     if (exe6_block_move_check(
@@ -341,7 +324,7 @@ static void fire_tick(Exe6Obj *self)
         spawn_hit(self, delete_shot);
     }
 
-    if (!timer_expired(self)) {
+    if (decrement_timer(&self->timer) >= 0) {
         return;
     }
     --self->animation_state;
@@ -371,7 +354,7 @@ static void shot_cooldown(Exe6Obj *self)
         self->substate = 4;
         return;
     }
-    if (timer_expired(self)) {
+    if (decrement_timer(&self->timer) < 0) {
         self->phase = EXIT_PHASE;
         self->phase_timer = 0;
     }
@@ -396,7 +379,7 @@ static void exit_phase(Exe6Obj *self)
         self->phase_timer_low = 4;
         return;
     }
-    if (timer_expired(self)) {
+    if (decrement_timer(&self->timer) < 0) {
         self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
         self->state_word = ACTOR_DESTROY_STATE;
     }
@@ -423,7 +406,7 @@ static void actor_init(Exe6Obj *self)
     );
     exe6_obj_char_set();
     exe6_obj_shadow_set();
-    set_animation(self, 0);
+    set_animation_immediate(self, 0);
     exe6_block_to_pos();
     self->z = 0;
     exe6_obj_flip_set(exe6_enemy_flip_check());
@@ -544,8 +527,7 @@ static void reticle_scan(Exe6Obj *self)
         return;
     }
 
-    int32_t timer = (int32_t)self->timer - 1;
-    self->timer = (uint16_t)timer;
+    int32_t timer = decrement_timer(&self->timer);
     if (timer < 0) {
         self->phase = self->aux_timer == 0 ? RETICLE_LOCKED_PHASE : 0;
         self->phase_timer_low = 0;
@@ -579,7 +561,7 @@ static void reticle_locked(Exe6Obj *self)
             self->parent->subvariant = 1;
         }
     }
-    if (timer_expired(self)) {
+    if (decrement_timer(&self->timer) < 0) {
         self->state = ACTOR_DESTROY_STATE;
     }
 }
@@ -612,7 +594,7 @@ static void reticle_init(Exe6Obj *self)
     exe6_obj_char_init(0x80, group, sprite);
     exe6_obj_char_set();
     exe6_obj_no_shadow();
-    set_animation(self, 0);
+    set_animation_immediate(self, 0);
     exe6_obj_clt_set(0);
     reticle_set_initial_block(self);
     exe6_block_to_pos();

@@ -1,3 +1,4 @@
+#include "common.h"
 #include "runtime.h"
 
 BN67_SPRITE(chaoslord_main_sprite, "build/chaoslord-bass-sprite.bin");
@@ -163,19 +164,6 @@ static const struct AttackSpriteEntry ATTACK_SPRITE_TABLE[] = {
     { 0x14, 0x08, 0x00, 0x02 },
     { 0x14, 0x19, 0x00, 0x00 },
 };
-
-static bool timer_nonnegative_after_decrement(Exe6Obj *self)
-{
-    int32_t timer = (int32_t)self->timer - 1;
-    self->timer = (uint16_t)timer;
-    return timer >= 0;
-}
-
-static void set_phase(Exe6Obj *self, uint8_t phase)
-{
-    self->phase = phase;
-    self->phase_timer = 0;
-}
 
 static uint32_t packed_scale(Exe6Obj *self)
 {
@@ -504,7 +492,7 @@ static void controller_init(Exe6Obj *self)
 
 static void controller_phase_intro(Exe6Obj *self)
 {
-    if (timer_nonnegative_after_decrement(self)) {
+    if (decrement_timer(&self->timer) >= 0) {
         return;
     }
 
@@ -548,7 +536,7 @@ static void controller_phase_apparition(Exe6Obj *self)
         self->z += 8 << 16;
         self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     }
-    if (timer_nonnegative_after_decrement(self)) {
+    if (decrement_timer(&self->timer) >= 0) {
         return;
     }
 
@@ -599,7 +587,7 @@ static void controller_phase_approach(Exe6Obj *self)
 
     self->z += 0x0000C000;
     self->x += self->velocity_x;
-    if (timer_nonnegative_after_decrement(self)) {
+    if (decrement_timer(&self->timer) >= 0) {
         return;
     }
     self->timer = ATTACK_FRAMES;
@@ -613,7 +601,7 @@ static void controller_phase_attack(Exe6Obj *self)
         exe6_sound_req(0x141);
         (void)spawn_attack_obj(self, 1);
     }
-    if (timer_nonnegative_after_decrement(self)) {
+    if (decrement_timer(&self->timer) >= 0) {
         return;
     }
     self->animation = 0x0F;
@@ -623,7 +611,7 @@ static void controller_phase_attack(Exe6Obj *self)
 
 static void controller_phase_outro(Exe6Obj *self)
 {
-    if (!timer_nonnegative_after_decrement(self)) {
+    if (decrement_timer(&self->timer) < 0) {
         self->state_word = DESTROY_STATE;
     }
 }
@@ -827,7 +815,7 @@ static void attack_fly(Exe6Obj *self)
     self->x += self->velocity_x;
     self->y += self->velocity_y;
     self->z -= self->velocity_z;
-    if (!timer_nonnegative_after_decrement(self)) {
+    if (decrement_timer(&self->timer) < 0) {
         attack_impact(self);
     }
 }
@@ -862,7 +850,7 @@ static void attack_form(Exe6Obj *self)
     }
 
     attack_flash_target(self);
-    if (timer_nonnegative_after_decrement(self)) {
+    if (decrement_timer(&self->timer) >= 0) {
         return;
     }
 
@@ -940,7 +928,7 @@ static void aura_appear_special(Exe6Obj *self)
         self->timer = 0x19;
         self->phase_timer_low = 2;
     }
-    if (!timer_nonnegative_after_decrement(self)) {
+    if (decrement_timer(&self->timer) < 0) {
         self->phase = AURA_LIFESPAN_PHASE;
     }
 }
@@ -952,7 +940,7 @@ static void aura_appear_normal(Exe6Obj *self)
         self->timer = 0x22;
     }
     if (self->phase_timer_low == 1) {
-        if (timer_nonnegative_after_decrement(self)) {
+        if (decrement_timer(&self->timer) >= 0) {
             return;
         }
         self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
@@ -965,7 +953,7 @@ static void aura_appear_normal(Exe6Obj *self)
     packed = (packed << 5) | scale;
     packed = (packed << 5) | scale;
     exe6_obj_col_efc_set(packed);
-    if (!timer_nonnegative_after_decrement(self)) {
+    if (decrement_timer(&self->timer) < 0) {
         self->phase = AURA_LIFESPAN_PHASE;
     }
 }
@@ -1143,8 +1131,7 @@ BN67_EFFECT(chaoslord_burst_main)
 
 static void teardown_update(Exe6Obj *self)
 {
-    int32_t timer = (int32_t)self->timer - 1;
-    self->timer = (uint16_t)timer;
+    int32_t timer = decrement_timer(&self->timer);
     bool finished = timer == 0;
     if (!finished
         && (exe6_obj_seq_info_get()
@@ -1193,8 +1180,7 @@ BN67_EFFECT(chaoslord_teardown_main)
 
 static void flash_update(Exe6Obj *self)
 {
-    int32_t timer = (int32_t)self->aux_timer - 1;
-    self->aux_timer = (uint16_t)timer;
+    int32_t timer = decrement_timer(&self->aux_timer);
     if (timer < 0) {
         exe6_col_fade_kill(0x14);
         exe6_col_fade_kill(0x15);

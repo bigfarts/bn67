@@ -1,4 +1,4 @@
-#include "abi.h"
+#include "common.h"
 #include "runtime.h"
 
 BN67_SPRITE(bugcharge_gospel_sprite, "build/bugcharge-gospel-sprite.bin");
@@ -171,8 +171,7 @@ static bool head_update(Exe6Obj *self)
         exe6_obj_move_delete();
         return false;
     }
-    int32_t timer = (int32_t)self->aux_timer - 1;
-    self->aux_timer = (uint16_t)timer;
+    int32_t timer = decrement_timer(&self->aux_timer);
     if (timer < 0) {
         exe6_obj_move_delete();
         return false;
@@ -237,8 +236,7 @@ static void effect_update(
         return;
     }
 
-    int32_t delay = (int32_t)self->aux_timer - 1;
-    self->aux_timer = (uint16_t)delay;
+    int32_t delay = decrement_timer(&self->aux_timer);
     if (delay >= 0) {
         return;
     }

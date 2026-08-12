@@ -234,14 +234,6 @@ static const uint32_t BEAM_SCALES[] = {
     0x0000B9C0,
 };
 
-static void set_animation(Exe6Obj *self, uint8_t animation)
-{
-    self->animation = animation;
-    self->palette = UINT8_MAX;
-    exe6_obj_dma_seq_set(animation);
-    exe6_obj_char_set();
-}
-
 static void read_command(Exe6Obj *actor)
 {
     const uint8_t *input = exe6_battle_key_work_adrs_get(actor->owner);
@@ -255,15 +247,6 @@ static void read_command(Exe6Obj *actor)
     } else if ((keys & EXE6_KEY_LEFT) != 0) {
         actor->subvariant = 4;
     }
-}
-
-static void actor_destroy(Exe6Obj *self)
-{
-    uint8_t *completion = self->completion;
-    if (completion != NULL) {
-        *completion = 0;
-    }
-    exe6_obj_move_delete();
 }
 
 static void spawn_laser(Exe6Obj *actor)
@@ -289,15 +272,15 @@ static void spawn_laser(Exe6Obj *actor)
 static void actor_attack(Exe6Obj *self)
 {
     if (self->substate == 0) {
-        set_animation(self, 2);
+        set_animation_immediate(self, 2);
         self->timer = RAISE_FRAMES;
         self->substate = 4;
         return;
     }
     if (self->substate == 4) {
         read_command(self);
-        if (timer_expired(self)) {
-            set_animation(self, 3);
+        if (decrement_timer(&self->timer) < 0) {
+            set_animation_immediate(self, 3);
             spawn_laser(self);
             exe6_sound_req(BN67_SONG_ID(laserman_fire_song));
             self->timer = LASER_FRAMES;
@@ -306,8 +289,8 @@ static void actor_attack(Exe6Obj *self)
         return;
     }
     if (self->substate == 8) {
-        if (timer_expired(self)) {
-            set_animation(self, 4);
+        if (decrement_timer(&self->timer) < 0) {
+            set_animation_immediate(self, 4);
             self->substate = 12;
         }
         return;
@@ -321,7 +304,7 @@ static void actor_attack(Exe6Obj *self)
 static void actor_update(Exe6Obj *self)
 {
     if (self->phase == 0) {
-        if (!timer_expired(self)) {
+        if (decrement_timer(&self->timer) >= 0) {
             return;
         }
         if (exe6_block_move_check(
@@ -349,10 +332,7 @@ static void actor_init(Exe6Obj *self)
     );
     exe6_obj_char_set();
     exe6_obj_shadow_set();
-    self->animation = 0;
-    self->palette = 0;
-    exe6_obj_dma_seq_set(0);
-    exe6_obj_char_set();
+    set_animation_immediate(self, 0);
     exe6_block_to_pos();
     self->z = 0;
     exe6_obj_flip_set(exe6_enemy_flip_check());
@@ -427,7 +407,7 @@ static void beam_update(Exe6Obj *self)
     if (self->phase == 0) {
         if ((exe6_obj_seq_info_get()
                 & EXE6_ANIMATION_FRAME_FLAG_END) != 0) {
-            set_animation(self, 18);
+            set_animation_immediate(self, 18);
             self->animation_state = 0;
             self->removal_state = 0;
             self->timer = BEAM_FRAMES;
@@ -437,8 +417,8 @@ static void beam_update(Exe6Obj *self)
     }
     if (self->phase == 4) {
         beam_command_tick(self);
-        if (timer_expired(self)) {
-            set_animation(self, 19);
+        if (decrement_timer(&self->timer) < 0) {
+            set_animation_immediate(self, 19);
             self->phase = 8;
         }
         return;
@@ -461,7 +441,7 @@ static void beam_init(Exe6Obj *self)
     );
     exe6_obj_char_set();
     exe6_obj_no_shadow();
-    set_animation(self, 17);
+    set_animation_immediate(self, 17);
     exe6_obj_flip_set(exe6_enemy_flip_check());
     exe6_obj_clt_set(
         self->variant == 0 || self->variant == 2 ? 0 : 10

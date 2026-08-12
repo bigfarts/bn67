@@ -206,49 +206,17 @@ struct NumbermanActorWork {
     uint8_t die_active;
 };
 
-static void actor_set_animation(Exe6Obj *self, uint8_t animation)
-{
-    self->animation = animation;
-    self->palette = UINT8_MAX;
-}
-
-static void die_set_animation(Exe6Obj *self, uint8_t animation)
-{
-    self->animation = animation;
-    self->palette = UINT8_MAX;
-}
-
-static void set_phase(Exe6Obj *self, uint8_t phase)
-{
-    self->phase = phase;
-    self->phase_timer = 0;
-}
-
-static bool timer_nonpositive_after_decrement(Exe6Obj *self)
-{
-    int32_t timer = (int32_t)self->timer - 1;
-    self->timer = (uint16_t)timer;
-    return timer <= 0;
-}
-
-static bool aux_timer_expired(Exe6Obj *self)
-{
-    int32_t timer = (int32_t)self->aux_timer - 1;
-    self->aux_timer = (uint16_t)timer;
-    return timer < 0;
-}
-
 static void actor_appear(Exe6Obj *self)
 {
     if (self->substate == 0) {
-        actor_set_animation(self, 3);
+        set_animation(self, 3);
         exe6_sound_req(0x94);
         self->timer = APPEAR_FRAMES;
         self->substate = 4;
     }
 
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
-    if (timer_nonpositive_after_decrement(self)) {
+    if (decrement_timer(&self->timer) <= 0) {
         set_phase(self, WAIT_PHASE);
     }
 }
@@ -256,11 +224,11 @@ static void actor_appear(Exe6Obj *self)
 static void actor_wait(Exe6Obj *self)
 {
     if (self->substate == 0) {
-        actor_set_animation(self, 0);
+        set_animation(self, 0);
         self->timer = WAIT_FRAMES;
         self->substate = 4;
     }
-    if (timer_nonpositive_after_decrement(self)) {
+    if (decrement_timer(&self->timer) <= 0) {
         set_phase(self, THROW_PHASE);
     }
 }
@@ -324,12 +292,12 @@ static void spawn_die(Exe6Obj *actor)
 static void actor_throw(Exe6Obj *self)
 {
     if (self->substate == 0) {
-        actor_set_animation(self, 6);
+        set_animation(self, 6);
         exe6_sound_req(0xB2);
         self->timer = THROW_FRAMES;
         self->substate = 4;
     }
-    if (!timer_expired(self)) {
+    if (decrement_timer(&self->timer) >= 0) {
         return;
     }
 
@@ -349,7 +317,7 @@ static void actor_wait_for_die(Exe6Obj *self)
         self->substate = 4;
         return;
     }
-    if (timer_expired(self)) {
+    if (decrement_timer(&self->timer) < 0) {
         set_phase(self, EXIT_PHASE);
     }
 }
@@ -357,11 +325,11 @@ static void actor_wait_for_die(Exe6Obj *self)
 static void actor_exit(Exe6Obj *self)
 {
     if (self->substate == 0) {
-        actor_set_animation(self, 4);
+        set_animation(self, 4);
         self->timer = EXIT_FRAMES;
         self->substate = 4;
     }
-    if (timer_nonpositive_after_decrement(self)) {
+    if (decrement_timer(&self->timer) <= 0) {
         self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
         self->state_word = DESTROY_STATE;
     }
@@ -392,7 +360,7 @@ static void actor_init(Exe6Obj *self)
     );
     exe6_obj_char_set();
     exe6_obj_shadow_set();
-    actor_set_animation(self, 0);
+    set_animation(self, 0);
     exe6_block_to_pos();
     self->z = 0;
     exe6_obj_flip_set(exe6_enemy_flip_check());
@@ -401,22 +369,9 @@ static void actor_init(Exe6Obj *self)
     set_phase(self, APPEAR_PHASE);
 }
 
-static void actor_destroy(Exe6Obj *self)
-{
-    uint8_t *completion = self->completion;
-    if (completion != NULL) {
-        *completion = 0;
-    }
-    exe6_obj_move_delete();
-}
-
 static void die_finish(Exe6Obj *self)
 {
-    uint8_t *completion = self->completion;
-    if (completion != NULL) {
-        *completion = 0;
-    }
-    exe6_obj_move_delete();
+    actor_destroy(self);
 }
 
 static void die_begin_bounce(Exe6Obj *self)
@@ -478,7 +433,7 @@ static void die_flight(Exe6Obj *self)
         die_leave_field(self);
         return;
     }
-    if (aux_timer_expired(self)) {
+    if (decrement_timer(&self->aux_timer) < 0) {
         if ((exe6_block_status_get(
                 self->target_block_x,
                 self->target_block_y
@@ -610,12 +565,12 @@ static void die_bounce(Exe6Obj *self)
 static void die_show_roll(Exe6Obj *self)
 {
     if (self->substate == 0) {
-        die_set_animation(self, (uint8_t)(self->variant - 1u));
+        set_animation(self, (uint8_t)(self->variant - 1u));
         self->timer = ROLL_FRAMES;
         self->substate = 4;
     }
 
-    if (timer_expired(self)) {
+    if (decrement_timer(&self->timer) < 0) {
         exe6_obj_flash_reset();
         self->phase = EXPLODE_PHASE;
         self->substate = 0;
@@ -657,7 +612,7 @@ static void die_init(Exe6Obj *self)
     );
     exe6_obj_char_set();
     exe6_obj_no_shadow();
-    die_set_animation(self, 6);
+    set_animation(self, 6);
     exe6_obj_prio_set(DIE_PRIORITY);
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
     self->state_word = ACTIVE_STATE;

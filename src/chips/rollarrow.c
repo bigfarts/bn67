@@ -148,14 +148,6 @@ static const uint8_t PROJECTILE_BLOCKS = 8;
 static const Exe6HitType PROJECTILE_HIT_TYPE =
     EXE6_HIT_TYPE_DELETE_ACTIVE_CHIP_ATTACK;
 
-static void set_animation(Exe6Obj *self, uint32_t animation)
-{
-    self->animation = (uint8_t)animation;
-    self->palette = UINT8_MAX;
-    exe6_obj_dma_seq_set(animation);
-    exe6_obj_char_set();
-}
-
 static void spawn_projectile(Exe6Obj *actor)
 {
     Exe6Obj *projectile = exe6_shl_open(
@@ -186,11 +178,11 @@ static void spawn_projectile(Exe6Obj *actor)
 static void actor_wait(Exe6Obj *self)
 {
     if (self->substate == 0) {
-        set_animation(self, 0);
+        set_animation_immediate(self, 0);
         self->timer = WAIT_FRAMES;
         self->substate = 4;
     }
-    if (timer_expired(self)) {
+    if (decrement_timer(&self->timer) < 0) {
         self->phase = 4;
         self->substate = 0;
     }
@@ -199,13 +191,13 @@ static void actor_wait(Exe6Obj *self)
 static void actor_fire(Exe6Obj *self)
 {
     if (self->substate == 0) {
-        set_animation(self, 7);
+        set_animation_immediate(self, 7);
         exe6_sound_req(BN67_SONG_ID(rollarrow_fire_song));
         spawn_projectile(self);
         self->timer = FIRE_HOLD_FRAMES;
         self->substate = 4;
     }
-    if (timer_expired(self)) {
+    if (decrement_timer(&self->timer) < 0) {
         self->phase = 8;
         self->substate = 0;
     }
@@ -214,20 +206,20 @@ static void actor_fire(Exe6Obj *self)
 static void actor_exit(Exe6Obj *self)
 {
     if (self->substate == 0) {
-        set_animation(self, 0);
+        set_animation_immediate(self, 0);
         self->timer = POST_SHOT_FRAMES;
         self->substate = 4;
         return;
     }
     if (self->substate == 4) {
-        if (timer_expired(self)) {
-            set_animation(self, 4);
+        if (decrement_timer(&self->timer) < 0) {
+            set_animation_immediate(self, 4);
             self->timer = EXIT_FRAMES;
             self->substate = 8;
         }
         return;
     }
-    if (timer_expired(self)) {
+    if (decrement_timer(&self->timer) < 0) {
         self->header_flags &= (uint8_t)~EXE6_OBJ_FLAG_VISIBLE;
         self->state_word = 8;
     }
@@ -257,9 +249,7 @@ static void actor_init(Exe6Obj *self)
     );
     exe6_obj_char_set();
     exe6_obj_shadow_set();
-    self->animation_word = 0;
-    exe6_obj_dma_seq_set(0);
-    exe6_obj_char_set();
+    set_animation_immediate(self, 0);
     exe6_block_to_pos();
     self->z = 0;
     exe6_obj_flip_set(exe6_enemy_flip_check());
@@ -268,15 +258,6 @@ static void actor_init(Exe6Obj *self)
     self->state_word = 4;
     self->substate = 0;
     exe6_sound_req(BN67_SONG_ID(common_navi_summon_song));
-}
-
-static void actor_destroy(Exe6Obj *self)
-{
-    uint8_t *completion = self->completion;
-    if (completion != NULL) {
-        *completion = 0;
-    }
-    exe6_obj_move_delete();
 }
 
 BN67_ENEMY(rollarrow_actor_main)

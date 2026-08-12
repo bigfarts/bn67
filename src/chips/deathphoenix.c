@@ -1,3 +1,4 @@
+#include "common.h"
 #include "runtime.h"
 
 BN67_SPRITE(deathphoenix_battle_sprite, "build/deathphoenix-battle-sprite.bin");
@@ -130,26 +131,6 @@ _Static_assert(
     "DeathPhoenix work layout"
 );
 
-static bool timer_positive_after_decrement(Exe6Obj *self)
-{
-    int32_t timer = (int32_t)self->timer - 1;
-    self->timer = (uint16_t)timer;
-    return timer > 0;
-}
-
-static bool timer_nonnegative_after_decrement(Exe6Obj *self)
-{
-    int32_t timer = (int32_t)self->timer - 1;
-    self->timer = (uint16_t)timer;
-    return timer >= 0;
-}
-
-static void set_phase(Exe6Obj *self, uint8_t phase)
-{
-    self->phase = phase;
-    self->phase_timer = 0;
-}
-
 static void finish(Exe6Obj *self)
 {
     *self->completion = 0;
@@ -244,7 +225,7 @@ static void wait_before_strikes(Exe6Obj *self)
         self->timer = BEFORE_STRIKES_FRAMES;
         self->substate = 4;
     }
-    if (timer_positive_after_decrement(self)) {
+    if (decrement_timer(&self->timer) > 0) {
         return;
     }
     self->timer = 0;
@@ -300,7 +281,7 @@ static void strikes(Exe6Obj *self)
 {
     struct DeathphoenixWork *work =
         (struct DeathphoenixWork *)self->work;
-    if (timer_positive_after_decrement(self)) {
+    if (decrement_timer(&self->timer) > 0) {
         return;
     }
     self->timer = STRIKE_INTERVAL;
@@ -330,7 +311,7 @@ static void wait_after_strikes(Exe6Obj *self)
         self->timer = AFTER_STRIKES_FRAMES;
         self->substate = 4;
     }
-    if (!timer_positive_after_decrement(self)) {
+    if (decrement_timer(&self->timer) <= 0) {
         set_phase(self, DISAPPEAR_PHASE);
     }
 }
@@ -349,7 +330,7 @@ static void disappear(Exe6Obj *self)
         self->timer = APPEAR_FRAMES;
         self->substate = 4;
     }
-    if (timer_nonnegative_after_decrement(self)) {
+    if (decrement_timer(&self->timer) >= 0) {
         exe6_obj_bld_set(self->timer);
         return;
     }
@@ -370,7 +351,7 @@ static void recycle_intro(Exe6Obj *self)
         self->timer = RECYCLE_WAIT_FRAMES;
         self->substate = 4;
     }
-    if (!timer_nonnegative_after_decrement(self)) {
+    if (decrement_timer(&self->timer) < 0) {
         self->phase_timer = RECYCLE_INVOKE_STEP;
     }
 }
@@ -409,7 +390,7 @@ static void recycle_wait(Exe6Obj *self)
         self->timer = RECYCLE_WAIT_FRAMES;
         self->substate = 4;
     }
-    if (!timer_nonnegative_after_decrement(self)) {
+    if (decrement_timer(&self->timer) < 0) {
         self->phase_timer = RECYCLE_CLEANUP_STEP;
     }
 }
@@ -518,7 +499,7 @@ static void strike_attack(Exe6Obj *self)
         flame_spawn(self, self->variant);
         self->timer = PULSE_FRAMES;
     }
-    if (timer_positive_after_decrement(self)) {
+    if (decrement_timer(&self->timer) > 0) {
         return;
     }
     self->phase_timer_low = 0;
@@ -537,7 +518,7 @@ static void strike_lead_in(Exe6Obj *self)
         }
         self->animation = 1;
     }
-    if (timer_positive_after_decrement(self)) {
+    if (decrement_timer(&self->timer) > 0) {
         return;
     }
     self->aux_timer = 0;
@@ -598,7 +579,7 @@ static void flame_motion(Exe6Obj *self)
     const int16_t *sine = (const int16_t *)SINE_TABLE_ADDRESS;
     int32_t height = sine[angle >> 8];
     self->z = (height * 20 << 8) + 0x00040000;
-    if (!timer_positive_after_decrement(self)) {
+    if (decrement_timer(&self->timer) <= 0) {
         self->state_word = DESTROY_STATE;
     }
 }
@@ -610,7 +591,7 @@ static void flame_update(Exe6Obj *self)
             self->phase_timer_low = 1;
             self->timer = FLAME_DELAY_FRAMES;
         }
-        if (!timer_positive_after_decrement(self)) {
+        if (decrement_timer(&self->timer) <= 0) {
             set_phase(self, 4);
         }
     } else {

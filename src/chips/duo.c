@@ -144,14 +144,6 @@ struct DuoWork {
     uint8_t saved_panel_active[6];
 };
 
-static void duo_set_animation(Exe6Obj *self, uint32_t animation)
-{
-    self->animation = (uint8_t)animation;
-    self->palette = 0;
-    exe6_obj_dma_seq_set(animation);
-    exe6_obj_char_set();
-}
-
 static uint32_t duo_target_bit(uint32_t block_x, uint32_t block_y)
 {
     return 1u << ((block_y - 1u) * 6u + block_x - 1u);
@@ -377,7 +369,7 @@ static void duo_begin_entry(Exe6Obj *self)
     );
     exe6_obj_char_set();
     exe6_obj_no_shadow();
-    duo_set_animation(self, DUO_ACTOR_ANIMATION);
+    set_animation_immediate(self, DUO_ACTOR_ANIMATION);
     exe6_obj_prio_set(EXE6_OBJ_PRIORITY_BATTLE);
     int32_t direction = (int32_t)exe6_calc_pl_em_dir_spd_for(self);
     self->x = -direction * DUO_ENTRY_X;
@@ -397,13 +389,13 @@ static void duo_actor_update(Exe6Obj *self)
     switch (self->phase) {
     case DUO_PANEL_PHASE:
         duo_set_panels(self, (self->timer & 4u) != 0);
-        if (timer_expired(self)) {
+        if (decrement_timer(&self->timer) < 0) {
             duo_begin_entry(self);
         }
         break;
     case DUO_ENTRY_PHASE:
         self->x += self->velocity_x;
-        if (timer_expired(self)) {
+        if (decrement_timer(&self->timer) < 0) {
             self->timer = DUO_WAIT_FRAMES;
             self->phase = DUO_WAIT_PHASE;
             exe6_camera_quake_set(1, 30);
@@ -411,7 +403,7 @@ static void duo_actor_update(Exe6Obj *self)
         }
         break;
     case DUO_WAIT_PHASE:
-        if (timer_expired(self)) {
+        if (decrement_timer(&self->timer) < 0) {
             duo_begin_barrage(self);
         }
         break;
@@ -432,7 +424,7 @@ static void duo_actor_update(Exe6Obj *self)
         break;
     default:
         if (self->substate == 0) {
-            if (!timer_expired(self)) {
+            if (decrement_timer(&self->timer) >= 0) {
                 break;
             }
             exe6_camera_quake_set(1, 20);
@@ -440,7 +432,7 @@ static void duo_actor_update(Exe6Obj *self)
             self->substate = 4;
         }
         self->x -= self->velocity_x;
-        if (timer_expired(self)) {
+        if (decrement_timer(&self->timer) < 0) {
             self->state_word = DUO_DESTROY_STATE;
         }
         break;
@@ -496,7 +488,7 @@ static void duo_fist_init(Exe6Obj *self)
     uint32_t animation = self->variant == 0
         ? DUO_FIST_ANIMATION_LEFT
         : DUO_FIST_ANIMATION_RIGHT;
-    duo_set_animation(self, animation);
+    set_animation_immediate(self, animation);
     exe6_obj_prio_set(EXE6_OBJ_PRIORITY_BATTLE);
     exe6_obj_flip_set(exe6_enemy_flip_check());
     exe6_obj_clt_set(0);
