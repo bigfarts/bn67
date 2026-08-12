@@ -251,7 +251,9 @@ static void obj_init(Exe6Obj *obj)
         BN67_SPRITE_ID(rook_battle_sprite)
     );
     exe6_obj_shadow_set();
-    obj->animation_word = ROOK_ANIMATION;
+    obj->animation_word = (uint16_t)(
+        ROOK_ANIMATION | (ROOK_ANIMATION << 8)
+    );
     exe6_obj_dma_seq_set(ROOK_ANIMATION);
     exe6_obj_char_set();
     exe6_obj_clt_set(0);

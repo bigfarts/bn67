@@ -62,7 +62,9 @@ class RookTests(unittest.TestCase):
         )
         self.assertIn("static const uint8_t ROOK_ANIMATION = 4;", source)
         self.assertIn("exe6_obj_char_init(\n        0x80,", source)
+        self.assertIn("ROOK_ANIMATION | (ROOK_ANIMATION << 8)", source)
         self.assertIn("exe6_obj_dma_seq_set(ROOK_ANIMATION);", source)
+        self.assertIn("exe6_obj_clt_set(0);", source)
         self.assertIn("uint8_t owner_side = owner->owner;", source)
         self.assertIn("obj->work[SPAWNER_SIDE_WORK] = owner_side;", source)
         self.assertIn(

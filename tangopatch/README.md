@@ -176,13 +176,12 @@ peer.
 **Replaces:** Attack +10
 
 BN3 Rook is available in both versions while Anti Sword remains unchanged.
-The 30 MB, Obstacle-element Standard chip uses codes D/N/U/* and places a
-500-HP Rook on the block in front of the user after a dimming cut-in and its
-native summon cue. It blocks non-Break attacks
-without losing HP. Break attacks deal normal damage and must deplete all 500
-HP; they do not delete it automatically. Both versions use Rook's original
-BN3 chip art, palette, and tower-shaped battle sprite. Dust Cross can suck it
-in and fire that same sprite as ammo.
+The 30 MB, Obstacle-element Standard chip uses codes * and places a 500-HP Rook
+on the block in front of the user after a dimming cut-in and its native summon
+cue. It blocks non-Break attacks without losing HP. Break attacks deal normal
+damage and must deplete all 500 HP; they do not delete it automatically. Both
+versions use Rook's original BN3 chip art, palette, and tower-shaped battle
+sprite. Dust Cross can suck it in and fire that same sprite as ammo.
 
 ### Duo
 
