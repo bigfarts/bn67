@@ -193,7 +193,7 @@ enum VisualFlags {
 #define EXE6_SPRITE_PALETTE_BANK_SHIFT 4u
 #define EXE6_SPRITE_PALETTE_ATTRIBUTE 0x15u
 
-static uint8_t *blackweapon_palette_bank(uint8_t palette_bank)
+static uint8_t *palette_bank_address(uint8_t palette_bank)
 {
     return (uint8_t *)(uintptr_t)(EXE6_SPRITE_PALETTE_STAGING_00
         + (uintptr_t)palette_bank * 0x20u);
@@ -235,7 +235,7 @@ static void install_dark_palette(Exe6Obj *visual)
     }
     exe6_mem_trans256(
         blackweapon_dark_palette,
-        blackweapon_palette_bank(palette_bank),
+        palette_bank_address(palette_bank),
         0x20
     );
 }
@@ -244,7 +244,7 @@ static void save_white_palette(Exe6Obj *visual)
 {
     struct VisualWork *work = (struct VisualWork *)visual->work;
     exe6_mem_trans256(
-        blackweapon_palette_bank(DARK_PALETTE_BANK),
+        palette_bank_address(DARK_PALETTE_BANK),
         work->white_palette,
         sizeof(work->white_palette)
     );
@@ -260,7 +260,7 @@ static void restore_white_palette(Exe6Obj *visual)
     const struct VisualWork *work = (const struct VisualWork *)visual->work;
     exe6_mem_trans256(
         work->white_palette,
-        blackweapon_palette_bank(DARK_PALETTE_BANK),
+        palette_bank_address(DARK_PALETTE_BANK),
         sizeof(work->white_palette)
     );
     visual->aux_timer &= (uint16_t)~VISUAL_PALETTE_SAVED;
