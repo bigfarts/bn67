@@ -54,6 +54,14 @@ static const uint32_t WHITE_FLASH = 0x00006318;
 static const uint16_t IMPACT_FRAMES = 0x46;
 static const uint16_t RESTORED_FRAMES = 0x14;
 
+struct FolderBackControllerWork {
+  uint16_t held_custom_gauge;
+};
+
+_Static_assert(sizeof(struct FolderBackControllerWork) <=
+                   sizeof(((Exe6Obj *)0)->work),
+               "FolderBack controller work exceeds object work storage");
+
 static USED __attribute__((noinline)) bool
 folderback_object_should_pause(const Exe6Obj *object) {
   const enum Exe6ObjectClass object_class =
@@ -132,10 +140,16 @@ static void impact(void) {
   exe6_sound_req(BN67_SONG_ID(folderback_rumble_song));
 }
 
-static void fill_local_custom_gauge(void) {
-  Exe6BattleContext *context = exe6_runtime()->battle_context;
-  uint8_t *player = exe6_op_work_adrs_get(context->local_side);
-  *(uint16_t *)(player + 0x28) = FULL_GAUGE;
+static void hold_local_custom_gauge(Exe6Obj *self) {
+  struct FolderBackControllerWork *work =
+      (struct FolderBackControllerWork *)self->work;
+  exe6_cockpit_set_custom_gauge_value(work->held_custom_gauge);
+}
+
+static void fill_local_custom_gauge(Exe6Obj *self) {
+  struct FolderBackControllerWork *work =
+      (struct FolderBackControllerWork *)self->work;
+  work->held_custom_gauge = FULL_GAUGE;
   exe6_cockpit_set_custom_gauge_value(FULL_GAUGE);
   exe6_sound_req(0x8F);
 }
@@ -201,7 +215,7 @@ static bool effect_update(Exe6Obj *self) {
   case 8:
     self->timer = RESTORED_FRAMES;
     self->phase_timer_low = 0x0C;
-    fill_local_custom_gauge();
+    fill_local_custom_gauge(self);
     restore_local_folder(self);
     break;
   default:
@@ -235,12 +249,22 @@ static void delete_controller(Exe6Obj *self) {
 }
 
 BN67_EFFECT(folderback_controller_main) {
+  struct FolderBackControllerWork *work =
+      (struct FolderBackControllerWork *)self->work;
   if (self->state == 0) {
+    /* Link battles advance the displayed cockpit gauge directly.  Their
+     * operation-work gauge can remain zero even while Custom is charged. */
+    work->held_custom_gauge =
+        (uint16_t)exe6_cockpit_get_custom_gauge_value();
     self->state_word = 4;
   } else if (self->state != 4) {
     delete_controller(self);
     return;
   }
+
+  // Restore the displayed snapshot every controller frame so the per-frame
+  // gauge update cannot accumulate. FullCust replaces it below.
+  hold_local_custom_gauge(self);
 
   if (exe6_battle_end_check() != 0) {
     restore_palette();

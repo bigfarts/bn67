@@ -1149,6 +1149,7 @@ void exe6_deck_shuffle_sub(
     uint32_t preserve_tag
 );
 void exe6_cockpit_set_custom_gauge_value(uint32_t value);
+uint32_t exe6_cockpit_get_custom_gauge_value(void);
 void exe6_operate_slot_in_gauge_sub(uint32_t side, uint32_t amount);
 void exe6_yazirushi_trans(uint32_t duration, uint32_t animation);
 void exe6_camera_quake_set(uint32_t intensity, uint32_t duration);

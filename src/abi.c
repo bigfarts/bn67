@@ -191,6 +191,7 @@ NATIVE_WRAPPER(
 )
 NATIVE_WRAPPER(exe6_battle_key_work_adrs_get, 0x0800A0F4, const uint8_t *, (uint32_t side))
 NATIVE_WRAPPER(exe6_cockpit_set_custom_gauge_value, 0x0801DFA2, void, (uint32_t value))
+NATIVE_WRAPPER(exe6_cockpit_get_custom_gauge_value, 0x0801DFE4, uint32_t, (void))
 NATIVE_WRAPPER(exe6_cockpit_pause_set, 0x0801E15C, void, (void))
 NATIVE_WRAPPER(exe6_op_work_adrs_get, 0x0802E070, uint8_t *, (uint32_t side))
 NATIVE_WRAPPER(exe6_operate_slot_in_gauge_sub, 0x0802E04E, void, (uint32_t side, uint32_t amount))

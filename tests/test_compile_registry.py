@@ -782,6 +782,29 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn("object->object_class", folderback)
         self.assertIn("EXE6_OBJECT_CLASS_ENEMY", folderback)
         self.assertIn("EXE6_OBJECT_CLASS_SHELL", folderback)
+        controller_start = folderback.index(
+            "BN67_EFFECT(folderback_controller_main)"
+        )
+        controller_end = folderback.index(
+            "BN67_PERSISTENT_ATTACK", controller_start
+        )
+        controller = folderback[controller_start:controller_end]
+        self.assertNotIn("exe6_cockpit_pause_set();", controller)
+        self.assertIn("hold_local_custom_gauge(self);", controller)
+        held_gauge_capture = "exe6_cockpit_get_custom_gauge_value();"
+        self.assertIn(held_gauge_capture, controller)
+        self.assertNotIn("local_operation_work", folderback)
+        self.assertNotIn("exe6_op_work_adrs_get", folderback)
+        self.assertLess(
+            controller.index(held_gauge_capture),
+            controller.index("hold_local_custom_gauge(self)"),
+        )
+        self.assertLess(
+            controller.index("hold_local_custom_gauge(self);"),
+            controller.index("effect_update(self)"),
+        )
+        self.assertIn("work->held_custom_gauge = FULL_GAUGE;", folderback)
+        self.assertNotIn("player + 0x28", folderback)
         self.assertNotIn("EXE6_SHELL_TYPE_2", folderback)
         self.assertNotIn("locked_opponents", folderback)
         self.assertNotIn("object->parent", folderback)
@@ -810,6 +833,9 @@ class PackageCompilerTests(unittest.TestCase):
         abi = (ROOT / "src/abi.h").read_text()
         self.assertIn("struct Exe6ObjectSlotFields", abi)
         self.assertIn("sizeof(Exe6ObjectSlot) == 0xC8", abi)
+        self.assertIn(
+            "uint32_t exe6_cockpit_get_custom_gauge_value(void);", abi
+        )
         self.assertIn("EXE6_ENEMY_POOL_HEAD", abi)
         self.assertIn("EXE6_SHELL_POOL_HEAD", abi)
         self.assertIn("EXE6_EFFECT_POOL_HEAD", abi)
