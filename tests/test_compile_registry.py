@@ -536,6 +536,7 @@ class PackageCompilerTests(unittest.TestCase):
             "BN67_PERSISTENT_ATTACK(0x12f, blackweapon_attack_main)",
             source,
         )
+        self.assertIn(".library_number = 3", source)
         self.assertIn(".library_sort_order = 0x012f", source)
         self.assertNotIn("BN67_CHIP_RECORD(0x12d)", source)
 

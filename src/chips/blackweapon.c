@@ -74,7 +74,7 @@ BN67_CHIP_RECORD(0x12f) {
         .object_spawn = {0},
         .delay = 0,
     },
-    .library_number = 1,
+    .library_number = 3,
     .library_flags = 0x14,
     .library_lock_on_type = 0,
     .alphabetical_sort = 0,
