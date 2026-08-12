@@ -1140,7 +1140,6 @@ void exe6_battle_hit_status_flag_off(
     uint32_t status_flags
 );
 Exe6NaviSelectChipWork *exe6_navi_select_chip_work_adrs_get(uint32_t side);
-uint8_t *exe6_op_work_adrs_get(uint32_t side);
 void exe6_battle_chip_set(void);
 void exe6_battle_select_chip_work_init(void);
 void exe6_deck_shuffle_sub(

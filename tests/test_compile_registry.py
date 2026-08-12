@@ -836,6 +836,7 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn(
             "uint32_t exe6_cockpit_get_custom_gauge_value(void);", abi
         )
+        self.assertNotIn("exe6_op_work_adrs_get", abi)
         self.assertIn("EXE6_ENEMY_POOL_HEAD", abi)
         self.assertIn("EXE6_SHELL_POOL_HEAD", abi)
         self.assertIn("EXE6_EFFECT_POOL_HEAD", abi)
