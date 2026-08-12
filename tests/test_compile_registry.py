@@ -564,7 +564,7 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertEqual(source.count(".subfamily = DELTARAY_SUBFAMILY"), 3)
         self.assertRegex(source, r"(?m)^    \.power = 80,$")
         self.assertRegex(source, r"(?m)^    \.power = 100,$")
-        self.assertRegex(source, r"(?m)^    \.power = 180,$")
+        self.assertRegex(source, r"(?m)^    \.power = 200,$")
         self.assertEqual(
             source.count(
                 ".object_spawn = { .animation_state = "
@@ -582,8 +582,60 @@ class PackageCompilerTests(unittest.TestCase):
                 [chip.chip_id for chip in protoman.chips],
                 [0x0E0, 0x0E1, 0x0E2],
             )
+            self.assertEqual(
+                {
+                    (entry.archive, entry.index, entry.value)
+                    for entry in protoman.text
+                },
+                {
+                    ("chip-descriptions-0", index, "A button\npower up\nby 3 swrd")
+                    for index in range(0xE0, 0xE3)
+                },
+            )
             assembly = "\n".join(emit_chip_records(config, packages))
             for chip_id in range(0x0E0, 0x0E3):
+                self.assertIn(
+                    f"bn67_chip_record_0x{chip_id:03x}",
+                    assembly,
+                )
+
+    def test_colonel_uses_native_cross_divide(self) -> None:
+        source = (ROOT / "src/chips/colonel.c").read_text()
+        self.assertEqual(source.count("BN67_CHIP_RECORD("), 3)
+        self.assertIn("BN67_CHIP_RECORD(0x110)", source)
+        self.assertIn("BN67_CHIP_RECORD(0x111)", source)
+        self.assertIn("BN67_CHIP_RECORD(0x112)", source)
+        self.assertEqual(source.count(".family = COLONEL_FAMILY"), 3)
+        self.assertEqual(source.count(".subfamily = COLONEL_SUBFAMILY"), 3)
+        self.assertEqual(
+            source.count(
+                ".object_spawn = { .animation_state = "
+                "CROSSDIVIDE_ANIMATION_STATE }"
+            ),
+            3,
+        )
+
+        for variant in ("gregar", "falzar"):
+            config, packages = self.packages(variant)
+            colonel = next(
+                package for package in packages if package.name == "colonel"
+            )
+            self.assertEqual(
+                [chip.chip_id for chip in colonel.chips],
+                [0x110, 0x111, 0x112],
+            )
+            self.assertEqual(
+                {
+                    (entry.archive, entry.index, entry.value)
+                    for entry in colonel.text
+                },
+                {
+                    ("chip-descriptions-1", index, "Cross-\nslice!")
+                    for index in range(0x10, 0x13)
+                },
+            )
+            assembly = "\n".join(emit_chip_records(config, packages))
+            for chip_id in range(0x110, 0x113):
                 self.assertIn(
                     f"bn67_chip_record_0x{chip_id:03x}",
                     assembly,

@@ -1,27 +1,27 @@
 #include "runtime.h"
 
-/* DeltaRay is the final native family-0x1B summon in both BN6 editions. */
-#define DELTARAY_FAMILY 0x1B
-#define DELTARAY_SUBFAMILY 0x1C
-#define DELTARAY_ANIMATION_STATE 0x0C
+/* CrossDivide selects the alternate mode of Colonel's native summon. */
+#define COLONEL_FAMILY 0x1B
+#define COLONEL_SUBFAMILY 0x11
+#define CROSSDIVIDE_ANIMATION_STATE 0x01
 
 #if FALZAR
-#define PROTOMAN_ICON ((const uint8_t *)0x0872BE14u)
-#define PROTOMAN_IMAGE ((const uint8_t *)0x0871ACF4u)
-#define PROTOMAN_PALETTE_BASE ((const uint8_t *)0x08724ED4u)
-#define PROTOMAN_PALETTE_EX ((const uint8_t *)0x08724EF4u)
-#define PROTOMAN_PALETTE_SP ((const uint8_t *)0x08724F14u)
+#define COLONEL_ICON ((const uint8_t *)0x0872BE14u)
+#define COLONEL_IMAGE ((const uint8_t *)0x087200F4u)
+#define COLONEL_PALETTE_BASE ((const uint8_t *)0x087254D4u)
+#define COLONEL_PALETTE_EX ((const uint8_t *)0x087254F4u)
+#define COLONEL_PALETTE_SP ((const uint8_t *)0x08725514u)
 #else
-#define PROTOMAN_ICON ((const uint8_t *)0x08729D50u)
-#define PROTOMAN_IMAGE ((const uint8_t *)0x08718C30u)
-#define PROTOMAN_PALETTE_BASE ((const uint8_t *)0x08722E10u)
-#define PROTOMAN_PALETTE_EX ((const uint8_t *)0x08722E30u)
-#define PROTOMAN_PALETTE_SP ((const uint8_t *)0x08722E50u)
+#define COLONEL_ICON ((const uint8_t *)0x08729D50u)
+#define COLONEL_IMAGE ((const uint8_t *)0x0871E030u)
+#define COLONEL_PALETTE_BASE ((const uint8_t *)0x08723410u)
+#define COLONEL_PALETTE_EX ((const uint8_t *)0x08723430u)
+#define COLONEL_PALETTE_SP ((const uint8_t *)0x08723450u)
 #endif
 
-BN67_CHIP_RECORD(0x0e0) {
+BN67_CHIP_RECORD(0x110) {
     .codes = {
-        EXE6_CHIP_CODE_B,
+        EXE6_CHIP_CODE_C,
         EXE6_CHIP_CODE_ASTERISK,
         EXE6_CHIP_CODE_NONE,
         EXE6_CHIP_CODE_NONE,
@@ -30,37 +30,37 @@ BN67_CHIP_RECORD(0x0e0) {
     .rarity = 2,
     .element = EXE6_CHIP_ELEMENT_SWORD,
     .chip_class = EXE6_CHIP_CLASS_MEGA,
-    .mb = 41,
+    .mb = 45,
     .behavior = {
         .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
                         EXE6_CHIP_EFFECT_FLAG_ATTACK |
                         EXE6_CHIP_EFFECT_FLAG_NAVI |
                         EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x8A,
-        .family = DELTARAY_FAMILY,
-        .subfamily = DELTARAY_SUBFAMILY,
-        .dark_soul_usage = 0x0A,
-        .unknown_0e = 0x04,
+        .family = COLONEL_FAMILY,
+        .subfamily = COLONEL_SUBFAMILY,
+        .dark_soul_usage = 0x00,
+        .unknown_0e = 0x00,
         .lock_on = 0x00,
-        .object_spawn = { .animation_state = DELTARAY_ANIMATION_STATE },
+        .object_spawn = { .animation_state = CROSSDIVIDE_ANIMATION_STATE },
         .delay = 0,
     },
-    .library_number = 0x04,
+    .library_number = 0x25,
     .library_flags = 0x00,
     .library_lock_on_type = 0x00,
     .alphabetical_sort = 0,
-    .power = 80,
-    .library_sort_order = 0x00E0,
+    .power = 160,
+    .library_sort_order = 0x0110,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = PROTOMAN_ICON,
-    .image = PROTOMAN_IMAGE,
-    .palette = PROTOMAN_PALETTE_BASE,
+    .icon = COLONEL_ICON,
+    .image = COLONEL_IMAGE,
+    .palette = COLONEL_PALETTE_BASE,
 };
 
-BN67_CHIP_RECORD(0x0e1) {
+BN67_CHIP_RECORD(0x111) {
     .codes = {
-        EXE6_CHIP_CODE_B,
+        EXE6_CHIP_CODE_C,
         EXE6_CHIP_CODE_NONE,
         EXE6_CHIP_CODE_NONE,
         EXE6_CHIP_CODE_NONE,
@@ -69,37 +69,37 @@ BN67_CHIP_RECORD(0x0e1) {
     .rarity = 3,
     .element = EXE6_CHIP_ELEMENT_SWORD,
     .chip_class = EXE6_CHIP_CLASS_MEGA,
-    .mb = 53,
+    .mb = 70,
     .behavior = {
         .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
                         EXE6_CHIP_EFFECT_FLAG_ATTACK |
                         EXE6_CHIP_EFFECT_FLAG_NAVI |
                         EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x8A,
-        .family = DELTARAY_FAMILY,
-        .subfamily = DELTARAY_SUBFAMILY,
-        .dark_soul_usage = 0x0A,
-        .unknown_0e = 0x04,
+        .family = COLONEL_FAMILY,
+        .subfamily = COLONEL_SUBFAMILY,
+        .dark_soul_usage = 0x00,
+        .unknown_0e = 0x00,
         .lock_on = 0x00,
-        .object_spawn = { .animation_state = DELTARAY_ANIMATION_STATE },
+        .object_spawn = { .animation_state = CROSSDIVIDE_ANIMATION_STATE },
         .delay = 0,
     },
-    .library_number = 0x05,
+    .library_number = 0x26,
     .library_flags = 0x00,
     .library_lock_on_type = 0x00,
     .alphabetical_sort = 0,
-    .power = 100,
-    .library_sort_order = 0x00E1,
+    .power = 180,
+    .library_sort_order = 0x0111,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = PROTOMAN_ICON,
-    .image = PROTOMAN_IMAGE,
-    .palette = PROTOMAN_PALETTE_EX,
+    .icon = COLONEL_ICON,
+    .image = COLONEL_IMAGE,
+    .palette = COLONEL_PALETTE_EX,
 };
 
-BN67_CHIP_RECORD(0x0e2) {
+BN67_CHIP_RECORD(0x112) {
     .codes = {
-        EXE6_CHIP_CODE_B,
+        EXE6_CHIP_CODE_C,
         EXE6_CHIP_CODE_NONE,
         EXE6_CHIP_CODE_NONE,
         EXE6_CHIP_CODE_NONE,
@@ -108,30 +108,30 @@ BN67_CHIP_RECORD(0x0e2) {
     .rarity = 4,
     .element = EXE6_CHIP_ELEMENT_SWORD,
     .chip_class = EXE6_CHIP_CLASS_MEGA,
-    .mb = 68,
+    .mb = 91,
     .behavior = {
         .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
                         EXE6_CHIP_EFFECT_FLAG_ATTACK |
                         EXE6_CHIP_EFFECT_FLAG_NAVI |
                         EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x8A,
-        .family = DELTARAY_FAMILY,
-        .subfamily = DELTARAY_SUBFAMILY,
-        .dark_soul_usage = 0x0A,
-        .unknown_0e = 0x04,
+        .family = COLONEL_FAMILY,
+        .subfamily = COLONEL_SUBFAMILY,
+        .dark_soul_usage = 0x00,
+        .unknown_0e = 0x00,
         .lock_on = 0x00,
-        .object_spawn = { .animation_state = DELTARAY_ANIMATION_STATE },
+        .object_spawn = { .animation_state = CROSSDIVIDE_ANIMATION_STATE },
         .delay = 0,
     },
-    .library_number = 0x06,
+    .library_number = 0x27,
     .library_flags = 0x00,
     .library_lock_on_type = 0x00,
     .alphabetical_sort = 0,
-    .power = 200,
-    .library_sort_order = 0x00E2,
+    .power = 0x03FA,
+    .library_sort_order = 0x0112,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = PROTOMAN_ICON,
-    .image = PROTOMAN_IMAGE,
-    .palette = PROTOMAN_PALETTE_SP,
+    .icon = COLONEL_ICON,
+    .image = COLONEL_IMAGE,
+    .palette = COLONEL_PALETTE_SP,
 };
