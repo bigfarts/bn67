@@ -605,6 +605,11 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertNotIn("exe6_deck_shuffle_sub(", folderback)
         self.assertIn("selection->active_chip_index = 0;", folderback)
         self.assertIn("selection->loaded_chip_count = 0;", folderback)
+        self.assertIn("clear_chip_use_counts();", folderback)
+        self.assertIn(
+            "*EXE6_USED_CHIP_CLASS_COUNTS = (Exe6ChipClassUseCounts){0};",
+            folderback,
+        )
         self.assertNotIn("sizeof(*selection)", folderback)
         self.assertIn("const Exe6ObjectSlot *slots = EXE6_EFFECT_POOL_HEAD", folderback)
         self.assertIn("EXE6_POOL_SLOT_COUNT", folderback)

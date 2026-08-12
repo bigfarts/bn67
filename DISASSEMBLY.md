@@ -88,6 +88,14 @@ rebuilt 30-chip queue. It does not call the shuffle routine a second time;
 doing so changes both the restored draw order and the shared RNG stream twice.
 The native setup retains the equipped Regular and Tag designations and pins
 any still-available designated chips to their privileged positions.
+BN6 also keeps the number of Standard, Mega, and Giga chips selected during the
+battle at `0x020367E0`. `BattleCheckChip` at `0x0800AFBA` rejects a Mega or
+Giga once its accumulated count exceeds the Navi's class limit; it substitutes
+the dummy chip ID, which renders as a blank Custom slot. Native Folder setup
+does not reset these totals. FolderBack therefore clears all three of the
+owner's class totals after rebuilding the Folder. The Standard total is not an
+overall class limit but is reset with the restored Folder for consistent usage
+bookkeeping; the opponent's totals remain untouched on that peer.
 
 BN67 runtime code and imported assets are allocated from file offset `0x800000`
 onward in an expanded 16 MiB image; exact addresses are selected by Armips.

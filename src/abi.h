@@ -16,6 +16,7 @@ typedef struct Exe6HitFields Exe6Hit;
 typedef struct Exe6BattleContextFields Exe6BattleContext;
 typedef struct Exe6BattleContextFields Exe6BattleState;
 typedef struct Exe6ChipQueueFields Exe6ChipQueue;
+typedef struct Exe6ChipClassUseCountsFields Exe6ChipClassUseCounts;
 typedef struct Exe6RuntimeFields Exe6Runtime;
 typedef struct Exe6ObjectSlotFields Exe6ObjectSlot;
 typedef struct Exe6EnemyObjectSlotFields Exe6EnemyObjectSlot;
@@ -113,6 +114,8 @@ enum Exe6ObjectClass {
     ((Exe6BattleState *)(uintptr_t)0x0203CA70u)
 #define EXE6_CHIP_QUEUE \
     ((Exe6ChipQueue *)(uintptr_t)0x0203CDB0u)
+#define EXE6_USED_CHIP_CLASS_COUNTS \
+    ((Exe6ChipClassUseCounts *)(uintptr_t)0x020367E0u)
 
 #define EXE6_JOIN_INNER(left, right) left##right
 #define EXE6_JOIN(left, right) EXE6_JOIN_INNER(left, right)
@@ -727,6 +730,13 @@ struct Exe6ChipQueueFields {
     uint16_t chips[30];                  // +0x00 through +0x3A
 };
 
+struct Exe6ChipClassUseCountsFields {
+    uint8_t standard;                    // +0x00
+    uint8_t mega;                        // +0x01
+    uint8_t giga;                        // +0x02
+    uint8_t reserved;                    // +0x03
+};
+
 struct Exe6RuntimeFields {
     uint8_t unknown_00[0x18];
     Exe6BattleContext *battle_context;       // +0x18
@@ -745,6 +755,10 @@ _Static_assert(
 );
 _Static_assert(sizeof(Exe6ChipBehavior) == 0x0C, "chip behavior size");
 _Static_assert(sizeof(Exe6ChipRecord) == 0x2C, "chip record size");
+_Static_assert(
+    sizeof(Exe6ChipClassUseCounts) == sizeof(uint32_t),
+    "chip class use-count size"
+);
 _Static_assert(offsetof(Exe6ChipRecord, behavior) == 0x09, "chip behavior offset");
 _Static_assert(
     offsetof(Exe6ChipRecord, library_number) == 0x15,

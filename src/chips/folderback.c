@@ -152,6 +152,10 @@ static void clear_loaded_hand(uint32_t owner) {
   }
 }
 
+static void clear_chip_use_counts(void) {
+  *EXE6_USED_CHIP_CLASS_COUNTS = (Exe6ChipClassUseCounts){0};
+}
+
 static void restore_local_folder(Exe6Obj *self) {
   if (exe6_battle_one_self_check(self->owner) != 0) {
     return;
@@ -163,6 +167,11 @@ static void restore_local_folder(Exe6Obj *self) {
   uint8_t tag_chips_available = context->tag_chips_available;
 
   exe6_battle_chip_set();
+
+  /* BN6 rejects a Mega or Giga chip after the number selected this battle
+   * exceeds the Navi's class limit.  FolderBack restores the complete Folder,
+   * so all of its owner's accumulated class totals start over with it. */
+  clear_chip_use_counts();
 
   context->regular_chip_available = regular_chip_available;
   context->tag_chips_available = tag_chips_available;
