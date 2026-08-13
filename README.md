@@ -20,6 +20,11 @@ rebuilt wholesale rather than patching individual native atlas cells.
 AntiNavi retains its native BN6 behavior, codes, and metadata, but its MB cost
 is reduced from 50 MB to 33 MB in both versions.
 
+### FullCust
+
+FullCust retains its native BN6 behavior, wildcard code, and metadata, but its
+MB cost is increased from 50 MB to 51 MB in both versions.
+
 ### ProtoMan
 
 ProtoMan, ProtoMan EX, and ProtoMan SP now use BN6's native DeltaRay attack

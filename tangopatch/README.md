@@ -18,6 +18,11 @@ flashing invulnerability variants instead.
 Anti Navi's MB cost is reduced from 50 MB to 33 MB in both versions. Its native
 behavior and all other chip metadata are unchanged.
 
+### Full Custom
+
+Full Custom's MB cost is increased from 50 MB to 51 MB in both versions. Its
+native wildcard code, behavior, and all other chip metadata are unchanged.
+
 ### Aqua Needle
 
 Aqua Needle hits still stagger, but no longer make the target flash or grant
