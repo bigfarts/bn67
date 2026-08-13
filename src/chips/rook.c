@@ -9,10 +9,10 @@ BN67_INCBIN(rook_palette, "build/rook-palette.bin");
 
 BN67_CHIP_RECORD(0x0c0) {
     .codes = {
-        EXE6_CHIP_CODE_D,
-        EXE6_CHIP_CODE_N,
-        EXE6_CHIP_CODE_U,
         EXE6_CHIP_CODE_ASTERISK,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
+        EXE6_CHIP_CODE_NONE,
     },
     .attack_element = 0,
     .rarity = 3,
