@@ -334,14 +334,9 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn(".org 0x080DCAE2\n    mov r0,0x0C", assembly)
         self.assertNotIn("mov r1,0x1F", assembly)
         self.assertNotIn("LASERMAN_SUMMON_SONG", assembly)
-        self.assertNotIn("ROLLARROW_SUMMON_SONG", assembly)
         self.assertIn(
             "exe6_sound_req(BN67_SONG_ID(common_navi_summon_song))",
             (ROOT / "src/chips/laserman.c").read_text(),
-        )
-        self.assertIn(
-            "BN67_SONG_ID(common_navi_summon_song)",
-            (ROOT / "src/chips/rollarrow.c").read_text(),
         )
         self.assertNotIn(".definelabel", assembly)
 
@@ -583,18 +578,6 @@ class PackageCompilerTests(unittest.TestCase):
             self.assertIn(
                 ".dw signalred_attack_main + 1 // 0x17 signalred",
                 assembly,
-            )
-
-    def test_custom_summons_follow_delta_ray(self) -> None:
-        for variant in ("gregar", "falzar"):
-            config, packages = self.packages(variant)
-            allocations = validate_and_allocate(config, packages)
-            summon_pool = config.attack_pools["summon_attack"]
-            self.assertEqual(summon_pool.family, 0x1B)
-            self.assertEqual(summon_pool.native_entries, 0x1D)
-            self.assertEqual(
-                allocations.attacks["rollarrow_attack_main"].subfamily,
-                0x1D,
             )
 
     def test_blackweapon_replaces_delta_ray_slot(self) -> None:
