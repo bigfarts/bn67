@@ -67,6 +67,8 @@ static const uint8_t STARTUP_PENDING_FLAG = 0x01;
 static const uint8_t HIT_DEFERRED_FLAG = 0x80;
 static const uint8_t INITIAL_REMOVAL_FLAGS =
     STARTUP_PENDING_FLAG | HIT_DEFERRED_FLAG;
+static const uint8_t DEPLOYABLE_REGISTERED_WORK = 0;
+static const uint8_t OPPONENT_CHIPS_DISABLED_WORK = 1;
 static const uint32_t SPAWN_BLOB_EFFECT = 0x15;
 static const uint32_t DESTROY_EFFECT = 0x00;
 static const int32_t DESTROY_EFFECT_HEIGHT = 0x00100000;
@@ -91,12 +93,17 @@ static uint32_t opponent_chip_enable_flag(const Exe6Obj *obj)
 
 static void enable_opponent_chips(Exe6Obj *obj)
 {
+    if (obj->work[OPPONENT_CHIPS_DISABLED_WORK] == 0) {
+        return;
+    }
     exe6_battle_report_flag_on(opponent_chip_enable_flag(obj));
+    obj->work[OPPONENT_CHIPS_DISABLED_WORK] = 0;
 }
 
 static void disable_opponent_chips(Exe6Obj *obj)
 {
     exe6_battle_report_flag_off(opponent_chip_enable_flag(obj));
+    obj->work[OPPONENT_CHIPS_DISABLED_WORK] = 1;
 }
 
 static void obj_animate(Exe6Obj *obj)
@@ -145,7 +152,10 @@ static void obj_begin_placement_failure(Exe6Obj *obj)
 static void obj_destroy(Exe6Obj *obj)
 {
     enable_opponent_chips(obj);
-    exe6_cube_delete();
+    if (obj->work[DEPLOYABLE_REGISTERED_WORK] != 0) {
+        exe6_cube_delete();
+        obj->work[DEPLOYABLE_REGISTERED_WORK] = 0;
+    }
     Exe6Hit *hit = obj->hit;
     if (hit != NULL) {
         exe6_battle_hit_check(hit);
@@ -220,12 +230,15 @@ static void obj_normal_update(Exe6Obj *obj)
             obj->block_x,
             obj->block_y,
             EXE6_BLOCK_FLAG_SOLID,
-            0
+            EXE6_BLOCK_FLAG_SUPPORT_OBJECT
         ) == 0) {
         obj_begin_placement_failure(obj);
         return;
     }
     obj->removal_state &= (uint8_t)~STARTUP_PENDING_FLAG;
+    /* Do not replace an occupying SignalRed's slot before rejecting. */
+    exe6_cube_entry(obj, obj->owner, 1);
+    obj->work[DEPLOYABLE_REGISTERED_WORK] = 1;
     play_spawn_sound(obj);
     obj_animate(obj);
 }
@@ -359,10 +372,11 @@ static Exe6Obj *spawn_persistent(Exe6Obj *controller)
     obj->block_y = (uint8_t)block_y;
     uint8_t owner_side = owner->owner;
     obj->owner = owner_side;
+    obj->work[DEPLOYABLE_REGISTERED_WORK] = 0;
+    obj->work[OPPONENT_CHIPS_DISABLED_WORK] = 0;
     obj->parent = owner;
     obj->attack = controller->attack;
     obj->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
-    exe6_cube_entry(obj, owner_side, 1);
     return obj;
 }
 

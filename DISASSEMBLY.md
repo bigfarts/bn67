@@ -422,9 +422,12 @@ one-frame white sprite flash used by RockCube. The controller destroys the
 light when its resulting HP reaches zero, spawning BN6's fire-explosion effect
 kind `0x00` at a 16-pixel height and playing its native explosion SFX `0x070`.
 Red/green state changes pause while time is stopped.
-Because deployable registration precedes object initialization, every init
-failure also uses the full unregister/free path instead of leaving a freed
-pointer in the DustCross list.
+RockCube contributes the neutral support-object panel flag `0x00800000` through
+collision type `14`; Rook and SignalRed contribute the owner-specific support
+flags `0x01000000/0x02000000` through collision type `19`. Placement uses the
+native panel-parameter check to require a solid panel and reject all three
+support-object flags. Rook and SignalRed register only after that check passes,
+preventing a failed placement from replacing an existing deployable-list entry.
 
 DustCross's suction sweep at `0x080F10B4` walks all eight deployable-list
 entries. For each eligible object, `0x0800F8B0` raises the common removal bit

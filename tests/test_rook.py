@@ -71,7 +71,7 @@ class RookTests(unittest.TestCase):
             "exe6_obj_flip_set(obj->work[SPAWNER_SIDE_WORK] ^ 1u);",
             source,
         )
-        self.assertIn("exe6_cube_entry(obj, owner_side, 0);", source)
+        self.assertIn("exe6_cube_entry(obj, obj->owner, 0);", source)
 
     def test_native_spawn_animations_are_visible_without_effect_overlay(self) -> None:
         rook = (ROOT / "src/chips/rook.c").read_text()
@@ -99,6 +99,41 @@ class RookTests(unittest.TestCase):
             source.index("static Exe6Obj *spawn_persistent")
         ]
         self.assertIn("obj->header_flags |= EXE6_OBJ_FLAG_VISIBLE;", init)
+
+    def test_spawn_uses_support_object_panel_occupancy(self) -> None:
+        abi = (ROOT / "src/abi.h").read_text()
+        self.assertIn("EXE6_BLOCK_FLAG_NEUTRAL_SUPPORT_OBJECT 0x00800000", abi)
+        self.assertIn("EXE6_BLOCK_FLAG_SIDE_1_SUPPORT_OBJECT 0x01000000", abi)
+        self.assertIn("EXE6_BLOCK_FLAG_SIDE_0_SUPPORT_OBJECT 0x02000000", abi)
+
+        for filename, deployable_slot in (("rook.c", 0), ("signalred.c", 1)):
+            source = (ROOT / "src/chips" / filename).read_text()
+
+            placement = source[
+                source.index("static void obj_normal_update"):
+                source.index("static void obj_store_dust_ammo")
+            ]
+            self.assertIn("EXE6_BLOCK_FLAG_SUPPORT_OBJECT", placement)
+            self.assertIn("obj_begin_placement_failure(obj);", placement)
+            self.assertIn(
+                f"exe6_cube_entry(obj, obj->owner, {deployable_slot});",
+                placement,
+            )
+
+            spawn = source[
+                source.index("static Exe6Obj *spawn_persistent"):
+                source.index("static void launch_effect")
+            ]
+            self.assertNotIn("exe6_cube_entry", spawn)
+
+        runtime = (ROOT / "src/runtime.c").read_text()
+        self.assertNotIn("deployable_block_occupied", runtime)
+
+        signalred = (ROOT / "src/chips/signalred.c").read_text()
+        self.assertIn(
+            "if (obj->work[OPPONENT_CHIPS_DISABLED_WORK] == 0)",
+            signalred,
+        )
 
     def test_text_identifies_rook(self) -> None:
         text = (ROOT / "src/chips/rook.text.toml").read_text()
