@@ -422,9 +422,13 @@ one-frame white sprite flash used by RockCube. The controller destroys the
 light when its resulting HP reaches zero, spawning BN6's fire-explosion effect
 kind `0x00` at a 16-pixel height and playing its native explosion SFX `0x070`.
 Red/green state changes pause while time is stopped.
-RockCube contributes the neutral support-object panel flag `0x00800000` through
-collision type `14`; Rook and SignalRed contribute the owner-specific support
-flags `0x01000000/0x02000000` through collision type `19`. Placement uses the
+RockCube contributes the neutral support-object panel flag `0x00800000`
+through collision type `14`. Rook and SignalRed contribute the owner-specific
+support flags `0x01000000/0x02000000` through collision type `19`, allowing
+their owner's attacks to pass through. WindRack and Tengu's shared traveling
+wind check is extended from only `0x00800000` to the neutral bit plus the
+opposing side's support-object bit, so Rook stops hostile wind without stopping
+friendly attacks. Placement uses the
 native panel-parameter check to require a solid panel and reject all three
 support-object flags. An invalid panel uses the materialization-failure cue;
 support-object occupancy uses the same damage explosion as RockCube contact.

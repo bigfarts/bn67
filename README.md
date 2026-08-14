@@ -162,7 +162,9 @@ WindRack, and Tengu Racket are the push exceptions: their damage is still
 blocked, but they move Rook one panel away from the attacker at AirShot's
 native 10-pixel-per-frame knockback speed. An invalid panel, Navi, virus, or
 blocking object prevents the move; Rook is not removed and nothing takes
-collision damage. Tengu's B+Left wind is blocked by Rook and does not move it.
+collision damage. Rook stops Tengu Racket's traveling gust and Tengu's B+Left
+wind from passing through its panel; B+Left does not move Rook. Its owner's
+attacks still pass through it.
 Break attacks deal their normal damage, so they must deplete the full 500 HP
 rather than deleting Rook in one hit. Both versions import Rook's BN3 icon,
 center-cropped library art,

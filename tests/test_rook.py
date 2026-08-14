@@ -211,6 +211,25 @@ class RookTests(unittest.TestCase):
             signalred,
         )
 
+    def test_rook_keeps_owner_collision_and_extends_the_windbreak_check(self) -> None:
+        source = (ROOT / "src/chips/rook.c").read_text()
+        self.assertIn("EXE6_HIT_TYPE_13;", source)
+        self.assertIn("EXE6_HIT_TYPE_14;", source)
+        self.assertIn("#if FALZAR", source)
+        self.assertNotIn("#ifdef FALZAR", source)
+        self.assertIn(
+            "BN67_PATCH_SECTION(0x080CD418, 0x080E42D0, "
+            "rook_windbreak_filter_main);",
+            source,
+        )
+        self.assertIn(
+            "BN67_PATCH_SECTION(0x080CEC88, 0x080E42D0, "
+            "rook_windbreak_filter_main);",
+            source,
+        )
+        self.assertIn('"lsls r1,r1,#23\\n"', source)
+        self.assertIn('"ldrb r2,[r5,#0x16]\\n"', source)
+
     def test_text_identifies_rook(self) -> None:
         text = (ROOT / "src/chips/rook.text.toml").read_text()
         self.assertIn('"0xC0" = "Rook"', text)

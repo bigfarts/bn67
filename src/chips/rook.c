@@ -48,8 +48,10 @@ static const uint16_t ROOK_HP = 500;
 static const uint16_t ROOK_LIFETIME = 0x0708;
 static const uint16_t STARTUP_TICKS = 3;
 static const uint8_t ROOK_ANIMATION = 4;
-static const Exe6HitType PASSIVE_HIT_TYPE = EXE6_HIT_TYPE_13;
-static const Exe6HitType TARGET_HIT_TYPE = EXE6_HIT_TYPE_14;
+static const Exe6HitType PASSIVE_HIT_TYPE =
+    EXE6_HIT_TYPE_13;
+static const Exe6HitType TARGET_HIT_TYPE =
+    EXE6_HIT_TYPE_14;
 static const uint8_t STARTUP_PENDING_FLAG = 0x01;
 static const uint8_t HIT_DEFERRED_FLAG = 0x80;
 static const uint8_t INITIAL_REMOVAL_FLAGS =
@@ -72,6 +74,39 @@ static const uint32_t SPAWN_BLOB_EFFECT = 0x15;
 static const uint32_t DESTROY_EFFECT = 0x00;
 static const int32_t DESTROY_EFFECT_HEIGHT = 0x00100000;
 static const uint32_t DESTROY_SFX = 0x70;
+
+/*
+ * WindRack and Tengu's wind object only checks the neutral support-object bit
+ * before continuing through a panel. Keep Rook's owner-specific collision so
+ * friendly attacks pass, but extend that check to the opposing side's support
+ * bit. The relocated Custom-opening path provides an eight-byte relay slot.
+ */
+#if FALZAR
+BN67_PATCH_SECTION(0x080CD418, 0x080E42D0, rook_windbreak_filter_main);
+#define ROOK_WINDBREAK_FILTER_RETURN 0x080CD41F
+#else
+BN67_PATCH_SECTION(0x080CEC88, 0x080E42D0, rook_windbreak_filter_main);
+#define ROOK_WINDBREAK_FILTER_RETURN 0x080CEC8F
+#endif
+
+NAKED void rook_windbreak_filter_main(void)
+{
+    __asm__(
+        ".syntax unified\n"
+        "pop {r1}\n"
+        "ldr r0,[r7,#0x70]\n"
+        "movs r1,#1\n"
+        "lsls r1,r1,#23\n"
+        "ldrb r2,[r5,#0x16]\n"
+        "adds r2,#1\n"
+        "adds r3,r1,#0\n"
+        "lsls r3,r2\n"
+        "orrs r1,r3\n"
+        "tst r0,r1\n"
+        "ldr r3,=" EXE6_STRINGIFY(ROOK_WINDBREAK_FILTER_RETURN) "\n"
+        "bx r3\n"
+    );
+}
 
 enum LaunchStep {
     LAUNCH_STEP_INIT,
