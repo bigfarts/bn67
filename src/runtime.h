@@ -246,4 +246,15 @@
     extern const uint8_t BN67_LINK_DUST_KIND(archive)[]; \
     BN67_METADATA_RECORD("dust_sprite", BN67_STRINGIFY(archive))
 
+enum Bn67DeployablePlacementResult {
+    BN67_DEPLOYABLE_PLACEMENT_CLEAR,
+    BN67_DEPLOYABLE_PLACEMENT_INVALID,
+    BN67_DEPLOYABLE_PLACEMENT_OCCUPIED,
+};
+
+enum Bn67DeployablePlacementResult bn67_deployable_placement_check(
+    uint32_t block_x,
+    uint32_t block_y
+);
+
 #endif

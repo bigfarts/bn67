@@ -42,7 +42,7 @@ class RookTests(unittest.TestCase):
         self.assertIn("BN67_EFFECT(rook_controller_main)", source)
         self.assertIn("exe6_event_chip_common_telop();", source)
         self.assertIn("static const uint16_t STARTUP_TICKS = 3;", source)
-        self.assertIn("exe6_block_move_check(", source)
+        self.assertIn("bn67_deployable_placement_check(", source)
         self.assertIn("BN67_USE_SONG(signalred_spawn_song);", source)
         self.assertIn(
             "exe6_sound_req(BN67_SONG_ID(signalred_spawn_song));",
@@ -106,6 +106,12 @@ class RookTests(unittest.TestCase):
         self.assertIn("EXE6_BLOCK_FLAG_SIDE_1_SUPPORT_OBJECT 0x01000000", abi)
         self.assertIn("EXE6_BLOCK_FLAG_SIDE_0_SUPPORT_OBJECT 0x02000000", abi)
 
+        runtime = (ROOT / "src/runtime.c").read_text()
+        self.assertIn("bn67_deployable_placement_check(", runtime)
+        self.assertIn("BN67_DEPLOYABLE_PLACEMENT_INVALID", runtime)
+        self.assertIn("EXE6_BLOCK_FLAG_SUPPORT_OBJECT", runtime)
+        self.assertIn("BN67_DEPLOYABLE_PLACEMENT_OCCUPIED", runtime)
+
         for filename, deployable_slot in (("rook.c", 0), ("signalred.c", 1)):
             source = (ROOT / "src/chips" / filename).read_text()
 
@@ -113,8 +119,9 @@ class RookTests(unittest.TestCase):
                 source.index("static void obj_normal_update"):
                 source.index("static void obj_store_dust_ammo")
             ]
-            self.assertIn("EXE6_BLOCK_FLAG_SUPPORT_OBJECT", placement)
+            self.assertIn("bn67_deployable_placement_check(", placement)
             self.assertIn("obj_begin_placement_failure(obj);", placement)
+            self.assertIn("obj_begin_damage_destroy(obj);", placement)
             self.assertIn(
                 f"exe6_cube_entry(obj, obj->owner, {deployable_slot});",
                 placement,
@@ -125,9 +132,6 @@ class RookTests(unittest.TestCase):
                 source.index("static void launch_effect")
             ]
             self.assertNotIn("exe6_cube_entry", spawn)
-
-        runtime = (ROOT / "src/runtime.c").read_text()
-        self.assertNotIn("deployable_block_occupied", runtime)
 
         signalred = (ROOT / "src/chips/signalred.c").read_text()
         self.assertIn(

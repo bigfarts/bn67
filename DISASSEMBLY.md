@@ -426,8 +426,10 @@ RockCube contributes the neutral support-object panel flag `0x00800000` through
 collision type `14`; Rook and SignalRed contribute the owner-specific support
 flags `0x01000000/0x02000000` through collision type `19`. Placement uses the
 native panel-parameter check to require a solid panel and reject all three
-support-object flags. Rook and SignalRed register only after that check passes,
-preventing a failed placement from replacing an existing deployable-list entry.
+support-object flags. An invalid panel uses the materialization-failure cue;
+support-object occupancy uses the same damage explosion as RockCube contact.
+Rook and SignalRed register only after that check passes, preventing a failed
+placement from replacing an existing deployable-list entry.
 
 DustCross's suction sweep at `0x080F10B4` walks all eight deployable-list
 entries. For each eligible object, `0x0800F8B0` raises the common removal bit

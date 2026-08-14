@@ -226,13 +226,14 @@ static void obj_normal_update(Exe6Obj *obj)
         obj_animate(obj);
         return;
     }
-    if (exe6_block_move_check(
-            obj->block_x,
-            obj->block_y,
-            EXE6_BLOCK_FLAG_SOLID,
-            EXE6_BLOCK_FLAG_SUPPORT_OBJECT
-        ) == 0) {
+    enum Bn67DeployablePlacementResult placement =
+        bn67_deployable_placement_check(obj->block_x, obj->block_y);
+    if (placement == BN67_DEPLOYABLE_PLACEMENT_INVALID) {
         obj_begin_placement_failure(obj);
+        return;
+    }
+    if (placement == BN67_DEPLOYABLE_PLACEMENT_OCCUPIED) {
+        obj_begin_damage_destroy(obj);
         return;
     }
     obj->removal_state &= (uint8_t)~STARTUP_PENDING_FLAG;
