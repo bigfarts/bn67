@@ -2,6 +2,7 @@
 
 BN67_SPRITE(signalred_battle_sprite, "build/signalred-battle-sprite.bin");
 BN67_DUST_SPRITE(signalred_battle_sprite);
+BN67_FIELD_OBJECT(signalred_battle_sprite, 0, 0, 1);
 BN67_SONG(
     signalred_spawn_song,
     BN67_PCM(
@@ -72,6 +73,8 @@ static const uint8_t OPPONENT_CHIPS_DISABLED_WORK = 1;
 static const uint32_t SPAWN_BLOB_EFFECT = 0x15;
 static const uint32_t DESTROY_EFFECT = 0x00;
 static const int32_t DESTROY_EFFECT_HEIGHT = 0x00100000;
+static const uint32_t FIELD_OBJECT_REMOVAL_EFFECT = 0x14;
+static const int32_t FIELD_OBJECT_REMOVAL_EFFECT_HEIGHT = 0x000C0000;
 static const uint32_t DESTROY_SFX = 0x70;
 
 enum LightState {
@@ -250,6 +253,39 @@ static void obj_store_dust_ammo(Exe6Obj *obj)
     obj_destroy(obj);
 }
 
+static bool obj_handle_removal_request(Exe6Obj *obj)
+{
+    uint32_t secondary_flags = exe6_battle_hit_req_flag_get();
+    if ((secondary_flags &
+         (EXE6_HIT_SECONDARY_FLAG_DUST_SUCTION_SIDE_0 |
+          EXE6_HIT_SECONDARY_FLAG_DUST_SUCTION_SIDE_1)) != 0) {
+        obj_store_dust_ammo(obj);
+        return true;
+    }
+
+    if ((secondary_flags &
+         (EXE6_HIT_SECONDARY_FLAG_TIMED_BLINK_REMOVAL |
+          EXE6_HIT_SECONDARY_FLAG_FIELD_OBJECT_REMOVAL)) == 0) {
+        return false;
+    }
+
+    uint32_t erase_result = exe6_cube_erase2();
+    if (erase_result == 0) {
+        return true;
+    }
+    if (erase_result == 2) {
+        (void)exe6_set_efc00(
+            0,
+            obj->x,
+            obj->y,
+            obj->z + FIELD_OBJECT_REMOVAL_EFFECT_HEIGHT,
+            FIELD_OBJECT_REMOVAL_EFFECT
+        );
+    }
+    obj_begin_destroy(obj);
+    return true;
+}
+
 static void obj_update(Exe6Obj *obj)
 {
     obj->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
@@ -293,20 +329,11 @@ static void obj_update(Exe6Obj *obj)
         obj_begin_damage_destroy(obj);
         return;
     }
+    if (obj_handle_removal_request(obj)) {
+        return;
+    }
     if (exe6_battle_event_busy_check() != 0) {
         obj_animate(obj);
-        return;
-    }
-
-    uint32_t secondary_flags = exe6_battle_hit_req_flag_get();
-    if ((secondary_flags & (EXE6_HIT_SECONDARY_FLAG_DUST_SUCTION_SIDE_0 | EXE6_HIT_SECONDARY_FLAG_DUST_SUCTION_SIDE_1)) != 0) {
-        obj_store_dust_ammo(obj);
-        return;
-    }
-    if ((secondary_flags & EXE6_HIT_SECONDARY_FLAG_TIMED_BLINK_REMOVAL) != 0) {
-        if (exe6_cube_erase2() == 1) {
-            obj_begin_destroy(obj);
-        }
         return;
     }
     obj_normal_update(obj);
@@ -336,6 +363,7 @@ static void obj_init(Exe6Obj *obj)
 
     obj->hp = OBJ_HP;
     obj->max_hp = OBJ_HP;
+    obj->name_id = (uint16_t)BN67_FIELD_OBJECT_ID(signalred_battle_sprite);
     obj->aux_timer = STARTUP_TICKS;
     obj->timer = 0x0960;
     if (exe6_battle_hit_open() == NULL) {

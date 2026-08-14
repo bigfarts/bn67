@@ -58,6 +58,7 @@ class PackageCompilerTests(unittest.TestCase):
                 [item["native_table"] for item in raw["object_classes"]]
                 + [item["native_table"] for item in raw["sprite_groups"]]
                 + [raw["dust_sprites"]["native_table"]]
+                + [raw["field_objects"]["native_table"]]
                 + [raw["songs"]["native_table"]]
                 + [item["native_table"] for item in raw["attack_pools"].values()]
             )
@@ -146,6 +147,17 @@ class PackageCompilerTests(unittest.TestCase):
                     / raw["dust_sprites"]["native_table"]
                 ).stat().st_size
                 // 2,
+            )
+            self.assertNotIn("native_entries", raw["field_objects"])
+            self.assertEqual(config.field_objects.base_id, 0xCD)
+            self.assertEqual(config.field_objects.max_id, 0xFF)
+            self.assertEqual(
+                config.field_objects.native_entries,
+                (
+                    self.fixture_root
+                    / raw["field_objects"]["native_table"]
+                ).stat().st_size
+                // 5,
             )
             for kind, pool in config.attack_pools.items():
                 self.assertEqual(pool.family, raw["attack_pools"][kind]["family"])
@@ -363,6 +375,43 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertEqual(
             allocations.dust_sprites["signalred_battle_sprite"],
             0x0F,
+        )
+
+    def test_field_object_ids_are_compiler_allocated(self) -> None:
+        config, packages = self.packages()
+        allocations = validate_and_allocate(config, packages)
+        assembly = generate(config, packages, allocations)
+        linker = generate_linker_values(packages, allocations)
+
+        self.assertIn(
+            "__bn67_meta__field_object__rook_battle_sprite__4__0__1",
+            self.metadata["gregar"]["rook"],
+        )
+        self.assertIn(
+            "__bn67_meta__field_object__signalred_battle_sprite__0__0__1",
+            self.metadata["gregar"]["signalred"],
+        )
+        self.assertEqual(allocations.field_objects["rook_battle_sprite"], 0xEC)
+        self.assertEqual(
+            allocations.field_objects["signalred_battle_sprite"],
+            0xED,
+        )
+        self.assertIn(".org 0x0800F4D4\n    .dw field_object_sprite_table", assembly)
+        self.assertIn(
+            "0x04,0x00,0x01 // 0xEC rook_battle_sprite",
+            assembly,
+        )
+        self.assertIn(
+            "0x00,0x00,0x01 // 0xED signalred_battle_sprite",
+            assembly,
+        )
+        self.assertIn(
+            "__bn67_field_object_id_rook_battle_sprite = 0xEC;",
+            linker,
+        )
+        self.assertIn(
+            "__bn67_field_object_id_signalred_battle_sprite = 0xED;",
+            linker,
         )
 
     def test_sources_and_text_definition_files(self) -> None:

@@ -174,6 +174,7 @@ enum Exe6EventChipPhase {
 #define EXE6_HIT_STATUS_FLAG_UNDERSHIRT 0x00040000
 
 /* HitData.ObjFlags2 (+0x40). */
+#define EXE6_HIT_SECONDARY_FLAG_FIELD_OBJECT_REMOVAL 0x00008000
 #define EXE6_HIT_SECONDARY_FLAG_TIMED_BLINK_REMOVAL 0x00040000
 #define EXE6_HIT_SECONDARY_FLAG_DUST_SUCTION_SIDE_0 0x00100000
 #define EXE6_HIT_SECONDARY_FLAG_DUST_SUCTION_SIDE_1 0x00200000
@@ -627,7 +628,7 @@ struct Exe6ObjFields {
     uint16_t aux_timer;                  // +0x22
     uint16_t hp;                         // +0x24
     uint16_t max_hp;                     // +0x26
-    uint8_t unknown_28[2];
+    uint16_t name_id;                    // +0x28
     uint16_t active_chip_id;             // +0x2A
     uint32_t attack;                     // +0x2C
     union {
@@ -837,6 +838,7 @@ _Static_assert(offsetof(struct Exe6ObjFields, parameter) == 0x0E, "obj parameter
 _Static_assert(offsetof(struct Exe6ObjFields, block_x) == 0x12, "obj block offset");
 _Static_assert(offsetof(struct Exe6ObjFields, owner_word) == 0x16, "obj owner offset");
 _Static_assert(offsetof(struct Exe6ObjFields, timer) == 0x20, "obj timer offset");
+_Static_assert(offsetof(struct Exe6ObjFields, name_id) == 0x28, "obj name ID offset");
 _Static_assert(
     offsetof(struct Exe6ObjFields, active_chip_id) == 0x2A,
     "obj active chip id offset"

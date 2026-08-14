@@ -128,6 +128,7 @@ class RookTests(unittest.TestCase):
         self.assertNotIn("rook_guard_mark_main", source)
         self.assertNotIn("EXE6_HIT_EFFECT_PING", source)
         self.assertIn("BN67_DUST_SPRITE(rook_battle_sprite);", source)
+        self.assertIn("BN67_FIELD_OBJECT(rook_battle_sprite, 4, 0, 1);", source)
         self.assertIn(
             "exe6_cube_set_dust_suikomi_efc(BN67_DUST_KIND(rook_battle_sprite));",
             source,
@@ -144,6 +145,55 @@ class RookTests(unittest.TestCase):
             source,
         )
         self.assertIn("exe6_cube_entry(obj, obj->owner, 0);", source)
+        self.assertIn(
+            "obj->name_id = (uint16_t)BN67_FIELD_OBJECT_ID(rook_battle_sprite);",
+            source,
+        )
+
+    def test_junkman_and_blizzardball_use_allocated_field_object_ids(self) -> None:
+        abi = (ROOT / "src/abi.h").read_text()
+        self.assertIn("uint16_t name_id;", abi)
+        self.assertIn(
+            "EXE6_HIT_SECONDARY_FLAG_FIELD_OBJECT_REMOVAL 0x00008000",
+            abi,
+        )
+
+        expectations = (
+            ("rook.c", "rook_battle_sprite", 4),
+            ("signalred.c", "signalred_battle_sprite", 0),
+        )
+        for filename, archive, animation in expectations:
+            source = (ROOT / "src/chips" / filename).read_text()
+            self.assertIn(
+                f"BN67_FIELD_OBJECT({archive}, {animation}, 0, 1);",
+                source,
+            )
+            self.assertIn(
+                f"obj->name_id = (uint16_t)BN67_FIELD_OBJECT_ID({archive});",
+                source,
+            )
+            self.assertIn(
+                "EXE6_HIT_SECONDARY_FLAG_FIELD_OBJECT_REMOVAL",
+                source,
+            )
+            self.assertIn("static bool obj_handle_removal_request", source)
+            self.assertIn("uint32_t erase_result = exe6_cube_erase2();", source)
+            self.assertIn("if (erase_result == 2)", source)
+            self.assertIn("FIELD_OBJECT_REMOVAL_EFFECT = 0x14", source)
+            self.assertIn(
+                "FIELD_OBJECT_REMOVAL_EFFECT_HEIGHT = 0x000C0000",
+                source,
+            )
+
+            update = source[
+                source.index("static void obj_update"):
+                source.index("static void obj_init")
+            ]
+            removal_request = update.index(
+                "if (obj_handle_removal_request(obj))"
+            )
+            event_pause = update.rindex("if (exe6_battle_event_busy_check()")
+            self.assertLess(removal_request, event_pause)
 
     def test_native_spawn_animations_are_visible_without_effect_overlay(self) -> None:
         rook = (ROOT / "src/chips/rook.c").read_text()

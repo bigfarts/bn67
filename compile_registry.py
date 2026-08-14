@@ -69,6 +69,15 @@ class DustSpriteConfig:
 
 
 @dataclass(frozen=True)
+class FieldObjectConfig:
+    native_table: str
+    native_entries: int
+    references: tuple[int, ...]
+    base_id: int
+    max_id: int
+
+
+@dataclass(frozen=True)
 class TextArchive:
     name: str
     region: int
@@ -114,6 +123,7 @@ class Config:
     object_classes: dict[int, ObjectClass]
     sprite_groups: dict[int, SpriteGroup]
     dust_sprites: DustSpriteConfig
+    field_objects: FieldObjectConfig
     songs: SongConfig
     text: TextConfig
     chips: ChipConfig
@@ -134,6 +144,14 @@ class SpriteResource:
 @dataclass(frozen=True)
 class DustSpriteResource:
     archive: str
+
+
+@dataclass(frozen=True)
+class FieldObjectResource:
+    archive: str
+    animation: int
+    palette: int
+    shadow: int
 
 
 @dataclass(frozen=True)
@@ -192,6 +210,7 @@ class Package:
     objects: tuple[ObjectResource, ...]
     sprites: tuple[SpriteResource, ...]
     dust_sprites: tuple[DustSpriteResource, ...]
+    field_objects: tuple[FieldObjectResource, ...]
     songs: tuple[SongResource, ...]
     text: tuple[TextResource, ...]
     chips: tuple[ChipResource, ...]
@@ -205,6 +224,7 @@ class Allocations:
     objects: dict[int, dict[str, int]]
     sprites: dict[str, tuple[int, int]]
     dust_sprites: dict[str, int]
+    field_objects: dict[str, int]
     songs: dict[str, int]
     song_players: dict[str, int]
     attacks: dict[str, AttackAllocation]
@@ -322,6 +342,7 @@ def load_config(path: Path) -> Config:
             "object_classes",
             "sprite_groups",
             "dust_sprites",
+            "field_objects",
             "songs",
             "text",
             "chips",
@@ -490,6 +511,48 @@ def load_config(path: Path) -> Config:
         tuple(reclaimed),
     )
 
+    field_raw = require_table(raw, "field_objects", context)
+    check_keys(
+        field_raw,
+        {"native_table", "references", "base_id", "max_id"},
+        f"{path}: field_objects",
+    )
+    field_table = require_str(
+        field_raw, "native_table", f"{path}: field_objects"
+    )
+    field_references = require_int_array(
+        field_raw, "references", f"{path}: field_objects"
+    )
+    if not field_references or any(address % 4 for address in field_references):
+        raise PackageError(
+            f"{path}: field_objects.references must be non-empty and word-aligned"
+        )
+    field_base_id = checked_int(
+        require_int(field_raw, "base_id", f"{path}: field_objects"),
+        0,
+        0xFF,
+        f"{path}: field_objects.base_id",
+    )
+    field_max_id = checked_int(
+        require_int(field_raw, "max_id", f"{path}: field_objects"),
+        field_base_id,
+        0xFF,
+        f"{path}: field_objects.max_id",
+    )
+    field_objects = FieldObjectConfig(
+        field_table,
+        fixed_width_entry_count(
+            root,
+            field_table,
+            5,
+            field_max_id - field_base_id + 1,
+            f"{path}: field_objects.native_table",
+        ),
+        field_references,
+        field_base_id,
+        field_max_id,
+    )
+
     chips_raw = require_table(raw, "chips", context)
     check_keys(
         chips_raw, {"table_address", "record_size", "record_count"}, f"{path}: chips"
@@ -613,6 +676,7 @@ def load_config(path: Path) -> Config:
         object_classes,
         sprite_groups,
         dust_sprites,
+        field_objects,
         songs,
         text,
         chips,
@@ -684,6 +748,7 @@ def load_package(source_path: Path, config: Config) -> Package:
         (),
         (),
         (),
+        (),
         tuple(text),
         (),
         None,
@@ -728,6 +793,7 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
     objects: list[ObjectResource] = []
     sprites: list[SpriteResource] = []
     dust_sprites: list[DustSpriteResource] = []
+    field_objects: list[FieldObjectResource] = []
     songs: list[SongResource] = []
     chips: list[ChipResource] = []
     attack: AttackResource | None = None
@@ -793,6 +859,16 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         elif kind == "dust_sprite" and len(parts) == 2:
             check_snake_resource_label(package.name, parts[1], "_sprite")
             dust_sprites.append(DustSpriteResource(parts[1]))
+        elif kind == "field_object" and len(parts) == 5:
+            check_snake_resource_label(package.name, parts[1], "_sprite")
+            field_objects.append(
+                FieldObjectResource(
+                    parts[1],
+                    checked_int(int(parts[2], 0), 0, 0xFF, symbol),
+                    checked_int(int(parts[3], 0), 0, 0xFF, symbol),
+                    checked_int(int(parts[4], 0), 0, 1, symbol),
+                )
+            )
         elif kind == "song" and len(parts) == 2:
             check_snake_resource_label(package.name, parts[1], "_song")
             songs.append(SongResource(parts[1]))
@@ -822,6 +898,7 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         objects=tuple(objects),
         sprites=tuple(sprites),
         dust_sprites=tuple(dust_sprites),
+        field_objects=tuple(field_objects),
         songs=tuple(songs),
         chips=tuple(chips),
         attack=attack,
@@ -854,6 +931,7 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
     objects = [item for package in packages for item in package.objects]
     sprites = [item for package in packages for item in package.sprites]
     dust_sprites = [item for package in packages for item in package.dust_sprites]
+    field_objects = [item for package in packages for item in package.field_objects]
     songs = [item for package in packages for item in package.songs]
     text = [item for package in packages for item in package.text]
     chips = [item for package in packages for item in package.chips]
@@ -879,6 +957,29 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
         )
     dust_allocations = {
         item.archive: dust_slots[index] for index, item in enumerate(dust_sprites)
+    }
+
+    field_names: set[str] = set()
+    for item in field_objects:
+        if item.archive not in sprite_names:
+            raise PackageError(
+                f"{item.archive}: field object must also be declared with BN67_SPRITE"
+            )
+        if item.archive in field_names:
+            raise PackageError(f"{item.archive}: duplicate field-object declaration")
+        field_names.add(item.archive)
+    first_custom_field_id = (
+        config.field_objects.base_id + config.field_objects.native_entries
+    )
+    field_capacity = config.field_objects.max_id - first_custom_field_id + 1
+    if len(field_objects) > field_capacity:
+        raise PackageError(
+            f"field-object table has {field_capacity} custom IDs for "
+            f"{len(field_objects)} registered objects"
+        )
+    field_allocations = {
+        item.archive: first_custom_field_id + index
+        for index, item in enumerate(field_objects)
     }
 
     for item in objects:
@@ -963,6 +1064,7 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
         object_allocations,
         sprite_allocations,
         dust_allocations,
+        field_allocations,
         song_allocations,
         song_players,
         attack_allocations,
@@ -1035,6 +1137,11 @@ def generate_linker_values(packages: list[Package], allocations: Allocations) ->
             lines.append(
                 f"__bn67_dust_kind_{item.archive} = "
                 f"0x{allocations.dust_sprites[item.archive]:X};"
+            )
+        for item in package.field_objects:
+            lines.append(
+                f"__bn67_field_object_id_{item.archive} = "
+                f"0x{allocations.field_objects[item.archive]:X};"
             )
         for item in package.songs:
             player = allocations.song_players[item.archive]
@@ -1295,6 +1402,42 @@ def emit_dust_sprite_table(
     return lines
 
 
+def emit_field_object_table(
+    config: Config, packages: list[Package], allocations: Allocations
+) -> list[str]:
+    """Relocate native field-object render records and append allocated IDs."""
+    field = config.field_objects
+    resources = {
+        item.archive: item
+        for package in packages
+        for item in package.field_objects
+    }
+    lines = ["// Compiler-owned field-object ID and sprite table."]
+    for address in field.references:
+        lines.extend([f".org 0x{address:08X}", "    .dw field_object_sprite_table"])
+    lines.extend(
+        [
+            "",
+            ".autoregion",
+            ".align 4",
+            "field_object_sprite_table:",
+            f'    .incbin "{field.native_table}"',
+        ]
+    )
+    for archive, object_id in sorted(
+        allocations.field_objects.items(), key=lambda item: item[1]
+    ):
+        item = resources[archive]
+        group, sprite_id = allocations.sprites[archive]
+        lines.append(
+            f"    .byte 0x{group:02X},0x{sprite_id:02X},"
+            f"0x{item.animation:02X},0x{item.palette:02X},0x{item.shadow:02X} "
+            f"// 0x{object_id:02X} {archive}"
+        )
+    lines.extend(["field_object_sprite_table_end:", ".endautoregion"])
+    return lines
+
+
 def emit_song_table(
     config: Config, packages: list[Package], allocations: Allocations
 ) -> list[str]:
@@ -1397,6 +1540,8 @@ def generate(config: Config, packages: list[Package], allocations: Allocations) 
         emit_object_tables(config, packages, allocations),
         [""],
         emit_sprite_tables(config, packages, allocations),
+        [""],
+        emit_field_object_table(config, packages, allocations),
         [""],
         emit_dust_sprite_table(config, packages, allocations),
         [""],

@@ -106,6 +106,23 @@ BN67_DUST_SPRITE(rook_battle_sprite);
 exe6_cube_set_dust_suikomi_efc(BN67_DUST_KIND(rook_battle_sprite));
 ```
 
+`BN67_FIELD_OBJECT(archive, animation, palette, shadow)` allocates the separate
+native `NameID` used when chips such as JunkMan and BlizzardBall inspect or
+reconstruct an obstacle. The declaration must refer to a `BN67_SPRITE` in the
+same source package. Its final three arguments are byte literals describing the
+sprite state JunkMan should throw. Store the generated ID in the persistent
+object after it is created:
+
+```c
+BN67_FIELD_OBJECT(rook_battle_sprite, 4, 0, 1);
+
+obj->name_id = (uint16_t)BN67_FIELD_OBJECT_ID(rook_battle_sprite);
+```
+
+Field-object IDs are not object-class lifecycle IDs. The compiler preserves the
+native `0xCD`-through-`0xEB` render records, allocates imported obstacles from
+`0xEC` upward, and relocates the engine lookup table configured for each target.
+
 Target-specific pointer addresses use `BN67_PATCH_POINTER` behind the normal C
 preprocessor; the metadata pass receives the same definition as the final C
 build.
@@ -199,8 +216,9 @@ tables to 256 entries and resolves `BN67_OBJ_ID` directly, so custom objects
 do not need an extra runtime discriminator field.
 
 The final C link resolves `BN67_OBJ_ID`, `BN67_SPRITE_ID`,
-`BN67_SPRITE_GROUP`, `BN67_SONG_ID`, and `BN67_SONG_GROUP` from that linker file.
-Metadata records are not included in the final gameplay binary.
+`BN67_SPRITE_GROUP`, `BN67_DUST_KIND`, `BN67_FIELD_OBJECT_ID`, `BN67_SONG_ID`,
+and `BN67_SONG_GROUP` from that linker file. Metadata records are not included
+in the final gameplay binary.
 
 ## Chip definitions
 

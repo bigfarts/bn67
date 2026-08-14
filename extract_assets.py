@@ -312,6 +312,11 @@ ASSETS = (
     # obstacle sprites and redirects every suction/firing lookup to one table.
     Asset("exe6_gregar", "dust-sprite-table-gregar.bin", 0xEAC00, 0x1E),
     Asset("exe6_falzar", "dust-sprite-table-falzar.bin", 0xE98C0, 0x1E),
+    # Native field-object NameID render records (IDs 0xCD through 0xEB).
+    # The registry relocates this prefix and allocates the remaining IDs through
+    # 0xFF for imported obstacles consumed by JunkMan and BlizzardBall.
+    Asset("exe6_gregar", "field-object-table-gregar.bin", 0x21220, 0x9B),
+    Asset("exe6_falzar", "field-object-table-falzar.bin", 0x21220, 0x9B),
     # Complete native BN6 song tables, relocated before imported cues append.
     Asset("exe6_gregar", "song-table-gregar.bin", 0x159F48, 0xED0),
     Asset("exe6_falzar", "song-table-falzar.bin", 0x1583F8, 0xED0),

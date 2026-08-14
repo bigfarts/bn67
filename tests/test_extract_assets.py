@@ -37,6 +37,17 @@ class ExtractAssetsTests(unittest.TestCase):
         for asset in ephemeral_tables.values():
             self.assertEqual(asset.length, 0x17 * 4)
 
+    def test_exe6_field_object_tables_end_before_allocated_ids(self) -> None:
+        tables = {
+            asset.source: asset
+            for asset in ASSETS
+            if asset.output.startswith("field-object-table-")
+        }
+        self.assertEqual(set(tables), {"exe6_gregar", "exe6_falzar"})
+        for asset in tables.values():
+            self.assertEqual(asset.offset, 0x21220)
+            self.assertEqual(asset.length, (0xEC - 0xCD) * 5)
+
     def test_default_navi_icon_is_not_extracted(self) -> None:
         outputs = {asset.output for asset in ASSETS}
         self.assertNotIn("laserman-icon.bin", outputs)

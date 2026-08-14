@@ -12,6 +12,8 @@
 #define BN67_LINK_SPRITE_ID(archive) BN67_JOIN(__bn67_sprite_id_, archive)
 #define BN67_LINK_SPRITE_GROUP(archive) BN67_JOIN(__bn67_sprite_group_, archive)
 #define BN67_LINK_DUST_KIND(archive) BN67_JOIN(__bn67_dust_kind_, archive)
+#define BN67_LINK_FIELD_OBJECT_ID(archive) \
+    BN67_JOIN(__bn67_field_object_id_, archive)
 #define BN67_LINK_SONG_ID(archive) BN67_JOIN(__bn67_song_id_, archive)
 #define BN67_LINK_SONG_GROUP(archive) BN67_JOIN(__bn67_song_group_, archive)
 
@@ -32,6 +34,8 @@
     ((uint32_t)(uintptr_t)BN67_LINK_SPRITE_GROUP(archive))
 #define BN67_DUST_KIND(archive) \
     ((uint32_t)(uintptr_t)BN67_LINK_DUST_KIND(archive))
+#define BN67_FIELD_OBJECT_ID(archive) \
+    ((uint32_t)(uintptr_t)BN67_LINK_FIELD_OBJECT_ID(archive))
 #define BN67_SONG_ID(archive) \
     ((uint32_t)(uintptr_t)BN67_LINK_SONG_ID(archive))
 #define BN67_SONG_GROUP(archive) \
@@ -245,6 +249,19 @@
 #define BN67_DUST_SPRITE(archive) \
     extern const uint8_t BN67_LINK_DUST_KIND(archive)[]; \
     BN67_METADATA_RECORD("dust_sprite", BN67_STRINGIFY(archive))
+
+/*
+ * Allocate the native NameID used by field-object consumers such as JunkMan
+ * and BlizzardBall. The final three arguments are the animation, palette,
+ * and shadow flag used when the engine reconstructs the object's sprite.
+ */
+#define BN67_FIELD_OBJECT(archive, animation, palette, shadow) \
+    extern const uint8_t BN67_LINK_FIELD_OBJECT_ID(archive)[]; \
+    BN67_METADATA_RECORD( \
+        "field_object", \
+        BN67_STRINGIFY(archive) "__" BN67_STRINGIFY(animation) "__" \
+            BN67_STRINGIFY(palette) "__" BN67_STRINGIFY(shadow) \
+    )
 
 enum Bn67DeployablePlacementResult {
     BN67_DEPLOYABLE_PLACEMENT_CLEAR,
