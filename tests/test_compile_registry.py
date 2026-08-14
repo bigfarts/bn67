@@ -605,6 +605,29 @@ class PackageCompilerTests(unittest.TestCase):
             self.assertEqual(text_entries[("chip-names-1", 0x2F)], "BlakWeap")
             self.assertIn(("chip-descriptions-1", 0x2F), text_entries)
 
+    def test_folderback_replaces_color_point_slot(self) -> None:
+        source = (ROOT / "src/chips/folderback.c").read_text()
+        self.assertIn("BN67_CHIP_RECORD(0x0c2)", source)
+        self.assertIn(
+            "BN67_PERSISTENT_ATTACK(0x0c2, folderback_attack_main)",
+            source,
+        )
+        self.assertNotIn("BN67_CHIP_RECORD(0x0c6)", source)
+
+        for variant in ("gregar", "falzar"):
+            _, packages = self.packages(variant)
+            folderback = next(
+                package for package in packages if package.name == "folderback"
+            )
+            self.assertEqual([chip.chip_id for chip in folderback.chips], [0x0C2])
+            self.assertEqual(folderback.attack.chip_id, 0x0C2)
+            text_entries = {
+                (entry.archive, entry.index): entry.value
+                for entry in folderback.text
+            }
+            self.assertEqual(text_entries[("chip-names-0", 0xC2)], "FoldrBak")
+            self.assertIn(("chip-descriptions-0", 0xC2), text_entries)
+
     def test_numberman_replaces_chargeman_slots(self) -> None:
         source = (ROOT / "src/chips/numberman.c").read_text()
         self.assertEqual(source.count("BN67_CHIP_RECORD("), 3)

@@ -10,7 +10,7 @@ BN67_SONG(folderback_rumble_song,
                    ".byte 0xBF,0x40,0xF9,0x3C,0x7F,0xAA,0x81,0xB1\n",
                    "build/folderback-rumble-sample.bin"));
 
-BN67_CHIP_RECORD(0x0c6){
+BN67_CHIP_RECORD(0x0c2){
     .codes =
         {
             EXE6_CHIP_CODE_ASTERISK,
@@ -331,7 +331,7 @@ BN67_EFFECT(folderback_controller_main) {
   open_custom(owner);
 }
 
-BN67_PERSISTENT_ATTACK(0x0c6, folderback_attack_main) {
+BN67_PERSISTENT_ATTACK(0x0c2, folderback_attack_main) {
   Exe6Obj *controller =
       exe6_efc_open(BN67_OBJ_ID(folderback_controller_main), spawn_parameters);
   if (controller == NULL) {

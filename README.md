@@ -192,7 +192,7 @@ Gregar deliberately keeps CrossDiv's original menu art.
 
 ### FoldrBak
 
-Replaces the dormant Falzar Giga chip with BN3 FolderBack in both versions.
+Replaces ColorPoint with BN3 FolderBack in both versions.
 It restores every used chip to the user's equipped Folder, including
 FolderBack itself, clears only the user's current hand, reshuffles once through
 BN6's native Folder setup, resets that user's accumulated chip-class usage so
