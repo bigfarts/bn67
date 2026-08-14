@@ -63,6 +63,7 @@ enum EffectStep {
 
 struct ControllerWork {
   uint16_t held_custom_gauge;
+  bool folder_restored;
 };
 
 _Static_assert(sizeof(struct ControllerWork) <=
@@ -98,6 +99,11 @@ folderback_object_should_pause(const Exe6Obj *object) {
 // The class-1 dispatch table is relocated by the registry compiler, leaving
 // its original first two entries available for the section-patch relay.
 BN67_PATCH_SECTION(0x080031FA, 0x08003C9C, folderback_dispatch_main);
+
+/* The original class-4 table is dead after registry relocation, so its first
+ * two entries can relay the native Custom-opening path to the linked code. */
+BN67_PATCH_SECTION(0x0800819A, 0x080E42C8,
+                   folderback_custom_transition_dispatch);
 
 NAKED void folderback_dispatch_main(void) {
   // Native object mains consume the dispatcher's live registers and flags.
@@ -201,6 +207,55 @@ static void restore_local_folder(Exe6Obj *self) {
   clear_loaded_hand(self->owner);
 }
 
+static void restore_folder_once(Exe6Obj *self) {
+  struct ControllerWork *work = (struct ControllerWork *)self->work;
+  if (work->folder_restored) {
+    return;
+  }
+  work->folder_restored = true;
+  fill_local_custom_gauge(self);
+  restore_local_folder(self);
+}
+
+static void delete_controller(Exe6Obj *self) {
+  // FolderBack bypasses the common event-chip exit while opening Custom.
+  // Clear the persistent attack's handshake before removing its controller.
+  exe6_event_chip_state_reset(self->owner);
+  exe6_obj_invoke(self, (uintptr_t)exe6_obj_move_delete);
+}
+
+static USED __attribute__((noinline)) void
+folderback_coalesce_native_custom(void) {
+  Exe6ObjectSlot *slots = EXE6_EFFECT_POOL_HEAD;
+  const uint8_t controller_id =
+      (uint8_t)BN67_OBJ_ID(folderback_controller_main);
+  for (size_t slot_index = 0; slot_index < EXE6_POOL_SLOT_COUNT;
+       ++slot_index) {
+    Exe6Obj *controller = &slots[slot_index].object;
+    if ((controller->header_flags & EXE6_OBJ_FLAG_ACTIVE) == 0 ||
+        controller->object_id != controller_id) {
+      continue;
+    }
+
+    /* Beast Over can invoke the native Custom transition while FolderBack's
+     * effect is still running. Finish FolderBack and consume that same Custom
+     * transition so its suspended controller cannot request Custom again. */
+    restore_palette();
+    restore_folder_once(controller);
+    delete_controller(controller);
+  }
+  exe6_battle_pause_on();
+}
+
+NAKED void folderback_custom_transition_dispatch(void) {
+  __asm__(".syntax unified\n"
+          "pop {r1}\n"
+          "push {r4-r7,lr}\n"
+          "bl folderback_coalesce_native_custom\n"
+          "movs r0,#0x20\n"
+          "pop {r4-r7,pc}\n");
+}
+
 static bool effect_update(Exe6Obj *self) {
   switch (self->phase_timer_low) {
   case EFFECT_STEP_IMPACT:
@@ -220,8 +275,7 @@ static bool effect_update(Exe6Obj *self) {
   case EFFECT_STEP_RESTORE:
     self->timer = RESTORED_FRAMES;
     self->phase_timer_low = EFFECT_STEP_WAIT;
-    fill_local_custom_gauge(self);
-    restore_local_folder(self);
+    restore_folder_once(self);
     break;
   default:
     if (--self->timer == 0) {
@@ -244,13 +298,6 @@ static void open_custom(uint32_t owner) {
     exe6_battle_pause_on();
     battle->state = 0x20;
   }
-}
-
-static void delete_controller(Exe6Obj *self) {
-  // FolderBack bypasses the common event-chip exit while opening Custom.
-  // Clear the persistent attack's handshake before removing its controller.
-  exe6_event_chip_state_reset(self->owner);
-  exe6_obj_move_delete();
 }
 
 BN67_EFFECT(folderback_controller_main) {
@@ -297,5 +344,6 @@ BN67_PERSISTENT_ATTACK(0x0c6, folderback_attack_main) {
   controller->owner_word = owner->owner_word;
   controller->attack = attack;
   controller->chip_data = chip_data;
+  ((struct ControllerWork *)controller->work)->folder_restored = false;
   return controller;
 }

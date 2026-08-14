@@ -801,6 +801,18 @@ class PackageCompilerTests(unittest.TestCase):
         )
         self.assertIn("ldr r1,=folderback_dispatch_main + 1", assembly)
         self.assertIn(
+            ".org 0x0800819A\n"
+            "    push {r1}\n"
+            "    bl section_patch_folderback_custom_transition_dispatch_relay\n"
+            ".org 0x080E42C8\n"
+            "section_patch_folderback_custom_transition_dispatch_relay:",
+            assembly,
+        )
+        self.assertIn(
+            "ldr r1,=folderback_custom_transition_dispatch + 1",
+            assembly,
+        )
+        self.assertIn(
             ".org 0x08012646\n"
             "    push {r1}\n"
             "    bl section_patch_blackweapon_attack_level_dispatch_relay\n"
@@ -846,6 +858,19 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn("object->object_class", folderback)
         self.assertIn("EXE6_OBJECT_CLASS_ENEMY", folderback)
         self.assertIn("EXE6_OBJECT_CLASS_SHELL", folderback)
+        self.assertNotIn("exe6_navi_status_work_adrs_get", folderback)
+        self.assertNotIn("EXE6_NAVI_TRANSFORMATION", folderback)
+        self.assertNotIn("exe6_event_chip_state_get", folderback)
+        self.assertNotIn("EXE6_HIT_STATUS_FLAG_BEAST_OVER", folderback)
+        self.assertNotIn("exe6_event_chip_state_reset(owner ^ 1u)", folderback)
+        self.assertIn("folderback_coalesce_native_custom", folderback)
+        self.assertIn("restore_folder_once(controller);", folderback)
+        self.assertIn("delete_controller(controller);", folderback)
+        self.assertIn("->folder_restored = false;", folderback)
+        self.assertIn(
+            "BN67_PATCH_SECTION(0x0800819A, 0x080E42C8,",
+            folderback,
+        )
         controller_start = folderback.index(
             "BN67_EFFECT(folderback_controller_main)"
         )
