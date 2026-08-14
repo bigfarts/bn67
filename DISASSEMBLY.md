@@ -314,7 +314,7 @@ installer relocates the complete group-`0x08`, `0x0C`, `0x10`, and `0x14`
 tables and appends every imported archive after each group's native entries.
 The compiler assigns every imported archive a stable generated group/index
 pair.
-ChaosLrd, SearchMan, LaserMan, RollArrow, BugCharge, SignalRed, and
+ChaosLrd, SearchMan, LaserMan, BugCharge, SignalRed, and
 DeathPhoenix use later appended entries in the same final table images. The
 original tables and every native pointer remain byte-for-byte untouched.
 
@@ -386,7 +386,7 @@ at derived index `0x61`; it does not modify the native entry formerly used by
 the port.
 
 SignalRed's persistent light receives its own compiler-assigned class-3 ID,
-alongside the ChaosLrd, SearchMan, LaserMan, RollArrow, and BugCharge entries.
+alongside the ChaosLrd, SearchMan, LaserMan, and BugCharge entries.
 
 Blue Moon also registers the light in its per-owner deployable list through
 `0x0800B230` and unregisters it through `0x0800B272`. Their structurally
@@ -597,52 +597,6 @@ shots one through four, effect `9` only on shot five, one delete only after
 that fifth contact, and a zero counter timer. On a miss, all five hit
 results stay zero, neither HP nor delete state changes, and every shot still
 receives exactly one update in both Gregar and Falzar.
-
-## RollArrow port
-
-Blue Moon runtime tracing identifies the actual Roll actor at spawn routine
-`0x080C8110`, main `0x080C812C`, and init `0x080C814C`. Its sprite-loader
-calls at `0x080C815C`/`0x080C8160` select group `0x08`, index `0x01`; the
-corresponding uncompressed archive is at ROM `0x2A5A10` and is `0xAC58` bytes.
-Roll fires immediately in animation `7` and holds the shot for six frames. Her
-projectile is the generic type-3 object spawned through `0x080CE81A`; its init loader calls at
-`0x080CE724`/`0x080CE728` select group `0x0C`, index `0x10`. The uncompressed
-heart-arrow archive is at ROM `0x35E5C0` and is `0x160` bytes. The native fire
-routine starts that arrow at Roll's bow origin: eight pixels forward in X,
-one pixel above her actor Y origin, and 36 pixels in Z. After firing, Roll stays
-on her block for the native animation-0 and animation-4 holds, then disappears;
-there is no horizontal retreat.
-
-The port keeps the heart-arrow in type-3, matching Blue Moon and BN6's
-counter-hit ownership path, and gives it a direct class-3 ID. Hosting the
-hit-bearing arrow in type 1 works
-for ordinary damage but corrupts the native counter response.
-
-The earlier `0x080C8644` group-`0x08`/index-`0x0D` trace was KendoMan, and
-the paired group-`0x0C`/index-`0x35` object was unrelated. Neither is used by
-this port.
-
-The BN6 port keeps TrainArrow's IDs `0x18`-`0x1A`; the compiler gives the Roll
-attack a new Navi-family subfamily. Roll receives a direct class-1 ID and the
-straight-moving arrow receives a direct class-3 ID. The arrow uses BN6's native
-hit lifecycle with BN4's `8/5/3` setup and hit-effect `9`, so it travels
-at seven pixels per frame and stops on the first real contact. Hit type
-`8` resolves to `0x80000090` or `0x40000090`, including the same `0x10`
-delete-property bit used by SearchMan's hit type `29`; hit effect `9`
-supplies the matching chip-delete VFX. The shared patched response discards
-the target's complete loaded hand rather than manufacturing a damage hit on
-every block.
-Generated selector pairs `ROLLARROW_ACTOR_SPRITE_GROUP` /
-`ROLLARROW_ACTOR_SPRITE` and `ROLLARROW_PROJECTILE_SPRITE_GROUP` /
-`ROLLARROW_PROJECTILE_SPRITE` point at the runtime-confirmed Blue Moon Roll
-and heart-arrow archives. The record codes,
-MB values, power, icons, image, and palettes are copied from Blue Moon.
-
-Blue Moon's summon SFX `0xB0` and fire SFX `0x132` are imported with their
-original tracks, voicegroups, and PCM samples. The BN6 song table is relocated
-through native entry `0x1D9`; the registry compiler assigns the shared cue's
-`COMMON_NAVI_SUMMON_SONG` selector and RollArrow's `ROLLARROW_FIRE_SONG`
-selector. RollArrow calls the common selector directly.
 
 ## LaserMan port
 

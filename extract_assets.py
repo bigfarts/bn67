@@ -84,7 +84,7 @@ def decompress_gba_lz77(data: bytes) -> bytes:
             if flags & (1 << bit):
                 if source + 2 > len(data):
                     raise ValueError("truncated GBA LZ77 back-reference")
-                first, second = data[source:source + 2]
+                first, second = data[source : source + 2]
                 source += 2
                 length = (first >> 4) + 3
                 displacement = ((first & 0x0F) << 8 | second) + 1
@@ -118,7 +118,9 @@ def read_bn3_pointer(rom: bytes, offset: int) -> int:
     address = struct.unpack_from("<I", rom, offset)[0]
     rom_offset = address - BN3_ROM_BASE
     if not 0 <= rom_offset < len(rom):
-        raise ValueError(f"pointer 0x{address:08X} at 0x{offset:X} is outside the BN3 ROM")
+        raise ValueError(
+            f"pointer 0x{address:08X} at 0x{offset:X} is outside the BN3 ROM"
+        )
     return rom_offset
 
 
@@ -133,7 +135,7 @@ def decode_4bpp_tiles(data: bytes, width: int, height: int) -> list[list[int]]:
     for tile_index in range((width // 8) * (height // 8)):
         tile_x = (tile_index % tiles_wide) * 8
         tile_y = (tile_index // tiles_wide) * 8
-        tile = data[tile_index * 32:(tile_index + 1) * 32]
+        tile = data[tile_index * 32 : (tile_index + 1) * 32]
         for y in range(8):
             for x in range(8):
                 packed = tile[y * 4 + x // 2]
@@ -185,9 +187,9 @@ def extract_bn3_chip_art(
     image_offset = read_bn3_pointer(rom, record + 0x18)
     palette_offset = read_bn3_pointer(rom, record + 0x1C)
 
-    icon = rom[icon_offset:icon_offset + 0x80]
-    source_image = rom[image_offset:image_offset + 0x700]
-    palette = rom[palette_offset:palette_offset + 0x20]
+    icon = rom[icon_offset : icon_offset + 0x80]
+    source_image = rom[image_offset : image_offset + 0x700]
+    palette = rom[palette_offset : palette_offset + 0x20]
     if len(icon) != 0x80 or len(source_image) != 0x700 or len(palette) != 0x20:
         raise ValueError(f"BN3 {chip_name} art is truncated")
 
@@ -195,8 +197,8 @@ def extract_bn3_chip_art(
     crop_x = (BN3_IMAGE_WIDTH - EXE6_IMAGE_WIDTH) // 2
     crop_y = (BN3_IMAGE_HEIGHT - EXE6_IMAGE_HEIGHT) // 2
     cropped = [
-        row[crop_x:crop_x + EXE6_IMAGE_WIDTH]
-        for row in pixels[crop_y:crop_y + EXE6_IMAGE_HEIGHT]
+        row[crop_x : crop_x + EXE6_IMAGE_WIDTH]
+        for row in pixels[crop_y : crop_y + EXE6_IMAGE_HEIGHT]
     ]
     return normalize_exe6_icon_border(icon), encode_4bpp_tiles(cropped), palette
 
@@ -207,23 +209,19 @@ ASSETS = (
     Asset("exe45", "blackweapon-icon.bin", 0x7640B0, 0x80),
     Asset("exe45", "blackweapon-image.bin", 0x755CF0, 0x540),
     Asset("exe45", "blackweapon-palette.bin", 0x75CEF0, 0x20),
-
     # BN3 Blue: the shared group-0x10/id-0x3D chess-piece archive. Rook is
     # animation 4; its menu art is decoded and cropped separately below because
     # BN3 stores it at 64x56, not 56x48.
     Asset("bn3_blue", "rook-battle-sprite.bin", 0x2CD434, 0x20A0),
-
     # BN3 Blue: FolderBack's original rumble sample. Its menu art uses the
     # same decoded-and-cropped path as Rook.
     Asset("bn3_blue", "folderback-rumble-sample.bin", 0x215B68, 0x354E),
-
     # BN5 ProtoMan: Jealousy menu art and chip-delete overlay.
     Asset("bn5_protoman", "jealousy-icon.bin", 0x748F38, 0x80),
     Asset("bn5_protoman", "jealousy-image.bin", 0x7250E8, 0x540),
     Asset("bn5_protoman", "jealousy-palette.bin", 0x734188, 0x20),
     Asset("bn5_protoman", "jealousy-effect-tiles.bin", 0x6FAD2C, 0x100),
     Asset("bn5_protoman", "jealousy-effect-palette.bin", 0x6FAE2C, 0x20),
-
     # BN5 ProtoMan: SearchMan library art, Navi archive, and both reticles.
     Asset("bn5_protoman", "searchman-image.bin", 0x728568, 0x540),
     Asset("bn5_protoman", "searchman-pal-base.bin", 0x7343C8, 0x20),
@@ -231,14 +229,12 @@ ASSETS = (
     Asset("bn5_protoman", "searchman-battle-sprite.bin", 0x254F64, 0xABFC),
     Asset("bn5_protoman", "searchman-reticle-alt.bin", 0x358410, 0x5B8),
     Asset("bn5_protoman", "searchman-reticle.bin", 0x3589C8, 0x460),
-
     # BN5: NumberMan's library art, full Navi archive, and animated die.
     Asset("bn5_colonel", "numberman-image.bin", 0x72AD24, 0x540),
     Asset("bn5_colonel", "numberman-pal-base.bin", 0x735804, 0x20),
     Asset("bn5_colonel", "numberman-pal-sp.bin", 0x735824, 0x20),
     Asset("bn5_colonel", "numberman-battle-sprite.bin", 0x2918A0, 0x8824),
     Asset("bn5_colonel", "numberman-die-sprite.bin", 0x2F8D08, 0x16A0),
-
     # BN5 ProtoMan: ChaosLord menu art and complete controller assets. The
     # teardown slice intentionally starts on the archive header at 0x389E68.
     Asset("bn5_protoman", "chaoslord-icon.bin", 0x749C38, 0x80),
@@ -249,25 +245,21 @@ ASSETS = (
     Asset("bn5_protoman", "chaoslord-aura-sprite.bin", 0x2E3B20, 0x56E0, lz77=True),
     Asset("bn5_protoman", "chaoslord-teardown-sprite.bin", 0x389E68, 0x11F0),
     Asset("bn5_protoman", "chaoslord-trig.bin", 0x5CD0, 0x280),
-
     # BN4 Blue Moon: SignalRed menu art, traffic light, and placement sample.
     Asset("bn4_blue_moon", "signalred-icon.bin", 0x746EEC, 0x80),
     Asset("bn4_blue_moon", "signalred-image.bin", 0x73A8EC, 0x540),
     Asset("bn4_blue_moon", "signalred-palette.bin", 0x73FAEC, 0x20),
     Asset("bn4_blue_moon", "signalred-battle-sprite.bin", 0x381C30, 0x694),
     Asset("bn4_blue_moon", "signalred-spawn-sample.bin", 0x17C834, 0x891),
-
     # BN4 Blue Moon: BlackWeapon's near-black MegaMan palette. The same
     # 16-color palette is repeated for the relevant animation groups.
     Asset("bn4_blue_moon", "blackweapon-dark-palette.bin", 0x21B7F4, 0x20),
-
     # BN4 Blue Moon: BugChain menu art, aura, and SFX 0x15D sample.
     Asset("bn4_blue_moon", "bugchain-icon.bin", 0x74626C, 0x80),
     Asset("bn4_blue_moon", "bugchain-image.bin", 0x7315EC, 0x540),
     Asset("bn4_blue_moon", "bugchain-palette.bin", 0x73F1AC, 0x20),
     Asset("bn4_blue_moon", "bugchain-battle-sprite.bin", 0x380CA4, 0xF8C),
     Asset("bn4_blue_moon", "bugchain-sound-sample.bin", 0x1970A0, 0x4B1),
-
     # BN4 Blue Moon: Duo's event icon and combined group-8/id-24 body/fist
     # archive. The source expands to the exact EWRAM archive selected by the
     # native event renderer; decompress_sprite_archive removes its size prefix
@@ -276,28 +268,14 @@ ASSETS = (
     Asset("bn4_blue_moon", "duo-battle-sprite.bin", 0x33FC3C, 0x5833, lz77=True),
     Asset("bn4_blue_moon", "duo-arrival-sound-sample.bin", 0x17D0C8, 0x227D),
     Asset("bn4_blue_moon", "duo-fist-sound-sample.bin", 0x1DD24C, 0x1166),
-
     # BN5 Colonel: BugCharge menu art, Gospel archive, and charge sample.
     Asset("bn5_colonel", "bugcharge-icon.bin", 0x74AE3C, 0x80),
     Asset("bn5_colonel", "bugcharge-image.bin", 0x730664, 0x540),
     Asset("bn5_colonel", "bugcharge-palette.bin", 0x735D64, 0x20),
     Asset("bn5_colonel", "bugcharge-gospel-sprite.bin", 0x3216D4, 0xA84),
     Asset("bn5_colonel", "bugcharge-charge-sample.bin", 0x191A80, 0x676),
-
-    # BN4 Blue Moon: shared Navi summon sample plus RollArrow menu art,
-    # sprites, and firing sample.
+    # BN4 Blue Moon: shared Navi summon sample.
     Asset("bn4_blue_moon", "common-navi-summon-sample.bin", 0x184D70, 0xF3E),
-    Asset("bn4_blue_moon", "rollarrow1-icon.bin", 0x74476C, 0x80),
-    Asset("bn4_blue_moon", "rollarrow2-icon.bin", 0x7447EC, 0x80),
-    Asset("bn4_blue_moon", "rollarrow3-icon.bin", 0x74486C, 0x80),
-    Asset("bn4_blue_moon", "rollarrow-image.bin", 0x729D2C, 0x540),
-    Asset("bn4_blue_moon", "rollarrow1-pal.bin", 0x73EAEC, 0x20),
-    Asset("bn4_blue_moon", "rollarrow2-pal.bin", 0x73EB0C, 0x20),
-    Asset("bn4_blue_moon", "rollarrow3-pal.bin", 0x73EB2C, 0x20),
-    Asset("bn4_blue_moon", "rollarrow-actor-sprite.bin", 0x2A5A10, 0xAC58),
-    Asset("bn4_blue_moon", "rollarrow-projectile-sprite.bin", 0x35E5C0, 0x160),
-    Asset("bn4_blue_moon", "rollarrow-fire-sample.bin", 0x1D2AFC, 0xC34),
-
     # BN4 Blue Moon: LaserMan library art, shared sprite, and fire SFX. Extraction
     # expands the source archive so packages never need compression metadata.
     Asset("bn4_blue_moon", "laserman-image.bin", 0x73842C, 0x540),
@@ -305,7 +283,6 @@ ASSETS = (
     Asset("bn4_blue_moon", "laserman-pal-sp.bin", 0x73F96C, 0x20),
     Asset("bn4_blue_moon", "laserman-battle-sprite.bin", 0x339B6C, 0x395C, lz77=True),
     Asset("bn4_blue_moon", "laserman-fire-sample.bin", 0x1BCFF8, 0x144E),
-
     # Native BN6 attack dispatch prefixes. The registry relocates each one and
     # appends package attacks in the remaining 8-bit subfamily namespace.
     Asset("exe6_gregar", "attack-family15-table-gregar.bin", 0x2CCB4, 0xA8),
@@ -314,7 +291,6 @@ ASSETS = (
     Asset("exe6_falzar", "attack-family15-table-falzar.bin", 0x2CCB4, 0xA8),
     Asset("exe6_falzar", "attack-family1B-table-falzar.bin", 0x2CD5C, 0x74),
     Asset("exe6_falzar", "attack-family1C-table-falzar.bin", 0xEC3F0, 0x5C),
-
     # Native BN6 object dispatch prefixes. The registry relocates each class
     # to a complete 256-entry object-ID table before appending package objects.
     Asset("exe6_gregar", "object-class1-table-gregar.bin", 0x3C9C, 0x17C),
@@ -323,7 +299,6 @@ ASSETS = (
     Asset("exe6_falzar", "object-class1-table-falzar.bin", 0x3C9C, 0x17C),
     Asset("exe6_falzar", "object-class3-table-falzar.bin", 0x3EC4, 0x354),
     Asset("exe6_falzar", "object-class4-table-falzar.bin", 0x42C8, 0x248),
-
     # Native BN6 sprite pointer tables that receive appended archives.
     Asset("exe6_gregar", "sprite-group08-table-gregar.bin", 0x31DA4, 0x5C),
     Asset("exe6_gregar", "sprite-group0C-table-gregar.bin", 0x31E00, 0x1A4),
@@ -333,16 +308,13 @@ ASSETS = (
     Asset("exe6_falzar", "sprite-group0C-table-falzar.bin", 0x31E00, 0x1A4),
     Asset("exe6_falzar", "sprite-group10-table-falzar.bin", 0x31FA4, 0x170),
     Asset("exe6_falzar", "sprite-group14-table-falzar.bin", 0x32114, 0x80),
-
     # Native DustCross ammo sprite selectors. The registry appends imported
     # obstacle sprites and redirects every suction/firing lookup to one table.
     Asset("exe6_gregar", "dust-sprite-table-gregar.bin", 0xEAC00, 0x1E),
     Asset("exe6_falzar", "dust-sprite-table-falzar.bin", 0xE98C0, 0x1E),
-
     # Complete native BN6 song tables, relocated before imported cues append.
     Asset("exe6_gregar", "song-table-gregar.bin", 0x159F48, 0xED0),
     Asset("exe6_falzar", "song-table-falzar.bin", 0x1583F8, 0xED0),
-
     # BN5 ProtoMan: DeathPhoenix menu art, Navi, and strike/flame archive.
     Asset("bn5_protoman", "deathphoenix-icon.bin", 0x749CB8, 0x80),
     Asset("bn5_protoman", "deathphoenix-image.bin", 0x730368, 0x540),
@@ -372,7 +344,7 @@ def extract_assets(roms: dict[str, bytes], output_dir: Path) -> tuple[int, int]:
                 f"exceeds {asset.source} size 0x{len(rom):X}"
             )
         output_names.add(asset.output)
-        data = rom[asset.offset:end]
+        data = rom[asset.offset : end]
         if asset.lz77:
             try:
                 data = decompress_sprite_archive(data)
@@ -413,7 +385,9 @@ def extract_assets(roms: dict[str, bytes], output_dir: Path) -> tuple[int, int]:
         path = output_dir / name
         written = path.write_bytes(data)
         if written != len(data):
-            raise OSError(f"short write for {path}: wrote {written} of {len(data)} bytes")
+            raise OSError(
+                f"short write for {path}: wrote {written} of {len(data)} bytes"
+            )
 
     return len(outputs), sum(len(data) for _, data in outputs)
 

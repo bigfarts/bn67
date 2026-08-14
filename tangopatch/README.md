@@ -60,15 +60,6 @@ animation preserves the user's current Cross or Beast form. Gregar uses
 Black Weapon's EXE4.5 chip art; Falzar keeps the original Delta Ray Edge slot
 art.
 
-### Roll Arrow
-
-**Replaces:** Train Arrow 1, Train Arrow 2, Train Arrow 3
-
-BN4 Roll Arrow 1/2/3 are available in both versions. Roll fires one arrow
-straight down the user's row and destroys the opponent's entire loaded hand on
-hit, using the original codes, 50/70/90 power, chip art, actor, and arrow
-graphics.
-
 ### SearchMan
 
 **Replaces:** CircusMan, CircusMan EX, CircusMan SP

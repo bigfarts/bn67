@@ -54,16 +54,6 @@ dedicated sound. Gregar imports BlackWeapon's complete
 icon, library art, and palette from EXE4.5, while Falzar retains the native
 DeltaRay-slot art.
 
-### RollArrow
-
-Replaces TrainArrow1, TrainArrow2, and TrainArrow3 with Blue Moon's RollArrow
-attack. Roll fires one arrow straight down the user's row, and the arrow
-destroys the opponent's entire loaded hand on hit. The A/F/T, D/R/W, and
-Q/Y/Z code sets,
-50/70/90 power, menu art, Roll actor, and arrow graphics are imported from
-Blue Moon in both versions. The original summon and firing sound effects are
-also imported intact.
-
 ### SearchMan
 
 Replaces CircusMan, CircusMan EX, and CircusMan SP with the complete SearchMan
@@ -217,13 +207,11 @@ center-cropped library art, palette, name, and description come from BN3 Blue.
 
 ## Assets and palettes
 
-The build extracts RollArrow's three menu-art variants, Roll actor and
-heart-arrow archives, summon and firing samples, BugChain's menu art and aura,
-LaserMan's menu art and palettes,
-shared actor/beam archive, and SignalRed's menu art and battle sprite from Blue
-Moon; Jealousy's menu/overlay graphics and BugCharge's menu and Gospel-head
-assets from BN5; Rook's BN3 menu art and battle sprite; FolderBack's BN3 menu
-art and original rumble PCM; plus the full BN5
+The build extracts BugChain's menu art and aura, LaserMan's menu art and
+palettes, shared actor/beam archive, summon and firing samples, and SignalRed's
+menu art and battle sprite from Blue Moon; Jealousy's menu/overlay graphics and
+BugCharge's menu and Gospel-head assets from BN5; Rook's BN3 menu art and battle
+sprite; FolderBack's BN3 menu art and original rumble PCM; plus the full BN5
 SearchMan actor archive, both scope/reticle archives, the chip icon, and the
 56x48 library artwork; NumberMan's actor and die archives and library art; and
 BlackWeapon's menu art from EXE4.5. The SearchMan
