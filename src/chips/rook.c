@@ -56,6 +56,18 @@ static const uint8_t INITIAL_REMOVAL_FLAGS =
     STARTUP_PENDING_FLAG | HIT_DEFERRED_FLAG;
 static const uint8_t SPAWNER_SIDE_WORK = 0;
 static const uint8_t DEPLOYABLE_REGISTERED_WORK = 1;
+static const uint8_t PUSH_ACTIVE_WORK = 2;
+/* Native AirShot uses 0x61; WindRack and Tengu Racket share 0x49. */
+static const uint8_t AIRSHOT_HIT_MODIFIER = 0x61;
+static const uint8_t RACKET_HIT_MODIFIER = 0x49;
+/* Native Navi AirShot knockback moves ten pixels per frame. */
+static const int32_t AIRSHOT_PUSH_SPEED = 0x000A0000;
+static const uint32_t PUSH_COLLISION_BLOCK_FLAGS =
+    EXE6_BLOCK_FLAG_SUPPORT_OBJECT |
+    EXE6_BLOCK_FLAG_SIDE_1_NAVI |
+    EXE6_BLOCK_FLAG_SIDE_0_NAVI |
+    EXE6_BLOCK_FLAG_SIDE_1_HIT |
+    EXE6_BLOCK_FLAG_SIDE_0_HIT;
 static const uint32_t SPAWN_BLOB_EFFECT = 0x15;
 static const uint32_t DESTROY_EFFECT = 0x00;
 static const int32_t DESTROY_EFFECT_HEIGHT = 0x00100000;
@@ -177,6 +189,70 @@ static void obj_block_damage(Exe6Hit *hit)
     }
 }
 
+static bool obj_received_push_attack(const Exe6Hit *hit)
+{
+    uint8_t modifier = hit->final_hit_modifier;
+    return modifier == AIRSHOT_HIT_MODIFIER ||
+           modifier == RACKET_HIT_MODIFIER;
+}
+
+static void obj_begin_one_panel_push(Exe6Obj *obj)
+{
+    if (obj->work[PUSH_ACTIVE_WORK] != 0) {
+        return;
+    }
+
+    int32_t direction = -(int32_t)exe6_calc_pl_em_dir_spd_for(obj);
+    if (direction == 0) {
+        return;
+    }
+
+    uint32_t block_x = (uint32_t)((int32_t)obj->block_x + direction);
+    uint32_t block_y = obj->block_y;
+    if (exe6_block_move_check(
+            block_x,
+            block_y,
+            EXE6_BLOCK_FLAG_SOLID,
+            0
+        ) == 0) {
+        return;
+    }
+    uint32_t block_flags = exe6_block_status_get(block_x, block_y);
+    if ((block_flags & PUSH_COLLISION_BLOCK_FLAGS) != 0) {
+        return;
+    }
+
+    obj->target_block_x = (uint8_t)block_x;
+    obj->velocity_x = direction * AIRSHOT_PUSH_SPEED;
+    obj->work[PUSH_ACTIVE_WORK] = 1;
+}
+
+static void obj_push_update(Exe6Obj *obj)
+{
+    if (obj->work[PUSH_ACTIVE_WORK] == 0) {
+        return;
+    }
+
+    uint64_t coordinates = exe6_get_block_pos(
+        obj->target_block_x,
+        obj->block_y
+    );
+    int32_t target_x = (int32_t)(uint32_t)coordinates;
+    int32_t next_x = obj->x + obj->velocity_x;
+    bool reached = obj->velocity_x < 0 ?
+        next_x <= target_x : next_x >= target_x;
+    if (reached) {
+        obj->x = target_x;
+        obj->block_x = obj->target_block_x;
+        obj->velocity_x = 0;
+        obj->work[PUSH_ACTIVE_WORK] = 0;
+    } else {
+        obj->x = next_x;
+        exe6_pos_to_block();
+    }
+    exe6_battle_hit_block_pos_set();
+}
+
 static void obj_update(Exe6Obj *obj)
 {
     uint8_t removal = obj->removal_state;
@@ -207,7 +283,11 @@ static void obj_update(Exe6Obj *obj)
 
     Exe6Hit *hit = obj->hit;
     uint32_t damage = hit->final_damage;
-    if (damage != 0) {
+    if (obj_received_push_attack(hit)) {
+        /* Push attacks move Rook one panel without damage. */
+        obj_block_damage(hit);
+        obj_begin_one_panel_push(obj);
+    } else if (damage != 0) {
         if ((hit->received_hit_flags &
              EXE6_HIT_TYPE_FLAG_GUARD_PIERCING) != 0) {
             exe6_obj_flash_set();
@@ -229,6 +309,8 @@ static void obj_update(Exe6Obj *obj)
         obj_animate(obj);
         return;
     }
+
+    obj_push_update(obj);
 
     uint32_t secondary_flags = exe6_battle_hit_req_flag_get();
     if ((secondary_flags &
@@ -314,6 +396,7 @@ static Exe6Obj *spawn_persistent(Exe6Obj *controller)
     obj->owner = owner_side;
     obj->work[SPAWNER_SIDE_WORK] = owner_side;
     obj->work[DEPLOYABLE_REGISTERED_WORK] = 0;
+    obj->work[PUSH_ACTIVE_WORK] = 0;
     obj->parent = owner;
     obj->attack = controller->attack;
     obj->chip_data = controller->chip_data;

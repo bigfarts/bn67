@@ -8,14 +8,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class RookTests(unittest.TestCase):
-    def test_replaces_attack_plus_ten_with_requested_codes(self) -> None:
+    def test_replaces_attack_plus_ten_with_asterisk_code_only(self) -> None:
         source = (ROOT / "src/chips/rook.c").read_text()
         self.assertIn("BN67_CHIP_RECORD(0x0c0)", source)
         codes = source[source.index(".codes = {"):source.index(".attack_element")]
         self.assertEqual(codes.count("EXE6_CHIP_CODE_"), 4)
-        for code in ("D", "N", "U", "ASTERISK"):
-            self.assertIn(f"EXE6_CHIP_CODE_{code}", codes)
-        self.assertNotIn("EXE6_CHIP_CODE_NONE", codes)
+        self.assertEqual(codes.count("EXE6_CHIP_CODE_ASTERISK"), 1)
+        self.assertEqual(codes.count("EXE6_CHIP_CODE_NONE"), 3)
+        for code in ("D", "N", "U"):
+            self.assertNotIn(f"EXE6_CHIP_CODE_{code},", codes)
         self.assertNotIn("BN67_CHIP_RECORD(0x0bc)", source)
 
     def test_retains_bn3_rook_stats_and_break_only_damage(self) -> None:
@@ -26,6 +27,77 @@ class RookTests(unittest.TestCase):
         self.assertIn("EXE6_HIT_TYPE_FLAG_GUARD_PIERCING", source)
         self.assertIn("exe6_enemy_life_sub(damage);", source)
         self.assertIn("static const uint16_t ROOK_LIFETIME = 0x0708;", source)
+
+    def test_airshot_and_rackets_push_one_panel_without_damage(
+        self,
+    ) -> None:
+        source = (ROOT / "src/chips/rook.c").read_text()
+        self.assertIn(
+            "static const uint8_t AIRSHOT_HIT_MODIFIER = 0x61;",
+            source,
+        )
+        self.assertIn(
+            "static const uint8_t RACKET_HIT_MODIFIER = 0x49;",
+            source,
+        )
+        self.assertIn(
+            "modifier == AIRSHOT_HIT_MODIFIER ||",
+            source,
+        )
+        self.assertIn("modifier == RACKET_HIT_MODIFIER;", source)
+        self.assertIn(
+            "int32_t direction = -(int32_t)exe6_calc_pl_em_dir_spd_for(obj);",
+            source,
+        )
+        self.assertIn("(int32_t)obj->block_x + direction", source)
+        self.assertIn("obj_block_damage(hit);", source)
+        self.assertIn("obj->target_block_x = (uint8_t)block_x;", source)
+
+    def test_push_uses_native_airshot_knockback_speed(self) -> None:
+        source = (ROOT / "src/chips/rook.c").read_text()
+        self.assertIn(
+            "static const int32_t AIRSHOT_PUSH_SPEED = 0x000A0000;",
+            source,
+        )
+        self.assertIn(
+            "obj->velocity_x = direction * AIRSHOT_PUSH_SPEED;",
+            source,
+        )
+        push = source[
+            source.index("static void obj_push_update"):
+            source.index("static void obj_update")
+        ]
+        self.assertIn("int32_t next_x = obj->x + obj->velocity_x;", push)
+        self.assertIn("obj->x = target_x;", push)
+        self.assertIn("obj->block_x = obj->target_block_x;", push)
+        self.assertIn("exe6_pos_to_block();", push)
+        self.assertIn("exe6_battle_hit_block_pos_set();", push)
+
+    def test_push_attacks_stop_at_invalid_or_occupied_panel(
+        self,
+    ) -> None:
+        source = (ROOT / "src/chips/rook.c").read_text()
+        push = source[
+            source.index("static void obj_begin_one_panel_push"):
+            source.index("static void obj_update")
+        ]
+        self.assertIn("EXE6_BLOCK_FLAG_SOLID", push)
+        self.assertIn("return;", push)
+        for flag in (
+            "EXE6_BLOCK_FLAG_SUPPORT_OBJECT",
+            "EXE6_BLOCK_FLAG_SIDE_1_NAVI",
+            "EXE6_BLOCK_FLAG_SIDE_0_NAVI",
+            "EXE6_BLOCK_FLAG_SIDE_1_HIT",
+            "EXE6_BLOCK_FLAG_SIDE_0_HIT",
+        ):
+            self.assertIn(flag, source)
+        handling = source[
+            source.index("if (obj_received_push_attack(hit))"):
+            source.index("} else if (damage != 0)")
+        ]
+        self.assertIn("obj_block_damage(hit);", handling)
+        self.assertIn("obj_begin_one_panel_push(obj);", handling)
+        self.assertNotIn("obj_begin_damage_destroy(obj);", handling)
 
     def test_uses_bn3_rook_art_and_battle_sprite(self) -> None:
         self.assertEqual(BN3_ROOK_ID, 0x99)

@@ -155,14 +155,20 @@ BugRSword-slot art.
 ### Rook
 
 Replaces Attack+10 with BN3 Rook while leaving AntiSword unchanged. Rook is a
-30 MB Obstacle-element StandardChip in codes D/N/U/*. It places Rook on the
+30 MB Obstacle-element StandardChip in `*` code only. It places Rook on the
 block in front of the user with 500 HP after a dimming cut-in and its native
-summon cue. Non-Break
-attacks are stopped without reducing that HP; Break attacks deal their normal
-damage, so they must deplete the full 500 HP rather than deleting Rook in one
-hit. Both versions import Rook's BN3 icon, center-cropped library art, palette,
-and original tower-shaped battle sprite. DustCross can suck Rook in and fire
-that same sprite as ammo, using the registry's shared DustCross selector table.
+summon cue. Non-Break attacks are stopped without reducing that HP. AirShot,
+WindRack, and Tengu Racket are the push exceptions: their damage is still
+blocked, but they move Rook one panel away from the attacker at AirShot's
+native 10-pixel-per-frame knockback speed. An invalid panel, Navi, virus, or
+blocking object prevents the move; Rook is not removed and nothing takes
+collision damage. Tengu's B+Left wind is blocked by Rook and does not move it.
+Break attacks deal their normal damage, so they must deplete the full 500 HP
+rather than deleting Rook in one hit. Both versions import Rook's BN3 icon,
+center-cropped library art,
+palette, and original tower-shaped battle sprite. DustCross can suck Rook in
+and fire that same sprite as ammo, using the registry's shared DustCross
+selector table.
 
 ### SignlRed
 
