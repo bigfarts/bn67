@@ -30,6 +30,18 @@ class GlobalHookTests(unittest.TestCase):
             ),
         )
 
+    def test_replaced_add_on_chips_are_not_consumed(self) -> None:
+        hooks = (ROOT / "src/hooks.asm").read_text()
+
+        self.assertRegex(
+            hooks,
+            re.compile(r"(?m)^\.org 0x08029238\n    nop$"),
+        )
+        self.assertRegex(
+            hooks,
+            re.compile(r"(?m)^\.org 0x0802923C\n    nop$"),
+        )
+
     def test_status_bug_replaces_only_green_invulnerability_entries(self) -> None:
         hooks = (ROOT / "src/hooks.asm").read_text()
 

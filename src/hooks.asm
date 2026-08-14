@@ -34,6 +34,16 @@
 .org 0x0800B1A2
     mov r0,5
 
+// The Custom Screen collapses chip IDs 0xC0 and 0xC1 into a preceding Attack
+// or Navi chip because those slots were originally Attack+10 and Navi+20.
+// Rook and SignalRed now occupy those IDs, so disable only the two consume
+// branches while leaving the other native add-on chips unchanged.
+.org 0x08029238
+    nop
+
+.org 0x0802923C
+    nop
+
 // Status Bug dispatches one of four native handlers for each severity. Replace
 // only the normal- and high-severity green-invulnerability entries with their
 // corresponding flashing handlers. Keep the native selector at 0x08013E7E

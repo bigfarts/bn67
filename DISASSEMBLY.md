@@ -334,6 +334,12 @@ forward through HubBatch's launcher. Their controllers and BugCharge's
 charge-head visual likewise receive distinct class-4 IDs. Native attack and
 object entries are copied unchanged into the relocated table prefixes.
 
+The Custom Screen's selected-hand cleanup at `0x08029224` also recognizes the
+old add-on chips by exact ID. Its branches at `0x08029238` and `0x0802923C`
+would consume IDs `0x0C0` and `0x0C1` after an Attack or Navi chip even after
+their records became Rook and SignalRed. Both branches are replaced with NOPs;
+the adjacent native handling for the remaining add-on chips is preserved.
+
 Exe6Runtime tracing of Colonel BugCharge identifies group `0x0C`/index `0x43` as
 both the stationary and moving Gospel archive. The stationary object is 24
 pixels forward of the user at Z `0x17`. BN5's object code gives this visual a
