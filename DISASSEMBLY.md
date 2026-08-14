@@ -421,6 +421,9 @@ object this passive obstacle does not own. Incoming damage sets the same
 one-frame white sprite flash used by RockCube. The controller destroys the
 light when its resulting HP reaches zero, spawning BN6's fire-explosion effect
 kind `0x00` at a 16-pixel height and playing its native explosion SFX `0x070`.
+Rook retains BN3's `0x0708`-frame lifespan and restores its visible object flag
+before BN6's native helper applies each of the final 180 frames' blink states;
+this prevents the first hidden blink frame from persisting until deletion.
 Red/green state changes pause while time is stopped.
 RockCube contributes the neutral support-object panel flag `0x00800000`
 through collision type `14`. Rook and SignalRed contribute the owner-specific

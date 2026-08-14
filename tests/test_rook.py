@@ -172,6 +172,18 @@ class RookTests(unittest.TestCase):
         ]
         self.assertIn("obj->header_flags |= EXE6_OBJ_FLAG_VISIBLE;", init)
 
+    def test_lifespan_refreshes_visibility_before_applying_each_blink(self) -> None:
+        source = (ROOT / "src/chips/rook.c").read_text()
+        update = source[
+            source.index("static void obj_update"):
+            source.index("static void obj_init")
+        ]
+        refresh = update.index(
+            "obj->header_flags |= EXE6_OBJ_FLAG_VISIBLE;"
+        )
+        lifespan = update.index("exe6_cube_life_span_check();")
+        self.assertLess(refresh, lifespan)
+
     def test_spawn_uses_support_object_panel_occupancy(self) -> None:
         abi = (ROOT / "src/abi.h").read_text()
         self.assertIn("EXE6_BLOCK_FLAG_NEUTRAL_SUPPORT_OBJECT 0x00800000", abi)

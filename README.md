@@ -166,7 +166,9 @@ collision damage. Rook stops Tengu Racket's traveling gust and Tengu's B+Left
 wind from passing through its panel; B+Left does not move Rook. Its owner's
 attacks still pass through it.
 Break attacks deal their normal damage, so they must deplete the full 500 HP
-rather than deleting Rook in one hit. Both versions import Rook's BN3 icon,
+rather than deleting Rook in one hit. Like BN3's original, Rook lasts 1,800
+active frames and blinks during its final 180 before expiring. Both versions
+import Rook's BN3 icon,
 center-cropped library art,
 palette, and original tower-shaped battle sprite. DustCross can suck Rook in
 and fire that same sprite as ammo, using the registry's shared DustCross

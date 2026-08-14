@@ -290,6 +290,8 @@ static void obj_push_update(Exe6Obj *obj)
 
 static void obj_update(Exe6Obj *obj)
 {
+    obj->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
+
     uint8_t removal = obj->removal_state;
     if ((removal & HIT_DEFERRED_FLAG) != 0) {
         if (exe6_battle_event_busy_check() != 0) {
