@@ -15,6 +15,18 @@ flashing invulnerability variants instead.
 
 ### Standard Chips
 
+#### Variable Sword
+
+Variable Sword gains BN3's Element Sonic command. Hold A and enter
+`B, B, Left, Down, Up` during its normal command window to fire four
+160-damage Sonic Booms in Fire, Aqua, Elec, then Wood order. Each wave also
+receives the attack bonus applied when Variable Sword was activated.
+
+The first three waves deal damage and stagger without starting flashing
+invulnerability. Only the final Wood wave grants the target its normal
+post-hit flashing. Variable Sword's five native BN6 commands, including the
+ordinary single Sonic Boom, retain their original inputs and behavior.
+
 #### Anti Navi
 
 Anti Navi's MB cost is reduced from 50 MB to 33 MB in both versions. Its native
