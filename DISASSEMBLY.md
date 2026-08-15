@@ -4,6 +4,40 @@ All addresses are GBA ROM addresses unless identified as file offsets. The
 port was translated from the supplied English BN5 ROM rather than from the
 unrelated dormant effects originally mistaken for SearchMan in BN6.
 
+## VarSword ElementSonic
+
+BN6's VarSword action begins at `0x080F096E` in Gregar and `0x080EF62E` in
+Falzar. Its native initialization selects one of two five-pointer command
+tables according to the user's facing direction, and the shared matcher at
+`0x08012792` advances one byte of command progress for every candidate. The
+patch repoints that table to two six-pointer copies, changes the per-side stride
+and matcher span from 20 to 24 bytes, and puts BN3's
+`B, B, Back, Down, Up` sequence first. Putting the new command first assigns it
+action-work progress byte `+0x30`, which is already zeroed by the native
+VarSword initializer.
+For the opposite-facing player, only the horizontal Back input is mirrored.
+
+Both ElementSonic and ordinary SonicBoom select BN6's hidden `SonicBom` action
+record `0x173`; their command-progress bytes distinguish them without consuming
+or modifying another hidden record. SonicBoom's init at `0x080F0CD0` Gregar /
+`0x080EF990` Falzar retains a repeat count of one for the native command and
+sets four only after all five ElementSonic inputs have completed. The native
+21-frame arm/wave cycle decrements that count and restarts itself, preserving
+BN6's animation, movement, and collision timing.
+
+Immediately before each shell-`0x58` spawn, the remaining counts `4, 3, 2, 1`
+are translated through `5 - count` to BN6 attack parameters `1, 2, 3, 4`.
+Shell `0x58` already maps those values to its Fire, Aqua, Elec, and Wood
+palettes and passes the same parameter through native hit processing, so each
+wave receives the matching damage element and weakness interaction. Damage and
+attack bonus remain the values cached from the activating VarSwrd chip; all
+four waves therefore use its 160 base power plus the same activation bonus.
+The first three created shells receive a private marker in unused object byte
+`+0x0F`; shell `0x58` converts that marker to hit modifier `1` (stagger only)
+instead of its native modifier `3` (stagger plus fixed flashing
+invulnerability). The final Wood wave is unmarked and retains modifier `3`, as
+does every native shell-`0x58` caller.
+
 ## Native BN5 attack chain
 
 The BN5 SearchMan time-freeze wrapper is at `0x080C1458`. It creates type-1

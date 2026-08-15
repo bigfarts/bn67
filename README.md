@@ -25,6 +25,15 @@ is reduced from 50 MB to 33 MB in both versions.
 FullCust retains its native BN6 behavior, wildcard code, and metadata, but its
 MB cost is increased from 50 MB to 51 MB in both versions.
 
+### VarSwrd
+
+VarSwrd gains BN3's ElementSonic command. Hold A and enter
+`B, B, Left, Down, Up` during the native input window to fire four Sonic Booms
+in Fire, Aqua, Elec, then Wood order. Every wave uses VarSwrd's 160 base power
+and receives the chip's attack bonus. Only the final Wood wave starts flashing
+invulnerability. The five native BN6 commands, including its ordinary single
+Sonic Boom, retain their original inputs and behavior.
+
 ### ProtoMan
 
 ProtoMan, ProtoMan EX, and ProtoMan SP now use BN6's native DeltaRay attack
