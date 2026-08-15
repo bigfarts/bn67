@@ -792,6 +792,75 @@ class PackageCompilerTests(unittest.TestCase):
                 "Bomb 3\nahead!\nHits 9sq",
             )
 
+    def test_django_restores_bn5_base_attack_in_missing_slots(self) -> None:
+        source = (ROOT / "src/chips/django.c").read_text()
+        self.assertIn(
+            "BN67_SUMMON_ATTACK(0x116, django_attack_main)",
+            source,
+        )
+        self.assertIn("EXE6_HIT_REGION_CENTERED_3X3", source)
+        self.assertIn("find_target_in_row", source)
+        self.assertIn("django_coffin_sprite", source)
+        self.assertIn("django_sun_sprite", source)
+        self.assertIn("LIGHT_VARIANT_CHARGE", source)
+        self.assertIn("LIGHT_VARIANT_SUN_CONTROLLER", source)
+        self.assertIn("SUNLIGHT_ORBIT_STEP = 8", source)
+        self.assertIn("BUILDUP_LAST_FRAME = 60", source)
+        self.assertIn("ROCK_SPAWN_FRAME = 20", source)
+        self.assertIn("CHARGE_SOUND_PERIOD = 16", source)
+        self.assertIn("exe6_camera_quake_set(2, 30)", source)
+        self.assertIn("exe6_sound_req(0xE5)", source)
+        self.assertIn("exe6_sound_req(0x149)", source)
+        self.assertIn("{-1, 0}, {1, 0}, {0, -1}, {0, 1}", source)
+        self.assertIn("exe6_obj_shadow_set()", source)
+        self.assertIn("exe6_obj_spawn_with_variant(2)", source)
+        self.assertIn("django2_palette", source)
+        self.assertIn("django3_palette", source)
+        self.assertIn(".short 0x6BF7,0x5BAD,0x4743", source)
+        self.assertIn("self->z = 35 << 16", source)
+        self.assertIn("self->z = 24 << 16", source)
+        self.assertIn("GREGAR_ROCK_SPRITE_GROUP = 0x10", source)
+        self.assertIn("GREGAR_ROCK_SPRITE_ID = 0x05", source)
+        self.assertIn("EXE6_HIT_TYPE_17", source)
+        self.assertIn("hide_target", source)
+        self.assertIn(".object_spawn = {0}", source)
+        self.assertNotIn("EXE6_CHIP_EFFECT_FLAG_DYNAMIC_POWER", source)
+        self.assertIn(
+            "0x116, EXE6_CHIP_CODE_ASTERISK, 2, 30, 130, django_palette",
+            source,
+        )
+        self.assertIn(
+            "0x117, EXE6_CHIP_CODE_NONE, 3, 70, 180, django2_palette",
+            source,
+        )
+        self.assertIn(
+            "0x118, EXE6_CHIP_CODE_NONE, 4, 90, 260, django3_palette",
+            source,
+        )
+
+        for variant in ("gregar", "falzar"):
+            _, packages = self.packages(variant)
+            django = next(
+                package for package in packages if package.name == "django"
+            )
+            self.assertEqual(
+                [chip.chip_id for chip in django.chips],
+                [0x116, 0x117, 0x118],
+            )
+            self.assertEqual(django.attack.chip_id, 0x116)
+            text_entries = {
+                (entry.archive, entry.index): entry.value
+                for entry in django.text
+            }
+            self.assertEqual(
+                text_entries[("chip-names-1", 0x16)],
+                "Django",
+            )
+            self.assertEqual(
+                text_entries[("chip-descriptions-1", 0x16)],
+                "Burns\nwith\nsunlight",
+            )
+
     def test_protoman_uses_native_delta_ray(self) -> None:
         source = (ROOT / "src/chips/protoman.c").read_text()
         self.assertEqual(source.count("BN67_CHIP_RECORD("), 3)
@@ -896,11 +965,14 @@ class PackageCompilerTests(unittest.TestCase):
                     f".dw {main} + 1 // 0x{object_id:02X} {main}",
                     assembly,
                 )
+            label = f"object_class_{number}_table"
+            object_table = assembly.split(f"{label}:", 1)[1].split(
+                f"{label}_end:", 1
+            )[0]
             if namespace:
                 self.assertNotIn(
-                    f"// 0x{max(namespace.values()) + 1:02X}", assembly
+                    f"// 0x{max(namespace.values()) + 1:02X}", object_table
                 )
-            label = f"object_class_{number}_table"
             self.assertIn(f"{label}:", assembly)
             self.assertIn(f"{label}_end:", assembly)
             object_class = config.object_classes[number]

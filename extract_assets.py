@@ -247,6 +247,23 @@ ASSETS = (
     Asset("bn5_protoman", "jealousy-palette.bin", 0x734188, 0x20),
     Asset("bn5_protoman", "jealousy-effect-tiles.bin", 0x6FAD2C, 0x100),
     Asset("bn5_protoman", "jealousy-effect-palette.bin", 0x6FAE2C, 0x20),
+    # BN5 ProtoMan: Django's library art and complete battle sequence.
+    # The battle archives are group 0x0C IDs 0x41, 0x44, and 0x45: the main
+    # actor, sunlight, and coffin used by the base attack.
+    # Django3 uses DjangoSP's original palette. Django2's Japanese BN6 green
+    # background colors are defined beside its chip record in django.c.
+    Asset("bn5_protoman", "django-icon.bin", 0x7493B8, 0x80),
+    Asset("bn5_protoman", "django-image.bin", 0x72D968, 0x540),
+    Asset(
+        "bn5_protoman",
+        "django-palette.bin",
+        0x7349C8,
+        0x20,
+    ),
+    Asset("bn5_protoman", "django3-palette.bin", 0x7349E8, 0x20),
+    Asset("bn5_protoman", "django-battle-sprite.bin", 0x31F1D0, 0x1C50),
+    Asset("bn5_protoman", "django-sun-sprite.bin", 0x322158, 0x8EC),
+    Asset("bn5_protoman", "django-coffin-sprite.bin", 0x322A44, 0x580),
     # BN5 ProtoMan: SearchMan library art, Navi archive, and both reticles.
     Asset("bn5_protoman", "searchman-image.bin", 0x728568, 0x540),
     Asset("bn5_protoman", "searchman-pal-base.bin", 0x7343C8, 0x20),

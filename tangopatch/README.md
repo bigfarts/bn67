@@ -133,6 +133,20 @@ attack.
 - `Count EX H`: 75 MB
 - `Count SP H`: 89 MB
 
+#### Django
+
+Django, Django2, and Django3 restore the three removed Mega Chip slots. Django
+targets the closest opposing unit in his row, seals it in a coffin, calls down
+rocks through their original poof effects, and burns the centered 3x3 area
+with sunlight. All three variants use BN5's base Django icon and library art;
+Django2 uses the Japanese BN6 chip's green background colors, while Django3
+uses BN5 DjangoSP's palette. The actor, coffin, and sunlight sprites are BN5's
+originals.
+
+- `Django D/*`: 30 MB, 130 damage
+- `Django2 D`: 70 MB, 180 damage
+- `Django3 D`: 90 MB, 260 damage
+
 #### ProtoMan
 
 ProtoMan, ProtoMan EX, and ProtoMan SP use BN6's native Delta Ray Edge attack
@@ -207,11 +221,15 @@ palette, and description.
 
 #### Gregar
 
+**Gregar GigaChip.**
+
 The Japanese-only `Gregar X` is restored as a 99 MB, Null-element Giga chip.
 It uses Gregar's original chip art and full summon sprite, including the
 falling-rock and scorching-breath sequence, and returns to battle normally.
 
 #### Falzar
+
+**Falzar GigaChip.**
 
 The Japanese-only `Falzar X` is restored as a 99 MB, Null-element Giga chip.
 It uses Falzar's original chip art, palette, full summon sprite, Strike

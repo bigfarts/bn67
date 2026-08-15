@@ -38,6 +38,12 @@ in the Japanese releases:
 - `Count H/*`, `Count[EX] H`, and `Count[SP] H` restore Count's three MegaChips,
   variant palettes, compressed actor archive, rain attack, lance objects, and
   complete cleanup sequence.
+- `Django D/*`, `Django2 D`, and `Django3 D` restore the three removed
+  MegaChips with 130, 180, and 260 damage. All three use BN5's base Django
+  artwork and complete coffin, poofing falling-rock, and sunlight sequence;
+  Django2 uses the Japanese BN6 chip's green background, while Django3 uses
+  BN5 DjangoSP's palette. Django targets the closest opposing unit in his row
+  and burns the centered 3x3 area around it.
 - `DoubleBeast` keeps the routine already present in the English engine and
   restores its missing Japanese icon, library art, palette, and description.
 - `Gregar X` and `Falzar X` restore the two 99 MB GigaChips with their original
@@ -244,7 +250,8 @@ The build extracts GunDelEX, Otenko, Count, DoubleBeast, Gregar, and Falzar
 resources from the Japanese BN6 releases; BugChain's menu art and aura,
 LaserMan's menu art and palettes, shared actor/beam archive, summon and firing
 samples, and SignalRed's menu art and battle sprite from Blue Moon; Jealousy's
-menu/overlay graphics and BugCharge's menu and Gospel-head assets from BN5;
+menu/overlay graphics, Django's menu art and complete battle sequence, and
+BugCharge's menu and Gospel-head assets from BN5;
 Rook's BN3 menu art and battle sprite; FolderBack's BN3 menu art and original
 rumble PCM; plus the full BN5 SearchMan actor archive, both scope/reticle
 archives, the chip icon, and the 56x48 library artwork; NumberMan's actor and
