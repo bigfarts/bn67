@@ -44,12 +44,13 @@
 .org 0x0802923C
     nop
 
-// Status Bug dispatches one of four native handlers for each severity. Replace
-// only the normal- and high-severity green-invulnerability entries with their
-// corresponding flashing handlers. Keep the native selector at 0x08013E7E
-// intact: rewriting its RNG path can hang while applying battle-start bugs.
-.org 0x08013EA8
-    .dw 0x08013EE7
+// Status Bug dispatches one of four native handlers for each severity. The
+// second normal/high entries inflict green invulnerability; redirect them to
+// the first entries, which apply the matching 300/600-frame flashing status.
+// Keep the native selector at 0x08013E7E intact: rewriting its RNG path can
+// hang at battle startup.
+.org 0x08013EA4
+    .dw 0x08013EC3
 
-.org 0x08013EB8
-    .dw 0x08013F15
+.org 0x08013EB4
+    .dw 0x08013EF1

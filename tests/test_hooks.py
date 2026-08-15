@@ -48,12 +48,14 @@ class GlobalHookTests(unittest.TestCase):
         self.assertNotRegex(hooks, r"(?m)^\.org 0x08013E7E$")
         self.assertRegex(
             hooks,
-            re.compile(r"(?m)^\.org 0x08013EA8\n    \.dw 0x08013EE7$"),
+            re.compile(r"(?m)^\.org 0x08013EA4\n    \.dw 0x08013EC3$"),
         )
         self.assertRegex(
             hooks,
-            re.compile(r"(?m)^\.org 0x08013EB8\n    \.dw 0x08013F15$"),
+            re.compile(r"(?m)^\.org 0x08013EB4\n    \.dw 0x08013EF1$"),
         )
+        self.assertNotRegex(hooks, r"(?m)^\.org 0x08013EA8$")
+        self.assertNotRegex(hooks, r"(?m)^\.org 0x08013EB8$")
 
 
 if __name__ == "__main__":

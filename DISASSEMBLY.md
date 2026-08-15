@@ -72,9 +72,13 @@ table full of wrapper pointers.
 
 Status Bug keeps BN6's native selector and synchronized RNG path at
 `0x08013E7E`. Its normal- and high-severity green-invulnerability dispatch
-entries at `0x08013EA8` and `0x08013EB8` instead point to the matching flashing
-handlers. This removes green invulnerability without replacing executable
-selection logic during battle startup.
+entries at `0x08013EA4` and `0x08013EB4` instead point to the native flashing
+handlers at `0x08013EC3` and `0x08013EF1`. Those handlers write the 300- or
+600-frame duration to hit state `+0x24` and enable modifier 2, which alternates
+the Navi between visible and invisible. The adjacent `0x08013EA8` and
+`0x08013EB8` entries remain on their native handlers. This removes green
+invulnerability without replacing executable selection logic during battle
+startup.
 
 FolderBack's Folder restore runs only on the chip owner's local peer. Its hand
 reset therefore clears only that owner's two hand counters and six loaded-chip
