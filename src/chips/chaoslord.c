@@ -52,9 +52,10 @@ BN67_CHIP_RECORD(0x12e) {
         .object_spawn = {0},
         .delay = 0,
     },
-    .library_number = 0x00,
-    .library_flags = 0x00,
-    .library_lock_on_type = 0x10,
+    /* Preserve BigHook's second Giga-library position and metadata. */
+    .library_number = 0x02,
+    .library_flags = 0x18,
+    .library_lock_on_type = 0x00,
     .alphabetical_sort = 0,
     .power = 500,
     .library_sort_order = 0x012E,

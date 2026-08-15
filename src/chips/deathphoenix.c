@@ -48,9 +48,10 @@ BN67_CHIP_RECORD(0x134) {
         .object_spawn = {0},
         .delay = 0,
     },
-    .library_number = 0x00,
-    .library_flags = 0x00,
-    .library_lock_on_type = 0x10,
+    /* Preserve CrossDiv's third Giga-library position and metadata. */
+    .library_number = 0x03,
+    .library_flags = 0x18,
+    .library_lock_on_type = 0x00,
     .alphabetical_sort = 0,
     .power = 150,
     .library_sort_order = 0x0134,

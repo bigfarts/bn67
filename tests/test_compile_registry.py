@@ -770,6 +770,19 @@ class PackageCompilerTests(unittest.TestCase):
             self.assertEqual(text_entries[("chip-names-1", 0x2F)], "BlakWeap")
             self.assertIn(("chip-descriptions-1", 0x2F), text_entries)
 
+    def test_giga_replacements_preserve_library_slots(self) -> None:
+        chaoslord = (ROOT / "src/chips/chaoslord.c").read_text()
+        self.assertIn("BN67_CHIP_RECORD(0x12e)", chaoslord)
+        self.assertIn(".library_number = 0x02", chaoslord)
+        self.assertIn(".library_flags = 0x18", chaoslord)
+        self.assertIn(".library_lock_on_type = 0x00", chaoslord)
+
+        deathphoenix = (ROOT / "src/chips/deathphoenix.c").read_text()
+        self.assertIn("BN67_CHIP_RECORD(0x134)", deathphoenix)
+        self.assertIn(".library_number = 0x03", deathphoenix)
+        self.assertIn(".library_flags = 0x18", deathphoenix)
+        self.assertIn(".library_lock_on_type = 0x00", deathphoenix)
+
     def test_folderback_replaces_color_point_slot(self) -> None:
         source = (ROOT / "src/chips/folderback.c").read_text()
         self.assertIn("BN67_CHIP_RECORD(0x0c2)", source)
