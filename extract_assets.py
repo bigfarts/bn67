@@ -204,6 +204,31 @@ def extract_bn3_chip_art(
 
 
 ASSETS = (
+    # Japanese BN6: event-chip menu art and the two removed battle archives.
+    # These offsets come directly from the original BR5J/BR6J chip records and
+    # sprite pointer tables; no redraws or palette conversions are involved.
+    Asset("exe6_jp_gregar", "gundelsol-ex-icon.bin", 0x74880C, 0x80),
+    Asset("exe6_jp_gregar", "gundelsol-ex-image.bin", 0x717B4C, 0x540),
+    Asset("exe6_jp_gregar", "gundelsol-ex-palette.bin", 0x745C6C, 0x20),
+    Asset("exe6_jp_gregar", "otenko-icon.bin", 0x74CB8C, 0x80),
+    Asset("exe6_jp_gregar", "otenko-image.bin", 0x72EACC, 0x540),
+    Asset("exe6_jp_gregar", "otenko-palette.bin", 0x746D4C, 0x20),
+    Asset("exe6_jp_gregar", "otenko-battle-sprite.bin", 0x33962C, 0x690),
+    Asset("exe6_jp_gregar", "count-icon.bin", 0x74E48C, 0x80),
+    Asset("exe6_jp_gregar", "count-image.bin", 0x740B8C, 0x540),
+    Asset("exe6_jp_gregar", "count-pal-base.bin", 0x747A4C, 0x20),
+    Asset("exe6_jp_gregar", "count-pal-ex.bin", 0x747A6C, 0x20),
+    Asset("exe6_jp_gregar", "count-pal-sp.bin", 0x747A8C, 0x20),
+    Asset("exe6_jp_gregar", "count-battle-sprite.bin", 0x2EF3C0, 0x33DC),
+    Asset("exe6_jp_gregar", "doublebeast-icon.bin", 0x74EC8C, 0x80),
+    Asset("exe6_jp_gregar", "doublebeast-image.bin", 0x74304C, 0x540),
+    Asset("exe6_jp_gregar", "doublebeast-palette.bin", 0x747BAC, 0x20),
+    Asset("exe6_jp_gregar", "gregar-icon.bin", 0x74ED0C, 0x80),
+    Asset("exe6_jp_gregar", "gregar-image.bin", 0x74358C, 0x540),
+    Asset("exe6_jp_gregar", "gregar-battle-sprite.bin", 0x357464, 0x1E40),
+    Asset("exe6_jp_falzar", "falzar-icon.bin", 0x750E58, 0x80),
+    Asset("exe6_jp_falzar", "falzar-image.bin", 0x745658, 0x540),
+    Asset("exe6_jp_gregar", "falzar-battle-sprite.bin", 0x3557D8, 0x1A2C),
     # EXE4.5: BlackWeapon's Advance Battle Chip menu art. Unlike the BN4
     # operation-battle placeholder, EXE4.5 contains the complete library art.
     Asset("exe45", "blackweapon-icon.bin", 0x7640B0, 0x80),
@@ -404,6 +429,8 @@ def main() -> None:
     parser.add_argument("--bn5-colonel", required=True, type=Path)
     parser.add_argument("--exe6-gregar", required=True, type=Path)
     parser.add_argument("--exe6-falzar", required=True, type=Path)
+    parser.add_argument("--exe6-jp-gregar", required=True, type=Path)
+    parser.add_argument("--exe6-jp-falzar", required=True, type=Path)
     parser.add_argument("--bn4-blue-moon", required=True, type=Path)
     parser.add_argument("--bn3-blue", required=True, type=Path)
     parser.add_argument("--exe45", required=True, type=Path)
@@ -414,6 +441,8 @@ def main() -> None:
         "bn5_colonel": args.bn5_colonel,
         "exe6_gregar": args.exe6_gregar,
         "exe6_falzar": args.exe6_falzar,
+        "exe6_jp_gregar": args.exe6_jp_gregar,
+        "exe6_jp_falzar": args.exe6_jp_falzar,
         "bn4_blue_moon": args.bn4_blue_moon,
         "bn3_blue": args.bn3_blue,
         "exe45": args.exe45,

@@ -13,6 +13,7 @@
 .endmacro
 
 .include "src/hooks.asm"
+.include "src/chips/otenko.asm"
 
 .if falzar
     .include "build/c-symbols-falzar.generated.asm"

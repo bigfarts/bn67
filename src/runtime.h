@@ -81,6 +81,14 @@
 #define BN67_SHELL(main) BN67_OBJ_BODY(3, main)
 #define BN67_EFFECT(main) BN67_OBJ_BODY(4, main)
 
+/* Restore a removed native object-table slot with a linked Thumb routine. */
+#define BN67_FIXED_OBJECT(obj_class, object_id, main) \
+    BN67_METADATA_RECORD( \
+        "fixed_object", \
+        BN67_STRINGIFY(obj_class) "__" BN67_STRINGIFY(object_id) "__" \
+            BN67_STRINGIFY(main) \
+    )
+
 #define BN67_USE_SONG(archive) \
     extern const uint8_t BN67_LINK_SONG_ID(archive)[]; \
     extern const uint8_t BN67_LINK_SONG_GROUP(archive)[]
@@ -148,6 +156,15 @@
 /* Source compatibility for packages written before the ABI names were split. */
 #define BN67_ATTACK(chip_id, main) BN67_PERSISTENT_ATTACK(chip_id, main)
 
+/* Restore a removed entry inside one of the compiler-owned native attack
+ * tables. The linked symbol is the original routine's Thumb entry point. */
+#define BN67_FIXED_ATTACK(family, subfamily, main) \
+    BN67_METADATA_RECORD( \
+        "fixed_attack", \
+        BN67_STRINGIFY(family) "__" BN67_STRINGIFY(subfamily) "__" \
+            BN67_STRINGIFY(main) \
+    )
+
 #define BN67_PATCH_POINTER(address, symbol) \
     BN67_METADATA_RECORD( \
         "pointer", \
@@ -167,6 +184,14 @@
         "section", \
         BN67_STRINGIFY(address) "__" BN67_STRINGIFY(relay_address) "__" \
             BN67_STRINGIFY(symbol) \
+    )
+
+/* Replace a Thumb call inside a routine linked into the expanded code image. */
+#define BN67_PATCH_LINKED_CALL(source, offset, target) \
+    BN67_METADATA_RECORD( \
+        "linked_call", \
+        BN67_STRINGIFY(source) "__" BN67_STRINGIFY(offset) "__" \
+            BN67_STRINGIFY(target) \
     )
 
 /*
@@ -244,6 +269,24 @@
     extern const uint8_t BN67_LINK_SPRITE_GROUP(archive)[]; \
     BN67_INCBIN(archive, path); \
     BN67_METADATA_RECORD("sprite", BN67_STRINGIFY(archive))
+
+/* Replace a removed native sprite slot while preserving its original handle. */
+#define BN67_FIXED_SPRITE(group, index, archive, path) \
+    BN67_INCBIN(archive, path); \
+    BN67_METADATA_RECORD( \
+        "fixed_sprite", \
+        BN67_STRINGIFY(group) "__" BN67_STRINGIFY(index) "__" \
+            BN67_STRINGIFY(archive) \
+    )
+
+/* Preserve bit 31, which tells the native loader to decompress the archive. */
+#define BN67_FIXED_COMPRESSED_SPRITE(group, index, archive, path) \
+    BN67_INCBIN(archive, path); \
+    BN67_METADATA_RECORD( \
+        "fixed_compressed_sprite", \
+        BN67_STRINGIFY(group) "__" BN67_STRINGIFY(index) "__" \
+            BN67_STRINGIFY(archive) \
+    )
 
 /* Register an imported sprite as a DustCross ammo kind. */
 #define BN67_DUST_SPRITE(archive) \

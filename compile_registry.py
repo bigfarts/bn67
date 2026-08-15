@@ -21,6 +21,10 @@ THUMB_POINTER_METADATA_RE = re.compile(
 SECTION_METADATA_RE = re.compile(
     r"^section__(0[xX][0-9A-Fa-f]+)__(0[xX][0-9A-Fa-f]+)__([a-z][a-z0-9_]*)$"
 )
+LINKED_CALL_METADATA_RE = re.compile(
+    r"^linked_call__([a-z][a-z0-9_]*)__(0[xX][0-9A-Fa-f]+)__"
+    r"([a-z][a-z0-9_]*)$"
+)
 RUNTIME_SOURCE_NAMES = {"abi.c", "runtime.c"}
 SONG_PLAYER_FIRST = 0x0C
 SONG_PLAYER_LAST = 0x1F
@@ -137,8 +141,23 @@ class ObjectResource:
 
 
 @dataclass(frozen=True)
+class FixedObjectResource:
+    object_class: int
+    object_id: int
+    main: str
+
+
+@dataclass(frozen=True)
 class SpriteResource:
     archive: str
+
+
+@dataclass(frozen=True)
+class FixedSpriteResource:
+    group: int
+    index: int
+    archive: str
+    compressed: bool = False
 
 
 @dataclass(frozen=True)
@@ -183,6 +202,13 @@ class AttackResource:
 
 
 @dataclass(frozen=True)
+class FixedAttackResource:
+    family: int
+    subfamily: int
+    main: str
+
+
+@dataclass(frozen=True)
 class AttackAllocation:
     family: int
     subfamily: int
@@ -203,20 +229,31 @@ class SectionPatch:
 
 
 @dataclass(frozen=True)
+class LinkedCallPatch:
+    source: str
+    offset: int
+    target: str
+
+
+@dataclass(frozen=True)
 class Package:
     name: str
     source: str
     definitions: Path
     objects: tuple[ObjectResource, ...]
+    fixed_objects: tuple[FixedObjectResource, ...]
     sprites: tuple[SpriteResource, ...]
+    fixed_sprites: tuple[FixedSpriteResource, ...]
     dust_sprites: tuple[DustSpriteResource, ...]
     field_objects: tuple[FieldObjectResource, ...]
     songs: tuple[SongResource, ...]
     text: tuple[TextResource, ...]
     chips: tuple[ChipResource, ...]
     attack: AttackResource | None
+    fixed_attacks: tuple[FixedAttackResource, ...]
     pointer_patches: tuple[PointerPatch, ...]
     section_patches: tuple[SectionPatch, ...]
+    linked_call_patches: tuple[LinkedCallPatch, ...]
 
 
 @dataclass(frozen=True)
@@ -749,9 +786,13 @@ def load_package(source_path: Path, config: Config) -> Package:
         (),
         (),
         (),
+        (),
+        (),
         tuple(text),
         (),
         None,
+        (),
+        (),
         (),
         (),
     )
@@ -791,14 +832,18 @@ def check_snake_resource_label(package: str, label: str, suffix: str) -> None:
 
 def apply_metadata(package: Package, symbols: list[str]) -> Package:
     objects: list[ObjectResource] = []
+    fixed_objects: list[FixedObjectResource] = []
     sprites: list[SpriteResource] = []
+    fixed_sprites: list[FixedSpriteResource] = []
     dust_sprites: list[DustSpriteResource] = []
     field_objects: list[FieldObjectResource] = []
     songs: list[SongResource] = []
     chips: list[ChipResource] = []
     attack: AttackResource | None = None
+    fixed_attacks: list[FixedAttackResource] = []
     pointer_patches: list[PointerPatch] = []
     section_patches: list[SectionPatch] = []
+    linked_call_patches: list[LinkedCallPatch] = []
     for symbol in symbols:
         prefix = "__bn67_meta__"
         if not symbol.startswith(prefix):
@@ -847,15 +892,47 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
                 SectionPatch(patch_symbol, address, relay_address)
             )
             continue
+        linked_call = LINKED_CALL_METADATA_RE.fullmatch(body)
+        if linked_call is not None:
+            source, offset_text, target = linked_call.groups()
+            offset = checked_int(int(offset_text, 0), 0, 0xFFFFFFFF, symbol)
+            if offset % 2:
+                raise PackageError(
+                    f"{package.name}: linked call offset must be halfword-aligned"
+                )
+            linked_call_patches.append(LinkedCallPatch(source, offset, target))
+            continue
         parts = body.split("__")
         kind = parts[0]
         if kind == "object" and len(parts) == 3:
             object_class = int(parts[1], 0)
             check_snake_resource_label(package.name, parts[2], "_main")
             objects.append(ObjectResource(object_class, parts[2]))
+        elif kind == "fixed_object" and len(parts) == 4:
+            check_snake_resource_label(package.name, parts[3], "_main")
+            fixed_objects.append(
+                FixedObjectResource(
+                    checked_int(int(parts[1], 0), 0, 0xFF, symbol),
+                    checked_int(int(parts[2], 0), 0, 0xFF, symbol),
+                    parts[3],
+                )
+            )
         elif kind == "sprite" and len(parts) == 2:
             check_snake_resource_label(package.name, parts[1], "_sprite")
             sprites.append(SpriteResource(parts[1]))
+        elif (
+            kind in {"fixed_sprite", "fixed_compressed_sprite"}
+            and len(parts) == 4
+        ):
+            check_snake_resource_label(package.name, parts[3], "_sprite")
+            fixed_sprites.append(
+                FixedSpriteResource(
+                    checked_int(int(parts[1], 0), 0, 0xFF, symbol),
+                    checked_int(int(parts[2], 0), 0, 0xFF, symbol),
+                    parts[3],
+                    kind == "fixed_compressed_sprite",
+                )
+            )
         elif kind == "dust_sprite" and len(parts) == 2:
             check_snake_resource_label(package.name, parts[1], "_sprite")
             dust_sprites.append(DustSpriteResource(parts[1]))
@@ -891,19 +968,32 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
             chip_id = checked_int(int(parts[1], 0), 0, 0xFFFF, symbol)
             check_snake_resource_label(package.name, parts[2], "_main")
             attack = AttackResource(package.name, chip_id, kind, parts[2])
+        elif kind == "fixed_attack" and len(parts) == 4:
+            check_snake_resource_label(package.name, parts[3], "_main")
+            fixed_attacks.append(
+                FixedAttackResource(
+                    checked_int(int(parts[1], 0), 0, 0xFF, symbol),
+                    checked_int(int(parts[2], 0), 0, 0xFF, symbol),
+                    parts[3],
+                )
+            )
         else:
             raise PackageError(f"{package.name}: invalid metadata symbol {symbol}")
     return replace(
         package,
         objects=tuple(objects),
+        fixed_objects=tuple(fixed_objects),
         sprites=tuple(sprites),
+        fixed_sprites=tuple(fixed_sprites),
         dust_sprites=tuple(dust_sprites),
         field_objects=tuple(field_objects),
         songs=tuple(songs),
         chips=tuple(chips),
         attack=attack,
+        fixed_attacks=tuple(fixed_attacks),
         pointer_patches=tuple(pointer_patches),
         section_patches=tuple(section_patches),
+        linked_call_patches=tuple(linked_call_patches),
     )
 
 
@@ -929,14 +1019,40 @@ def discover_packages(config: Config, metadata: dict[str, list[str]]) -> list[Pa
 
 def validate_and_allocate(config: Config, packages: list[Package]) -> Allocations:
     objects = [item for package in packages for item in package.objects]
+    fixed_objects = [item for package in packages for item in package.fixed_objects]
     sprites = [item for package in packages for item in package.sprites]
+    fixed_sprites = [item for package in packages for item in package.fixed_sprites]
     dust_sprites = [item for package in packages for item in package.dust_sprites]
     field_objects = [item for package in packages for item in package.field_objects]
     songs = [item for package in packages for item in package.songs]
     text = [item for package in packages for item in package.text]
     chips = [item for package in packages for item in package.chips]
+    fixed_attacks = [item for package in packages for item in package.fixed_attacks]
 
     sprite_names = {item.archive for item in sprites}
+    for item in fixed_sprites:
+        group = config.sprite_groups.get(item.group)
+        if group is None:
+            raise PackageError(
+                f"{item.archive}: unknown fixed sprite group 0x{item.group:02X}"
+            )
+        if item.index >= group.native_entries:
+            raise PackageError(
+                f"{item.archive}: fixed sprite 0x{item.group:02X}/0x{item.index:02X} "
+                "is outside the native table"
+            )
+        if item.archive in sprite_names:
+            raise PackageError(f"{item.archive}: duplicate sprite declaration")
+        sprite_names.add(item.archive)
+    fixed_slots: dict[tuple[int, int], str] = {}
+    for item in fixed_sprites:
+        key = (item.group, item.index)
+        if key in fixed_slots:
+            raise PackageError(
+                f"fixed sprite 0x{item.group:02X}/0x{item.index:02X} is declared "
+                f"by both {fixed_slots[key]} and {item.archive}"
+            )
+        fixed_slots[key] = item.archive
     dust_names: set[str] = set()
     for item in dust_sprites:
         if item.archive not in sprite_names:
@@ -985,6 +1101,29 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
     for item in objects:
         if item.object_class not in config.object_classes:
             raise PackageError(f"{item.main}: unknown object class {item.object_class}")
+    object_names = {item.main for item in objects}
+    fixed_object_slots: dict[tuple[int, int], str] = {}
+    for item in fixed_objects:
+        object_class = config.object_classes.get(item.object_class)
+        if object_class is None:
+            raise PackageError(
+                f"{item.main}: unknown fixed object class {item.object_class}"
+            )
+        if item.object_id >= object_class.native_entries:
+            raise PackageError(
+                f"{item.main}: fixed object class {item.object_class} "
+                f"ID 0x{item.object_id:02X} is outside the native table"
+            )
+        if item.main in object_names:
+            raise PackageError(f"{item.main}: duplicate object declaration")
+        object_names.add(item.main)
+        key = (item.object_class, item.object_id)
+        if key in fixed_object_slots:
+            raise PackageError(
+                f"fixed object class {item.object_class} ID 0x{item.object_id:02X} "
+                f"is declared by both {fixed_object_slots[key]} and {item.main}"
+            )
+        fixed_object_slots[key] = item.main
     text_owners: dict[tuple[str, int], str] = {}
     for item in text:
         key = (item.archive, item.index)
@@ -1009,6 +1148,27 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
         chip_owners[item.chip_id] = item.package
 
     attack_allocations = allocate_attacks(config, packages)
+
+    attack_pools = {pool.family: pool for pool in config.attack_pools.values()}
+    fixed_attack_slots: dict[tuple[int, int], str] = {}
+    for item in fixed_attacks:
+        pool = attack_pools.get(item.family)
+        if pool is None:
+            raise PackageError(
+                f"{item.main}: no compiler-owned attack family 0x{item.family:02X}"
+            )
+        if item.subfamily >= pool.native_entries:
+            raise PackageError(
+                f"{item.main}: fixed attack 0x{item.family:02X}/"
+                f"0x{item.subfamily:02X} is outside the native table"
+            )
+        key = (item.family, item.subfamily)
+        if key in fixed_attack_slots:
+            raise PackageError(
+                f"fixed attack 0x{item.family:02X}/0x{item.subfamily:02X} "
+                f"is declared by both {fixed_attack_slots[key]} and {item.main}"
+            )
+        fixed_attack_slots[key] = item.main
 
     object_allocations: dict[int, dict[str, int]] = {}
     for number, object_class in config.object_classes.items():
@@ -1204,6 +1364,9 @@ def emit_attack_tables(
         for package in packages
         if package.attack is not None
     }
+    fixed_attacks = [
+        item for package in packages for item in package.fixed_attacks
+    ]
     for pool in config.attack_pools.values():
         label = f"attack_family_{pool.family:02x}_table"
         assigned = {
@@ -1211,15 +1374,34 @@ def emit_attack_tables(
             for main, allocation in allocations.attacks.items()
             if allocation.family == pool.family
         }
+        fixed = {
+            item.subfamily: item for item in fixed_attacks if item.family == pool.family
+        }
         lines.extend(
             [
                 "",
                 ".autoregion",
                 ".align 4",
                 f"{label}:",
-                f'    .incbin "{pool.native_table}"',
             ]
         )
+        native_cursor = 0
+        for subfamily, item in sorted(fixed.items()):
+            if native_cursor < subfamily:
+                lines.append(
+                    f'    .incbin "{pool.native_table}",'
+                    f"0x{native_cursor * 4:X},0x{(subfamily - native_cursor) * 4:X}"
+                )
+            lines.append(
+                f"    .dw {item.main} + 1 // 0x{subfamily:02X} {item.main}"
+            )
+            native_cursor = subfamily + 1
+        if native_cursor < pool.native_entries:
+            lines.append(
+                f'    .incbin "{pool.native_table}",'
+                f"0x{native_cursor * 4:X},"
+                f"0x{(pool.native_entries - native_cursor) * 4:X}"
+            )
         for subfamily, attack in sorted(assigned.items()):
             lines.append(
                 f"    .dw {attack.main} + 1 // 0x{subfamily:02X} {attack.package}"
@@ -1242,6 +1424,9 @@ def emit_object_tables(
             lines.extend([f".org 0x{address:08X}", f"    .dw {label}"])
 
     all_objects = [item for package in packages for item in package.objects]
+    all_fixed_objects = [
+        item for package in packages for item in package.fixed_objects
+    ]
     for number in class_numbers:
         object_class = config.object_classes[number]
         namespace = allocations.objects[number]
@@ -1249,6 +1434,11 @@ def emit_object_tables(
             item.main: item for item in all_objects if item.object_class == number
         }
         reverse = {resource_id: name for name, resource_id in namespace.items()}
+        fixed = {
+            item.object_id: item
+            for item in all_fixed_objects
+            if item.object_class == number
+        }
         label = f"object_class_{number}_table"
         lines.extend(
             [
@@ -1256,9 +1446,25 @@ def emit_object_tables(
                 ".autoregion",
                 ".align 4",
                 f"{label}:",
-                f'    .incbin "{object_class.native_table}"',
             ]
         )
+        native_cursor = 0
+        for object_id, item in sorted(fixed.items()):
+            if native_cursor < object_id:
+                lines.append(
+                    f'    .incbin "{object_class.native_table}",'
+                    f"0x{native_cursor * 4:X},0x{(object_id - native_cursor) * 4:X}"
+                )
+            lines.append(
+                f"    .dw {item.main} + 1 // 0x{object_id:02X} {item.main}"
+            )
+            native_cursor = object_id + 1
+        if native_cursor < object_class.native_entries:
+            lines.append(
+                f'    .incbin "{object_class.native_table}",'
+                f"0x{native_cursor * 4:X},"
+                f"0x{(object_class.native_entries - native_cursor) * 4:X}"
+            )
         for resource_id, name in sorted(reverse.items()):
             lines.append(
                 f"    .dw {active[name].main} + 1 // 0x{resource_id:02X} {name}"
@@ -1306,11 +1512,28 @@ def emit_section_patches(packages: list[Package]) -> list[str]:
     return lines
 
 
+def emit_linked_call_patches(packages: list[Package]) -> list[str]:
+    lines = ["// Package-declared calls inside linked gameplay routines."]
+    for package in packages:
+        for patch in package.linked_call_patches:
+            lines.extend(
+                [
+                    f"// {package.name}: {patch.source} -> {patch.target}",
+                    f".org {patch.source} + 0x{patch.offset:X}",
+                    f"    bl {patch.target}",
+                ]
+            )
+    return lines
+
+
 def emit_sprite_tables(
     config: Config, packages: list[Package], allocations: Allocations
 ) -> list[str]:
     lines = ["// Relocated native sprite groups with package-owned archives appended."]
     all_sprites = [item for package in packages for item in package.sprites]
+    all_fixed_sprites = [
+        item for package in packages for item in package.fixed_sprites
+    ]
     for number, group in sorted(config.sprite_groups.items()):
         table = f"imported_sprite_group_{number:02x}_table"
         for address in group.references:
@@ -1327,15 +1550,38 @@ def emit_sprite_tables(
             if allocated_group == number
         }
         table = f"imported_sprite_group_{number:02x}_table"
+        fixed = {
+            item.index: item
+            for item in all_fixed_sprites
+            if item.group == number
+        }
         lines.extend(
             [
                 "",
                 ".autoregion",
                 ".align 4",
                 f"{table}:",
-                f'    .incbin "{group.native_table}"',
             ]
         )
+        native_cursor = 0
+        for resource_id, item in sorted(fixed.items()):
+            if native_cursor < resource_id:
+                lines.append(
+                    f'    .incbin "{group.native_table}",'
+                    f"0x{native_cursor * 4:X},0x{(resource_id - native_cursor) * 4:X}"
+                )
+            pointer = item.archive
+            if item.compressed:
+                pointer += " + 0x80000000"
+            lines.append(
+                f"    .dw {pointer} // 0x{resource_id:02X} {item.archive}"
+            )
+            native_cursor = resource_id + 1
+        if native_cursor < group.native_entries:
+            lines.append(
+                f'    .incbin "{group.native_table}",'
+                f"0x{native_cursor * 4:X},0x{(group.native_entries - native_cursor) * 4:X}"
+            )
         for resource_id in sorted(reverse):
             name = reverse[resource_id]
             item = active[name]
@@ -1532,6 +1778,8 @@ def generate(config: Config, packages: list[Package], allocations: Allocations) 
         emit_pointer_patches(packages),
         [""],
         emit_section_patches(packages),
+        [""],
+        emit_linked_call_patches(packages),
         [""],
         emit_attack_tables(config, packages, allocations),
         [""],

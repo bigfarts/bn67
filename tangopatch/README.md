@@ -37,6 +37,19 @@ behavior and all other chip metadata are unchanged.
 Full Custom's MB cost is increased from 50 MB to 51 MB in both versions. Its
 native wildcard code, behavior, and all other chip metadata are unchanged.
 
+#### GunDelSol EX
+
+The Japanese-only `GunDelEX G` is restored as an 80 MB, Null-element Standard
+chip. It uses its original Japanese icon, library art, palette, and native
+spread-sunbeam attack.
+
+#### Otenko
+
+The Japanese-only `Otenko O` is restored as a 66 MB Obstacle-element Standard
+chip. Otenko appears with his original battle sprite and raises attack power as
+in the Japanese release. Its original menu art and description are restored as
+well.
+
 #### Aqua Needle
 
 Aqua Needle hits still stagger, but no longer make the target flash or grant
@@ -108,6 +121,18 @@ art and text.
 
 ### Mega Chips
 
+#### Count
+
+Count, Count EX, and Count SP are restored from the Japanese releases. Count
+rains attacks over the target and follows with his lance sequence. All three
+variants use their original records, menu palettes, compressed Count sprite,
+lance objects, and complete ending, returning to battle normally after the
+attack.
+
+- `Count H/*`: 60 MB
+- `Count EX H`: 75 MB
+- `Count SP H`: 89 MB
+
 #### ProtoMan
 
 ProtoMan, ProtoMan EX, and ProtoMan SP use BN6's native Delta Ray Edge attack
@@ -173,6 +198,25 @@ foreground and changes only its five background entries to green. SP uses the
 native yellow-background SP palette. All variants use the base battle palette.
 
 ### Giga Chips
+
+#### Double Beast
+
+Double Beast's behavior was retained by the English engine, but its menu
+resources were removed. Both editions restore the Japanese icon, library art,
+palette, and description.
+
+#### Gregar
+
+The Japanese-only `Gregar X` is restored as a 99 MB, Null-element Giga chip.
+It uses Gregar's original chip art and full summon sprite, including the
+falling-rock and scorching-breath sequence, and returns to battle normally.
+
+#### Falzar
+
+The Japanese-only `Falzar X` is restored as a 99 MB, Null-element Giga chip.
+It uses Falzar's original chip art, palette, full summon sprite, Strike
+Feathers, Sonic Wave, and tornado sequence, and returns to battle normally.
+Its 100-damage Strike Feathers also receive the activating chip's attack bonus.
 
 #### Black Weapon
 

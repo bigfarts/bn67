@@ -138,6 +138,11 @@ it must pop `r1`, own any displaced instructions, and continue or return
 according to that native call site. FolderBack uses the original class-1 table
 after the registry relocates that table and its reference.
 
+`BN67_PATCH_LINKED_CALL(source, offset, target)` replaces a Thumb call inside a
+routine linked into the expanded gameplay image. Both symbols must live in that
+image and remain within Thumb `bl` range. Unlike a fixed section patch, this
+form needs no relay and does not alter registers or preserve displaced code.
+
 The attack macros name the native family lifecycle they register:
 
 - `BN67_PERSISTENT_ATTACK` uses family `0x15`. Its C function returns the
@@ -153,6 +158,15 @@ The attack macros name the native family lifecycle they register:
 `BN67_PERSISTENT_ATTACK`. Here, persistent and ephemeral describe the native
 wrapper lifecycle; an ephemeral callback may still spawn an independently
 managed object.
+
+`BN67_FIXED_OBJECT(class, id, main)` and
+`BN67_FIXED_ATTACK(family, subfamily, main)` replace entries inside extracted
+native table prefixes instead of appending new IDs. They are reserved for
+restoring removed routines whose machine code still depends on its original
+hard-coded object or attack selector. `BN67_FIXED_SPRITE(group, index, archive,
+path)` does the same for a removed native sprite slot. Use
+`BN67_FIXED_COMPRESSED_SPRITE` when the original table pointer has bit 31 set;
+the engine uses that flag to decompress the archive before loading it.
 
 The family selects one of these native ABIs and the subfamily is an 8-bit
 index into that family's function table. The compiler relocates each

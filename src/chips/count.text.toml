@@ -1,0 +1,9 @@
+[chip-names-1]
+"0x13" = "Count"
+"0x14" = "Count[EX]"
+"0x15" = "Count[SP]"
+
+[chip-descriptions-1]
+"0x13" = "Rain on\nenmy then\nlance atk"
+"0x14" = "Rain on\nenmy then\nlance atk"
+"0x15" = "Rain on\nenmy then\nlance atk"

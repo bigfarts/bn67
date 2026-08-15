@@ -25,6 +25,30 @@ is reduced from 50 MB to 33 MB in both versions.
 FullCust retains its native BN6 behavior, wildcard code, and metadata, but its
 MB cost is increased from 50 MB to 51 MB in both versions.
 
+### Japanese event chips
+
+Both English editions restore the chips and resources that were available only
+in the Japanese releases:
+
+- `GunDelEX G` restores GunDelSol EX's original chip record and Japanese menu
+  art. Its spread-sunbeam attack was retained by the English engine and remains
+  native.
+- `Otenko O` restores the original 66 MB StandardChip, menu art, battle sprite,
+  description, and attack-power support effect.
+- `Count H/*`, `Count[EX] H`, and `Count[SP] H` restore Count's three MegaChips,
+  variant palettes, compressed actor archive, rain attack, lance objects, and
+  complete cleanup sequence.
+- `DoubleBeast` keeps the routine already present in the English engine and
+  restores its missing Japanese icon, library art, palette, and description.
+- `Gregar X` and `Falzar X` restore the two 99 MB GigaChips with their original
+  Japanese records, menu art, compressed summon archives, controllers, child
+  attacks, and cleanup routines. They are usable in both editions.
+
+### Falzar
+
+Falzar's 100-damage Strike Feathers now receive the activating chip's attack
+bonus, matching its Sonic Wave and Gregar's 100-damage falling rocks.
+
 ### VarSwrd
 
 VarSwrd gains BN3's ElementSonic command. Hold A and enter
@@ -216,14 +240,15 @@ center-cropped library art, palette, name, and description come from BN3 Blue.
 
 ## Assets and palettes
 
-The build extracts BugChain's menu art and aura, LaserMan's menu art and
-palettes, shared actor/beam archive, summon and firing samples, and SignalRed's
-menu art and battle sprite from Blue Moon; Jealousy's menu/overlay graphics and
-BugCharge's menu and Gospel-head assets from BN5; Rook's BN3 menu art and battle
-sprite; FolderBack's BN3 menu art and original rumble PCM; plus the full BN5
-SearchMan actor archive, both scope/reticle archives, the chip icon, and the
-56x48 library artwork; NumberMan's actor and die archives and library art; and
-BlackWeapon's menu art from EXE4.5. The SearchMan
+The build extracts GunDelEX, Otenko, Count, DoubleBeast, Gregar, and Falzar
+resources from the Japanese BN6 releases; BugChain's menu art and aura,
+LaserMan's menu art and palettes, shared actor/beam archive, summon and firing
+samples, and SignalRed's menu art and battle sprite from Blue Moon; Jealousy's
+menu/overlay graphics and BugCharge's menu and Gospel-head assets from BN5;
+Rook's BN3 menu art and battle sprite; FolderBack's BN3 menu art and original
+rumble PCM; plus the full BN5 SearchMan actor archive, both scope/reticle
+archives, the chip icon, and the 56x48 library artwork; NumberMan's actor and
+die archives and library art; and BlackWeapon's menu art from EXE4.5. The SearchMan
 variant library-art palettes are:
 
 - base: BN5 base palette (blue background)
@@ -293,13 +318,17 @@ Requirements: Make, `armips`, Python 3, the Arm GNU toolchain
 (`arm-none-eabi-gcc`, `objcopy`, and `nm`), and optionally `flips` for BPS
 output.
 
-Pass the six source ROM paths as Make variables:
+Pass the eight source ROM paths as Make variables. The Japanese BN6 ROMs
+supply the event-chip art, sprites, and original object routines removed from
+the English releases:
 
 ```sh
 make \
   BN5_PROTOMAN_ROM=/path/to/bn5.srl \
   BN6_GREGAR_ROM=/path/to/bn6-gregar.srl \
   BN6_FALZAR_ROM=/path/to/bn6-falzar.srl \
+  EXE6_GREGAR_ROM=/path/to/bn6-jp-gregar.srl \
+  EXE6_FALZAR_ROM=/path/to/bn6-jp-falzar.srl \
   BN4_BLUE_MOON_ROM=/path/to/bn4-blue-moon.srl \
   BN3_BLUE_ROM=/path/to/bn3-blue.srl \
   EXE45_ROM=/path/to/exe4.5.gba
@@ -315,6 +344,8 @@ Supported source SHA-256 hashes:
 - BN5 Team Colonel: `d4b7aefc3918c9f801c84cfd1322c2cdbb9d13c2e3271b3c3f8f9927480f2633`
 - BN6 Gregar: `572e113eeb53bb29cd9ff8acb9db265cfd48c5e509c8d0e6420b58e71e442cf2`
 - BN6 Falzar: `a37c1028adb72082b51e142321fa437967bc54b6f46730a53f6581ad455ad670`
+- BN6 Japanese Gregar: `fa6808a5c63c2cc09430ec7ad74c6e02f4f35928448e6ff5f8dbdec0795160cf`
+- BN6 Japanese Falzar: `21300170c404371da5cd0c327c3959c0981cf0af6e6bb9189fec4010fc6258a4`
 - BN4 Blue Moon: `63ea187c792f4bfcd077f92c3a509fa09ed422993aee9480c39dfdf6a561c5c1`
 - BN3 Blue: `8c6767788f99dc9e2af0c9d75513b227c7c42d6d452d6165c8e08850af78e273`
 - EXE4.5 English: `588a77da006fb0dca0c8addbcc316d7bd4b1c3a42db24750bcfe17b170ac5ef8`

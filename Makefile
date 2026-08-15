@@ -17,6 +17,8 @@ BN5_PROTOMAN_ROM ?=
 BN5_COLONEL_ROM ?=
 BN6_GREGAR_ROM ?=
 BN6_FALZAR_ROM ?=
+EXE6_GREGAR_ROM ?=
+EXE6_FALZAR_ROM ?=
 BN4_BLUE_MOON_ROM ?=
 BN3_BLUE_ROM ?=
 EXE45_ROM ?=
@@ -54,10 +56,12 @@ check-roms:
 	if [ -z "$(BN5_PROTOMAN_ROM)" ] || \
 	   [ -z "$(BN6_GREGAR_ROM)" ] || \
 	   [ -z "$(BN6_FALZAR_ROM)" ] || \
+	   [ -z "$(EXE6_GREGAR_ROM)" ] || \
+	   [ -z "$(EXE6_FALZAR_ROM)" ] || \
 	   [ -z "$(BN4_BLUE_MOON_ROM)" ] || \
 	   [ -z "$(BN3_BLUE_ROM)" ] || \
 	   [ -z "$(EXE45_ROM)" ]; then \
-		echo "usage: make BN5_PROTOMAN_ROM=... BN6_GREGAR_ROM=... BN6_FALZAR_ROM=... BN4_BLUE_MOON_ROM=... BN3_BLUE_ROM=... EXE45_ROM=... [BN5_COLONEL_ROM=...]" >&2; \
+		echo "usage: make BN5_PROTOMAN_ROM=... BN5_COLONEL_ROM=... BN6_GREGAR_ROM=... BN6_FALZAR_ROM=... EXE6_GREGAR_ROM=... EXE6_FALZAR_ROM=... BN4_BLUE_MOON_ROM=... BN3_BLUE_ROM=... EXE45_ROM=..." >&2; \
 		exit 2; \
 	fi; \
 	if ! command -v "$(ARMIPS)" >/dev/null 2>&1; then \
@@ -79,6 +83,8 @@ check-roms:
 	check_sha256 "$(BN5_COLONEL_ROM)" d4b7aefc3918c9f801c84cfd1322c2cdbb9d13c2e3271b3c3f8f9927480f2633; \
 	check_sha256 "$(BN6_GREGAR_ROM)" 572e113eeb53bb29cd9ff8acb9db265cfd48c5e509c8d0e6420b58e71e442cf2; \
 	check_sha256 "$(BN6_FALZAR_ROM)" a37c1028adb72082b51e142321fa437967bc54b6f46730a53f6581ad455ad670; \
+	check_sha256 "$(EXE6_GREGAR_ROM)" fa6808a5c63c2cc09430ec7ad74c6e02f4f35928448e6ff5f8dbdec0795160cf; \
+	check_sha256 "$(EXE6_FALZAR_ROM)" 21300170c404371da5cd0c327c3959c0981cf0af6e6bb9189fec4010fc6258a4; \
 	check_sha256 "$(BN4_BLUE_MOON_ROM)" 63ea187c792f4bfcd077f92c3a509fa09ed422993aee9480c39dfdf6a561c5c1; \
 	check_sha256 "$(BN3_BLUE_ROM)" 8c6767788f99dc9e2af0c9d75513b227c7c42d6d452d6165c8e08850af78e273; \
 	check_sha256 "$(EXE45_ROM)" 588a77da006fb0dca0c8addbcc316d7bd4b1c3a42db24750bcfe17b170ac5ef8
@@ -98,6 +104,8 @@ $(ASSET_STAMP): $(PATCH_DIR)/extract_assets.py | check-roms $(BUILD_DIR)
 		--bn5-colonel "$(BN5_COLONEL_ROM)" \
 		--exe6-gregar "$(BN6_GREGAR_ROM)" \
 		--exe6-falzar "$(BN6_FALZAR_ROM)" \
+		--exe6-jp-gregar "$(EXE6_GREGAR_ROM)" \
+		--exe6-jp-falzar "$(EXE6_FALZAR_ROM)" \
 		--bn4-blue-moon "$(BN4_BLUE_MOON_ROM)" \
 		--bn3-blue "$(BN3_BLUE_ROM)" \
 		--exe45 "$(EXE45_ROM)"
@@ -106,6 +114,8 @@ $(ASSET_STAMP): $(PATCH_DIR)/extract_assets.py | check-roms $(BUILD_DIR)
 EDITIONS := gregar falzar
 EDITION_ROM_gregar = $(BN6_GREGAR_ROM)
 EDITION_ROM_falzar = $(BN6_FALZAR_ROM)
+EDITION_JP_ROM_gregar = $(EXE6_GREGAR_ROM)
+EDITION_JP_ROM_falzar = $(EXE6_FALZAR_ROM)
 EDITION_DEFINE_gregar := 0
 EDITION_DEFINE_falzar := 1
 EDITION_TEXT_OFFSET_gregar := 0x42038
@@ -116,6 +126,8 @@ EDITION_REGISTRY_METADATA := $(call edition_targets,registry-metadata-,.generate
 # Registry, title, and text generation each write multiple peer outputs.
 EDITION_REGISTRY_STAMPS := $(call edition_targets,.registry-,.stamp)
 EDITION_ELFS := $(call edition_targets,gameplay-,.elf)
+EDITION_JP_ROUTINE_ASM := $(call edition_targets,jp-routines-,.generated.s)
+EDITION_JP_ROUTINE_OBJECTS := $(call edition_targets,jp-routines-,.generated.o)
 EDITION_BINARIES := $(call edition_targets,gameplay-,.bin)
 EDITION_C_SYMBOLS := $(call edition_targets,c-symbols-,.generated.asm)
 EDITION_TITLE_STAMPS := $(call edition_targets,.title-,.stamp)
@@ -149,12 +161,21 @@ $(EDITION_NATIVE_TEXT_STAMPS): $(BUILD_DIR)/.native-text-%.stamp: \
 		"$(BUILD_DIR)/chip-descriptions-0-$*.bin" "$(BUILD_DIR)/chip-descriptions-1-$*.bin"
 	@touch "$@"
 
+$(EDITION_JP_ROUTINE_ASM): $(BUILD_DIR)/jp-routines-%.generated.s: \
+	$(PATCH_DIR)/relocate_jp_routines.py | check-roms $(BUILD_DIR)
+	$(PYTHON) "$(PATCH_DIR)/relocate_jp_routines.py" \
+		--variant "$*" --source-rom "$(EDITION_JP_ROM_$*)" --output "$@"
+
+$(EDITION_JP_ROUTINE_OBJECTS): $(BUILD_DIR)/jp-routines-%.generated.o: \
+	$(BUILD_DIR)/jp-routines-%.generated.s
+	$(ARM_GCC) -mthumb -march=armv4t -mthumb-interwork -c "$<" -o "$@"
+
 $(EDITION_ELFS): $(BUILD_DIR)/gameplay-%.elf: \
 	$(BUILD_DIR)/.registry-%.stamp $(ASSET_STAMP) $(C_SOURCES) $(C_HEADERS) \
-	$(C_LINKER_SCRIPT) | $(BUILD_DIR)
+	$(BUILD_DIR)/jp-routines-%.generated.o $(C_LINKER_SCRIPT) | $(BUILD_DIR)
 	$(ARM_GCC) $(CFLAGS) -DFALZAR=$(EDITION_DEFINE_$*) \
 		-include "$(BUILD_DIR)/registry-values-$*.generated.h" \
-		$(C_SOURCES) $(CLDFLAGS) \
+		$(C_SOURCES) "$(BUILD_DIR)/jp-routines-$*.generated.o" $(CLDFLAGS) \
 		-Wl,-T,"$(BUILD_DIR)/registry-values-$*.generated.ld" -lgcc -o "$@"
 
 $(EDITION_BINARIES): $(BUILD_DIR)/gameplay-%.bin: $(BUILD_DIR)/gameplay-%.elf
@@ -222,7 +243,7 @@ clean:
 	rm -rf "$(BUILD_DIR)" "$(DIST_DIR)" "$(TANGOPATCH_SRC)/roms"
 
 help:
-	@echo "make BN5_PROTOMAN_ROM=... BN5_COLONEL_ROM=... BN6_GREGAR_ROM=... BN6_FALZAR_ROM=... BN4_BLUE_MOON_ROM=... BN3_BLUE_ROM=... EXE45_ROM=..."
+	@echo "make BN5_PROTOMAN_ROM=... BN5_COLONEL_ROM=... BN6_GREGAR_ROM=... BN6_FALZAR_ROM=... EXE6_GREGAR_ROM=... EXE6_FALZAR_ROM=... BN4_BLUE_MOON_ROM=... BN3_BLUE_ROM=... EXE45_ROM=..."
 	@echo ""
 	@echo "Targets:"
 	@echo "  all      Build and create optional patch packages (default)"

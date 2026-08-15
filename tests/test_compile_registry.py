@@ -307,6 +307,51 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn("__bn67_sprite_group_searchman_reticle_sprite =", linker)
         self.assertIn(".dw searchman_reticle_sprite", assembly)
         self.assertIn(
+            ".dw count_battle_sprite + 0x80000000 // 0x16 count_battle_sprite",
+            assembly,
+        )
+        group_08 = assembly.split("imported_sprite_group_08_table:", 1)[1].split(
+            "imported_sprite_group_08_table_end:", 1
+        )[0]
+        self.assertIn("count_battle_sprite", group_08)
+        group_0c = assembly.split("imported_sprite_group_0c_table:", 1)[1].split(
+            "imported_sprite_group_0c_table_end:", 1
+        )[0]
+        self.assertNotIn("count_battle_sprite", group_0c)
+        self.assertIn(
+            ".dw otenko_battle_sprite // 0x49 otenko_battle_sprite",
+            assembly,
+        )
+        self.assertIn(
+            ".dw falzar_battle_sprite + 0x80000000 // 0x66 falzar_battle_sprite",
+            assembly,
+        )
+        self.assertIn(
+            ".dw gregar_battle_sprite + 0x80000000 // 0x68 gregar_battle_sprite",
+            assembly,
+        )
+        self.assertIn(
+            ".dw gregar_controller_main + 1 // 0x7A gregar_controller_main",
+            assembly,
+        )
+        self.assertIn(
+            ".dw falzar_controller_main + 1 // 0x7B falzar_controller_main",
+            assembly,
+        )
+        self.assertIn(
+            ".dw gregar_shared_aux_main + 1 // 0x7D gregar_shared_aux_main",
+            assembly,
+        )
+        self.assertIn(
+            ".dw count_lance_main + 1 // 0x0D count_lance_main",
+            assembly,
+        )
+
+        otenko_patch = (ROOT / "src/chips/otenko.asm").read_text()
+        self.assertIn(".org 0x080DCB60", otenko_patch)
+        self.assertIn(".org 0x080DB2F0", otenko_patch)
+        self.assertIn(".db 0x49", otenko_patch)
+        self.assertIn(
             f"__bn67_song_id_common_navi_summon_song = "
             f"0x{allocations.songs['common_navi_summon_song']:X};",
             linker,
@@ -519,6 +564,9 @@ class PackageCompilerTests(unittest.TestCase):
         assembly = "\n".join(emit_attack_tables(config, packages, allocations))
 
         attacks = [package.attack for package in packages if package.attack is not None]
+        fixed_attacks = [
+            item for package in packages for item in package.fixed_attacks
+        ]
         self.assertEqual(len(allocations.attacks), len(attacks))
         self.assertEqual(
             len({(slot.family, slot.subfamily) for slot in allocations.attacks.values()}),
@@ -543,6 +591,12 @@ class PackageCompilerTests(unittest.TestCase):
                 f".dw {attack.main} + 1 // 0x{slot.subfamily:02X} {attack.package}",
                 assembly,
             )
+        for attack in fixed_attacks:
+            self.assertIn(
+                f".dw {attack.main} + 1 // 0x{attack.subfamily:02X} "
+                f"{attack.main}",
+                assembly,
+            )
 
         self.assertNotIn("attack_route", assembly)
         self.assertNotIn("cmp r0", assembly)
@@ -553,7 +607,7 @@ class PackageCompilerTests(unittest.TestCase):
                 for line in assembly.splitlines()
                 if line.startswith("    .dw ") and " // 0x" in line
             ),
-            len(attacks),
+            len(attacks) + len(fixed_attacks),
         )
         for pool in config.attack_pools.values():
             allocated = [
@@ -562,7 +616,18 @@ class PackageCompilerTests(unittest.TestCase):
                 if allocation.family == pool.family
             ]
             if allocated:
-                self.assertNotIn(f"// 0x{max(allocated) + 1:02X}", assembly)
+                next_id = max(allocated) + 1
+                fixed_ids = {
+                    attack.subfamily
+                    for attack in fixed_attacks
+                    if attack.family == pool.family
+                }
+                if next_id not in fixed_ids:
+                    label = f"attack_family_{pool.family:02x}_table"
+                    section = assembly.split(f"{label}:", 1)[1].split(
+                        f"{label}_end:", 1
+                    )[0]
+                    self.assertNotIn(f"// 0x{next_id:02X}", section)
         for pool in config.attack_pools.values():
             label = f"attack_family_{pool.family:02x}_table"
             self.assertIn(f"{label}:", assembly)
@@ -843,9 +908,24 @@ class PackageCompilerTests(unittest.TestCase):
             for address in object_class.references:
                 self.assertIn(f".org 0x{address:08X}", assembly)
 
+        fixed_objects = [
+            item for package in packages for item in package.fixed_objects
+        ]
+        self.assertEqual(len(fixed_objects), 8)
+        for item in fixed_objects:
+            self.assertIn(
+                f".dw {item.main} + 1 // 0x{item.object_id:02X} {item.main}",
+                assembly,
+            )
+
         self.assertNotIn("object_class_1_dispatch_table", assembly)
         self.assertNotIn("object_dispatch_interceptor_main:", assembly)
         self.assertIn("// Package-declared fixed section patches.", assembly)
+        self.assertIn(
+            ".org falzar_controller_main + 0x302\n"
+            "    bl falzar_strike_feather_spawn_with_bonus",
+            assembly,
+        )
         self.assertIn(
             ".org 0x080031FA\n"
             "    push {r1}\n"
@@ -993,6 +1073,7 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn("BN67_PATCH_POINTER", runtime)
         self.assertIn("BN67_PATCH_THUMB_POINTER", runtime)
         self.assertIn("BN67_PATCH_SECTION", runtime)
+        self.assertIn("BN67_PATCH_LINKED_CALL", runtime)
         self.assertNotRegex(runtime, r"(?m)^#define EXE6_")
 
     def test_out_of_range_c_chip_id_is_rejected(self) -> None:
