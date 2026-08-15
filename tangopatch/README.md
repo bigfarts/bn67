@@ -138,17 +138,17 @@ attack.
 
 #### Django
 
-Django, Django2, and Django3 restore the three removed Mega Chip slots. Django
-targets the closest opposing unit in his row, seals it in a coffin, calls down
-rocks through their original poof effects, and burns the centered 3x3 area
+Django, Django V2, and Django V3 restore the three removed Mega Chip slots.
+Django targets the closest opposing unit in his row, seals it in a coffin, calls
+down rocks through their original poof effects, and burns the centered 3x3 area
 with sunlight. All three variants use BN5's base Django icon and library art;
-Django2 uses the Japanese BN6 chip's green background colors, while Django3
-uses BN5 DjangoSP's palette. The actor, coffin, and sunlight sprites are BN5's
+Django V2 uses the Japanese BN6 chip's green background colors, while Django V3
+uses BN5 Django SP's palette. The actor, coffin, and sunlight sprites are BN5's
 originals.
 
 - `Django D/*`: 30 MB, 130 damage
-- `Django2 D`: 70 MB, 180 damage
-- `Django3 D`: 90 MB, 260 damage
+- `Django V2 D`: 70 MB, 180 damage
+- `Django V3 D`: 90 MB, 260 damage
 
 #### ProtoMan
 
