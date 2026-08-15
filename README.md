@@ -25,6 +25,11 @@ is reduced from 50 MB to 33 MB in both versions.
 FullCust retains its native BN6 behavior, wildcard code, and metadata, but its
 MB cost is increased from 50 MB to 51 MB in both versions.
 
+### StatGrd
+
+BodyPack is renamed StatGrd and grants StatusGuard only. It no longer grants
+SuperArmor, FloatShoes, AirShoes, or UnderShirt.
+
 ### Japanese event chips
 
 Both English editions restore the chips and resources that were available only
@@ -128,7 +133,8 @@ Holding a direction while LaserMan raises his arms enables Blue Moon's command
 effect on Base, EX, and SP:
 
 - Up resets Attack, Rapid, and Charge to level 1.
-- Down disables SuperArmor, AirShoes, FloatShoes, Undershirt, and B+Left abilities.
+- Down disables SuperArmor, AirShoes, FloatShoes, Undershirt, StatusGuard, and
+  B+Left abilities.
 - Right restores the standard charge shot without overwriting an active Cross charge shot.
 - Left permanently reduces the target's Custom Screen selection by one chip,
   to a minimum of two chips.
@@ -170,16 +176,15 @@ palette are imported from Blue Moon in both versions, along with the original
 
 ### BugCharg
 
-Replaces the former SignalRed/BugRSword slot with BN5 Colonel's BugCharge and
-restores BN6 BugFix. BugCharge is a GigaChip: the 77 MB,
-Null-element chip uses code B and fires one 200-damage Gospel shot plus one
-additional shot for every active battle-bug type it clears. It consumes the
-complete BN6 BugFix property set, including the Custom-screen bug, and resets
-BugFix's latched runtime bug state. The stationary Gospel uses BN5's 24-pixel
-forward offset and remains present through the full bug-scaled firing sequence;
-each moving head begins on the front block with BN5's native hit timing.
-Gregar uses the imported BugCharge menu art; Falzar retains the inaccessible
-BugRSword-slot art.
+Replaces the former SignalRed/BugRSword slot with BN5 Colonel's BugCharge. The
+77 MB, Null-element GigaChip uses code B and fires one 200-damage Gospel shot
+plus one additional shot for every active battle-bug type it clears. It
+consumes the complete battle-bug property set, including the Custom-screen
+bug, and resets the latched runtime bug state. The stationary Gospel uses
+BN5's 24-pixel forward offset and remains present through the full bug-scaled
+firing sequence; each moving head begins on the front block with BN5's native
+hit timing. Gregar uses the imported BugCharge menu art; Falzar retains the
+inaccessible BugRSword-slot art.
 
 ### Rook
 

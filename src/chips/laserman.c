@@ -204,6 +204,7 @@ enum CommandEffect {
     COMMAND_EFFECT_RESET_ATTACK = 5,
     COMMAND_EFFECT_RESET_RAPID = 6,
     COMMAND_EFFECT_RESET_CHARGE = 7,
+    COMMAND_EFFECT_DISABLE_STATUS_GUARD = 8,
     COMMAND_EFFECT_RESTORE_CHARGE_SHOT = 0x0A,
     COMMAND_EFFECT_DISABLE_B_LEFT = 0x0C,
     COMMAND_MARKER = 0xFD,
@@ -225,6 +226,7 @@ static const uint16_t COMMAND_DOWN[] = {
     COMMAND_EFFECT_DISABLE_AIR_SHOES,
     COMMAND_EFFECT_DISABLE_UNDERSHIRT,
     COMMAND_EFFECT_DISABLE_B_LEFT,
+    COMMAND_EFFECT_DISABLE_STATUS_GUARD,
     COMMAND_MARKER,
     COMMAND_END,
 };
@@ -495,6 +497,10 @@ static void apply_command_effect(Exe6Obj *hit, uint16_t command)
         break;
     case COMMAND_EFFECT_DISABLE_UNDERSHIRT:
         property = 0x1D;
+        value = 0;
+        break;
+    case COMMAND_EFFECT_DISABLE_STATUS_GUARD:
+        property = 0x52;
         value = 0;
         break;
     case COMMAND_EFFECT_RESET_ATTACK:

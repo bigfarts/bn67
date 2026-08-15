@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build both complete BN6 chip-name and chip-description archives."""
+"""Build the complete BN6 chip and NaviCust text archives."""
 
 from __future__ import annotations
 
@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 import json
 import struct
 from pathlib import Path
+
+from build_title_screen import compress_lz77, decompress_lz77
 
 # The leading BN6 English charset entries cover the chip text used here.
 # Bracketed tokens are single glyphs in the ROM (for example EX and SP).
@@ -20,6 +22,11 @@ LINE_BREAK = 0xE9
 
 DESCRIPTION_HEADER = bytes((0xE8, 0x06, 0x01, 0x01, 0xF1, 0x00, 0x00))
 DESCRIPTION_FOOTER = bytes((0xE7, 0x01))
+NCP_DESCRIPTION_HEADER = bytes((0xE8, 0x02, 0xF1, 0x00, 0x00))
+NCP_DESCRIPTION_FOOTER = bytes((0xEE, 0xFF, 0x00, 0x00))
+
+TEXT_SOURCES = {"names", "descriptions", "ncp_names", "ncp_descriptions"}
+TEXT_ENCODINGS = {"name", "description", "ncp_description"}
 
 
 @dataclass
@@ -152,6 +159,10 @@ def encode_description(text: str) -> bytes:
     return DESCRIPTION_HEADER + encode_text(text) + DESCRIPTION_FOOTER
 
 
+def encode_ncp_description(text: str) -> bytes:
+    return NCP_DESCRIPTION_HEADER + encode_text(text) + NCP_DESCRIPTION_FOOTER
+
+
 def load_package_text(path: Path) -> PackageText:
     try:
         raw = json.loads(path.read_text())
@@ -184,11 +195,11 @@ def load_package_text(path: Path) -> PackageText:
         encoding = archive["encoding"]
         if not isinstance(name, str) or not name:
             raise ValueError(f"{context}: name must be a non-empty string")
-        if source not in {"names", "descriptions"}:
+        if source not in TEXT_SOURCES:
             raise ValueError(f"{context}: unknown source {source!r}")
         if not isinstance(source_index, int) or source_index < 0:
             raise ValueError(f"{context}: source_index must be a non-negative integer")
-        if encoding not in {"name", "description"}:
+        if encoding not in TEXT_ENCODINGS:
             raise ValueError(f"{context}: unknown encoding {encoding!r}")
         if name in archives:
             raise ValueError(f"{context}: duplicate text archive name {name!r}")
@@ -226,10 +237,14 @@ def load_package_text(path: Path) -> PackageText:
                 if not isinstance(value, str):
                     raise ValueError("value must be a string")
                 encoded = encode_name(value)
-            else:
+            elif archive.encoding == "description":
                 if not isinstance(value, str):
                     raise ValueError("value must be a string")
                 encoded = encode_description(value)
+            else:
+                if not isinstance(value, str):
+                    raise ValueError("value must be a string")
+                encoded = encode_ncp_description(value)
         except ValueError as exc:
             raise ValueError(f"{context} ({package}): {exc}") from exc
         encoded += bytes((RECORD_END,))
@@ -282,6 +297,32 @@ def build_archive(entries: list[bytes]) -> bytes:
     return struct.pack(f"<{len(offsets)}H", *offsets) + b"".join(entries)
 
 
+def read_compressed_archive(rom: bytes, offset: int) -> list[bytes]:
+    decoded, _ = decompress_lz77(rom, offset)
+    if len(decoded) < 4:
+        raise ValueError("compressed text archive is too short")
+    declared_size = int.from_bytes(decoded[1:4], "little")
+    if decoded[0] != 0 or declared_size != len(decoded):
+        raise ValueError(
+            f"compressed text archive declares 0x{declared_size:X} bytes, "
+            f"decoded 0x{len(decoded):X}"
+        )
+    return read_archive(decoded, 4)
+
+
+def build_compressed_archive(entries: list[bytes]) -> bytes:
+    archive = build_archive(entries)
+    decoded_size = len(archive) + 4
+    if decoded_size > 0xFFFFFF:
+        raise ValueError("compressed text archive exceeds 24-bit size header")
+    decoded = bytes((0,)) + decoded_size.to_bytes(3, "little") + archive
+    encoded = compress_lz77(decoded)
+    check, _ = decompress_lz77(encoded)
+    if check != decoded:
+        raise ValueError("compressed text archive LZ77 round trip failed")
+    return encoded
+
+
 def apply_changes(
     archives: dict[str, list[bytes]],
     changes: dict[str, dict[int, bytes]],
@@ -307,6 +348,14 @@ def main() -> None:
     parser.add_argument("name_output_1", type=Path)
     parser.add_argument("description_output_0", type=Path)
     parser.add_argument("description_output_1", type=Path)
+    parser.add_argument(
+        "--ncp-name-offset", required=True, type=lambda value: int(value, 0)
+    )
+    parser.add_argument(
+        "--ncp-description-offset", required=True, type=lambda value: int(value, 0)
+    )
+    parser.add_argument("--ncp-name-output", required=True, type=Path)
+    parser.add_argument("--ncp-description-output", required=True, type=Path)
     parser.add_argument("--package-text", type=Path)
     args = parser.parse_args()
 
@@ -318,7 +367,11 @@ def main() -> None:
         u32(rom, args.description_pointer_table + index * 4) - 0x08000000
         for index in range(2)
     ]
-    for archive_offset in name_offsets + description_offsets:
+    for archive_offset in (
+        name_offsets
+        + description_offsets
+        + [args.ncp_name_offset, args.ncp_description_offset]
+    ):
         if not 0 <= archive_offset < len(rom):
             raise ValueError(
                 f"text archive pointer is outside the ROM: 0x{archive_offset:X}"
@@ -326,12 +379,18 @@ def main() -> None:
 
     name_archives = [read_archive(rom, offset) for offset in name_offsets]
     description_archives = [read_archive(rom, offset) for offset in description_offsets]
+    ncp_name_archives = [read_archive(rom, args.ncp_name_offset)]
+    ncp_description_archives = [
+        read_compressed_archive(rom, args.ncp_description_offset)
+    ]
 
     if args.package_text is not None:
         package_text = load_package_text(args.package_text)
         source_archives = {
             "names": name_archives,
             "descriptions": description_archives,
+            "ncp_names": ncp_name_archives,
+            "ncp_descriptions": ncp_description_archives,
         }
         archives: dict[str, list[bytes]] = {}
         for archive in package_text.archives.values():
@@ -349,9 +408,13 @@ def main() -> None:
         (args.name_output_1, name_archives[1]),
         (args.description_output_0, description_archives[0]),
         (args.description_output_1, description_archives[1]),
+        (args.ncp_name_output, ncp_name_archives[0]),
     ]
     for output, entries in outputs:
         output.write_bytes(build_archive(entries))
+    args.ncp_description_output.write_bytes(
+        build_compressed_archive(ncp_description_archives[0])
+    )
 
 
 if __name__ == "__main__":

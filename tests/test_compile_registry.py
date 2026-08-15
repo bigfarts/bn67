@@ -12,8 +12,10 @@ from build_text_archives import (
     LINE_BREAK,
     RECORD_END,
     build_archive,
+    build_compressed_archive,
     encode_description,
     encode_name,
+    encode_ncp_description,
     encode_text,
     load_package_text,
 )
@@ -66,10 +68,22 @@ class PackageCompilerTests(unittest.TestCase):
                 asset = extracted_assets[Path(relative).name]
                 (cls.fixture_root / relative).write_bytes(bytes(asset.length))
             for archive in raw["text"]["archives"]:
-                entry_count = 0x100 if archive["source_index"] == 0 else 0xA8
-                (cls.fixture_root / archive["binary"]).write_bytes(
-                    build_archive([b"\xE6"] * entry_count)
+                entry_counts = {
+                    "names": (0x100, 0xA8),
+                    "descriptions": (0x100, 0xA8),
+                    "ncp_names": (75,),
+                    "ncp_descriptions": (48,),
+                }
+                entry_count = entry_counts[archive["source"]][
+                    archive["source_index"]
+                ]
+                entries = [b"\xE6"] * entry_count
+                contents = (
+                    build_compressed_archive(entries)
+                    if archive.get("compression") == "lz77"
+                    else build_archive(entries)
                 )
+                (cls.fixture_root / archive["binary"]).write_bytes(contents)
 
         cls.metadata = {}
         for variant, falzar in (("gregar", 0), ("falzar", 1)):
@@ -177,13 +191,19 @@ class PackageCompilerTests(unittest.TestCase):
             }
             for item in raw["text"]["archives"]:
                 self.assertNotIn("native_entries", item)
-                binary = (self.fixture_root / item["binary"]).read_bytes()
                 self.assertEqual(
                     archives[item["name"]].native_entries,
-                    int.from_bytes(binary[:2], "little") // 2,
+                    text_archive_entry_count(
+                        self.fixture_root,
+                        item["binary"],
+                        "archive",
+                        item.get("compression"),
+                    ),
                 )
             self.assertEqual(archives["chip-names-1"].native_entries, 0xA8)
             self.assertEqual(archives["chip-descriptions-1"].native_entries, 0xA8)
+            self.assertEqual(archives["ncp-names"].native_entries, 75)
+            self.assertEqual(archives["ncp-descriptions"].native_entries, 48)
 
     def test_binary_entry_counts_reject_malformed_tables(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -195,6 +215,14 @@ class PackageCompilerTests(unittest.TestCase):
             (root / "text.bin").write_bytes(b"\x05\x00payload")
             with self.assertRaisesRegex(PackageError, "invalid offset-table size"):
                 text_archive_entry_count(root, "text.bin", "archive")
+
+            (root / "text.lz").write_bytes(
+                build_compressed_archive([b"\xE6"] * 48)
+            )
+            self.assertEqual(
+                text_archive_entry_count(root, "text.lz", "archive", "lz77"),
+                48,
+            )
 
     def test_package_text_records_end_with_the_record_delimiter(self) -> None:
         manifest = {
@@ -211,6 +239,12 @@ class PackageCompilerTests(unittest.TestCase):
                     "source_index": 0,
                     "encoding": "description",
                 },
+                {
+                    "name": "ncp-descriptions",
+                    "source": "ncp_descriptions",
+                    "source_index": 0,
+                    "encoding": "ncp_description",
+                },
             ],
             "entries": [
                 {
@@ -225,6 +259,12 @@ class PackageCompilerTests(unittest.TestCase):
                     "index": 0,
                     "value": "All your\nbugs will\nattack!",
                 },
+                {
+                    "package": "test",
+                    "archive": "ncp-descriptions",
+                    "index": 28,
+                    "value": "Prevents\nstatus\nproblems",
+                },
             ],
         }
         with tempfile.TemporaryDirectory() as directory:
@@ -234,12 +274,18 @@ class PackageCompilerTests(unittest.TestCase):
 
         name = package_text.changes["names"][0]
         description = package_text.changes["descriptions"][0]
+        ncp_description = package_text.changes["ncp-descriptions"][28]
         self.assertNotEqual(encode_name("BugCharg")[-1], RECORD_END)
         self.assertNotEqual(
             encode_description("All your\nbugs will\nattack!")[-1], RECORD_END
         )
         self.assertEqual(name[-1], RECORD_END)
         self.assertEqual(description[-1], RECORD_END)
+        self.assertEqual(ncp_description[-1], RECORD_END)
+        self.assertEqual(
+            ncp_description[:-1],
+            encode_ncp_description("Prevents\nstatus\nproblems"),
+        )
         self.assertEqual(
             encode_text("bugs\nattack"),
             encode_text("bugs") + bytes((LINE_BREAK,)) + encode_text("attack"),
@@ -286,6 +332,11 @@ class PackageCompilerTests(unittest.TestCase):
                 for address in archive.references:
                     self.assertIn(f".org 0x{address:08X}", assembly)
                     self.assertIn(f".dw {archive.symbol}", assembly)
+                for address in archive.compressed_references:
+                    self.assertIn(f".org 0x{address:08X}", assembly)
+                    self.assertIn(
+                        f".dw {archive.symbol}+0x80000000", assembly
+                    )
         self.assertEqual(
             configured_names,
             {archive["name"] for archive in manifest["archives"]},

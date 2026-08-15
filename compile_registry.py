@@ -12,6 +12,8 @@ import sys
 import tomllib
 from typing import Any
 
+from build_title_screen import decompress_lz77
+
 NAME_RE = re.compile(r"^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$")
 SNAKE_CASE_RE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 POINTER_METADATA_RE = re.compile(r"^pointer__(0[xX][0-9A-Fa-f]+)__([a-z][a-z0-9_]*)$")
@@ -92,6 +94,8 @@ class TextArchive:
     symbol: str
     binary: str
     references: tuple[int, ...]
+    compressed_references: tuple[int, ...]
+    compression: str | None
 
 
 @dataclass(frozen=True)
@@ -343,13 +347,35 @@ def fixed_width_entry_count(
     return entries
 
 
-def text_archive_entry_count(root: Path, binary: str, context: str) -> int:
+def text_archive_entry_count(
+    root: Path,
+    binary: str,
+    context: str,
+    compression: str | None = None,
+) -> int:
     """Read the entry count encoded by a BN6 text archive's offset table."""
     path = root / binary
     try:
         data = path.read_bytes()
     except OSError as exc:
         raise PackageError(f"{context}: cannot read {path}: {exc}") from exc
+    if compression == "lz77":
+        try:
+            data, _ = decompress_lz77(data)
+        except (IndexError, ValueError) as exc:
+            raise PackageError(
+                f"{context}: {path} is not valid LZ77: {exc}"
+            ) from exc
+        if len(data) < 4:
+            raise PackageError(f"{context}: {path} has no compressed archive header")
+        declared_size = int.from_bytes(data[1:4], "little")
+        if data[0] != 0 or declared_size != len(data):
+            raise PackageError(
+                f"{context}: {path} has an invalid compressed archive header"
+            )
+        data = data[4:]
+    elif compression is not None:
+        raise PackageError(f"{context}: unknown compression {compression!r}")
     if len(data) < 2:
         raise PackageError(f"{context}: {path} is too short for an offset table")
     table_size = int.from_bytes(data[:2], "little")
@@ -661,6 +687,8 @@ def load_config(path: Path) -> Config:
                 "symbol",
                 "binary",
                 "references",
+                "compressed_references",
+                "compression",
             },
             item_context,
         )
@@ -676,11 +704,30 @@ def load_config(path: Path) -> Config:
             )
         source = require_str(item, "source", item_context)
         encoding = require_str(item, "encoding", item_context)
-        if source not in {"names", "descriptions"}:
+        if source not in {
+            "names",
+            "descriptions",
+            "ncp_names",
+            "ncp_descriptions",
+        }:
             raise PackageError(f"{item_context}: unknown source {source!r}")
-        if encoding not in {"name", "description"}:
+        if encoding not in {"name", "description", "ncp_description"}:
             raise PackageError(f"{item_context}: unknown encoding {encoding!r}")
         binary = require_str(item, "binary", item_context)
+        compression = item.get("compression")
+        if compression is not None and compression != "lz77":
+            raise PackageError(
+                f"{item_context}: compression must be 'lz77' when present"
+            )
+        compressed_references = (
+            require_int_array(item, "compressed_references", item_context)
+            if "compressed_references" in item
+            else ()
+        )
+        if compressed_references and compression != "lz77":
+            raise PackageError(
+                f"{item_context}: compressed_references require LZ77 compression"
+            )
         archives.append(
             TextArchive(
                 name,
@@ -688,10 +735,14 @@ def load_config(path: Path) -> Config:
                 source,
                 require_int(item, "source_index", item_context),
                 encoding,
-                text_archive_entry_count(root, binary, f"{item_context}: binary"),
+                text_archive_entry_count(
+                    root, binary, f"{item_context}: binary", compression
+                ),
                 symbol,
                 binary,
                 require_int_array(item, "references", item_context),
+                compressed_references,
+                compression,
             )
         )
     groups = tuple(
@@ -1722,13 +1773,20 @@ def emit_text_archives(config: Config) -> list[str]:
     archives = [archive for group in config.text.groups for archive in group.archives]
     skip_address, skip_target = config.text.folder_edit_skip
     lines = [
-        "// Complete chip-text archives with changes declared by packages.",
+        "// Complete text archives with changes declared by packages.",
         f".org 0x{skip_address:08X}",
         f"    b 0x{skip_target:08X}",
     ]
     for archive in archives:
         for address in archive.references:
             lines.extend([f".org 0x{address:08X}", f"    .dw {archive.symbol}"])
+        for address in archive.compressed_references:
+            lines.extend(
+                [
+                    f".org 0x{address:08X}",
+                    f"    .dw {archive.symbol}+0x80000000",
+                ]
+            )
     for group in config.text.groups:
         lines.extend(["", ".autoregion"])
         for archive in group.archives:

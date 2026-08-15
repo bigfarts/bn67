@@ -253,13 +253,15 @@ from the schema because the final sort pass regenerates it from chip names.
 
 ## Relocated text archives
 
-Names and descriptions each use two archives. Archive 0 has IDs
-`0x000`-`0x0FF`; archive 1 begins at `0x100`. `build_text_archives.py` reads
-both original halves, applies readable charset-encoded replacements generated
-from semantic chip `name` and `description` fields, and emits four complete
-archives. Low-level text edits may still select an explicit archive and local
-index. `config.gregar.toml` and `config.falzar.toml` name each archive and
-define its format, extent, generated binary, and pointer references. The
+Chip names and descriptions each use two archives. Archive 0 has IDs
+`0x000`-`0x0FF`; archive 1 begins at `0x100`. NaviCust program names and
+descriptions use one archive apiece, with the description archive stored as
+LZ77-compressed text scripts. `build_text_archives.py` reads all six original
+archives, applies readable charset-encoded replacements, rebuilds the NCP
+script wrappers, and recompresses the NCP descriptions. Low-level text edits
+select an explicit archive and local index. `config.gregar.toml` and
+`config.falzar.toml` define each archive's format, extent, generated binary,
+compression, and direct or compression-flagged pointer references. The
 generated package assembly repoints those references.
 Verification compares every untouched entry against the source ROM in both
 versions.

@@ -120,6 +120,10 @@ EDITION_DEFINE_gregar := 0
 EDITION_DEFINE_falzar := 1
 EDITION_TEXT_OFFSET_gregar := 0x42038
 EDITION_TEXT_OFFSET_falzar := 0x42068
+EDITION_NCP_DESCRIPTION_OFFSET_gregar := 0x73CC04
+EDITION_NCP_DESCRIPTION_OFFSET_falzar := 0x73ECC8
+EDITION_NCP_NAME_OFFSET_gregar := 0x73C98C
+EDITION_NCP_NAME_OFFSET_falzar := 0x73EA50
 
 edition_targets = $(foreach edition,$(EDITIONS),$(BUILD_DIR)/$(1)$(edition)$(2))
 EDITION_REGISTRY_METADATA := $(call edition_targets,registry-metadata-,.generated.json)
@@ -154,11 +158,16 @@ $(EDITION_REGISTRY_STAMPS): $(BUILD_DIR)/.registry-%.stamp: \
 	@touch "$@"
 
 $(EDITION_NATIVE_TEXT_STAMPS): $(BUILD_DIR)/.native-text-%.stamp: \
-	$(PATCH_DIR)/build_text_archives.py $(ASSET_STAMP) | $(BUILD_DIR)
+	$(PATCH_DIR)/build_text_archives.py $(PATCH_DIR)/build_title_screen.py \
+	$(ASSET_STAMP) | $(BUILD_DIR)
 	$(PYTHON) "$(PATCH_DIR)/build_text_archives.py" \
 		"$(EDITION_ROM_$*)" $(EDITION_TEXT_OFFSET_$*) 0x27D50 \
 		"$(BUILD_DIR)/chip-names-0-$*.bin" "$(BUILD_DIR)/chip-names-1-$*.bin" \
-		"$(BUILD_DIR)/chip-descriptions-0-$*.bin" "$(BUILD_DIR)/chip-descriptions-1-$*.bin"
+		"$(BUILD_DIR)/chip-descriptions-0-$*.bin" "$(BUILD_DIR)/chip-descriptions-1-$*.bin" \
+		--ncp-name-offset "$(EDITION_NCP_NAME_OFFSET_$*)" \
+		--ncp-description-offset "$(EDITION_NCP_DESCRIPTION_OFFSET_$*)" \
+		--ncp-name-output "$(BUILD_DIR)/ncp-names-$*.bin" \
+		--ncp-description-output "$(BUILD_DIR)/ncp-descriptions-$*.bin"
 	@touch "$@"
 
 $(EDITION_JP_ROUTINE_ASM): $(BUILD_DIR)/jp-routines-%.generated.s: \
@@ -195,11 +204,16 @@ $(EDITION_TITLE_STAMPS): $(BUILD_DIR)/.title-%.stamp: \
 	@touch "$@"
 
 $(EDITION_TEXT_STAMPS): $(BUILD_DIR)/.text-%.stamp: \
-	$(PATCH_DIR)/build_text_archives.py $(BUILD_DIR)/.registry-%.stamp | $(BUILD_DIR)
+	$(PATCH_DIR)/build_text_archives.py $(PATCH_DIR)/build_title_screen.py \
+	$(BUILD_DIR)/.registry-%.stamp | $(BUILD_DIR)
 	$(PYTHON) "$(PATCH_DIR)/build_text_archives.py" \
 		"$(EDITION_ROM_$*)" $(EDITION_TEXT_OFFSET_$*) 0x27D50 \
 		"$(BUILD_DIR)/chip-names-0-$*.bin" "$(BUILD_DIR)/chip-names-1-$*.bin" \
 		"$(BUILD_DIR)/chip-descriptions-0-$*.bin" "$(BUILD_DIR)/chip-descriptions-1-$*.bin" \
+		--ncp-name-offset "$(EDITION_NCP_NAME_OFFSET_$*)" \
+		--ncp-description-offset "$(EDITION_NCP_DESCRIPTION_OFFSET_$*)" \
+		--ncp-name-output "$(BUILD_DIR)/ncp-names-$*.bin" \
+		--ncp-description-output "$(BUILD_DIR)/ncp-descriptions-$*.bin" \
 		--package-text "$(BUILD_DIR)/text-replacements-$*.generated.json"
 	@touch "$@"
 

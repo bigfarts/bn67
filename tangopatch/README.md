@@ -11,6 +11,13 @@ Link battles start each player with five Beast Out turns instead of three.
 The normal- and high-severity green invulnerability outcomes now use their
 flashing invulnerability variants instead.
 
+## Navi Customizer
+
+### Status Guard
+
+Body Pack is renamed Status Guard and grants Status Guard only. It no longer
+grants Super Armor, Float Shoes, Air Shoes, or Under Shirt.
+
 ## Chips
 
 ### Standard Chips
@@ -24,18 +31,15 @@ receives the attack bonus applied when Variable Sword was activated.
 
 The first three waves deal damage and stagger without starting flashing
 invulnerability. Only the final Aqua wave grants the target its normal
-post-hit flashing. Variable Sword's five native BN6 commands, including the
-ordinary single Sonic Boom, retain their original inputs and behavior.
+post-hit flashing.
 
 #### Anti Navi
 
-Anti Navi's MB cost is reduced from 50 MB to 33 MB in both versions. Its native
-behavior and all other chip metadata are unchanged.
+Anti Navi's MB cost is reduced from 50 MB to 33 MB in both versions.
 
 #### Full Custom
 
-Full Custom's MB cost is increased from 50 MB to 51 MB in both versions. Its
-native wildcard code, behavior, and all other chip metadata are unchanged.
+Full Custom's MB cost is increased from 50 MB to 51 MB in both versions.
 
 #### Gun del Sol EX
 
@@ -98,13 +102,12 @@ peer.
 
 **Replaces:** Attack +10
 
-BN3 Rook replaces Attack +10 while Anti Sword remains unchanged. The 30 MB,
-Obstacle-element Standard chip uses codes * and places a 500-HP Rook on the
-block in front of the user after a dimming cut-in and its native summon cue. It
-blocks non-Break attacks without losing HP. Break attacks deal normal damage
-and must deplete all 500 HP; they do not delete it automatically. Both versions
-use Rook's original BN3 chip art, palette, and tower-shaped battle sprite. Dust
-Cross can suck it in and fire that same sprite as ammo.
+The 30 MB, Obstacle-element Standard chip uses code * and places a 500-HP Rook
+on the block in front of the user after a dimming cut-in and its native summon
+cue. It blocks non-Break attacks without losing HP. Break attacks deal normal
+damage and must deplete all 500 HP; they do not delete it automatically. Both
+versions use Rook's original BN3 chip art, palette, and tower-shaped battle
+sprite. Dust Cross can suck it in and fire that same sprite as ammo.
 
 #### Folder Back
 
@@ -150,8 +153,7 @@ originals.
 #### ProtoMan
 
 ProtoMan, ProtoMan EX, and ProtoMan SP use BN6's native Delta Ray Edge attack
-instead of their normal Wide Sword summon. Their original codes, MB costs,
-Navi chip classification, and artwork are unchanged.
+instead of their normal Wide Sword summon.
 
 - `ProtoMan B/*`: 80 damage
 - `ProtoMan EX B`: 100 damage
@@ -160,9 +162,8 @@ Navi chip classification, and artwork are unchanged.
 #### Colonel
 
 Colonel, Colonel EX, and Colonel SP use BN6's native Cross Divide attack
-instead of their normal screen-splitting summon. Their original codes, MB
-costs, Navi chip classification, artwork, and power are unchanged. Their chip
-descriptions now identify the Cross Divide attack.
+instead of their normal screen-splitting summon. Their chip descriptions
+identify the Cross Divide attack.
 
 #### SearchMan
 
@@ -201,11 +202,12 @@ blue-white laser through the complete row.
 
 Hold a direction while LaserMan raises his arms to add the original command
 effect. This works for Base, EX, and SP: Up resets Attack, Rapid, and Charge to
-level 1; Down disables Super Armor, Air Shoes, Float Shoes, Under Shirt, and B+Left
-abilities; Right restores the standard charge shot without overwriting an
-active Cross charge shot; Left permanently reduces the target's Custom Screen
-selection by one chip, to a minimum of two. Command effects require the beam to
-hit the target, so a miss does not alter the target.
+level 1; Down disables Super Armor, Air Shoes, Float Shoes, Under Shirt,
+Status Guard, and B+Left abilities; Right restores the standard charge shot
+without overwriting an active Cross charge shot; Left permanently reduces the
+target's Custom Screen selection by one chip, to a minimum of two. Command
+effects require the beam to hit the target, so a miss does not alter the
+target.
 
 Base uses the native red-background menu palette. EX keeps the base LaserMan
 foreground and changes only its five background entries to green. SP uses the
@@ -215,9 +217,8 @@ native yellow-background SP palette. All variants use the base battle palette.
 
 #### Double Beast
 
-Double Beast's behavior was retained by the English engine, but its menu
-resources were removed. Both editions restore the Japanese icon, library art,
-palette, and description.
+Both editions use Double Beast's Japanese icon, library art, palette, and
+description.
 
 #### Gregar
 
@@ -242,10 +243,9 @@ Its 100-damage Strike Feathers also receive the activating chip's attack bonus.
 
 **Gregar GigaChip.**
 
-BN4 Black Weapon leaves Bass and Bass Anomaly unchanged. The 64 MB,
-Null-element Giga chip uses code B, sets Buster Attack to level 10 and Rapid
-and Charge to level 5, and drains 1 HP every 6 active battle frames without
-reducing the user below 1 HP.
+The 64 MB, Null-element Giga chip uses code B, sets Buster Attack to level 10
+and Rapid and Charge to level 5, and drains 1 HP every 6 active battle frames
+without reducing the user below 1 HP.
 
 Cross-charged Buster attacks, chargeable Cross chip attacks, and both Beast Out
 rapid Buster variants scale through all 10 Buster Attack levels. The activation
@@ -269,12 +269,11 @@ that slot.
 
 **Gregar GigaChip.**
 
-BN5 Bug Charge replaces Bug Rise Sword, and BN6 Bug Fix is restored. The 77
-MB, Null-element Giga chip uses code B. It fires one 200-damage Gospel shot plus
-one shot per active battle-bug type it clears, including BN6's Custom Screen
-bug and its latched runtime state. The stationary Gospel remains for the
-complete firing sequence. Gregar uses the imported Bug Charge chip art; Falzar
-retains the inaccessible Bug Rise Sword slot art.
+The 77 MB, Null-element Giga chip uses code B. It fires one 200-damage Gospel
+shot plus one shot per active battle-bug type it clears, including the Custom
+Screen bug and its latched runtime state. The stationary Gospel remains for
+the complete firing sequence. Gregar uses the imported Bug Charge chip art;
+Falzar retains the inaccessible Bug Rise Sword slot art.
 
 #### Duo
 

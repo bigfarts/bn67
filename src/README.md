@@ -259,7 +259,17 @@ are direct top-level tables; there is no `text.` prefix:
 
 [chip-descriptions-1]
 "0x31" = "All your\nbugs will\nattack!"
+
+[ncp-names]
+"0x1C" = "StatGrd"
+
+[ncp-descriptions]
+"0x1C" = "Prevents\nstatus\nproblems"
 ```
+
+NCP descriptions use the NaviCust menu's three-line script format and are
+recompressed automatically. Program names should fit the menu's eight-glyph
+field.
 
 Allocation is deterministic: attacks are ordered by their explicit
 representative chip IDs, while other resources sort source paths and retain ELF

@@ -118,3 +118,25 @@ encoding = "description"
 symbol = "chip_description_archive_1"
 binary = "build/chip-descriptions-1-falzar.bin"
 references = [0x08027D54, 0x08119690, 0x0811A090]
+
+[[text.archives]]
+name = "ncp-names"
+region = 2
+source = "ncp_names"
+source_index = 0
+encoding = "name"
+symbol = "ncp_name_archive"
+binary = "build/ncp-names-falzar.bin"
+references = [0x08042078, 0x0804207C, 0x08047748, 0x08118194, 0x08118CDC, 0x08119A34, 0x0811B77C, 0x081202AC, 0x08127750, 0x081277D0, 0x08131538]
+
+[[text.archives]]
+name = "ncp-descriptions"
+region = 3
+source = "ncp_descriptions"
+source_index = 0
+encoding = "ncp_description"
+symbol = "ncp_description_archive"
+binary = "build/ncp-descriptions-falzar.bin"
+references = [0x08047224]
+compressed_references = [0x0812EA9C, 0x08135D3C]
+compression = "lz77"

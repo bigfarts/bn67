@@ -118,3 +118,25 @@ encoding = "description"
 symbol = "chip_description_archive_1"
 binary = "build/chip-descriptions-1-gregar.bin"
 references = [0x08027D54, 0x0811A9C0, 0x0811B3C0]
+
+[[text.archives]]
+name = "ncp-names"
+region = 2
+source = "ncp_names"
+source_index = 0
+encoding = "name"
+symbol = "ncp_name_archive"
+binary = "build/ncp-names-gregar.bin"
+references = [0x08042048, 0x0804204C, 0x08047718, 0x081194C4, 0x0811A00C, 0x0811AD64, 0x0811CAAC, 0x08122088, 0x0812952C, 0x081295AC, 0x08133314]
+
+[[text.archives]]
+name = "ncp-descriptions"
+region = 3
+source = "ncp_descriptions"
+source_index = 0
+encoding = "ncp_description"
+symbol = "ncp_description_archive"
+binary = "build/ncp-descriptions-gregar.bin"
+references = [0x080471F4]
+compressed_references = [0x08130878, 0x08137B18]
+compression = "lz77"

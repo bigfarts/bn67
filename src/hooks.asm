@@ -54,3 +54,19 @@
 
 .org 0x08013EB4
     .dw 0x08013EF1
+
+// StatGrd enables only the persistent StatusGuard property (0x52).
+.if falzar
+    .org 0x0813CA4C
+.else
+    .org 0x0813E82C
+.endif
+    push {lr}
+    mov r0,0
+    mov r1,0x52
+    mov r2,1
+    bl 0x0801379E
+    pop {pc}
+    nop
+    nop
+    nop

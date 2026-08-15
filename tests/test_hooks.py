@@ -1,4 +1,5 @@
 import re
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -56,6 +57,38 @@ class GlobalHookTests(unittest.TestCase):
         )
         self.assertNotRegex(hooks, r"(?m)^\.org 0x08013EA8$")
         self.assertNotRegex(hooks, r"(?m)^\.org 0x08013EB8$")
+
+    def test_bodypack_provides_only_status_guard(self) -> None:
+        hooks = (ROOT / "src/hooks.asm").read_text()
+
+        self.assertRegex(
+            hooks,
+            re.compile(
+                r"(?m)^\.if falzar\n"
+                r"    \.org 0x0813CA4C\n"
+                r"\.else\n"
+                r"    \.org 0x0813E82C\n"
+                r"\.endif\n"
+                r"    push \{lr\}\n"
+                r"    mov r0,0\n"
+                r"    mov r1,0x52\n"
+                r"    mov r2,1\n"
+                r"    bl 0x0801379E\n"
+                r"    pop \{pc\}\n"
+                r"    nop\n"
+                r"    nop\n"
+                r"    nop$"
+            ),
+        )
+
+    def test_bodypack_is_presented_as_status_guard(self) -> None:
+        text_patch = tomllib.loads((ROOT / "src/hooks.text.toml").read_text())
+
+        self.assertEqual(text_patch["ncp-names"]["0x1C"], "StatGrd")
+        self.assertEqual(
+            text_patch["ncp-descriptions"]["0x1C"],
+            "Prevents\nstatus\nproblems",
+        )
 
 
 if __name__ == "__main__":
