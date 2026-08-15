@@ -37,7 +37,7 @@ behavior and all other chip metadata are unchanged.
 Full Custom's MB cost is increased from 50 MB to 51 MB in both versions. Its
 native wildcard code, behavior, and all other chip metadata are unchanged.
 
-#### GunDelSol EX
+#### Gun del Sol EX
 
 The Japanese-only `GunDelEX G` is restored as an 80 MB, Null-element Standard
 chip. It uses its original Japanese icon, library art, palette, and native
