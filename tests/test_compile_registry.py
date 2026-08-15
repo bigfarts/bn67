@@ -778,6 +778,9 @@ class PackageCompilerTests(unittest.TestCase):
             source,
         )
         self.assertNotIn("BN67_CHIP_RECORD(0x0c6)", source)
+        self.assertIn(".library_number = 0xC7", source)
+        self.assertIn(".library_flags = 0x00", source)
+        self.assertIn(".library_sort_order = 0x00C7", source)
 
         for variant in ("gregar", "falzar"):
             _, packages = self.packages(variant)
