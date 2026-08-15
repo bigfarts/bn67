@@ -29,13 +29,17 @@ class VarSwordTests(unittest.TestCase):
         self.assertNotIn("0x080F098A", source)
         self.assertNotIn("0x080EF64A", source)
 
-    def test_element_waves_cycle_fire_aqua_elec_wood(self) -> None:
+    def test_element_waves_cycle_fire_elec_wood_aqua(self) -> None:
         source = (ROOT / "src/chips/varsword.c").read_text()
         dispatch = source[source.index("NAKED void varsword_element_wave_dispatch"):]
 
         self.assertIn('"movs r2,#5\\n"', dispatch)
         self.assertIn('"ldrh r3,[r7,#0x12]\\n"', dispatch)
         self.assertIn('"subs r2,r2,r3\\n"', dispatch)
+        self.assertIn('"cmp r2,#1\\n"', dispatch)
+        self.assertIn('"adds r2,#1\\n"', dispatch)
+        self.assertIn('"cmp r2,#5\\n"', dispatch)
+        self.assertIn('"movs r2,#2\\n"', dispatch)
         self.assertIn('"movs r3,#0x30\\n"', dispatch)
         self.assertIn('"ldrb r3,[r7,r3]\\n"', dispatch)
 

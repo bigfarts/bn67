@@ -140,7 +140,7 @@ NAKED void varsword_sonic_boom_init(void)
 
 /*
  * A completed ElementSonic command leaves 10 at +0x30. Counts 4, 3, 2, 1
- * become the Fire, Aqua, Elec, and Wood parameters accepted by shell 0x58.
+ * become the Fire, Elec, Wood, and Aqua parameters accepted by shell 0x58.
  */
 NAKED void varsword_element_wave_dispatch(void)
 {
@@ -154,6 +154,12 @@ NAKED void varsword_element_wave_dispatch(void)
         "movs r2,#5\n"
         "ldrh r3,[r7,#0x12]\n"
         "subs r2,r2,r3\n"
+        "cmp r2,#1\n"
+        "beq 1f\n"
+        "adds r2,#1\n"
+        "cmp r2,#5\n"
+        "bne 1f\n"
+        "movs r2,#2\n"
         "1:\n"
         "ldrh r3,[r7,#6]\n"
         "adds r6,r6,r3\n"
@@ -199,7 +205,7 @@ NAKED void varsword_sonic_shell_finalize(void)
 /*
  * Native shell 0x58 uses hit modifier 3 (stagger plus fixed flashing
  * invulnerability). Tagged waves use modifier 1 (stagger only); the untagged
- * Wood wave and all native shell callers keep modifier 3.
+ * Aqua wave and all native shell callers keep modifier 3.
  */
 NAKED void varsword_sonic_hit_modifier(void)
 {
