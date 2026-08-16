@@ -371,6 +371,28 @@ static void break_obstacles(void)
     }
 }
 
+static bool entrance_has_player(uint32_t owner)
+{
+    /* BN4 area pattern 17 covers the user's rear two columns, all three rows. */
+    uint32_t first_x = owner * 4u + 1u;
+    uint32_t player_flag = owner == 0
+        ? EXE6_BLOCK_FLAG_SIDE_1_HIT
+        : EXE6_BLOCK_FLAG_SIDE_0_HIT;
+    for (uint32_t block_x = first_x; block_x < first_x + 2u; ++block_x) {
+        for (uint32_t block_y = 1; block_y <= 3; ++block_y) {
+            if (exe6_block_move_check(
+                    block_x,
+                    block_y,
+                    player_flag,
+                    0
+                ) != 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 static void begin_entry(Exe6Obj *self)
 {
     exe6_obj_char_init(
@@ -587,6 +609,9 @@ BN67_EFFECT(duo_fist_main)
 BN67_SUMMON_ATTACK(0x133, duo_attack_main)
 {
     break_obstacles();
+    if (entrance_has_player(owner->owner)) {
+        return;
+    }
     Exe6Obj *actor = exe6_em_open(
         BN67_OBJ_ID(duo_actor_main), spawn_parameters
     );
