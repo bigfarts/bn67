@@ -712,10 +712,13 @@ pose, and now takes an initial sample when the time-freeze summon is created so
 a direction held with the chip-use input is not lost during the cut-in delay.
 Blue Moon gated that parser away from Base; the BN6 port intentionally enables
 it for Base, EX, and SP. On each confirmed Down-command contact, the port
-updates BN6's cached B-Left ID and clears the corresponding live FloatShoes,
-AirShoes, UnderShirt, and SuperArmor status bits. It deliberately does not
-rewrite the live power-attack cache unconditionally, because that byte can hold
-a temporary Cross charge shot. Before applying Right, it compares that cache with the old
+clears the underlying base-form properties. When the target is in base form it
+also updates BN6's cached B-Left ID and clears the corresponding live
+FloatShoes, AirShoes, UnderShirt, and SuperArmor status bits. With an active
+Cross it leaves those live caches intact; native Cross Out then rebuilds them
+from the cleared base-form properties. It deliberately does not rewrite the
+live power-attack cache unconditionally, because that byte can hold a
+temporary Cross charge shot. Before applying Right, it compares that cache with the old
 underlying power-attack property. Matching values identify a normal modified
 charge shot and permit the cache refresh; a mismatch identifies a temporary
 Cross or other-form override, so Right changes the underlying default Buster

@@ -718,7 +718,9 @@ struct Exe6NaviStatusWorkFields {
     uint8_t color_bug;                    // +0x1A
     uint8_t unknown_1b[0x09];
     uint8_t emotion_bug;                  // +0x24
-    uint8_t unknown_25[0x0C];
+    uint8_t unknown_25[4];
+    uint8_t active_cross;                 // +0x29; zero in base form
+    uint8_t unknown_2a[7];
     uint8_t movement_bug;                 // +0x31
     uint8_t unknown_32[0x22];
     uint16_t custom_damage_bug;           // +0x54
@@ -920,6 +922,10 @@ _Static_assert(
 _Static_assert(
     offsetof(struct Exe6NaviStatusWorkFields, emotion_bug) == 0x24,
     "Navi status emotion bug offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, active_cross) == 0x29,
+    "Navi status active Cross offset"
 );
 _Static_assert(
     offsetof(struct Exe6NaviStatusWorkFields, movement_bug) == 0x31,

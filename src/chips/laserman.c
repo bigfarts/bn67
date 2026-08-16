@@ -555,6 +555,23 @@ static void refresh_target_player(Exe6Obj *hit, uint16_t command)
     }
     Exe6PlayerRuntime *runtime = player->runtime_data;
     enum CommandEffect effect = (enum CommandEffect)(uint8_t)command;
+
+    /* The property writes above uninstall the target's base-form abilities.
+     * Keep an active Cross's live flags and B-Left cache intact; native Cross
+     * Out rebuilds those caches from the now-cleared base properties. */
+    bool disables_base_ability =
+        (effect >= COMMAND_EFFECT_DISABLE_SUPER_ARMOR
+            && effect <= COMMAND_EFFECT_DISABLE_UNDERSHIRT)
+        || effect == COMMAND_EFFECT_DISABLE_STATUS_GUARD
+        || effect == COMMAND_EFFECT_DISABLE_B_LEFT;
+    if (disables_base_ability) {
+        const Exe6NaviStatusWork *status =
+            exe6_navi_status_work_adrs_get(target_side);
+        if (status != NULL && status->active_cross != 0) {
+            return;
+        }
+    }
+
     if (effect == COMMAND_EFFECT_RESTORE_CHARGE_SHOT) {
         if (hit->phase_timer_low == CHARGE_SHOT_RESTORE_ACTIVE) {
             runtime->active_power_attack =

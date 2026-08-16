@@ -146,8 +146,9 @@ Holding a direction while LaserMan raises his arms enables Blue Moon's command
 effect on Base, 2, and 3:
 
 - Up resets Attack, Rapid, and Charge to level 1.
-- Down disables SuperArmor, AirShoes, FloatShoes, Undershirt, StatusGuard, and
-  B+Left abilities.
+- Down disables the base form's SuperArmor, AirShoes, FloatShoes, Undershirt,
+  StatusGuard, and B+Left abilities. An active Cross keeps its live versions
+  until Cross Out, when the cleared base-form configuration takes effect.
 - Right restores the standard charge shot without overwriting an active Cross charge shot.
 - Left permanently reduces the target's Custom Screen selection by one chip,
   to a minimum of two chips.
