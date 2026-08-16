@@ -215,8 +215,9 @@ ASSETS = (
     Asset("exe6_jp_gregar", "otenko-palette.bin", 0x746D4C, 0x20),
     Asset("exe6_jp_gregar", "otenko-battle-sprite.bin", 0x33962C, 0x690),
     # Crossover's subtype-1 partner uses group 0x0C/index 0x0F. The complete
-    # compressed Django archive is identical in Japanese Gregar and Falzar;
-    # the English releases replace this table entry with a white dot.
+    # compressed Django archive, including the GunDelSol overlay animations, is
+    # identical in Japanese Gregar and Falzar. The English releases replace its
+    # table entry with a white dot and redirect the overlay effect selectors.
     Asset(
         "exe6_jp_gregar",
         "django-crossover-sprite.bin",

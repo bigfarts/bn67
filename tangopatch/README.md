@@ -16,7 +16,21 @@ flashing invulnerability variants instead.
 ### Status Guard
 
 Body Pack is renamed Status Guard and grants Status Guard only. It no longer
-grants Super Armor, Float Shoes, Air Shoes, or Under Shirt.
+grants Super Armor, Float Shoes, Air Shoes, or Under Shirt. It also has a
+different shape:
+
+Compressed:
+```
+ x
+xxx
+```
+
+Uncompressed:
+```
+ x
+xxx
+ x
+```
 
 ## Chips
 
@@ -154,8 +168,8 @@ down rocks through their original poof effects, and burns the centered 3x3 area
 with sunlight. All three variants use BN5's base Django icon and library art;
 Django V2 uses the Japanese BN6 chip's green background colors, while Django V3
 uses BN5 Django SP's palette. The actor, coffin, and sunlight sprites are BN5's
-originals. Crossover keeps its native animation sequence and separately uses the
-original Japanese BN6 Django actor archive instead of the English placeholder.
+originals. Crossover keeps its native animation sequence and separately restores
+the original Japanese BN6 Django actor archive and GunDelSol effect selectors.
 
 - `Django D/*`: 30 MB, 130 damage
 - `Django V2 D`: 70 MB, 180 damage

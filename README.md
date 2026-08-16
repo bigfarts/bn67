@@ -49,9 +49,9 @@ in the Japanese releases:
   menu artwork and complete coffin, poofing falling-rock, and sunlight sequence;
   Django2 uses the Japanese BN6 chip's green background, while Django3 uses
   BN5 DjangoSP's palette. Django targets the closest opposing unit in his row
-  and burns the centered 3x3 area around it. Crossover separately uses Django's
-  original Japanese BN6 actor archive in place of the English white-dot
-  placeholder.
+  and burns the centered 3x3 area around it. Crossover separately restores
+  Django's original Japanese BN6 actor archive and its GunDelSol effect
+  selectors in place of the English placeholders.
 - `DoubleBeast` keeps the routine already present in the English engine and
   restores its missing Japanese icon, library art, palette, and description.
 - `Gregar X` and `Falzar X` restore the two 99 MB GigaChips with their original
