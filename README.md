@@ -209,10 +209,11 @@ summon cue. Non-Break attacks are stopped without reducing that HP. AirShot,
 WindRack, and Tengu Racket are the push exceptions: their damage is still
 blocked, but they move Rook one panel away from the attacker at AirShot's
 native 10-pixel-per-frame knockback speed. An invalid panel, Navi, virus, or
-blocking object prevents the move; Rook is not removed and nothing takes
-collision damage. Rook stops Tengu Racket's traveling gust and Tengu's B+Left
-wind from passing through its panel; B+Left does not move Rook. Its owner's
-attacks still pass through it.
+blocking object prevents the move. An invalid panel leaves Rook in place, but
+a Navi, virus, or blocking object behind it destroys Rook immediately without
+dealing collision damage. Rook stops Tengu Racket's traveling gust and Tengu's
+B+Left wind from passing through its panel; B+Left does not move Rook. Its
+owner's attacks still pass through it.
 Break attacks deal their normal damage, so they must deplete the full 500 HP
 rather than deleting Rook in one hit. Like BN3's original, Rook lasts 1,800
 active frames and blinks during its final 180 before expiring. Both versions

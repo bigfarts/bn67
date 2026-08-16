@@ -116,6 +116,12 @@ enum LaunchStep {
     LAUNCH_STEP_ACTIVE = 4,
 };
 
+enum PushStartResult {
+    PUSH_START_NONE,
+    PUSH_START_ACTIVE,
+    PUSH_START_BLOCKED,
+};
+
 static void obj_animate(Exe6Obj *obj)
 {
     (void)obj;
@@ -267,15 +273,15 @@ static bool obj_received_push_attack(const Exe6Hit *hit)
            modifier == RACKET_HIT_MODIFIER;
 }
 
-static void obj_begin_one_panel_push(Exe6Obj *obj)
+static enum PushStartResult obj_begin_one_panel_push(Exe6Obj *obj)
 {
     if (obj->work[PUSH_ACTIVE_WORK] != 0) {
-        return;
+        return PUSH_START_NONE;
     }
 
     int32_t direction = -(int32_t)exe6_calc_pl_em_dir_spd_for(obj);
     if (direction == 0) {
-        return;
+        return PUSH_START_NONE;
     }
 
     uint32_t block_x = (uint32_t)((int32_t)obj->block_x + direction);
@@ -286,16 +292,17 @@ static void obj_begin_one_panel_push(Exe6Obj *obj)
             EXE6_BLOCK_FLAG_SOLID,
             0
         ) == 0) {
-        return;
+        return PUSH_START_NONE;
     }
     uint32_t block_flags = exe6_block_status_get(block_x, block_y);
     if ((block_flags & PUSH_COLLISION_BLOCK_FLAGS) != 0) {
-        return;
+        return PUSH_START_BLOCKED;
     }
 
     obj->target_block_x = (uint8_t)block_x;
     obj->velocity_x = direction * AIRSHOT_PUSH_SPEED;
     obj->work[PUSH_ACTIVE_WORK] = 1;
+    return PUSH_START_ACTIVE;
 }
 
 static void obj_push_update(Exe6Obj *obj)
@@ -357,9 +364,13 @@ static void obj_update(Exe6Obj *obj)
     Exe6Hit *hit = obj->hit;
     uint32_t damage = hit->final_damage;
     if (obj_received_push_attack(hit)) {
-        /* Push attacks move Rook one panel without damage. */
+        /* Push attacks deal no hit damage, even if the move is blocked. */
         obj_block_damage(hit);
-        obj_begin_one_panel_push(obj);
+        enum PushStartResult push = obj_begin_one_panel_push(obj);
+        if (push == PUSH_START_BLOCKED) {
+            obj_begin_damage_destroy(obj);
+            return;
+        }
     } else if (damage != 0) {
         if ((hit->received_hit_flags &
              EXE6_HIT_TYPE_FLAG_GUARD_PIERCING) != 0) {

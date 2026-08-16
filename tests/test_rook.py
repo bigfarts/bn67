@@ -73,12 +73,14 @@ class RookTests(unittest.TestCase):
         self.assertIn("exe6_pos_to_block();", push)
         self.assertIn("exe6_battle_hit_block_pos_set();", push)
 
-    def test_push_attacks_stop_at_invalid_or_occupied_panel(
+    def test_push_attacks_destroy_rook_at_occupied_panel(
         self,
     ) -> None:
         source = (ROOT / "src/chips/rook.c").read_text()
         push = source[
-            source.index("static void obj_begin_one_panel_push"):
+            source.index(
+                "static enum PushStartResult obj_begin_one_panel_push"
+            ):
             source.index("static void obj_update")
         ]
         self.assertIn("EXE6_BLOCK_FLAG_SOLID", push)
@@ -96,8 +98,26 @@ class RookTests(unittest.TestCase):
             source.index("} else if (damage != 0)")
         ]
         self.assertIn("obj_block_damage(hit);", handling)
-        self.assertIn("obj_begin_one_panel_push(obj);", handling)
-        self.assertNotIn("obj_begin_damage_destroy(obj);", handling)
+        self.assertIn(
+            "enum PushStartResult push = obj_begin_one_panel_push(obj);",
+            handling,
+        )
+        self.assertIn("if (push == PUSH_START_BLOCKED)", handling)
+        self.assertIn("obj_begin_damage_destroy(obj);", handling)
+        self.assertIn("return;", handling)
+
+        occupancy = push[
+            push.index("uint32_t block_flags"):
+            push.index("obj->target_block_x")
+        ]
+        self.assertIn("return PUSH_START_BLOCKED;", occupancy)
+
+        invalid_panel = push[
+            push.index("if (exe6_block_move_check("):
+            push.index("uint32_t block_flags")
+        ]
+        self.assertIn("return PUSH_START_NONE;", invalid_panel)
+        self.assertNotIn("PUSH_START_BLOCKED", invalid_panel)
 
     def test_uses_bn3_rook_art_and_battle_sprite(self) -> None:
         self.assertEqual(BN3_ROOK_ID, 0x99)
