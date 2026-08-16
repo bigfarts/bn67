@@ -264,13 +264,31 @@ static const uint8_t CROSS_POWER_ATTACKS[] = {
     1, 6, 11, 18, 20, 39, 12, 22, 15, 25, 40,
 };
 
-static bool target_has_active_cross(uint32_t side)
+/* Native B+Left attacks supplied by the standard Crosses. */
+static const uint8_t CROSS_B_LEFTS[] = {
+    UINT8_MAX, UINT8_MAX, UINT8_MAX, UINT8_MAX, UINT8_MAX, UINT8_MAX,
+    UINT8_MAX, UINT8_MAX, 0x10, UINT8_MAX, 0x2A,
+};
+
+/* Down-targeted live flags that are innate to each standard Cross. TenguCross
+ * supplies AirShoes and GroundCross supplies SuperArmor. */
+static const uint32_t CROSS_INNATE_STATUS_FLAGS[] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    EXE6_HIT_STATUS_FLAG_AIR_SHOES,
+    EXE6_HIT_STATUS_FLAG_SUPER_ARMOR,
+    0,
+};
+
+static uint8_t target_active_cross(uint32_t side)
 {
     const Exe6NaviStatusWork *status =
         exe6_navi_status_work_adrs_get(side);
-    return status != NULL
-        && status->active_form != 0
-        && status->active_form <= EXE6_STANDARD_CROSS_COUNT;
+    if (status == NULL
+        || status->active_form == 0
+        || status->active_form > EXE6_STANDARD_CROSS_COUNT) {
+        return 0;
+    }
+    return status->active_form;
 }
 
 static void read_command(Exe6Obj *actor)
@@ -540,11 +558,7 @@ static void apply_command_effect(Exe6Obj *hit, uint16_t command)
         Exe6Obj *player = exe6_get_navi_adrs(target_side);
         if (player != NULL) {
             Exe6PlayerRuntime *runtime = player->runtime_data;
-            const Exe6NaviStatusWork *status =
-                exe6_navi_status_work_adrs_get(target_side);
-            if (status != NULL
-                && status->active_form != 0
-                && status->active_form <= EXE6_STANDARD_CROSS_COUNT) {
+            if (target_active_cross(target_side) != 0) {
                 hit->phase_timer_low = CHARGE_SHOT_RESTORE_CROSS;
             } else if (runtime->active_power_attack == current) {
                 hit->phase_timer_low = CHARGE_SHOT_RESTORE_BASE;
@@ -577,38 +591,22 @@ static void refresh_target_player(Exe6Obj *hit, uint16_t command)
     }
     Exe6PlayerRuntime *runtime = player->runtime_data;
     enum CommandEffect effect = (enum CommandEffect)(uint8_t)command;
-
-    /* Cross abilities are live flags layered over the base Navi status. Keep
-     * those flags intact while the property writes uninstall the underlying
-     * base abilities; native Cross Out rebuilds them from the edited status. */
-    bool disables_base_ability =
-        (effect >= COMMAND_EFFECT_DISABLE_SUPER_ARMOR
-            && effect <= COMMAND_EFFECT_DISABLE_UNDERSHIRT)
-        || effect == COMMAND_EFFECT_DISABLE_STATUS_GUARD
-        || effect == COMMAND_EFFECT_DISABLE_B_LEFT;
-    if (disables_base_ability) {
-        if (target_has_active_cross(target_side)) {
-            return;
-        }
-    }
+    uint8_t active_cross = target_active_cross(target_side);
 
     if (effect == COMMAND_EFFECT_RESTORE_CHARGE_SHOT) {
         if (hit->phase_timer_low == CHARGE_SHOT_RESTORE_CROSS) {
-            const Exe6NaviStatusWork *status =
-                exe6_navi_status_work_adrs_get(target_side);
-            if (status != NULL
-                && status->active_form != 0
-                && status->active_form <= EXE6_STANDARD_CROSS_COUNT) {
+            if (active_cross != 0) {
                 runtime->active_power_attack =
-                    CROSS_POWER_ATTACKS[status->active_form];
+                    CROSS_POWER_ATTACKS[active_cross];
             }
         } else if (hit->phase_timer_low == CHARGE_SHOT_RESTORE_BASE) {
             runtime->active_power_attack =
                 (uint8_t)exe6_navi_status_get(target_side, 5);
         }
     } else if (effect == COMMAND_EFFECT_DISABLE_B_LEFT) {
-        runtime->b_left =
-            (uint8_t)exe6_navi_status_get(target_side, 7);
+        runtime->b_left = active_cross == 0
+            ? (uint8_t)exe6_navi_status_get(target_side, 7)
+            : CROSS_B_LEFTS[active_cross];
     }
 
     if (command < COMMAND_EFFECT_DISABLE_SUPER_ARMOR
@@ -623,7 +621,11 @@ static void refresh_target_player(Exe6Obj *hit, uint16_t command)
         EXE6_HIT_STATUS_FLAG_SUPER_ARMOR,
     };
     for (size_t index = 0; index < 4; ++index) {
-        if (exe6_navi_status_get(target_side, PROPERTIES[index]) == 0) {
+        bool cross_supplies_ability = active_cross != 0
+            && (CROSS_INNATE_STATUS_FLAGS[active_cross]
+                & STATUS_FLAGS[index]) != 0;
+        if (!cross_supplies_ability
+            && exe6_navi_status_get(target_side, PROPERTIES[index]) == 0) {
             exe6_battle_hit_status_flag_off(
                 player,
                 STATUS_FLAGS[index]

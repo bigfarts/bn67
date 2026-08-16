@@ -10,7 +10,7 @@ class LaserManTests(unittest.TestCase):
         self.source = (ROOT / "src/chips/laserman.c").read_text()
         self.abi = (ROOT / "src/abi.h").read_text()
 
-    def test_down_uninstalls_base_abilities_without_clearing_live_cross(self) -> None:
+    def test_down_keeps_only_innate_cross_abilities(self) -> None:
         self.assertIn("uint8_t navi_id;", self.abi)
         self.assertIn(
             "offsetof(struct Exe6NaviStatusWorkFields, navi_id) == 0x29",
@@ -32,10 +32,12 @@ class LaserManTests(unittest.TestCase):
             self.source.index("static void refresh_target_player"):
             self.source.index("static void apply_selected_command")
         ]
-        self.assertIn("if (disables_base_ability)", refresh)
-        self.assertIn("target_has_active_cross(target_side)", refresh)
-        self.assertIn("status->active_form <= EXE6_STANDARD_CROSS_COUNT", self.source)
-        self.assertIn("runtime->b_left =", refresh)
+        self.assertIn("CROSS_INNATE_STATUS_FLAGS[active_cross]", refresh)
+        self.assertIn("!cross_supplies_ability", refresh)
+        self.assertIn("CROSS_B_LEFTS[active_cross]", refresh)
+        self.assertIn("EXE6_HIT_STATUS_FLAG_AIR_SHOES", self.source)
+        self.assertIn("EXE6_HIT_STATUS_FLAG_SUPER_ARMOR", self.source)
+        self.assertIn("0x10, UINT8_MAX, 0x2A", self.source)
         self.assertIn("exe6_battle_hit_status_flag_off(", refresh)
 
     def test_right_restores_cross_native_charge_shot(self) -> None:
@@ -45,7 +47,7 @@ class LaserManTests(unittest.TestCase):
             self.source,
         )
         self.assertIn(
-            "CROSS_POWER_ATTACKS[status->active_form]",
+            "CROSS_POWER_ATTACKS[active_cross]",
             self.source,
         )
         self.assertIn("exe6_navi_status_set(target_side, 4, 0);", self.source)

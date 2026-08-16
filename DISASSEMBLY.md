@@ -718,11 +718,16 @@ FloatShoes, AirShoes, UnderShirt, and SuperArmor status bits. Standard Crosses
 are identified by transformation IDs `1`-`10` at Navi status offset `+0x2C`;
 offset `+0x29` is the Navi ID and is not a form indicator. With an active
 Cross, the property writes still edit the underlying base defaults in the
-current status record at `0x0203CE00 + side * 0x64`, but the port leaves the
-Cross's live flags and B-Left cache intact. Native Cross Out removes the form
-flags and rebuilds the base form from those edited properties. Right likewise
-sets the base Buster properties to `0` and `1`, then restores the active
-Cross's native runtime power attack. Emulator traces give power-attack IDs
+current status record at `0x0203CE00 + side * 0x64`. The port then removes the
+corresponding live flags unless native Cross activation supplies them:
+TenguCross adds AirShoes flag `0x10`, and GroundCross adds SuperArmor flag
+`0x20000`. It similarly resets the live B-Left ID to `FF`, except for
+TenguCross's native `10` and DustCross's native `2A`. Thus inherited NaviCust
+abilities disappear immediately while innate Cross abilities remain. Native
+Cross Out removes the form flags and rebuilds the base form from the already
+edited properties. Right likewise sets the base Buster properties to `0` and
+`1`, then restores the active Cross's native runtime power attack. Emulator
+traces give power-attack IDs
 `6, 11, 18, 20, 39, 12, 22, 15, 25, 40` for Cross IDs `1`-`10`; this removes
 replacements such as BugDeathThunder without turning the active Cross's charge
 shot into a MegaBuster. Outside those Crosses, the original cache comparison
