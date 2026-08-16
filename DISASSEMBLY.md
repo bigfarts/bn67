@@ -714,15 +714,19 @@ Blue Moon gated that parser away from Base; the BN6 port intentionally enables
 it for Base, EX, and SP. On each confirmed Down-command contact, the port
 clears the underlying base-form properties. When the target is in base form it
 also updates BN6's cached B-Left ID and clears the corresponding live
-FloatShoes, AirShoes, UnderShirt, and SuperArmor status bits. With an active
-Cross it leaves those live caches intact; native Cross Out then rebuilds them
-from the cleared base-form properties. It deliberately does not rewrite the
-live power-attack cache unconditionally, because that byte can hold a
-temporary Cross charge shot. Before applying Right, it compares that cache with the old
-underlying power-attack property. Matching values identify a normal modified
-charge shot and permit the cache refresh; a mismatch identifies a temporary
-Cross or other-form override, so Right changes the underlying default Buster
-properties without replacing the active form's charge shot.
+FloatShoes, AirShoes, UnderShirt, and SuperArmor status bits. Standard Crosses
+are identified by transformation IDs `1`-`10` at Navi status offset `+0x2C`;
+offset `+0x29` is the Navi ID and is not a form indicator. With an active
+Cross, the property writes still edit the underlying base defaults in the
+current status record at `0x0203CE00 + side * 0x64`, but the port leaves the
+Cross's live flags and B-Left cache intact. Native Cross Out removes the form
+flags and rebuilds the base form from those edited properties. Right likewise
+sets the base Buster properties to `0` and `1`, then restores the active
+Cross's native runtime power attack. Emulator traces give power-attack IDs
+`6, 11, 18, 20, 39, 12, 22, 15, 25, 40` for Cross IDs `1`-`10`; this removes
+replacements such as BugDeathThunder without turning the active Cross's charge
+shot into a MegaBuster. Outside those Crosses, the original cache comparison
+still avoids overwriting an unrelated temporary form override.
 Effect events retain the original six-frame
 cadence. Because the imported full-width beam is stationary in the BN6 object
 model, the sole `FD` damage event is represented on all six blocks; only one

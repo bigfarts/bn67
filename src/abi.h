@@ -53,6 +53,8 @@ enum Exe6EventChipPhase {
     ((Exe6Block *)(uintptr_t)0x02039AE0u)
 #define EXE6_BLOCK_ROW_WIDTH ((size_t)8u)
 #define EXE6_OBSTACLE_SLOT_COUNT ((size_t)6u)
+/* Transformation IDs 1-10 are the ten standard Crosses. */
+#define EXE6_STANDARD_CROSS_COUNT ((uint8_t)10u)
 
 #define EXE6_PALETTE_BG_STAGING_00 ((uintptr_t)0x03001550u)
 #define EXE6_PALETTE_BG_STAGING_01 ((uintptr_t)0x03001570u)
@@ -719,8 +721,10 @@ struct Exe6NaviStatusWorkFields {
     uint8_t unknown_1b[0x09];
     uint8_t emotion_bug;                  // +0x24
     uint8_t unknown_25[4];
-    uint8_t active_cross;                 // +0x29; zero in base form
-    uint8_t unknown_2a[7];
+    uint8_t navi_id;                      // +0x29
+    uint8_t unknown_2a[2];
+    uint8_t active_form;                  // +0x2C; 1-10 are Crosses
+    uint8_t unknown_2d[4];
     uint8_t movement_bug;                 // +0x31
     uint8_t unknown_32[0x22];
     uint16_t custom_damage_bug;           // +0x54
@@ -924,8 +928,12 @@ _Static_assert(
     "Navi status emotion bug offset"
 );
 _Static_assert(
-    offsetof(struct Exe6NaviStatusWorkFields, active_cross) == 0x29,
-    "Navi status active Cross offset"
+    offsetof(struct Exe6NaviStatusWorkFields, navi_id) == 0x29,
+    "Navi status Navi ID offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, active_form) == 0x2C,
+    "Navi status active form offset"
 );
 _Static_assert(
     offsetof(struct Exe6NaviStatusWorkFields, movement_bug) == 0x31,

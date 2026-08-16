@@ -183,7 +183,8 @@ enum BeamPhase {
 
 enum ChargeShotRestoreState {
     CHARGE_SHOT_RESTORE_INACTIVE,
-    CHARGE_SHOT_RESTORE_ACTIVE,
+    CHARGE_SHOT_RESTORE_BASE,
+    CHARGE_SHOT_RESTORE_CROSS,
 };
 
 struct HitWork {
@@ -256,6 +257,21 @@ static const uint32_t BEAM_SCALES[] = {
     0x00000000,
     0x0000B9C0,
 };
+
+/* Native player-runtime power-attack IDs for transformation IDs 1-10:
+ * Heat, Elec, Slash, Erase, Charge, Aqua, Tomahawk, Tengu, Ground, Dust. */
+static const uint8_t CROSS_POWER_ATTACKS[] = {
+    1, 6, 11, 18, 20, 39, 12, 22, 15, 25, 40,
+};
+
+static bool target_has_active_cross(uint32_t side)
+{
+    const Exe6NaviStatusWork *status =
+        exe6_navi_status_work_adrs_get(side);
+    return status != NULL
+        && status->active_form != 0
+        && status->active_form <= EXE6_STANDARD_CROSS_COUNT;
+}
 
 static void read_command(Exe6Obj *actor)
 {
@@ -524,8 +540,14 @@ static void apply_command_effect(Exe6Obj *hit, uint16_t command)
         Exe6Obj *player = exe6_get_navi_adrs(target_side);
         if (player != NULL) {
             Exe6PlayerRuntime *runtime = player->runtime_data;
-            if (runtime->active_power_attack == current) {
-                hit->phase_timer_low = CHARGE_SHOT_RESTORE_ACTIVE;
+            const Exe6NaviStatusWork *status =
+                exe6_navi_status_work_adrs_get(target_side);
+            if (status != NULL
+                && status->active_form != 0
+                && status->active_form <= EXE6_STANDARD_CROSS_COUNT) {
+                hit->phase_timer_low = CHARGE_SHOT_RESTORE_CROSS;
+            } else if (runtime->active_power_attack == current) {
+                hit->phase_timer_low = CHARGE_SHOT_RESTORE_BASE;
             }
         }
         exe6_navi_status_set(target_side, 4, 0);
@@ -556,24 +578,31 @@ static void refresh_target_player(Exe6Obj *hit, uint16_t command)
     Exe6PlayerRuntime *runtime = player->runtime_data;
     enum CommandEffect effect = (enum CommandEffect)(uint8_t)command;
 
-    /* The property writes above uninstall the target's base-form abilities.
-     * Keep an active Cross's live flags and B-Left cache intact; native Cross
-     * Out rebuilds those caches from the now-cleared base properties. */
+    /* Cross abilities are live flags layered over the base Navi status. Keep
+     * those flags intact while the property writes uninstall the underlying
+     * base abilities; native Cross Out rebuilds them from the edited status. */
     bool disables_base_ability =
         (effect >= COMMAND_EFFECT_DISABLE_SUPER_ARMOR
             && effect <= COMMAND_EFFECT_DISABLE_UNDERSHIRT)
         || effect == COMMAND_EFFECT_DISABLE_STATUS_GUARD
         || effect == COMMAND_EFFECT_DISABLE_B_LEFT;
     if (disables_base_ability) {
-        const Exe6NaviStatusWork *status =
-            exe6_navi_status_work_adrs_get(target_side);
-        if (status != NULL && status->active_cross != 0) {
+        if (target_has_active_cross(target_side)) {
             return;
         }
     }
 
     if (effect == COMMAND_EFFECT_RESTORE_CHARGE_SHOT) {
-        if (hit->phase_timer_low == CHARGE_SHOT_RESTORE_ACTIVE) {
+        if (hit->phase_timer_low == CHARGE_SHOT_RESTORE_CROSS) {
+            const Exe6NaviStatusWork *status =
+                exe6_navi_status_work_adrs_get(target_side);
+            if (status != NULL
+                && status->active_form != 0
+                && status->active_form <= EXE6_STANDARD_CROSS_COUNT) {
+                runtime->active_power_attack =
+                    CROSS_POWER_ATTACKS[status->active_form];
+            }
+        } else if (hit->phase_timer_low == CHARGE_SHOT_RESTORE_BASE) {
             runtime->active_power_attack =
                 (uint8_t)exe6_navi_status_get(target_side, 5);
         }

@@ -229,11 +229,11 @@ Hold a direction while LaserMan raises his arms to add the original command
 effect. This works for Base, V2, and V3: Up resets Attack, Rapid, and Charge to
 level 1; Down disables the base form's Super Armor, Air Shoes, Float Shoes,
 Under Shirt, Status Guard, and B+Left abilities, while an active Cross keeps
-its live versions until Cross Out; Right restores the standard charge shot
-without overwriting an active Cross charge shot; Left permanently reduces the
-target's Custom Screen selection by one chip, to a minimum of two. Command
-effects require the beam to hit the target, so a miss does not alter the
-target.
+its live versions until Cross Out; Right removes charge-shot replacements,
+restoring an active Cross's native charge shot while resetting the base form
+to the standard MegaBuster; Left permanently reduces the target's Custom
+Screen selection by one chip, to a minimum of two. Command effects require the
+beam to hit the target, so a miss does not alter the target.
 
 Base uses the native red-background menu palette. LaserMan V2 keeps the base
 LaserMan foreground and changes only its five background entries to green.
