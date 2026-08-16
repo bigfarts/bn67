@@ -1,5 +1,11 @@
-format = 1
+format = 2
 name = "bn67"
 version = "1.9.2"
 title = "bn67"
 netplay = "isolated"
+
+[rom_overrides.BR5E_00]
+legal_chip_ranges = [[1, 202], [221, 280], [301, 305], [311, 312]]
+
+[rom_overrides.BR6E_00]
+legal_chip_ranges = [[1, 202], [221, 280], [306, 311], [313, 313]]

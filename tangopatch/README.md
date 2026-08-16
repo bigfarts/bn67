@@ -52,7 +52,7 @@ spread-sunbeam attack.
 The Japanese-only `Otenko O` is restored as a 66 MB Obstacle-element Standard
 chip. Otenko appears with his original battle sprite and raises attack power as
 in the Japanese release. Its original menu art and description are restored as
-well.
+well. Dust Cross also retains Otenko's sprite when it fires him as ammo.
 
 #### Aqua Needle
 

@@ -6,6 +6,8 @@ BN67_FIXED_SPRITE(
     otenko_battle_sprite,
     "build/otenko-battle-sprite.bin"
 );
+/* Replace the AirSpin handle in Otenko's native Dust ammo kind. */
+BN67_FIXED_DUST_SPRITE(0x0E, otenko_battle_sprite);
 BN67_INCBIN(otenko_icon, "build/otenko-icon.bin");
 BN67_INCBIN(otenko_image, "build/otenko-image.bin");
 BN67_INCBIN(otenko_palette, "build/otenko-palette.bin");

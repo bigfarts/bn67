@@ -417,7 +417,11 @@ class PackageCompilerTests(unittest.TestCase):
             linker,
         )
         self.assertIn(
-            "__bn67_dust_kind_rook_battle_sprite = 0xE;",
+            "__bn67_dust_kind_rook_battle_sprite = 0xB;",
+            linker,
+        )
+        self.assertIn(
+            "__bn67_dust_kind_otenko_battle_sprite = 0xE;",
             linker,
         )
         self.assertIn("dust_sprite_table:", assembly)
@@ -436,10 +440,15 @@ class PackageCompilerTests(unittest.TestCase):
         )
         self.assertIn(
             f".byte 0x{rook_group:02X},0x{rook_id:02X} "
-            "// 0x0E rook_battle_sprite",
+            "// 0x0B rook_battle_sprite",
             assembly,
         )
-        self.assertIn(".org 0x080DCAE2\n    mov r0,0x0C", assembly)
+        self.assertIn(
+            ".byte 0x0C,0x49 // 0x0E otenko_battle_sprite",
+            assembly,
+        )
+        self.assertIn(".org 0x080D9DF8\n    mov r0,0x04", assembly)
+        self.assertNotIn(".org 0x080DCAE2", assembly)
         self.assertNotIn("mov r1,0x1F", assembly)
         self.assertNotIn("LASERMAN_SUMMON_SONG", assembly)
         self.assertIn(
@@ -460,14 +469,22 @@ class PackageCompilerTests(unittest.TestCase):
             "__bn67_meta__dust_sprite__signalred_battle_sprite",
             self.metadata["gregar"]["signalred"],
         )
+        self.assertIn(
+            "__bn67_meta__fixed_dust_sprite__0x0E__otenko_battle_sprite",
+            self.metadata["gregar"]["otenko"],
+        )
         self.assertFalse(
             any(
-                "dust_sprite__0x" in symbol
+                symbol.startswith("__bn67_meta__dust_sprite__0x")
                 for symbols in self.metadata["gregar"].values()
                 for symbol in symbols
             )
         )
-        self.assertEqual(allocations.dust_sprites["rook_battle_sprite"], 0x0E)
+        self.assertEqual(
+            allocations.dust_sprites["otenko_battle_sprite"],
+            0x0E,
+        )
+        self.assertEqual(allocations.dust_sprites["rook_battle_sprite"], 0x0B)
         self.assertEqual(
             allocations.dust_sprites["signalred_battle_sprite"],
             0x0F,
@@ -869,6 +886,16 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn("find_target_in_row", source)
         self.assertIn("django_coffin_sprite", source)
         self.assertIn("django_sun_sprite", source)
+        self.assertIn(
+            "BN67_PATCH_SPRITE_LOAD(0x080BF4AA, django_battle_sprite)",
+            source,
+        )
+        self.assertIn(
+            "BN67_PATCH_SPRITE_LOAD(0x080BDC3A, django_battle_sprite)",
+            source,
+        )
+        self.assertNotIn("BN67_PATCH_SPRITE_LOAD(0x080BFD6C", source)
+        self.assertNotIn("BN67_PATCH_SPRITE_LOAD(0x080BE4FC", source)
         self.assertIn("LIGHT_VARIANT_CHARGE", source)
         self.assertIn("LIGHT_VARIANT_SUN_CONTROLLER", source)
         self.assertIn("SUNLIGHT_ORBIT_STEP = 8", source)
@@ -906,7 +933,7 @@ class PackageCompilerTests(unittest.TestCase):
         )
 
         for variant in ("gregar", "falzar"):
-            _, packages = self.packages(variant)
+            config, packages = self.packages(variant)
             django = next(
                 package for package in packages if package.name == "django"
             )
@@ -915,6 +942,25 @@ class PackageCompilerTests(unittest.TestCase):
                 [0x116, 0x117, 0x118],
             )
             self.assertEqual(django.attack.chip_id, 0x116)
+            expected_address = (
+                0x080BDC3A if variant == "falzar" else 0x080BF4AA
+            )
+            self.assertEqual(
+                [
+                    (patch.address, patch.archive)
+                    for patch in django.sprite_load_patches
+                ],
+                [(expected_address, "django_battle_sprite")],
+            )
+            allocations = validate_and_allocate(config, packages)
+            group, sprite_id = allocations.sprites["django_battle_sprite"]
+            assembly = generate(config, packages, allocations)
+            self.assertIn(
+                f".org 0x{expected_address:08X}\n"
+                f"    mov r1,0x{group:X}\n"
+                f"    mov r2,0x{sprite_id:X}",
+                assembly,
+            )
             text_entries = {
                 (entry.archive, entry.index): entry.value
                 for entry in django.text
@@ -1283,7 +1329,11 @@ class PackageCompilerTests(unittest.TestCase):
             linker,
         )
         self.assertIn(
-            "__bn67_dust_kind_rook_battle_sprite = 0xE;",
+            "__bn67_dust_kind_rook_battle_sprite = 0xB;",
+            linker,
+        )
+        self.assertIn(
+            "__bn67_dust_kind_otenko_battle_sprite = 0xE;",
             linker,
         )
         self.assertIn(

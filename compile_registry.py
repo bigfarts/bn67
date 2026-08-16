@@ -170,6 +170,12 @@ class DustSpriteResource:
 
 
 @dataclass(frozen=True)
+class FixedDustSpriteResource:
+    kind: int
+    archive: str
+
+
+@dataclass(frozen=True)
 class FieldObjectResource:
     archive: str
     animation: int
@@ -240,6 +246,12 @@ class LinkedCallPatch:
 
 
 @dataclass(frozen=True)
+class SpriteLoadPatch:
+    address: int
+    archive: str
+
+
+@dataclass(frozen=True)
 class Package:
     name: str
     source: str
@@ -249,6 +261,7 @@ class Package:
     sprites: tuple[SpriteResource, ...]
     fixed_sprites: tuple[FixedSpriteResource, ...]
     dust_sprites: tuple[DustSpriteResource, ...]
+    fixed_dust_sprites: tuple[FixedDustSpriteResource, ...]
     field_objects: tuple[FieldObjectResource, ...]
     songs: tuple[SongResource, ...]
     text: tuple[TextResource, ...]
@@ -258,6 +271,7 @@ class Package:
     pointer_patches: tuple[PointerPatch, ...]
     section_patches: tuple[SectionPatch, ...]
     linked_call_patches: tuple[LinkedCallPatch, ...]
+    sprite_load_patches: tuple[SpriteLoadPatch, ...]
 
 
 @dataclass(frozen=True)
@@ -839,9 +853,11 @@ def load_package(source_path: Path, config: Config) -> Package:
         (),
         (),
         (),
+        (),
         tuple(text),
         (),
         None,
+        (),
         (),
         (),
         (),
@@ -887,6 +903,7 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
     sprites: list[SpriteResource] = []
     fixed_sprites: list[FixedSpriteResource] = []
     dust_sprites: list[DustSpriteResource] = []
+    fixed_dust_sprites: list[FixedDustSpriteResource] = []
     field_objects: list[FieldObjectResource] = []
     songs: list[SongResource] = []
     chips: list[ChipResource] = []
@@ -895,6 +912,7 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
     pointer_patches: list[PointerPatch] = []
     section_patches: list[SectionPatch] = []
     linked_call_patches: list[LinkedCallPatch] = []
+    sprite_load_patches: list[SpriteLoadPatch] = []
     for symbol in symbols:
         prefix = "__bn67_meta__"
         if not symbol.startswith(prefix):
@@ -987,6 +1005,14 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         elif kind == "dust_sprite" and len(parts) == 2:
             check_snake_resource_label(package.name, parts[1], "_sprite")
             dust_sprites.append(DustSpriteResource(parts[1]))
+        elif kind == "fixed_dust_sprite" and len(parts) == 3:
+            check_snake_resource_label(package.name, parts[2], "_sprite")
+            fixed_dust_sprites.append(
+                FixedDustSpriteResource(
+                    checked_int(int(parts[1], 0), 0, 0x0F, symbol),
+                    parts[2],
+                )
+            )
         elif kind == "field_object" and len(parts) == 5:
             check_snake_resource_label(package.name, parts[1], "_sprite")
             field_objects.append(
@@ -1028,6 +1054,15 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
                     parts[3],
                 )
             )
+        elif kind == "sprite_load" and len(parts) == 3:
+            address = checked_int(int(parts[1], 0), 0, 0xFFFFFFFC, symbol)
+            if address % 2:
+                raise PackageError(
+                    f"{package.name}: sprite-load patch address must be "
+                    "halfword-aligned"
+                )
+            check_snake_resource_label(package.name, parts[2], "_sprite")
+            sprite_load_patches.append(SpriteLoadPatch(address, parts[2]))
         else:
             raise PackageError(f"{package.name}: invalid metadata symbol {symbol}")
     return replace(
@@ -1037,6 +1072,7 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         sprites=tuple(sprites),
         fixed_sprites=tuple(fixed_sprites),
         dust_sprites=tuple(dust_sprites),
+        fixed_dust_sprites=tuple(fixed_dust_sprites),
         field_objects=tuple(field_objects),
         songs=tuple(songs),
         chips=tuple(chips),
@@ -1045,6 +1081,7 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         pointer_patches=tuple(pointer_patches),
         section_patches=tuple(section_patches),
         linked_call_patches=tuple(linked_call_patches),
+        sprite_load_patches=tuple(sprite_load_patches),
     )
 
 
@@ -1074,13 +1111,33 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
     sprites = [item for package in packages for item in package.sprites]
     fixed_sprites = [item for package in packages for item in package.fixed_sprites]
     dust_sprites = [item for package in packages for item in package.dust_sprites]
+    fixed_dust_sprites = [
+        item for package in packages for item in package.fixed_dust_sprites
+    ]
     field_objects = [item for package in packages for item in package.field_objects]
     songs = [item for package in packages for item in package.songs]
     text = [item for package in packages for item in package.text]
     chips = [item for package in packages for item in package.chips]
     fixed_attacks = [item for package in packages for item in package.fixed_attacks]
+    sprite_load_patches = [
+        item for package in packages for item in package.sprite_load_patches
+    ]
 
     sprite_names = {item.archive for item in sprites}
+    sprite_load_addresses: dict[int, str] = {}
+    for item in sprite_load_patches:
+        if item.archive not in sprite_names:
+            raise PackageError(
+                f"{item.archive}: sprite-load patch must refer to a "
+                "BN67_SPRITE archive"
+            )
+        owner = sprite_load_addresses.get(item.address)
+        if owner is not None:
+            raise PackageError(
+                f"sprite-load address 0x{item.address:08X} is declared for "
+                f"both {owner} and {item.archive}"
+            )
+        sprite_load_addresses[item.address] = item.archive
     for item in fixed_sprites:
         group = config.sprite_groups.get(item.group)
         if group is None:
@@ -1108,11 +1165,42 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
     for item in dust_sprites:
         if item.archive not in sprite_names:
             raise PackageError(
-                f"{item.archive}: DustCross ammo must also be declared with BN67_SPRITE"
+                f"{item.archive}: DustCross ammo must also be declared with "
+                "BN67_SPRITE or BN67_FIXED_SPRITE"
             )
         if item.archive in dust_names:
             raise PackageError(f"{item.archive}: duplicate DustCross ammo declaration")
         dust_names.add(item.archive)
+    fixed_dust_kinds: dict[int, str] = {}
+    reclaimed_dust_kinds = {
+        item.kind for item in config.dust_sprites.reclaimed
+    }
+    for item in fixed_dust_sprites:
+        if item.archive not in sprite_names:
+            raise PackageError(
+                f"{item.archive}: fixed DustCross ammo must also be declared "
+                "with BN67_SPRITE or BN67_FIXED_SPRITE"
+            )
+        if item.archive in dust_names:
+            raise PackageError(f"{item.archive}: duplicate DustCross ammo declaration")
+        if item.kind >= config.dust_sprites.native_entries:
+            raise PackageError(
+                f"{item.archive}: fixed DustCross kind 0x{item.kind:02X} "
+                "is outside the native table"
+            )
+        if item.kind in reclaimed_dust_kinds:
+            raise PackageError(
+                f"{item.archive}: fixed DustCross kind 0x{item.kind:02X} "
+                "is also reclaimed by the edition config"
+            )
+        owner = fixed_dust_kinds.get(item.kind)
+        if owner is not None:
+            raise PackageError(
+                f"fixed DustCross kind 0x{item.kind:02X} is declared by both "
+                f"{owner} and {item.archive}"
+            )
+        dust_names.add(item.archive)
+        fixed_dust_kinds[item.kind] = item.archive
     dust_slots = sorted(item.kind for item in config.dust_sprites.reclaimed)
     dust_slots.extend(
         range(config.dust_sprites.native_entries, config.dust_sprites.max_kind + 1)
@@ -1125,6 +1213,9 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
     dust_allocations = {
         item.archive: dust_slots[index] for index, item in enumerate(dust_sprites)
     }
+    dust_allocations.update(
+        {item.archive: item.kind for item in fixed_dust_sprites}
+    )
 
     field_names: set[str] = set()
     for item in field_objects:
@@ -1344,7 +1435,7 @@ def generate_linker_values(packages: list[Package], allocations: Allocations) ->
             group, resource_id = allocations.sprites[item.archive]
             lines.append(f"__bn67_sprite_group_{item.archive} = 0x{group:X};")
             lines.append(f"__bn67_sprite_id_{item.archive} = 0x{resource_id:X};")
-        for item in package.dust_sprites:
+        for item in package.dust_sprites + package.fixed_dust_sprites:
             lines.append(
                 f"__bn67_dust_kind_{item.archive} = "
                 f"0x{allocations.dust_sprites[item.archive]:X};"
@@ -1577,6 +1668,24 @@ def emit_linked_call_patches(packages: list[Package]) -> list[str]:
     return lines
 
 
+def emit_sprite_load_patches(
+    packages: list[Package], allocations: Allocations
+) -> list[str]:
+    lines = ["// Native sprite loads redirected to package-owned archives."]
+    for package in packages:
+        for patch in package.sprite_load_patches:
+            group, resource_id = allocations.sprites[patch.archive]
+            lines.extend(
+                [
+                    f"// {package.name}: {patch.archive}",
+                    f".org 0x{patch.address:08X}",
+                    f"    mov r1,0x{group:X}",
+                    f"    mov r2,0x{resource_id:X}",
+                ]
+            )
+    return lines
+
+
 def emit_sprite_tables(
     config: Config, packages: list[Package], allocations: Allocations
 ) -> list[str]:
@@ -1646,10 +1755,18 @@ def emit_dust_sprite_table(
 ) -> list[str]:
     """Relocate DustCross selectors and append registered obstacle sprites."""
     dust = config.dust_sprites
+    sprite_handles = dict(allocations.sprites)
+    sprite_handles.update(
+        {
+            item.archive: (item.group, item.index)
+            for package in packages
+            for item in package.fixed_sprites
+        }
+    )
     resources = {
         allocations.dust_sprites[item.archive]: item
         for package in packages
-        for item in package.dust_sprites
+        for item in package.dust_sprites + package.fixed_dust_sprites
     }
     lines = ["// Compiler-owned DustCross ammo sprite table."]
     for address in dust.references:
@@ -1685,7 +1802,7 @@ def emit_dust_sprite_table(
             native_cursor = dust.native_entries
         if kind < dust.native_entries:
             native_cursor = kind + 1
-        group, sprite_id = allocations.sprites[item.archive]
+        group, sprite_id = sprite_handles[item.archive]
         lines.append(
             f"    .byte 0x{group:02X},0x{sprite_id:02X} "
             f"// 0x{kind:02X} {item.archive}"
@@ -1838,6 +1955,8 @@ def generate(config: Config, packages: list[Package], allocations: Allocations) 
         emit_section_patches(packages),
         [""],
         emit_linked_call_patches(packages),
+        [""],
+        emit_sprite_load_patches(packages, allocations),
         [""],
         emit_attack_tables(config, packages, allocations),
         [""],

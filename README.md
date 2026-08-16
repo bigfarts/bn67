@@ -39,7 +39,8 @@ in the Japanese releases:
   art. Its spread-sunbeam attack was retained by the English engine and remains
   native.
 - `Otenko O` restores the original 66 MB StandardChip, menu art, battle sprite,
-  description, and attack-power support effect.
+  description, and attack-power support effect. DustCross retains Otenko's
+  restored sprite when it sucks him in and fires him as ammo.
 - `Count H/*`, `Count2 H`, and `Count3 H` restore Count's three MegaChips,
   variant palettes, compressed actor archive, rain attack, lance objects, and
   complete cleanup sequence.

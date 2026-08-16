@@ -6,6 +6,16 @@ BN67_SPRITE(django_battle_sprite, "build/django-battle-sprite.bin");
 BN67_SPRITE(django_sun_sprite, "build/django-sun-sprite.bin");
 BN67_SPRITE(django_coffin_sprite, "build/django-coffin-sprite.bin");
 
+/* The English Crossover PA's subtype-1 partner loads group 0x0C/index 0x0F,
+ * which is the white-dot placeholder. Redirect that load to the imported
+ * Django actor archive. The later group 0x04/index 0x1A load belongs to Otenko
+ * and must remain native. */
+#if FALZAR
+BN67_PATCH_SPRITE_LOAD(0x080BDC3A, django_battle_sprite);
+#else
+BN67_PATCH_SPRITE_LOAD(0x080BF4AA, django_battle_sprite);
+#endif
+
 BN67_INCBIN(django_icon, "build/django-icon.bin");
 BN67_INCBIN(django_image, "build/django-image.bin");
 BN67_INCBIN(django_palette, "build/django-palette.bin");

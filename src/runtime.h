@@ -194,6 +194,14 @@
             BN67_STRINGIFY(target) \
     )
 
+/* Replace an adjacent `mov r1,group` / `mov r2,index` pair used by a native
+ * sprite-load call with the compiler-allocated handle for an imported sprite. */
+#define BN67_PATCH_SPRITE_LOAD(address, archive) \
+    BN67_METADATA_RECORD( \
+        "sprite_load", \
+        BN67_STRINGIFY(address) "__" BN67_STRINGIFY(archive) \
+    )
+
 /*
  * A complete native 0x2C chip record. The linked record remains in the C
  * image; the final ROM assembly copies it over the chip ID's native slot.
@@ -288,10 +296,18 @@
             BN67_STRINGIFY(archive) \
     )
 
-/* Register an imported sprite as a DustCross ammo kind. */
+/* Allocate a DustCross ammo kind for an imported or fixed sprite. */
 #define BN67_DUST_SPRITE(archive) \
     extern const uint8_t BN67_LINK_DUST_KIND(archive)[]; \
     BN67_METADATA_RECORD("dust_sprite", BN67_STRINGIFY(archive))
+
+/* Replace a native DustCross ammo kind with a registered sprite. */
+#define BN67_FIXED_DUST_SPRITE(kind, archive) \
+    extern const uint8_t BN67_LINK_DUST_KIND(archive)[]; \
+    BN67_METADATA_RECORD( \
+        "fixed_dust_sprite", \
+        BN67_STRINGIFY(kind) "__" BN67_STRINGIFY(archive) \
+    )
 
 /*
  * Allocate the native NameID used by field-object consumers such as JunkMan

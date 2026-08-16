@@ -41,9 +41,11 @@ references = [0x08012010, 0x08012014, 0x080E9990]
 max_kind = 0x0F
 
 [[dust_sprites.reclaimed]]
-kind = 0x0E
-alias = 0x0C
-references = [0x080DB272]
+# Native kinds 0x04 and 0x0B both use sprite 0x10/0x00. Preserve the original
+# kind-0x0B obstacle through 0x04 and give its duplicate slot to Rook.
+kind = 0x0B
+alias = 0x04
+references = [0x080D8588]
 
 [field_objects]
 native_table = "build/field-object-table-falzar.bin"

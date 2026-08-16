@@ -97,7 +97,8 @@ BN67_SUMMON_ATTACK(0x107, searchman_attack_main)
 DustCross ammo selector table. Use `BN67_DUST_KIND(archive)` when calling
 `exe6_cube_set_dust_suikomi_efc`; the compiler allocates its four-bit ammo kind.
 Target-specific table references and any safely reclaimed native aliases live
-in the edition config instead of individual chip sources.
+in the edition config instead of individual chip sources. The sprite may be
+declared with either `BN67_SPRITE` or `BN67_FIXED_SPRITE`.
 
 ```c
 BN67_SPRITE(rook_battle_sprite, "build/rook-battle-sprite.bin");
@@ -105,6 +106,9 @@ BN67_DUST_SPRITE(rook_battle_sprite);
 
 exe6_cube_set_dust_suikomi_efc(BN67_DUST_KIND(rook_battle_sprite));
 ```
+
+Use `BN67_FIXED_DUST_SPRITE(kind, archive)` when a restored sprite must replace
+an existing native ammo kind without changing the code that selects that kind.
 
 `BN67_FIELD_OBJECT(archive, animation, palette, shadow)` allocates the separate
 native `NameID` used when chips such as JunkMan and BlizzardBall inspect or
