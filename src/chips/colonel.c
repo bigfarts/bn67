@@ -127,7 +127,7 @@ BN67_CHIP_RECORD(0x112) {
     .library_flags = 0x00,
     .library_lock_on_type = 0x00,
     .alphabetical_sort = 0,
-    .power = 0x03FA,
+    .power = 300,
     .library_sort_order = 0x0112,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,

@@ -1,7 +1,7 @@
 [chip-names-1]
 "0x07" = "SerchMan"
-"0x08" = "SerchMn[EX]"
-"0x09" = "SerchMn[SP]"
+"0x08" = "SerchMn2"
+"0x09" = "SerchMn3"
 
 [chip-descriptions-1]
 "0x07" = "Aim\nand fire\n5 shots"

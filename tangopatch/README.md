@@ -124,17 +124,27 @@ art and text.
 
 ### Mega Chips
 
+#### Navi Variants
+
+All Navi chip series use V2 and V3 instead of EX and SP. Native SP damage
+scaling is removed and each affected Navi V3 chip always uses its highest damage:
+ElecMan V3 210, SlashMan V3 220, EraseMan V3 210, SpoutMan V3 120,
+TomahawkMan V3 280, TenguMan V3 160, GroundMan V3 130, DustMan V3 200,
+BlastMan V3 250, DiveMan V3 270, JudgeMan V3 190, ElementMan V3 240,
+Colonel V3 300, and Count V3 50. Custom Navi
+replacements that already have fixed power retain their existing values.
+
 #### Count
 
-Count, Count EX, and Count SP are restored from the Japanese releases. Count
+Count, Count V2, and Count V3 are restored from the Japanese releases. Count
 rains attacks over the target and follows with his lance sequence. All three
 variants use their original records, menu palettes, compressed Count sprite,
 lance objects, and complete ending, returning to battle normally after the
 attack.
 
 - `Count H/*`: 60 MB
-- `Count EX H`: 75 MB
-- `Count SP H`: 89 MB
+- `Count V2 H`: 75 MB
+- `Count V3 H`: 89 MB
 
 #### Django
 
@@ -152,56 +162,56 @@ originals.
 
 #### ProtoMan
 
-ProtoMan, ProtoMan EX, and ProtoMan SP use BN6's native Delta Ray Edge attack
+ProtoMan, ProtoMan V2, and ProtoMan V3 use BN6's native Delta Ray Edge attack
 instead of their normal Wide Sword summon.
 
 - `ProtoMan B/*`: 80 damage
-- `ProtoMan EX B`: 100 damage
-- `ProtoMan SP B`: 200 damage
+- `ProtoMan V2 B`: 100 damage
+- `ProtoMan V3 B`: 200 damage
 
 #### Colonel
 
-Colonel, Colonel EX, and Colonel SP use BN6's native Cross Divide attack
+Colonel, Colonel V2, and Colonel V3 use BN6's native Cross Divide attack
 instead of their normal screen-splitting summon. Their chip descriptions
 identify the Cross Divide attack.
 
 #### SearchMan
 
-**Replaces:** CircusMan, CircusMan EX, CircusMan SP
+**Replaces:** CircusMan series
 
 The complete SearchMan chip attack is ported from BN5. Its Cursor-element shots
 destroy traps on contact, and a successful delete shot discards the opponent's
 entire loaded hand.
 
 - `SearchMan S/*`: 20 damage per shot
-- `SearchMan EX S`: 40 damage per shot
-- `SearchMan SP S`: 75 damage per shot
+- `SearchMan V2 S`: 40 damage per shot
+- `SearchMan V3 S`: 75 damage per shot
 
 #### NumberMan
 
-**Replaces:** ChargeMan, ChargeMan EX, ChargeMan SP
+**Replaces:** ChargeMan series
 
 NumberMan uses his BN5 actor and die. He throws the die three panels ahead,
 shows a random face from 1 to 6, and then hits the centered 3x3 area for the
 rolled face times the listed power.
 
 - `NumberMan N/*`: 30 base power, 30-180 damage
-- `NumberMan EX N`: 40 base power, 40-240 damage
-- `NumberMan SP N`: 90 base power, 90-540 damage
+- `NumberMan V2 N`: 40 base power, 40-240 damage
+- `NumberMan V3 N`: 90 base power, 90-540 damage
 
 #### LaserMan
 
-**Replaces:** HeatMan, HeatMan EX, HeatMan SP
+**Replaces:** HeatMan series
 
 BN4 LaserMan raises his arm, points forward, and fires the original piercing
 blue-white laser through the complete row.
 
 - `LaserMan L/*`: 100 damage
-- `LaserMan EX L`: 150 damage
-- `LaserMan SP L`: 200 damage
+- `LaserMan V2 L`: 150 damage
+- `LaserMan V3 L`: 200 damage
 
 Hold a direction while LaserMan raises his arms to add the original command
-effect. This works for Base, EX, and SP: Up resets Attack, Rapid, and Charge to
+effect. This works for Base, V2, and V3: Up resets Attack, Rapid, and Charge to
 level 1; Down disables Super Armor, Air Shoes, Float Shoes, Under Shirt,
 Status Guard, and B+Left abilities; Right restores the standard charge shot
 without overwriting an active Cross charge shot; Left permanently reduces the
@@ -209,9 +219,10 @@ target's Custom Screen selection by one chip, to a minimum of two. Command
 effects require the beam to hit the target, so a miss does not alter the
 target.
 
-Base uses the native red-background menu palette. EX keeps the base LaserMan
-foreground and changes only its five background entries to green. SP uses the
-native yellow-background SP palette. All variants use the base battle palette.
+Base uses the native red-background menu palette. LaserMan V2 keeps the base
+LaserMan foreground and changes only its five background entries to green.
+LaserMan V3 uses the native yellow-background SP palette. All variants use the
+base battle palette.
 
 ### Giga Chips
 

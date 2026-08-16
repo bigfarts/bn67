@@ -964,6 +964,10 @@ class PackageCompilerTests(unittest.TestCase):
                 {
                     ("chip-descriptions-0", index, "A button\npower up\nby 3 swrd")
                     for index in range(0xE0, 0xE3)
+                }
+                | {
+                    ("chip-names-0", 0xE1, "ProtoMn2"),
+                    ("chip-names-0", 0xE2, "ProtoMn3"),
                 },
             )
             assembly = "\n".join(emit_chip_records(config, packages))
@@ -1006,6 +1010,10 @@ class PackageCompilerTests(unittest.TestCase):
                 {
                     ("chip-descriptions-1", index, "Cross-\nslice!")
                     for index in range(0x10, 0x13)
+                }
+                | {
+                    ("chip-names-1", 0x11, "Colonel2"),
+                    ("chip-names-1", 0x12, "Colonel3"),
                 },
             )
             assembly = "\n".join(emit_chip_records(config, packages))

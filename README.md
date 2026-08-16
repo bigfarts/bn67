@@ -40,7 +40,7 @@ in the Japanese releases:
   native.
 - `Otenko O` restores the original 66 MB StandardChip, menu art, battle sprite,
   description, and attack-power support effect.
-- `Count H/*`, `Count[EX] H`, and `Count[SP] H` restore Count's three MegaChips,
+- `Count H/*`, `Count2 H`, and `Count3 H` restore Count's three MegaChips,
   variant palettes, compressed actor archive, rain attack, lance objects, and
   complete cleanup sequence.
 - `Django D/*`, `Django2 D`, and `Django3 D` restore the three removed
@@ -71,16 +71,26 @@ Sonic Boom, retain their original inputs and behavior.
 
 ### ProtoMan
 
-ProtoMan, ProtoMan EX, and ProtoMan SP now use BN6's native DeltaRay attack
+ProtoMan, ProtoMan2, and ProtoMan3 now use BN6's native DeltaRay attack
 instead of their normal WideSword summon. Each chip retains its original
-codes, MB cost, Navi-chip classification, and artwork. Base, EX, and SP deal
+codes, MB cost, Navi-chip classification, and artwork. Base, 2, and 3 deal
 80, 100, and 200 damage respectively.
 
 ### Colonel
 
-Colonel, Colonel EX, and Colonel SP now use BN6's native CrossDivide attack
+Colonel, Colonel2, and Colonel3 now use BN6's native CrossDivide attack
 instead of their normal screen-splitting summon. Each chip retains its original
 codes, MB cost, Navi-chip classification, artwork, and power.
+
+### Navi chip variants
+
+Every Navi chip series now uses `2` and `3` instead of EX and SP in its names.
+The native time-based SP scaling sentinels are replaced with fixed damage at
+the highest value in each Navi's table. This fixes ElecMan3 at 210, SlashMn3
+at 220, EraseMn3 at 210, SpoutMn3 at 120, TmhkMan3 at 280, TenguMn3 at 160,
+GrndMan3 at 130, DustMan3 at 200, BlastMn3 at 250, DiveMan3 at 270, JudgeMn3
+at 190, ElmntMn3 at 240, Colonel3 at 300, and Count3 at 50. Navi replacements
+that already use deliberately fixed power retain those values.
 
 ### BlakWeap
 
@@ -100,37 +110,37 @@ DeltaRay-slot art.
 
 ### SearchMan
 
-Replaces CircusMan, CircusMan EX, and CircusMan SP with the complete SearchMan
+Replaces the CircusMan series with the complete SearchMan
 chip attack ported from Battle Network 5. Its shots retain Cursor element and
 destroy traps on contact. A successful delete shot discards the opponent's
 entire loaded hand.
 
 - `SerchMan S/*`: 20 damage per shot
-- `SerchMnEX S`: 40 damage per shot
-- `SerchMnSP S`: 75 damage per shot
+- `SerchMn2 S`: 40 damage per shot
+- `SerchMn3 S`: 75 damage per shot
 
 ### NumberMan
 
-Replaces ChargeMan, ChargeMan EX, and ChargeMan SP with NumberMan from Battle
+Replaces the ChargeMan series with NumberMan from Battle
 Network 5. He throws a die three panels ahead; the displayed face from 1 to 6
 multiplies the chip's power, then the die explodes over the centered 3x3 area.
 
 - `NumbrMan N/*`: 30 base power, 30-180 damage
-- `NumbrMnEX N`: 40 base power, 40-240 damage
-- `NumbrMnSP N`: 90 base power, 90-540 damage
+- `NumbrMn2 N`: 40 base power, 40-240 damage
+- `NumbrMn3 N`: 90 base power, 90-540 damage
 
 ### LaserMan
 
-Replaces HeatMan, HeatMan EX, and HeatMan SP with Blue Moon's LaserMan. The
+Replaces the HeatMan series with Blue Moon's LaserMan. The
 summoned Navi raises his arms, points forward, and fires Blue Moon's piercing
 blue-white laser through the complete row.
 
 - `LaserMan L/*`: 100 damage
-- `LaserMnEX L`: 150 damage
-- `LaserMnSP L`: 200 damage
+- `LaserMn2 L`: 150 damage
+- `LaserMn3 L`: 200 damage
 
 Holding a direction while LaserMan raises his arms enables Blue Moon's command
-effect on Base, EX, and SP:
+effect on Base, 2, and 3:
 
 - Up resets Attack, Rapid, and Charge to level 1.
 - Down disables SuperArmor, AirShoes, FloatShoes, Undershirt, StatusGuard, and
@@ -143,9 +153,10 @@ Command effects require the beam to contact the target. A missed LaserMan does
 not alter stats, abilities, charge shots, or Custom behavior.
 
 All three are Null-element MegaChips. Base uses Blue Moon's base art palette,
-EX preserves every base LaserMan foreground color while changing only the five
-red-background palette entries to green, and SP uses the native yellow-background
-Blue Moon SP palette. All three use LaserMan's base battle palette.
+LaserMan2 preserves every base LaserMan foreground color while changing only
+the five red-background palette entries to green, and LaserMan3 uses the
+native yellow-background Blue Moon SP palette. All three use LaserMan's base
+battle palette.
 
 ### ChaosLrd
 
@@ -264,18 +275,19 @@ die archives and library art; and BlackWeapon's menu art from EXE4.5. The Search
 variant library-art palettes are:
 
 - base: BN5 base palette (blue background)
-- EX: unchanged SearchMan foreground with a custom yellow background
-- SP: BN5 SP palette (red/pink background)
+- 2: unchanged SearchMan foreground with a custom yellow background
+- 3: BN5 SP palette (red/pink background)
 
-Base, EX, and SP all select the same in-battle actor palette. The three menu
+Base, 2, and 3 all select the same in-battle actor palette. The three menu
 art palettes remain distinct.
 
 The first 13 nontransparent palette entries used for SearchMan's foreground
 are byte-identical in all three variants. Only the three background entries
 differ.
 
-NumberMan Base keeps BN5's dark background, EX preserves the same foreground
-with a blue background, and SP uses BN5's SP background palette. BN6's native
+NumberMan Base keeps BN5's dark background, NumberMan2 preserves the same
+foreground with a blue background, and NumberMan3 uses BN5's SP background
+palette. BN6's native
 summon, throw, landing, and final-blast cues are byte-identical to BN5. The
 slightly different BN5 explosion sequence is imported separately.
 

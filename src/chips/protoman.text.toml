@@ -1,3 +1,7 @@
+[chip-names-0]
+"0xE1" = "ProtoMn2"
+"0xE2" = "ProtoMn3"
+
 [chip-descriptions-0]
 "0xE0" = "A button\npower up\nby 3 swrd"
 "0xE1" = "A button\npower up\nby 3 swrd"

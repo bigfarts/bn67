@@ -1,7 +1,7 @@
 [chip-names-0]
 "0xE3" = "LaserMan"
-"0xE4" = "LaserMn[EX]"
-"0xE5" = "LaserMn[SP]"
+"0xE4" = "LaserMn2"
+"0xE5" = "LaserMn3"
 
 [chip-descriptions-0]
 "0xE3" = "A laser\npierces\n1 thru"

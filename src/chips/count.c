@@ -66,6 +66,6 @@ COUNT_RECORD(
     count_palette_ex
 );
 COUNT_RECORD(
-    0x115, EXE6_CHIP_CODE_NONE, 4, 89, 0x64, 0x03F9, 0x0115,
+    0x115, EXE6_CHIP_CODE_NONE, 4, 89, 0x64, 50, 0x0115,
     count_palette_sp
 );

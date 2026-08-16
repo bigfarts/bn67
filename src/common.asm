@@ -14,6 +14,7 @@
 
 .include "src/hooks.asm"
 .include "src/chips/otenko.asm"
+.include "src/chips/navi-variants.asm"
 
 .if falzar
     .include "build/c-symbols-falzar.generated.asm"

@@ -1,7 +1,7 @@
 [chip-names-0]
 "0xEF" = "NumbrMan"
-"0xF0" = "NumbrMn[EX]"
-"0xF1" = "NumbrMn[SP]"
+"0xF0" = "NumbrMn2"
+"0xF1" = "NumbrMn3"
 
 [chip-descriptions-0]
 "0xEF" = "Bomb 3\nahead!\nHits 9sq"
