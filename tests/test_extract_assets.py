@@ -53,6 +53,35 @@ class ExtractAssetsTests(unittest.TestCase):
         self.assertNotIn("laserman-icon.bin", outputs)
         self.assertNotIn("searchman-icon.bin", outputs)
 
+    def test_django_uses_separate_bn5_chip_and_exe6_crossover_actors(
+        self,
+    ) -> None:
+        django_assets = {
+            asset.output: asset
+            for asset in ASSETS
+            if asset.output.startswith("django-")
+        }
+        self.assertEqual(
+            django_assets["django-crossover-sprite.bin"].source,
+            "exe6_jp_gregar",
+        )
+        self.assertEqual(
+            django_assets["django-crossover-sprite.bin"].offset,
+            0x30B980,
+        )
+        self.assertEqual(
+            django_assets["django-crossover-sprite.bin"].length,
+            0x21CC,
+        )
+        # Keep the original type-0x10 stream compressed for the native loader.
+        self.assertFalse(django_assets["django-crossover-sprite.bin"].lz77)
+        for output in (
+            "django-battle-sprite.bin",
+            "django-sun-sprite.bin",
+            "django-coffin-sprite.bin",
+        ):
+            self.assertEqual(django_assets[output].source, "bn5_protoman")
+
     def test_exe6_icon_border_uses_shared_palette_index(self) -> None:
         pixels = [[3] * 16 for _ in range(16)]
         for coordinate in range(16):

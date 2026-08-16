@@ -70,3 +70,25 @@
     nop
     nop
     nop
+
+// Give StatGrd SneakRun's native uncompressed and compressed shapes. Each
+// NaviCust shape is stored as seven rows of seven bytes.
+.if falzar
+    .org 0x0813AAA3
+.else
+    .org 0x0813C883
+.endif
+    .db 0,0,0,0,0,0,0
+    .db 0,0,0,0,0,0,0
+    .db 0,0,0,1,0,0,0
+    .db 0,0,1,1,1,0,0
+    .db 0,0,0,1,0,0,0
+    .db 0,0,0,0,0,0,0
+    .db 0,0,0,0,0,0,0
+    .db 0,0,0,0,0,0,0
+    .db 0,0,0,0,0,0,0
+    .db 0,0,0,1,0,0,0
+    .db 0,0,1,1,1,0,0
+    .db 0,0,0,0,0,0,0
+    .db 0,0,0,0,0,0,0
+    .db 0,0,0,0,0,0,0

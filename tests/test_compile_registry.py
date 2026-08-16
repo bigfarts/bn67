@@ -886,16 +886,17 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn("find_target_in_row", source)
         self.assertIn("django_coffin_sprite", source)
         self.assertIn("django_sun_sprite", source)
+        self.assertIn("django_crossover_sprite", source)
+        self.assertIn("django_battle_sprite", source)
         self.assertIn(
-            "BN67_PATCH_SPRITE_LOAD(0x080BF4AA, django_battle_sprite)",
+            "BN67_SPRITE_GROUP(django_battle_sprite)",
             source,
         )
         self.assertIn(
-            "BN67_PATCH_SPRITE_LOAD(0x080BDC3A, django_battle_sprite)",
+            "BN67_FIXED_COMPRESSED_SPRITE(",
             source,
         )
-        self.assertNotIn("BN67_PATCH_SPRITE_LOAD(0x080BFD6C", source)
-        self.assertNotIn("BN67_PATCH_SPRITE_LOAD(0x080BE4FC", source)
+        self.assertNotIn("BN67_PATCH_SPRITE_LOAD", source)
         self.assertIn("LIGHT_VARIANT_CHARGE", source)
         self.assertIn("LIGHT_VARIANT_SUN_CONTROLLER", source)
         self.assertIn("SUNLIGHT_ORBIT_STEP = 8", source)
@@ -942,23 +943,24 @@ class PackageCompilerTests(unittest.TestCase):
                 [0x116, 0x117, 0x118],
             )
             self.assertEqual(django.attack.chip_id, 0x116)
-            expected_address = (
-                0x080BDC3A if variant == "falzar" else 0x080BF4AA
-            )
+            self.assertEqual(django.sprite_load_patches, ())
             self.assertEqual(
                 [
-                    (patch.address, patch.archive)
-                    for patch in django.sprite_load_patches
+                    (
+                        sprite.group,
+                        sprite.index,
+                        sprite.archive,
+                        sprite.compressed,
+                    )
+                    for sprite in django.fixed_sprites
                 ],
-                [(expected_address, "django_battle_sprite")],
+                [(0x0C, 0x0F, "django_crossover_sprite", True)],
             )
             allocations = validate_and_allocate(config, packages)
-            group, sprite_id = allocations.sprites["django_battle_sprite"]
             assembly = generate(config, packages, allocations)
             self.assertIn(
-                f".org 0x{expected_address:08X}\n"
-                f"    mov r1,0x{group:X}\n"
-                f"    mov r2,0x{sprite_id:X}",
+                ".dw django_crossover_sprite + 0x80000000 "
+                "// 0x0F django_crossover_sprite",
                 assembly,
             )
             text_entries = {

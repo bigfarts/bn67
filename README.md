@@ -46,10 +46,12 @@ in the Japanese releases:
   complete cleanup sequence.
 - `Django D/*`, `Django2 D`, and `Django3 D` restore the three removed
   MegaChips with 130, 180, and 260 damage. All three use BN5's base Django
-  artwork and complete coffin, poofing falling-rock, and sunlight sequence;
+  menu artwork and complete coffin, poofing falling-rock, and sunlight sequence;
   Django2 uses the Japanese BN6 chip's green background, while Django3 uses
   BN5 DjangoSP's palette. Django targets the closest opposing unit in his row
-  and burns the centered 3x3 area around it.
+  and burns the centered 3x3 area around it. Crossover separately uses Django's
+  original Japanese BN6 actor archive in place of the English white-dot
+  placeholder.
 - `DoubleBeast` keeps the routine already present in the English engine and
   restores its missing Japanese icon, library art, palette, and description.
 - `Gregar X` and `Falzar X` restore the two 99 MB GigaChips with their original

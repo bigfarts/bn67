@@ -90,6 +90,34 @@ class GlobalHookTests(unittest.TestCase):
             "Prevents\nstatus\nproblems",
         )
 
+    def test_status_guard_uses_both_sneakrun_shapes(self) -> None:
+        hooks = (ROOT / "src/hooks.asm").read_text()
+
+        self.assertRegex(
+            hooks,
+            re.compile(
+                r"(?m)^\.if falzar\n"
+                r"    \.org 0x0813AAA3\n"
+                r"\.else\n"
+                r"    \.org 0x0813C883\n"
+                r"\.endif\n"
+                r"    \.db 0,0,0,0,0,0,0\n"
+                r"    \.db 0,0,0,0,0,0,0\n"
+                r"    \.db 0,0,0,1,0,0,0\n"
+                r"    \.db 0,0,1,1,1,0,0\n"
+                r"    \.db 0,0,0,1,0,0,0\n"
+                r"    \.db 0,0,0,0,0,0,0\n"
+                r"    \.db 0,0,0,0,0,0,0\n"
+                r"    \.db 0,0,0,0,0,0,0\n"
+                r"    \.db 0,0,0,0,0,0,0\n"
+                r"    \.db 0,0,0,1,0,0,0\n"
+                r"    \.db 0,0,1,1,1,0,0\n"
+                r"    \.db 0,0,0,0,0,0,0\n"
+                r"    \.db 0,0,0,0,0,0,0\n"
+                r"    \.db 0,0,0,0,0,0,0$"
+            ),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

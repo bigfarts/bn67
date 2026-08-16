@@ -214,6 +214,15 @@ ASSETS = (
     Asset("exe6_jp_gregar", "otenko-image.bin", 0x72EACC, 0x540),
     Asset("exe6_jp_gregar", "otenko-palette.bin", 0x746D4C, 0x20),
     Asset("exe6_jp_gregar", "otenko-battle-sprite.bin", 0x33962C, 0x690),
+    # Crossover's subtype-1 partner uses group 0x0C/index 0x0F. The complete
+    # compressed Django archive is identical in Japanese Gregar and Falzar;
+    # the English releases replace this table entry with a white dot.
+    Asset(
+        "exe6_jp_gregar",
+        "django-crossover-sprite.bin",
+        0x30B980,
+        0x21CC,
+    ),
     Asset("exe6_jp_gregar", "count-icon.bin", 0x74E48C, 0x80),
     Asset("exe6_jp_gregar", "count-image.bin", 0x740B8C, 0x540),
     Asset("exe6_jp_gregar", "count-pal-base.bin", 0x747A4C, 0x20),
@@ -247,9 +256,9 @@ ASSETS = (
     Asset("bn5_protoman", "jealousy-palette.bin", 0x734188, 0x20),
     Asset("bn5_protoman", "jealousy-effect-tiles.bin", 0x6FAD2C, 0x100),
     Asset("bn5_protoman", "jealousy-effect-palette.bin", 0x6FAE2C, 0x20),
-    # BN5 ProtoMan: Django's library art and complete battle sequence.
-    # The battle archives are group 0x0C IDs 0x41, 0x44, and 0x45: the main
-    # actor, sunlight, and coffin used by the base attack.
+    # BN5 ProtoMan: Django's library art and complete base-chip sequence. The
+    # actor, sunlight, and coffin archives use the animation layouts expected
+    # by the restored standalone attack and remain separate from Crossover.
     # Django3 uses DjangoSP's original palette. Django2's Japanese BN6 green
     # background colors are defined beside its chip record in django.c.
     Asset("bn5_protoman", "django-icon.bin", 0x7493B8, 0x80),

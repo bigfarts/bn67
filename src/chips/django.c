@@ -1,20 +1,19 @@
 #include "common.h"
 #include "runtime.h"
 
-/* BN5 ProtoMan's base Django, coffin, and sunlight archives. */
+/* BN5 ProtoMan's actor, coffin, and sunlight archives for the restored chips. */
 BN67_SPRITE(django_battle_sprite, "build/django-battle-sprite.bin");
 BN67_SPRITE(django_sun_sprite, "build/django-sun-sprite.bin");
 BN67_SPRITE(django_coffin_sprite, "build/django-coffin-sprite.bin");
 
-/* The English Crossover PA's subtype-1 partner loads group 0x0C/index 0x0F,
- * which is the white-dot placeholder. Redirect that load to the imported
- * Django actor archive. The later group 0x04/index 0x1A load belongs to Otenko
- * and must remain native. */
-#if FALZAR
-BN67_PATCH_SPRITE_LOAD(0x080BDC3A, django_battle_sprite);
-#else
-BN67_PATCH_SPRITE_LOAD(0x080BF4AA, django_battle_sprite);
-#endif
+/* Restore Japanese EXE6's compressed Django actor at the original handle used
+ * by Crossover. The standalone chips intentionally keep their BN5 archives. */
+BN67_FIXED_COMPRESSED_SPRITE(
+    0x0C,
+    0x0F,
+    django_crossover_sprite,
+    "build/django-crossover-sprite.bin"
+);
 
 BN67_INCBIN(django_icon, "build/django-icon.bin");
 BN67_INCBIN(django_image, "build/django-image.bin");
@@ -113,6 +112,9 @@ static const uint16_t CHARGE_SOUND_PERIOD = 16;
 /* BN5 advances the sunlight orbit by eight angle units each frame. */
 static const uint8_t SUNLIGHT_ORBIT_STEP = 8;
 static const uint8_t SUNLIGHT_PULSE_DAMAGE = 1;
+/* BN6 packs damage flags above the low eleven damage bits. */
+static const uint16_t DAMAGE_AMOUNT_MASK = 0x07FF;
+static const uint16_t DAMAGE_PARALYZE_FLAG = 0x4000;
 /* BN6's native "Rock (Gregar drops these)" sprite. */
 static const uint8_t GREGAR_ROCK_SPRITE_GROUP = 0x10;
 static const uint8_t GREGAR_ROCK_SPRITE_ID = 0x05;
@@ -133,6 +135,7 @@ struct ActorWork {
     uint8_t target_was_visible;
     uint16_t damage_remaining;
     uint8_t sunlight_sound_timer;
+    uint8_t paralysis_pending;
     Exe6Obj *target;
 };
 
@@ -285,20 +288,26 @@ static void spawn_sunlight(Exe6Obj *actor)
     );
 }
 
-static void spawn_sunlight_damage(Exe6Obj *self)
+static bool spawn_sunlight_damage(Exe6Obj *self, bool apply_paralysis)
 {
+    uint32_t attack = SUNLIGHT_PULSE_DAMAGE;
+    if (apply_paralysis) {
+        attack |= DAMAGE_PARALYZE_FLAG;
+    }
     Exe6Obj *damage = exe6_set_shl03_ev(
         self->target_block_x,
         self->target_block_y,
         self->owner_aux,
         0,
         SUNLIGHT_DAMAGE_PROPERTIES,
-        SUNLIGHT_PULSE_DAMAGE,
+        attack,
         3
     );
-    if (damage != NULL) {
-        damage->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
+    if (damage == NULL) {
+        return false;
     }
+    damage->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
+    return true;
 }
 
 static void actor_appear(Exe6Obj *self)
@@ -387,7 +396,10 @@ static void actor_sunlight(Exe6Obj *self)
     struct ActorWork *work = (struct ActorWork *)self->work;
     if (self->substate == UPDATE_STEP_INIT) {
         set_animation(self, 5);
-        work->damage_remaining = (uint16_t)(self->attack & 0x7FFFu);
+        work->damage_remaining =
+            (uint16_t)(self->attack & DAMAGE_AMOUNT_MASK);
+        work->paralysis_pending =
+            (uint8_t)((self->attack & DAMAGE_PARALYZE_FLAG) != 0);
         work->sunlight_sound_timer = 0;
         if (work->sun_spawned == 0) {
             work->sun_spawned = 1;
@@ -397,7 +409,9 @@ static void actor_sunlight(Exe6Obj *self)
     }
 
     if (work->damage_remaining != 0) {
-        spawn_sunlight_damage(self);
+        if (spawn_sunlight_damage(self, work->paralysis_pending != 0)) {
+            work->paralysis_pending = 0;
+        }
         --work->damage_remaining;
         if (work->sunlight_sound_timer == 0) {
             exe6_sound_req(0xF9);
