@@ -141,6 +141,19 @@ the Navi between visible and invisible. The adjacent `0x08013EA8` and
 invulnerability without replacing executable selection logic during battle
 startup.
 
+Uninstall's `0x2000` damage flag becomes native inflicted-effect `0xF8`, whose
+player response calls the shared removal routine at `0x080140EE`. SunMoon's
+BlueMoon hit carries the same flag and reaches that routine as well. Its
+successful tail call at `0x0801414A` is redirected through
+the nearby veneer at `0x080141BC` and then `status_guard_uninstall_main`, which
+clears battle Navi property `0x52` before continuing to the displaced native
+refresh routine at `0x0801469C`. The hook is after the native Link Navi guard,
+so it does not broaden Uninstall's target eligibility. BN6's status gate checks
+active transformation `0x2C == 7` independently of property `0x52`; clearing
+the property therefore strips the underlying StatGrd program without removing
+Tomahawk Cross's innate status immunity. Cross Out exposes the cleared base
+property.
+
 FolderBack's Folder restore runs only on the chip owner's local peer. Its hand
 reset therefore clears only that owner's two hand counters and six loaded-chip
 IDs. The rest of the `0x50`-byte selection-work block is Custom-screen state;

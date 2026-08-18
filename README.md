@@ -34,7 +34,10 @@ MB cost is increased from 50 MB to 51 MB in both versions.
 
 BodyPack is renamed StatGrd and grants StatusGuard only. It no longer grants
 SuperArmor, FloatShoes, AirShoes, or UnderShirt. StatGrd is a registry-owned
-NaviCust program in BodyPack's original logical slot (`0x1C`).
+NaviCust program in BodyPack's original logical slot (`0x1C`). Uninstall and
+the BlueMoon phase of SunMoon remove StatusGuard along with their native
+targets. TomahawkCross's separate innate StatusGuard remains active until
+Cross Out, but StatGrd stays removed underneath it.
 
 ### BeastT+1
 

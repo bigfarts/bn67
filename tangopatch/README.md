@@ -20,7 +20,11 @@ adds one turn to Beast Out's normal 3 turn duration, up to 9 turns.
 
 BodyPack is renamed StatGrd and grants Status Guard only. It no longer
 grants Super Armor, Float Shoes, Air Shoes, or Under Shirt. It also has a
-different shape:
+different shape. Uninstall and the Blue Moon phase of SunMoon remove Status
+Guard along with their native targets. Tomahawk Cross's separate innate Status
+Guard remains active until Cross Out, but StatGrd stays removed underneath it.
+
+The StatGrd shapes are:
 
 Compressed:
 ```

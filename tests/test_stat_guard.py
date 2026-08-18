@@ -29,6 +29,25 @@ class StatGuardTests(unittest.TestCase):
         )
         self.assertIn("#define STATUS_GUARD_PROPERTY 0x52u", self.source)
 
+    def test_uninstall_and_sunmoon_bluemoon_remove_status_guard(self) -> None:
+        hooks = (ROOT / "src/hooks.asm").read_text()
+
+        self.assertIn(
+            "exe6_navi_status_set(player->owner, STATUS_GUARD_PROPERTY, 0)",
+            self.source,
+        )
+        self.assertIn(
+            ".org 0x080141BC\n"
+            "status_guard_uninstall_veneer:\n"
+            "    ldr r0,=status_guard_uninstall_main + 1",
+            hooks,
+        )
+        self.assertIn(
+            ".org 0x0801414A\n    bl status_guard_uninstall_veneer",
+            hooks,
+        )
+        self.assertIn('"ldr r3,=0x0801469D\\n"', self.source)
+
     def test_uses_distinct_uncompressed_and_compressed_shapes(self) -> None:
         self.assertIn("STATUS_GUARD_UNCOMPRESSED_SHAPE", self.source)
         self.assertIn("STATUS_GUARD_COMPRESSED_SHAPE", self.source)
