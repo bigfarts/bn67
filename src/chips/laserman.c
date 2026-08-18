@@ -513,48 +513,37 @@ static void apply_command_effect(Exe6Obj *hit, uint16_t command)
 {
     uint32_t target_side = hit->owner ^ 1u;
     enum CommandEffect effect = (enum CommandEffect)(uint8_t)command;
-    uint32_t property; // ID of the player property affected by the command.
-    uint32_t value; // Raw value written to that player property.
 
     switch (effect) {
     case COMMAND_EFFECT_DISABLE_SUPER_ARMOR:
-        property = 0x23;
-        value = 0;
+        exe6_navi_status_set(target_side, 0x23, 0);
         break;
     case COMMAND_EFFECT_DISABLE_FLOAT_SHOES:
-        property = 0x1B;
-        value = 0;
+        exe6_navi_status_set(target_side, 0x1B, 0);
         break;
     case COMMAND_EFFECT_DISABLE_AIR_SHOES:
-        property = 0x1C;
-        value = 0;
+        exe6_navi_status_set(target_side, 0x1C, 0);
         break;
     case COMMAND_EFFECT_DISABLE_UNDERSHIRT:
-        property = 0x1D;
-        value = 0;
+        exe6_navi_status_set(target_side, 0x1D, 0);
         break;
     case COMMAND_EFFECT_DISABLE_STATUS_GUARD:
-        property = 0x52;
-        value = 0;
+        exe6_navi_status_set(target_side, 0x52, 0);
         break;
     case COMMAND_EFFECT_RESET_ATTACK:
-        property = 1;
-        value = 0;
+        exe6_navi_status_set(target_side, 0x01, 0);
         break;
     case COMMAND_EFFECT_RESET_RAPID:
-        property = 2;
-        value = 0;
+        exe6_navi_status_set(target_side, 0x02, 0);
         break;
     case COMMAND_EFFECT_RESET_CHARGE:
-        property = 3;
-        value = 0;
+        exe6_navi_status_set(target_side, 0x03, 0);
         break;
     case COMMAND_EFFECT_DISABLE_B_LEFT:
-        property = 7;
-        value = UINT8_MAX;
+        exe6_navi_status_set(target_side, 0x07, UINT8_MAX);
         break;
     case COMMAND_EFFECT_RESTORE_CHARGE_SHOT: {
-        uint32_t current = exe6_navi_status_get(target_side, 5);
+        uint32_t current = exe6_navi_status_get(target_side, 0x05);
         Exe6Obj *player = exe6_get_navi_adrs(target_side);
         if (player != NULL) {
             Exe6PlayerRuntime *runtime = player->runtime_data;
@@ -564,22 +553,22 @@ static void apply_command_effect(Exe6Obj *hit, uint16_t command)
                 hit->phase_timer_low = CHARGE_SHOT_RESTORE_BASE;
             }
         }
-        exe6_navi_status_set(target_side, 4, 0);
-        property = 5;
-        value = 1;
+        exe6_navi_status_set(target_side, 0x04, 0);
+        exe6_navi_status_set(target_side, 0x05, 1);
         break;
     }
     case COMMAND_EFFECT_REDUCE_CUSTOM:
-        value = exe6_navi_status_get(target_side, 0x0A);
-        if (value > 2) {
-            --value;
+        {
+            uint32_t value = exe6_navi_status_get(target_side, 0x0a);
+            if (value > 2) {
+                --value;
+            }
+            exe6_navi_status_set(target_side, 0x0a, value);
+            break;
         }
-        property = 0x0A;
-        break;
     default:
         return;
     }
-    exe6_navi_status_set(target_side, property, value);
 }
 
 static void refresh_target_player(Exe6Obj *hit, uint16_t command)
