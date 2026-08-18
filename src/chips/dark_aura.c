@@ -60,7 +60,7 @@ BN67_CHIP_RECORD(0x136) {
     .rarity = 4,
     .element = EXE6_CHIP_ELEMENT_NULL,
     .chip_class = EXE6_CHIP_CLASS_GIGA,
-    .mb = 61,
+    .mb = 89,
     .behavior = {
         .effect_flags = EFFECT_FLAGS,
         .counter_settings = 0x00,
