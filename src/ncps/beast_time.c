@@ -11,7 +11,16 @@
 
 /* The game stores both forms as independent 7x7 masks. Keep this plus part a
  * centered 2x2 square in either orientation/compression state. */
-#define BEAST_TIME_SHAPE \
+#define BEAST_TIME_UNCOMPRESSED_SHAPE \
+    ".byte 0,0,0,0,0,0,0\n" \
+    ".byte 0,0,0,0,0,0,0\n" \
+    ".byte 0,0,1,1,0,0,0\n" \
+    ".byte 0,0,1,1,0,0,0\n" \
+    ".byte 0,0,0,0,0,0,0\n" \
+    ".byte 0,0,0,0,0,0,0\n" \
+    ".byte 0,0,0,0,0,0,0\n"
+
+#define BEAST_TIME_COMPRESSED_SHAPE \
     ".byte 0,0,0,0,0,0,0\n" \
     ".byte 0,0,0,0,0,0,0\n" \
     ".byte 0,0,1,1,0,0,0\n" \
@@ -22,11 +31,11 @@
 
 BN67_ASM_RESOURCE(
     beast_time_program_ncp_uncompressed_shape,
-    BEAST_TIME_SHAPE
+    BEAST_TIME_UNCOMPRESSED_SHAPE
 );
 BN67_ASM_RESOURCE(
     beast_time_program_ncp_compressed_shape,
-    BEAST_TIME_SHAPE
+    BEAST_TIME_COMPRESSED_SHAPE
 );
 
 /* White, pink, and yellow are native NaviCust color selectors 1, 3, and 2.
