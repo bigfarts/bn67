@@ -77,6 +77,18 @@ table_address = 0x08021DA8
 record_size = 0x2C
 record_count = 0x13A
 
+[ncps]
+native_piece_table = "build/ncp_piece_table_falzar.bin"
+native_piece_table_address = 0x0813944C
+piece_table_references = [0x0813B78C, 0x0813C064]
+native_effect_table = "build/ncp_effect_table_falzar.bin"
+native_effect_table_address = 0x0813C74C
+effect_table_references = [0x0813C748]
+# 0x2F is the NaviCust menu's special RUN string. Future allocated programs
+# begin at the next logical ID; fixed replacements retain their native ID.
+base_id = 0x30
+max_id = 0x3F
+
 [text]
 folder_edit_skip_address = 0x08120116
 folder_edit_skip_target = 0x0812012E

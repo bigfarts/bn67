@@ -13,6 +13,7 @@
 .endmacro
 
 .include "src/hooks.asm"
+.include "src/ncps/beast_time.asm"
 .include "src/chips/django.asm"
 .include "src/chips/otenko.asm"
 .include "src/chips/navi_variants.asm"

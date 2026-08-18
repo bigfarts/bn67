@@ -48,6 +48,18 @@ class ExtractAssetsTests(unittest.TestCase):
             self.assertEqual(asset.offset, 0x21220)
             self.assertEqual(asset.length, (0xEC - 0xCD) * 5)
 
+    def test_exe6_ncp_tables_cover_every_program_through_hp_500(self) -> None:
+        assets = {asset.output: asset for asset in ASSETS}
+        expected = {
+            "ncp_piece_table_gregar.bin": ("exe6_gregar", 0x13B22C, 0xBC0),
+            "ncp_piece_table_falzar.bin": ("exe6_falzar", 0x13944C, 0xBC0),
+            "ncp_effect_table_gregar.bin": ("exe6_gregar", 0x13E52C, 0xBC),
+            "ncp_effect_table_falzar.bin": ("exe6_falzar", 0x13C74C, 0xBC),
+        }
+        for output, values in expected.items():
+            asset = assets[output]
+            self.assertEqual((asset.source, asset.offset, asset.length), values)
+
     def test_default_navi_icon_is_not_extracted(self) -> None:
         outputs = {asset.output for asset in ASSETS}
         self.assertNotIn("laserman_icon.bin", outputs)

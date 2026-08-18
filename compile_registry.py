@@ -125,6 +125,19 @@ class AttackPool:
 
 
 @dataclass(frozen=True)
+class NcpConfig:
+    native_programs: int
+    native_piece_table: str
+    native_piece_table_address: int
+    piece_table_references: tuple[int, ...]
+    native_effect_table: str
+    native_effect_table_address: int
+    effect_table_references: tuple[int, ...]
+    base_id: int
+    max_id: int
+
+
+@dataclass(frozen=True)
 class Config:
     root: Path
     variant: str
@@ -136,6 +149,7 @@ class Config:
     text: TextConfig
     chips: ChipConfig
     attack_pools: dict[str, AttackPool]
+    ncps: NcpConfig
 
 
 @dataclass(frozen=True)
@@ -192,7 +206,7 @@ class SongResource:
 class TextResource:
     package: str
     archive: str
-    index: int
+    index: int | str
     value: str
 
 
@@ -216,6 +230,17 @@ class FixedAttackResource:
     family: int
     subfamily: int
     main: str
+
+
+@dataclass(frozen=True)
+class NcpResource:
+    package: str
+    label: str
+    main: str
+    fixed_id: int | None
+    bug: int
+    plus_part: int
+    colors: tuple[int, int, int, int]
 
 
 @dataclass(frozen=True)
@@ -268,6 +293,7 @@ class Package:
     chips: tuple[ChipResource, ...]
     attack: AttackResource | None
     fixed_attacks: tuple[FixedAttackResource, ...]
+    ncps: tuple[NcpResource, ...]
     pointer_patches: tuple[PointerPatch, ...]
     section_patches: tuple[SectionPatch, ...]
     linked_call_patches: tuple[LinkedCallPatch, ...]
@@ -283,6 +309,7 @@ class Allocations:
     songs: dict[str, int]
     song_players: dict[str, int]
     attacks: dict[str, AttackAllocation]
+    ncps: dict[str, int]
 
 
 def require_int(table: dict[str, Any], key: str, context: str) -> int:
@@ -424,6 +451,7 @@ def load_config(path: Path) -> Config:
             "text",
             "chips",
             "attack_pools",
+            "ncps",
         },
         context,
     )
@@ -678,6 +706,113 @@ def load_config(path: Path) -> Config:
             references,
         )
 
+    ncps_raw = require_table(raw, "ncps", context)
+    check_keys(
+        ncps_raw,
+        {
+            "native_piece_table",
+            "native_piece_table_address",
+            "piece_table_references",
+            "native_effect_table",
+            "native_effect_table_address",
+            "effect_table_references",
+            "base_id",
+            "max_id",
+        },
+        f"{path}: ncps",
+    )
+    native_piece_table = require_str(
+        ncps_raw, "native_piece_table", f"{path}: ncps"
+    )
+    native_piece_records = fixed_width_entry_count(
+        root,
+        native_piece_table,
+        16,
+        0x400,
+        f"{path}: ncps.native_piece_table",
+    )
+    if native_piece_records % 4:
+        raise PackageError(
+            f"{path}: ncps.native_piece_table must contain four pieces per program"
+        )
+    native_programs = native_piece_records // 4
+    native_piece_table_address = checked_int(
+        require_int(ncps_raw, "native_piece_table_address", f"{path}: ncps"),
+        0x08000000,
+        0x09FFFFFC,
+        f"{path}: ncps.native_piece_table_address",
+    )
+    if native_piece_table_address % 4:
+        raise PackageError(
+            f"{path}: ncps.native_piece_table_address must be word-aligned"
+        )
+    native_effect_table = require_str(
+        ncps_raw, "native_effect_table", f"{path}: ncps"
+    )
+    native_effects = fixed_width_entry_count(
+        root,
+        native_effect_table,
+        4,
+        0x100,
+        f"{path}: ncps.native_effect_table",
+    )
+    if native_effects != native_programs:
+        raise PackageError(
+            f"{path}: NCP piece table contains {native_programs} programs, "
+            f"but the effect table contains {native_effects} handlers"
+        )
+    native_effect_table_address = checked_int(
+        require_int(ncps_raw, "native_effect_table_address", f"{path}: ncps"),
+        0x08000000,
+        0x09FFFFFC,
+        f"{path}: ncps.native_effect_table_address",
+    )
+    if native_effect_table_address % 4:
+        raise PackageError(
+            f"{path}: ncps.native_effect_table_address must be word-aligned"
+        )
+    piece_table_references = require_int_array(
+        ncps_raw, "piece_table_references", f"{path}: ncps"
+    )
+    effect_table_references = require_int_array(
+        ncps_raw, "effect_table_references", f"{path}: ncps"
+    )
+    if not piece_table_references or any(
+        address % 4 for address in piece_table_references
+    ):
+        raise PackageError(
+            f"{path}: ncps.piece_table_references must be non-empty and word-aligned"
+        )
+    if not effect_table_references or any(
+        address % 4 for address in effect_table_references
+    ):
+        raise PackageError(
+            f"{path}: ncps.effect_table_references must be non-empty and word-aligned"
+        )
+    ncp_base_id = checked_int(
+        require_int(ncps_raw, "base_id", f"{path}: ncps"),
+        native_programs,
+        0xFF,
+        f"{path}: ncps.base_id",
+    )
+    ncp_max_id = checked_int(
+        require_int(ncps_raw, "max_id", f"{path}: ncps"),
+        ncp_base_id,
+        0xFF,
+        f"{path}: ncps.max_id",
+    )
+    ncps = NcpConfig(
+        native_programs,
+        native_piece_table,
+        native_piece_table_address,
+        piece_table_references,
+        native_effect_table,
+        native_effect_table_address,
+        effect_table_references,
+        ncp_base_id,
+        ncp_max_id,
+    )
+
     text_raw = require_table(raw, "text", context)
     check_keys(
         text_raw,
@@ -783,6 +918,7 @@ def load_config(path: Path) -> Config:
         text,
         chips,
         attack_pools,
+        ncps,
     )
 
 
@@ -826,12 +962,21 @@ def load_package(source_path: Path, config: Config) -> Package:
         for entry_key, value in entries.items():
             entry_context = f"{context}.{entry_key}"
             try:
-                entry_index = int(entry_key, 0)
-            except ValueError as exc:
-                raise PackageError(
-                    f"{entry_context}: text index must be an integer string"
-                ) from exc
-            if not 0 <= entry_index < archive.native_entries:
+                entry_index: int | str = int(entry_key, 0)
+            except ValueError:
+                if archive.source not in {"ncp_names", "ncp_descriptions"}:
+                    raise PackageError(
+                        f"{entry_context}: text index must be an integer string"
+                    )
+                check_name(entry_key, entry_context)
+                if SNAKE_CASE_RE.fullmatch(entry_key) is None:
+                    raise PackageError(
+                        f"{entry_context}: allocated NCP label must be snake_case"
+                    )
+                entry_index = entry_key
+            if isinstance(entry_index, int) and not (
+                0 <= entry_index < archive.native_entries
+            ):
                 raise PackageError(
                     f"{entry_context}: text index must be between 0 and "
                     f"0x{archive.native_entries - 1:X}"
@@ -843,25 +988,26 @@ def load_package(source_path: Path, config: Config) -> Package:
             text.append(TextResource(name, archive_name, entry_index, value))
 
     return Package(
-        name,
-        source_path.relative_to(config.root).as_posix(),
-        text_definitions if text_definitions.is_file() else source_path,
-        (),
-        (),
-        (),
-        (),
-        (),
-        (),
-        (),
-        (),
-        tuple(text),
-        (),
-        None,
-        (),
-        (),
-        (),
-        (),
-        (),
+        name=name,
+        source=source_path.relative_to(config.root).as_posix(),
+        definitions=text_definitions if text_definitions.is_file() else source_path,
+        objects=(),
+        fixed_objects=(),
+        sprites=(),
+        fixed_sprites=(),
+        dust_sprites=(),
+        fixed_dust_sprites=(),
+        field_objects=(),
+        songs=(),
+        text=tuple(text),
+        chips=(),
+        attack=None,
+        fixed_attacks=(),
+        ncps=(),
+        pointer_patches=(),
+        section_patches=(),
+        linked_call_patches=(),
+        sprite_load_patches=(),
     )
 
 
@@ -909,6 +1055,7 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
     chips: list[ChipResource] = []
     attack: AttackResource | None = None
     fixed_attacks: list[FixedAttackResource] = []
+    ncps: list[NcpResource] = []
     pointer_patches: list[PointerPatch] = []
     section_patches: list[SectionPatch] = []
     linked_call_patches: list[LinkedCallPatch] = []
@@ -1054,6 +1201,54 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
                     parts[3],
                 )
             )
+        elif (
+            (kind == "ncp" and len(parts) == 9)
+            or (kind == "fixed_ncp" and len(parts) == 10)
+        ):
+            fixed_id = (
+                checked_int(int(parts[1], 0), 0, 0xFF, symbol)
+                if kind == "fixed_ncp"
+                else None
+            )
+            offset = 1 if fixed_id is not None else 0
+            label = parts[1 + offset]
+            main = parts[2 + offset]
+            check_snake_resource_label(package.name, label, "_ncp")
+            check_snake_resource_label(package.name, main, "_main")
+            color_values = tuple(
+                checked_int(int(value, 0), 0, 0xFF, symbol)
+                for value in parts[5 + offset : 9 + offset]
+            )
+            colors = (
+                color_values[0],
+                color_values[1],
+                color_values[2],
+                color_values[3],
+            )
+            if any(color not in {*range(1, 7), 0xFF} for color in colors):
+                raise PackageError(
+                    f"{package.name}: NCP colors must be 1-6 or 0xFF"
+                )
+            active_colors = [color for color in colors if color != 0xFF]
+            if not active_colors:
+                raise PackageError(f"{package.name}: NCP must have an active color")
+            if tuple(active_colors) + (0xFF,) * (4 - len(active_colors)) != colors:
+                raise PackageError(
+                    f"{package.name}: inactive NCP colors must follow active colors"
+                )
+            if len(set(active_colors)) != len(active_colors):
+                raise PackageError(f"{package.name}: NCP colors must be distinct")
+            ncps.append(
+                NcpResource(
+                    package.name,
+                    label,
+                    main,
+                    fixed_id,
+                    checked_int(int(parts[3 + offset], 0), 0, 0xFF, symbol),
+                    checked_int(int(parts[4 + offset], 0), 0, 1, symbol),
+                    colors,
+                )
+            )
         elif kind == "sprite_load" and len(parts) == 3:
             address = checked_int(int(parts[1], 0), 0, 0xFFFFFFFC, symbol)
             if address % 2:
@@ -1078,6 +1273,7 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
         chips=tuple(chips),
         attack=attack,
         fixed_attacks=tuple(fixed_attacks),
+        ncps=tuple(ncps),
         pointer_patches=tuple(pointer_patches),
         section_patches=tuple(section_patches),
         linked_call_patches=tuple(linked_call_patches),
@@ -1119,6 +1315,7 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
     text = [item for package in packages for item in package.text]
     chips = [item for package in packages for item in package.chips]
     fixed_attacks = [item for package in packages for item in package.fixed_attacks]
+    ncps = [item for package in packages for item in package.ncps]
     sprite_load_patches = [
         item for package in packages for item in package.sprite_load_patches
     ]
@@ -1266,15 +1463,89 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
                 f"is declared by both {fixed_object_slots[key]} and {item.main}"
             )
         fixed_object_slots[key] = item.main
+    ncp_labels: dict[str, str] = {}
+    ncp_mains: set[str] = set()
+    for item in ncps:
+        owner = ncp_labels.get(item.label)
+        if owner is not None:
+            raise PackageError(
+                f"NCP {item.label} is declared by both {owner} and {item.package}"
+            )
+        if item.main in ncp_mains:
+            raise PackageError(f"{item.main}: duplicate NCP effect handler")
+        ncp_labels[item.label] = item.package
+        ncp_mains.add(item.main)
+    fixed_ncp_slots: dict[int, str] = {}
+    custom_ncps = [item for item in ncps if item.fixed_id is None]
+    for item in ncps:
+        if item.fixed_id is None:
+            continue
+        if item.fixed_id >= config.ncps.native_programs:
+            raise PackageError(
+                f"{item.label}: fixed NCP ID 0x{item.fixed_id:02X} is outside "
+                "the native table"
+            )
+        owner = fixed_ncp_slots.get(item.fixed_id)
+        if owner is not None:
+            raise PackageError(
+                f"fixed NCP ID 0x{item.fixed_id:02X} is declared by both "
+                f"{owner} and {item.label}"
+            )
+        fixed_ncp_slots[item.fixed_id] = item.label
+    ncp_capacity = config.ncps.max_id - config.ncps.base_id + 1
+    if len(custom_ncps) > ncp_capacity:
+        raise PackageError(
+            f"NCP registry has {ncp_capacity} custom IDs for "
+            f"{len(custom_ncps)} registered programs"
+        )
+    ncp_allocations = {
+        item.label: config.ncps.base_id + index
+        for index, item in enumerate(custom_ncps)
+    }
+    for item in ncps:
+        if item.fixed_id is not None:
+            ncp_allocations[item.label] = item.fixed_id
+
+    archive_sources = {
+        archive.name: archive.source
+        for group in config.text.groups
+        for archive in group.archives
+    }
+    dynamic_ncp_text: set[tuple[str, str]] = set()
     text_owners: dict[tuple[str, int], str] = {}
     for item in text:
-        key = (item.archive, item.index)
+        entry_index = item.index
+        if isinstance(entry_index, str):
+            owner = ncp_labels.get(entry_index)
+            if owner is None:
+                raise PackageError(
+                    f"{item.package}: text refers to unregistered NCP {entry_index}"
+                )
+            if owner != item.package:
+                raise PackageError(
+                    f"{item.package}: text for NCP {entry_index} belongs to {owner}"
+                )
+            source = archive_sources[item.archive]
+            dynamic_key = (entry_index, source)
+            if dynamic_key in dynamic_ncp_text:
+                raise PackageError(
+                    f"{item.package}: duplicate {source} text for NCP {entry_index}"
+                )
+            dynamic_ncp_text.add(dynamic_key)
+            entry_index = ncp_allocations[entry_index]
+        key = (item.archive, entry_index)
         if key in text_owners:
             raise PackageError(
-                f"text archive {item.archive!r} index 0x{item.index:X} is declared by both "
+                f"text archive {item.archive!r} index 0x{entry_index:X} is declared by both "
                 f"{text_owners[key]} and {item.package}"
             )
         text_owners[key] = item.package
+    for item in ncps:
+        for source in ("ncp_names", "ncp_descriptions"):
+            if (item.label, source) not in dynamic_ncp_text:
+                raise PackageError(
+                    f"{item.package}: NCP {item.label} is missing {source} text"
+                )
     chip_owners: dict[int, str] = {}
     for item in chips:
         if not 0 <= item.chip_id < config.chips.record_count:
@@ -1370,6 +1641,7 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
         song_allocations,
         song_players,
         attack_allocations,
+        ncp_allocations,
     )
 
 
@@ -1450,6 +1722,10 @@ def generate_linker_values(packages: list[Package], allocations: Allocations) ->
             song_id = allocations.songs[item.archive]
             lines.append(f"__bn67_song_group_{item.archive} = 0x{player:X};")
             lines.append(f"__bn67_song_id_{item.archive} = 0x{song_id:X};")
+        for item in package.ncps:
+            lines.append(
+                f"__bn67_ncp_id_{item.label} = 0x{allocations.ncps[item.label]:X};"
+            )
     return "\n".join(lines) + "\n"
 
 
@@ -1885,6 +2161,175 @@ def emit_song_table(
     return lines
 
 
+def emit_ncp_tables(
+    config: Config, packages: list[Package], allocations: Allocations
+) -> list[str]:
+    """Patch fixed NaviCust slots, relocating only when custom IDs are appended."""
+    ncp_config = config.ncps
+    resources = {
+        item.label: item for package in packages for item in package.ncps
+    }
+    fixed = {
+        item.fixed_id: item
+        for item in resources.values()
+        if item.fixed_id is not None
+    }
+    custom = {
+        program_id: resources[label]
+        for label, program_id in allocations.ncps.items()
+        if resources[label].fixed_id is None
+    }
+    lines: list[str] = []
+
+    def emit_piece_records(program_id: int, item: NcpResource) -> None:
+        for piece, color in enumerate(item.colors):
+            if color == 0xFF:
+                lines.extend(
+                    [
+                        f"    // 0x{program_id:02X}/{piece}: reserved {item.label} piece",
+                        f"    .byte 0x00,0x{item.plus_part:02X},0x01,0x00,"
+                        f"0x{item.bug:02X},0xFF,0xFF,0xFF",
+                        f"    .dw {item.label}_uncompressed_shape,"
+                        f"{item.label}_compressed_shape",
+                    ]
+                )
+            else:
+                lines.extend(
+                    [
+                        f"    // 0x{program_id:02X}/{piece}: {item.label}, "
+                        f"color 0x{color:02X}",
+                        f"    .byte 0x00,0x{item.plus_part:02X},0x01,"
+                        f"0x{color:02X},0x{item.bug:02X},0xFF,0xFF,0xFF",
+                        f"    .dw {item.label}_uncompressed_shape,"
+                        f"{item.label}_compressed_shape",
+                    ]
+                )
+
+    if not custom:
+        lines.append("// Compiler-owned fixed NaviCust program and effect slots.")
+        for address in ncp_config.piece_table_references:
+            lines.extend(
+                [
+                    f".org 0x{address:08X}",
+                    f"    .dw 0x{ncp_config.native_piece_table_address:08X}",
+                ]
+            )
+        for address in ncp_config.effect_table_references:
+            lines.extend(
+                [
+                    f".org 0x{address:08X}",
+                    f"    .dw 0x{ncp_config.native_effect_table_address:08X}",
+                ]
+            )
+        for program_id, item in sorted(fixed.items()):
+            lines.extend(
+                [
+                    "",
+                    f".org 0x{ncp_config.native_piece_table_address + program_id * 64:08X}",
+                ]
+            )
+            emit_piece_records(program_id, item)
+            lines.extend(
+                [
+                    f".org 0x{ncp_config.native_effect_table_address + program_id * 4:08X}",
+                    f"    .dw {item.main} + 1 // 0x{program_id:02X} {item.label}",
+                ]
+            )
+        return lines
+
+    lines.append("// Compiler-owned relocated NaviCust program and effect tables.")
+    for address in ncp_config.piece_table_references:
+        lines.extend([f".org 0x{address:08X}", "    .dw ncp_piece_table"])
+    for address in ncp_config.effect_table_references:
+        lines.extend([f".org 0x{address:08X}", "    .dw ncp_effect_table"])
+
+    lines.extend(
+        [
+            "",
+            ".autoregion",
+            ".align 4",
+            "ncp_piece_table:",
+        ]
+    )
+
+    native_cursor = 0
+    for program_id, item in sorted(fixed.items()):
+        if native_cursor < program_id:
+            lines.append(
+                f'    .incbin "{ncp_config.native_piece_table}",'
+                f"0x{native_cursor * 64:X},0x{(program_id - native_cursor) * 64:X}"
+            )
+        emit_piece_records(program_id, item)
+        native_cursor = program_id + 1
+    if native_cursor < ncp_config.native_programs:
+        lines.append(
+            f'    .incbin "{ncp_config.native_piece_table}",'
+            f"0x{native_cursor * 64:X},"
+            f"0x{(ncp_config.native_programs - native_cursor) * 64:X}"
+        )
+    if custom:
+        for program_id in range(ncp_config.native_programs, ncp_config.base_id):
+            for piece in range(4):
+                lines.extend(
+                    [
+                        f"    // 0x{program_id:02X}/{piece}: reserved program slot",
+                        "    .byte 0x00,0x00,0x00,0x00,0x00,0xFF,0xFF,0xFF",
+                        "    .dw ncp_empty_shape,ncp_empty_shape",
+                    ]
+                )
+    for program_id, item in sorted(custom.items()):
+        emit_piece_records(program_id, item)
+    lines.extend(
+        [
+            "ncp_piece_table_end:",
+            "",
+            ".align 4",
+            "ncp_effect_table:",
+        ]
+    )
+    native_cursor = 0
+    for program_id, item in sorted(fixed.items()):
+        if native_cursor < program_id:
+            lines.append(
+                f'    .incbin "{ncp_config.native_effect_table}",'
+                f"0x{native_cursor * 4:X},0x{(program_id - native_cursor) * 4:X}"
+            )
+        lines.append(
+            f"    .dw {item.main} + 1 // 0x{program_id:02X} {item.label}"
+        )
+        native_cursor = program_id + 1
+    if native_cursor < ncp_config.native_programs:
+        lines.append(
+            f'    .incbin "{ncp_config.native_effect_table}",'
+            f"0x{native_cursor * 4:X},"
+            f"0x{(ncp_config.native_programs - native_cursor) * 4:X}"
+        )
+    if custom:
+        for program_id in range(ncp_config.native_programs, ncp_config.base_id):
+            lines.append(
+                f"    .dw ncp_noop_effect + 1 // 0x{program_id:02X} reserved"
+            )
+    for program_id, item in sorted(custom.items()):
+        lines.append(
+            f"    .dw {item.main} + 1 // 0x{program_id:02X} {item.label}"
+        )
+    lines.extend(
+        [
+            "ncp_effect_table_end:",
+            "",
+            ".align 4",
+            "ncp_noop_effect:",
+            "    bx lr",
+            "",
+            ".align 4",
+            "ncp_empty_shape:",
+            "    .fill 49,0x00",
+            ".endautoregion",
+        ]
+    )
+    return lines
+
+
 def emit_text_archives(config: Config) -> list[str]:
     """Emit the fixed BN6 archive installer fed by package-generated text binaries."""
     archives = [archive for group in config.text.groups for archive in group.archives]
@@ -1918,7 +2363,13 @@ def emit_text_archives(config: Config) -> list[str]:
     return lines
 
 
-def generate_text_manifest(config: Config, packages: list[Package]) -> str:
+def generate_text_manifest(
+    config: Config,
+    packages: list[Package],
+    allocations: Allocations | None = None,
+) -> str:
+    if allocations is None:
+        allocations = validate_and_allocate(config, packages)
     archives = [
         {
             "name": archive.name,
@@ -1933,7 +2384,11 @@ def generate_text_manifest(config: Config, packages: list[Package]) -> str:
         {
             "package": item.package,
             "archive": item.archive,
-            "index": item.index,
+            "index": (
+                allocations.ncps[item.index]
+                if isinstance(item.index, str)
+                else item.index
+            ),
             "value": item.value,
         }
         for package in packages
@@ -1971,6 +2426,8 @@ def generate(config: Config, packages: list[Package], allocations: Allocations) 
         emit_dust_sprite_table(config, packages, allocations),
         [""],
         emit_song_table(config, packages, allocations),
+        [""],
+        emit_ncp_tables(config, packages, allocations),
         [""],
         emit_text_archives(config),
     ]
@@ -2029,7 +2486,7 @@ def main() -> int:
         )
         allocations = validate_and_allocate(config, packages)
         output_text = generate(config, packages, allocations)
-        text_manifest = generate_text_manifest(config, packages)
+        text_manifest = generate_text_manifest(config, packages, allocations)
         linker_values = generate_linker_values(packages, allocations)
         c_values = generate_c_values(allocations)
         if args.check:

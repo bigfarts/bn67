@@ -1,6 +1,6 @@
 format = 2
 name = "bn67"
-version = "1.9.6"
+version = "1.10.0"
 title = "bn67"
 netplay = "isolated"
 

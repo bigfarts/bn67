@@ -1,5 +1,4 @@
 import re
-import tomllib
 import unittest
 from pathlib import Path
 
@@ -8,12 +7,36 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class GlobalHookTests(unittest.TestCase):
-    def test_link_battles_start_with_five_beast_turns(self) -> None:
-        hooks = (ROOT / "src/hooks.asm").read_text()
+    def test_link_battles_add_installed_piece_bonus_without_forced_five(self) -> None:
+        hooks = (ROOT / "src/ncps/beast_time.asm").read_text()
+
+        self.assertNotIn("mov r0,5", hooks)
+        self.assertRegex(
+            hooks,
+            re.compile(
+                r"(?m)^\.org 0x0800B1A2\n"
+                r"    bl beast_time_link_counter_veneer\n"
+                r"    nop$"
+            ),
+        )
+
+    def test_beast_out_initializer_uses_installed_piece_bonus(self) -> None:
+        hooks = (ROOT / "src/ncps/beast_time.asm").read_text()
+
+        self.assertIn(".org 0x080141AC", hooks)
+        self.assertIn("ldr r0,=beast_time_counter_init + 1", hooks)
+
+    def test_repurposed_millions_stat_does_not_grant_millions_reward(self) -> None:
+        hooks = (ROOT / "src/ncps/beast_time.asm").read_text()
 
         self.assertRegex(
             hooks,
-            re.compile(r"(?m)^\.org 0x0800B1A2\n    mov r0,5$"),
+            re.compile(
+                r"(?m)^\.org 0x0809FCAA\n"
+                r"    mov r5,0\n"
+                r"    nop\n"
+                r"    nop$"
+            ),
         )
 
     def test_aquaneedle_keeps_stagger_without_fixed_invulnerability(self) -> None:
@@ -58,65 +81,12 @@ class GlobalHookTests(unittest.TestCase):
         self.assertNotRegex(hooks, r"(?m)^\.org 0x08013EA8$")
         self.assertNotRegex(hooks, r"(?m)^\.org 0x08013EB8$")
 
-    def test_bodypack_provides_only_status_guard(self) -> None:
+    def test_status_guard_is_not_a_raw_hook(self) -> None:
         hooks = (ROOT / "src/hooks.asm").read_text()
 
-        self.assertRegex(
-            hooks,
-            re.compile(
-                r"(?m)^\.if falzar\n"
-                r"    \.org 0x0813CA4C\n"
-                r"\.else\n"
-                r"    \.org 0x0813E82C\n"
-                r"\.endif\n"
-                r"    push \{lr\}\n"
-                r"    mov r0,0\n"
-                r"    mov r1,0x52\n"
-                r"    mov r2,1\n"
-                r"    bl 0x0801379E\n"
-                r"    pop \{pc\}\n"
-                r"    nop\n"
-                r"    nop\n"
-                r"    nop$"
-            ),
-        )
-
-    def test_bodypack_is_presented_as_status_guard(self) -> None:
-        text_patch = tomllib.loads((ROOT / "src/hooks.text.toml").read_text())
-
-        self.assertEqual(text_patch["ncp-names"]["0x1C"], "StatGrd")
-        self.assertEqual(
-            text_patch["ncp-descriptions"]["0x1C"],
-            "Prevents\nstatus\nproblems",
-        )
-
-    def test_status_guard_uses_both_sneakrun_shapes(self) -> None:
-        hooks = (ROOT / "src/hooks.asm").read_text()
-
-        self.assertRegex(
-            hooks,
-            re.compile(
-                r"(?m)^\.if falzar\n"
-                r"    \.org 0x0813AAA3\n"
-                r"\.else\n"
-                r"    \.org 0x0813C883\n"
-                r"\.endif\n"
-                r"    \.db 0,0,0,0,0,0,0\n"
-                r"    \.db 0,0,0,0,0,0,0\n"
-                r"    \.db 0,0,0,1,0,0,0\n"
-                r"    \.db 0,0,1,1,1,0,0\n"
-                r"    \.db 0,0,0,1,0,0,0\n"
-                r"    \.db 0,0,0,0,0,0,0\n"
-                r"    \.db 0,0,0,0,0,0,0\n"
-                r"    \.db 0,0,0,0,0,0,0\n"
-                r"    \.db 0,0,0,0,0,0,0\n"
-                r"    \.db 0,0,0,1,0,0,0\n"
-                r"    \.db 0,0,1,1,1,0,0\n"
-                r"    \.db 0,0,0,0,0,0,0\n"
-                r"    \.db 0,0,0,0,0,0,0\n"
-                r"    \.db 0,0,0,0,0,0,0$"
-            ),
-        )
+        self.assertNotIn("StatGrd", hooks)
+        self.assertNotIn("0x0813CA4C", hooks)
+        self.assertNotIn("0x0813E82C", hooks)
 
 
 if __name__ == "__main__":

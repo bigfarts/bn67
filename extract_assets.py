@@ -481,6 +481,12 @@ ASSETS = (
     # 0xFF for imported obstacles consumed by JunkMan and BlizzardBall.
     Asset("exe6_gregar", "field_object_table_gregar.bin", 0x21220, 0x9B),
     Asset("exe6_falzar", "field_object_table_falzar.bin", 0x21220, 0x9B),
+    # Native NaviCust records: four 16-byte color pieces per logical program,
+    # plus one Thumb effect handler for each program through HP+500 (0x2E).
+    Asset("exe6_gregar", "ncp_piece_table_gregar.bin", 0x13B22C, 0xBC0),
+    Asset("exe6_falzar", "ncp_piece_table_falzar.bin", 0x13944C, 0xBC0),
+    Asset("exe6_gregar", "ncp_effect_table_gregar.bin", 0x13E52C, 0xBC),
+    Asset("exe6_falzar", "ncp_effect_table_falzar.bin", 0x13C74C, 0xBC),
     # Complete native BN6 song tables, relocated before imported cues append.
     Asset("exe6_gregar", "song_table_gregar.bin", 0x159F48, 0xED0),
     Asset("exe6_falzar", "song_table_falzar.bin", 0x1583F8, 0xED0),

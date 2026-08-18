@@ -2,10 +2,6 @@
 
 ## Behavior Changes
 
-### Beast Out
-
-Link battles start each player with five Beast Out turns instead of three.
-
 ### Status Bug
 
 The normal- and high-severity green invulnerability outcomes now use their
@@ -13,9 +9,16 @@ flashing invulnerability variants instead.
 
 ## Navi Customizer
 
+### Beast Time +1
+
+Beast Time +1 replaces Millions in its original NaviCust slot. It is available
+in white, pink, and yellow as a Plus Part with the Emotion Window bug. Its shape
+is a 2x2 square in both compressed and uncompressed form. Each installed piece
+adds one turn to Beast Out's normal 3 turn duration, up to 9 turns.
+
 ### Status Guard
 
-Body Pack is renamed Status Guard and grants Status Guard only. It no longer
+BodyPack is renamed StatGrd and grants Status Guard only. It no longer
 grants Super Armor, Float Shoes, Air Shoes, or Under Shirt. It also has a
 different shape:
 

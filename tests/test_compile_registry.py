@@ -24,6 +24,7 @@ from compile_registry import (
     discover_packages,
     emit_attack_tables,
     emit_chip_records,
+    emit_ncp_tables,
     emit_text_archives,
     fixed_width_entry_count,
     generate,
@@ -63,6 +64,10 @@ class PackageCompilerTests(unittest.TestCase):
                 + [raw["field_objects"]["native_table"]]
                 + [raw["songs"]["native_table"]]
                 + [item["native_table"] for item in raw["attack_pools"].values()]
+                + [
+                    raw["ncps"]["native_piece_table"],
+                    raw["ncps"]["native_effect_table"],
+                ]
             )
             for relative in fixed_tables:
                 asset = extracted_assets[Path(relative).name]
@@ -184,6 +189,29 @@ class PackageCompilerTests(unittest.TestCase):
                     ).stat().st_size
                     // 4,
                 )
+            self.assertEqual(config.ncps.native_programs, 0x2F)
+            self.assertEqual(config.ncps.base_id, 0x30)
+            self.assertEqual(config.ncps.max_id, 0x3F)
+            self.assertEqual(
+                config.ncps.native_piece_table_address,
+                0x0813B22C if variant == "gregar" else 0x0813944C,
+            )
+            self.assertEqual(
+                config.ncps.native_effect_table_address,
+                0x0813E52C if variant == "gregar" else 0x0813C74C,
+            )
+            self.assertEqual(
+                (
+                    self.fixture_root / raw["ncps"]["native_piece_table"]
+                ).stat().st_size,
+                config.ncps.native_programs * 4 * 16,
+            )
+            self.assertEqual(
+                (
+                    self.fixture_root / raw["ncps"]["native_effect_table"]
+                ).stat().st_size,
+                config.ncps.native_programs * 4,
+            )
             archives = {
                 archive.name: archive
                 for group in config.text.groups
@@ -526,6 +554,71 @@ class PackageCompilerTests(unittest.TestCase):
             "__bn67_field_object_id_signal_red_battle_sprite = 0xED;",
             linker,
         )
+
+    def test_beast_time_replaces_millions_through_ncp_registry(self) -> None:
+        for variant in ("gregar", "falzar"):
+            config, packages = self.packages(variant)
+            allocations = validate_and_allocate(config, packages)
+            assembly = "\n".join(emit_ncp_tables(config, packages, allocations))
+            linker = generate_linker_values(packages, allocations)
+            manifest = json.loads(
+                generate_text_manifest(config, packages, allocations)
+            )
+
+            self.assertEqual(allocations.ncps["beast_time_program_ncp"], 0x16)
+            self.assertIn(
+                "__bn67_meta__fixed_ncp__0x16__beast_time_program_ncp",
+                "\n".join(self.metadata[variant]["beast_time"]),
+            )
+            self.assertNotIn("ncp_piece_table:", assembly)
+            self.assertNotIn("ncp_effect_table:", assembly)
+            self.assertIn(
+                f".org 0x{config.ncps.native_piece_table_address + 0x16 * 64:08X}",
+                assembly,
+            )
+            self.assertIn(
+                f".org 0x{config.ncps.native_effect_table_address + 0x16 * 4:08X}",
+                assembly,
+            )
+            self.assertIn(
+                f".dw 0x{config.ncps.native_piece_table_address:08X}",
+                assembly,
+            )
+            self.assertIn(
+                f".dw 0x{config.ncps.native_effect_table_address:08X}",
+                assembly,
+            )
+            self.assertIn(
+                ".byte 0x00,0x01,0x01,0x01,0x02,0xFF,0xFF,0xFF",
+                assembly,
+            )
+            self.assertIn(
+                ".byte 0x00,0x01,0x01,0x03,0x02,0xFF,0xFF,0xFF",
+                assembly,
+            )
+            self.assertIn(
+                ".byte 0x00,0x01,0x01,0x02,0x02,0xFF,0xFF,0xFF",
+                assembly,
+            )
+            self.assertIn(
+                ".byte 0x00,0x01,0x01,0x00,0x02,0xFF,0xFF,0xFF",
+                assembly,
+            )
+            self.assertIn(
+                ".dw beast_time_ncp_main + 1 // 0x16",
+                assembly,
+            )
+            self.assertIn(
+                "__bn67_ncp_id_beast_time_program_ncp = 0x16;",
+                linker,
+            )
+            ncp_text = [
+                item
+                for item in manifest["entries"]
+                if item["package"] == "beast_time"
+            ]
+            self.assertEqual({item["index"] for item in ncp_text}, {0x16})
+            self.assertIn("BeastT+1", {item["value"] for item in ncp_text})
 
     def test_sources_and_text_definition_files(self) -> None:
         self.assertFalse((ROOT / "packages").exists())

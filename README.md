@@ -2,10 +2,6 @@
 
 ## Changes
 
-### Beast Out
-
-Link battles start each player with five Beast Out turns instead of three.
-
 ### DarkAura
 
 Replaces BugDthTh (`0x136`) in Falzar with BN3 Blue's DarkAura. The 61 MB,
@@ -37,7 +33,15 @@ MB cost is increased from 50 MB to 51 MB in both versions.
 ### StatGrd
 
 BodyPack is renamed StatGrd and grants StatusGuard only. It no longer grants
-SuperArmor, FloatShoes, AirShoes, or UnderShirt.
+SuperArmor, FloatShoes, AirShoes, or UnderShirt. StatGrd is a registry-owned
+NaviCust program in BodyPack's original logical slot (`0x1C`).
+
+### BeastT+1
+
+Millions is replaced in its original NaviCust slot (`0x16`) by BeastT+1. It
+is a white, pink, or yellow Plus Part with the Emotion Window bug and a 2x2
+square shape in both compressed and uncompressed form. Each installed piece
+adds one turn to Beast Out's normal three-turn duration.
 
 ### Japanese event chips
 

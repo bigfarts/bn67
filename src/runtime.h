@@ -16,6 +16,7 @@
     BN67_JOIN(__bn67_field_object_id_, archive)
 #define BN67_LINK_SONG_ID(archive) BN67_JOIN(__bn67_song_id_, archive)
 #define BN67_LINK_SONG_GROUP(archive) BN67_JOIN(__bn67_song_group_, archive)
+#define BN67_LINK_NCP_ID(label) BN67_JOIN(__bn67_ncp_id_, label)
 
 /* Metadata compilation runs before attack slots are allocated. */
 #ifndef BN67_ATTACK_FAMILY
@@ -40,6 +41,8 @@
     ((uint32_t)(uintptr_t)BN67_LINK_SONG_ID(archive))
 #define BN67_SONG_GROUP(archive) \
     ((uint32_t)(uintptr_t)BN67_LINK_SONG_GROUP(archive))
+#define BN67_NCP_ID(label) \
+    ((uint32_t)(uintptr_t)BN67_LINK_NCP_ID(label))
 
 /*
  * Package registries live in C.  The metadata build turns each declaration
@@ -164,6 +167,39 @@
         BN67_STRINGIFY(family) "__" BN67_STRINGIFY(subfamily) "__" \
             BN67_STRINGIFY(main) \
     )
+
+/* Register one NaviCust effect. Each logical ID owns four physical pieces;
+ * 0xFF reserves an unused color slot without changing later allocations. */
+#define BN67_NCP(label, main, bug, plus_part, color0, color1, color2, color3) \
+    extern const uint8_t BN67_LINK_NCP_ID(label)[]; \
+    BN67_METADATA_RECORD( \
+        "ncp", \
+        BN67_STRINGIFY(label) "__" BN67_STRINGIFY(main) "__" \
+            BN67_STRINGIFY(bug) "__" BN67_STRINGIFY(plus_part) "__" \
+            BN67_STRINGIFY(color0) "__" BN67_STRINGIFY(color1) "__" \
+            BN67_STRINGIFY(color2) "__" BN67_STRINGIFY(color3) \
+    ); \
+    static USED void BN67_JOIN(main, _fn)(void); \
+    EXE6_EXPORT_NCP(main, BN67_JOIN(main, _fn)) \
+    static USED void BN67_JOIN(main, _fn)(void)
+
+/* Claim and replace an existing native logical program through the same
+ * registry that owns newly allocated NCP slots. */
+#define BN67_FIXED_NCP( \
+    ncp_id, label, main, bug, plus_part, color0, color1, color2, color3 \
+) \
+    extern const uint8_t BN67_LINK_NCP_ID(label)[]; \
+    BN67_METADATA_RECORD( \
+        "fixed_ncp", \
+        BN67_STRINGIFY(ncp_id) "__" BN67_STRINGIFY(label) "__" \
+            BN67_STRINGIFY(main) "__" BN67_STRINGIFY(bug) "__" \
+            BN67_STRINGIFY(plus_part) "__" BN67_STRINGIFY(color0) "__" \
+            BN67_STRINGIFY(color1) "__" BN67_STRINGIFY(color2) "__" \
+            BN67_STRINGIFY(color3) \
+    ); \
+    static USED void BN67_JOIN(main, _fn)(void); \
+    EXE6_EXPORT_NCP(main, BN67_JOIN(main, _fn)) \
+    static USED void BN67_JOIN(main, _fn)(void)
 
 #define BN67_PATCH_POINTER(address, symbol) \
     BN67_METADATA_RECORD( \

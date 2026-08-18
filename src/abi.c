@@ -176,6 +176,8 @@ NATIVE_WRAPPER(
 )
 NATIVE_WRAPPER(exe6_navi_status_set, 0x080136B0, void, (uint32_t side, uint32_t property, uint32_t value))
 NATIVE_WRAPPER(exe6_navi_status_get, 0x080136CC, uint32_t, (uint32_t side, uint32_t property))
+NATIVE_WRAPPER(exe6_cur_pet_navi_stats_set, 0x0801379E, void, (uint32_t slot, uint32_t property, uint32_t value))
+NATIVE_WRAPPER(exe6_cur_pet_navi_stats_get, 0x080137B6, uint32_t, (uint32_t slot, uint32_t property))
 
 NATIVE_WRAPPER(
     exe6_cur_pet_navi_stats_adrs_get,

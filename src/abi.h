@@ -396,6 +396,20 @@ typedef struct __attribute__((aligned(4))) Exe6BlockDamageProperties {
         ); \
     }
 
+/* NaviCust effect dispatch enters with an even Thumb return address. Preserve
+ * that address for a native-style POP while giving the C helper a normal odd
+ * BL return address. */
+#define EXE6_EXPORT_NCP(name, target) \
+    NAKED void name(void) \
+    { \
+        __asm__( \
+            ".syntax unified\n" \
+            "push {lr}\n" \
+            "bl " EXE6_STRINGIFY(target) "\n" \
+            "pop {pc}\n" \
+        ); \
+    }
+
 #define EXE6_EXPORT_ATTACK(name, target) \
     NAKED void name(void) \
     { \
@@ -718,7 +732,9 @@ struct Exe6NaviStatusWorkFields {
     uint8_t battle_hp_bug;                // +0x18
     uint8_t custom_hp_bug;                // +0x19
     uint8_t color_bug;                    // +0x1A
-    uint8_t unknown_1b[0x09];
+    uint8_t unknown_1b[6];
+    uint8_t beast_out_turns;             // +0x21
+    uint8_t unknown_22[2];
     uint8_t emotion_bug;                  // +0x24
     uint8_t unknown_25[4];
     uint8_t navi_id;                      // +0x29
@@ -922,6 +938,10 @@ _Static_assert(
 _Static_assert(
     offsetof(struct Exe6NaviStatusWorkFields, color_bug) == 0x1A,
     "Navi status color bug offset"
+);
+_Static_assert(
+    offsetof(struct Exe6NaviStatusWorkFields, beast_out_turns) == 0x21,
+    "Navi status Beast Out turns offset"
 );
 _Static_assert(
     offsetof(struct Exe6NaviStatusWorkFields, emotion_bug) == 0x24,
@@ -1177,6 +1197,12 @@ void exe6_navi_status_set(
     uint32_t property,
     uint32_t value
 );
+void exe6_cur_pet_navi_stats_set(
+    uint32_t slot,
+    uint32_t property,
+    uint32_t value
+);
+uint32_t exe6_cur_pet_navi_stats_get(uint32_t slot, uint32_t property);
 uint8_t *exe6_cur_pet_navi_stats_adrs_get(uint32_t navi);
 uint8_t *exe6_special_navi_stats_adrs_get(uint32_t index);
 const uint8_t *exe6_battle_key_work_adrs_get(uint32_t side);

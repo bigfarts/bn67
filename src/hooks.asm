@@ -29,11 +29,6 @@
 .endif
     mov r3,0x01
 
-// Link battles replace the saved Beast Out counter with a fresh starting
-// value. Give each player five Beast Out turns instead of the native three.
-.org 0x0800B1A2
-    mov r0,5
-
 // The Custom Screen collapses chip IDs 0xC0 and 0xC1 into a preceding Attack
 // or Navi chip because those slots were originally Attack+10 and Navi+20.
 // Rook and SignalRed now occupy those IDs, so disable only the two consume
@@ -54,41 +49,3 @@
 
 .org 0x08013EB4
     .dw 0x08013EF1
-
-// StatGrd enables only the persistent StatusGuard property (0x52).
-.if falzar
-    .org 0x0813CA4C
-.else
-    .org 0x0813E82C
-.endif
-    push {lr}
-    mov r0,0
-    mov r1,0x52
-    mov r2,1
-    bl 0x0801379E
-    pop {pc}
-    nop
-    nop
-    nop
-
-// Give StatGrd SneakRun's native uncompressed and compressed shapes. Each
-// NaviCust shape is stored as seven rows of seven bytes.
-.if falzar
-    .org 0x0813AAA3
-.else
-    .org 0x0813C883
-.endif
-    .db 0,0,0,0,0,0,0
-    .db 0,0,0,0,0,0,0
-    .db 0,0,0,1,0,0,0
-    .db 0,0,1,1,1,0,0
-    .db 0,0,0,1,0,0,0
-    .db 0,0,0,0,0,0,0
-    .db 0,0,0,0,0,0,0
-    .db 0,0,0,0,0,0,0
-    .db 0,0,0,0,0,0,0
-    .db 0,0,0,1,0,0,0
-    .db 0,0,1,1,1,0,0
-    .db 0,0,0,0,0,0,0
-    .db 0,0,0,0,0,0,0
-    .db 0,0,0,0,0,0,0

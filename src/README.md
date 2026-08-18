@@ -235,8 +235,8 @@ do not need an extra runtime discriminator field.
 
 The final C link resolves `BN67_OBJ_ID`, `BN67_SPRITE_ID`,
 `BN67_SPRITE_GROUP`, `BN67_DUST_KIND`, `BN67_FIELD_OBJECT_ID`, `BN67_SONG_ID`,
-and `BN67_SONG_GROUP` from that linker file. Metadata records are not included
-in the final gameplay binary.
+`BN67_SONG_GROUP`, and `BN67_NCP_ID` from that linker file. Metadata records
+are not included in the final gameplay binary.
 
 ## Chip definitions
 
@@ -263,17 +263,30 @@ are direct top-level tables; there is no `text.` prefix:
 
 [chip-descriptions-1]
 "0x31" = "All your\nbugs will\nattack!"
-
-[ncp-names]
-"0x1C" = "StatGrd"
-
-[ncp-descriptions]
-"0x1C" = "Prevents\nstatus\nproblems"
 ```
 
 NCP descriptions use the NaviCust menu's three-line script format and are
 recompressed automatically. Program names should fit the menu's eight-glyph
 field.
+
+NCP piece and effect slots are compiler-owned too. `BN67_NCP` allocates a new
+logical program ID; `BN67_FIXED_NCP` claims a native ID for replacement. Each
+declaration supplies the effect handler, bug type, plus-part flag, and four
+physical color slots (`0xFF` reserves an unused slot). Shape resources follow
+the `<label>_uncompressed_shape` and `<label>_compressed_shape` convention.
+Fixed replacements are written into the native table in place so game tools
+that read the canonical table address see the replacement; the compiler only
+relocates the tables when a package allocates a genuinely new logical ID.
+Use the NCP label instead of a numeric key in both sibling text tables so the
+registry resolves the name and description to the same allocated ID:
+
+```toml
+[ncp-names]
+beast_time_program_ncp = "BeastT+1"
+
+[ncp-descriptions]
+beast_time_program_ncp = "BeastOut\neffect\n+1 turn"
+```
 
 Allocation is deterministic: attacks are ordered by their explicit
 representative chip IDs, while other resources sort source paths and retain ELF
