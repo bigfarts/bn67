@@ -41,7 +41,7 @@ NaviCust program in BodyPack's original logical slot (`0x1C`).
 Millions is replaced in its original NaviCust slot (`0x16`) by BeastT+1. It
 is a white, pink, or yellow Plus Part with the Emotion Window bug and a 2x2
 square shape in both compressed and uncompressed form. Each installed piece
-adds one turn to Beast Out's normal three-turn duration.
+adds one turn to Beast Out's normal three-turn duration, up to nine turns.
 
 ### Japanese event chips
 

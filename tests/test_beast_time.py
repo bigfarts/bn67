@@ -77,9 +77,11 @@ class BeastTimeTests(unittest.TestCase):
         self.assertIn('"BeastOut\\neffect\\n+1 turn"', self.text)
 
     def test_patch_readmes_document_beast_time_instead_of_forced_five(self) -> None:
-        for path in (ROOT / "README.md", ROOT / "tangopatch/README.md"):
-            readme = path.read_text()
-            self.assertIn("BeastT+1", readme)
+        root_readme = (ROOT / "README.md").read_text()
+        self.assertIn("BeastT+1", root_readme)
+        packaged_readme = (ROOT / "tangopatch/README.md").read_text()
+        self.assertIn("Beast Time +1", packaged_readme)
+        for readme in (root_readme, packaged_readme):
             self.assertIn("Millions", readme)
             self.assertRegex(readme, re.compile(r"2x2\s+square"))
             self.assertNotIn("five Beast Out turns", readme)

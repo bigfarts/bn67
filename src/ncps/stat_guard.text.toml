@@ -1,5 +1,0 @@
-[ncp-names]
-stat_guard_program_ncp = "StatGrd"
-
-[ncp-descriptions]
-stat_guard_program_ncp = "Prevents\nstatus\nproblems"
