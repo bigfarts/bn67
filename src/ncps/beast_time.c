@@ -31,7 +31,7 @@ BN67_ASM_RESOURCE(
 
 /* White, pink, and yellow are native NaviCust color selectors 1, 3, and 2.
  * Effect group 2 produces the Emotion Window bug. */
-BN67_FIXED_NCP(
+BN67_NCP(
     0x16,
     beast_time_program_ncp,
     beast_time_ncp_main,

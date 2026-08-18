@@ -13,12 +13,12 @@ class BeastTimeTests(unittest.TestCase):
         cls.text = (ROOT / "src/ncps/beast_time.text.toml").read_text()
 
     def test_replaces_millions_without_a_runtime_order_hook(self) -> None:
-        self.assertIn("BN67_FIXED_NCP(\n    0x16,", self.source)
+        self.assertIn("BN67_NCP(\n    0x16,", self.source)
         self.assertNotIn("order_pack", self.source)
         self.assertNotIn("BN67_PATCH", self.source)
 
     def test_has_three_plus_part_colors_and_emotion_bug(self) -> None:
-        declaration = self.source.split("BN67_FIXED_NCP(", 1)[1].split(")", 1)[0]
+        declaration = self.source.split("BN67_NCP(", 1)[1].split(")", 1)[0]
         self.assertIn(
             "beast_time_ncp_main,\n    2,\n    1,\n    1,\n    3,\n    2,\n    0xFF",
             declaration,
@@ -73,7 +73,8 @@ class BeastTimeTests(unittest.TestCase):
         self.assertNotIn("beast_time", global_hooks)
 
     def test_name_and_description_replace_millions_text(self) -> None:
-        self.assertIn('beast_time_program_ncp = "BeastT+1"', self.text)
+        self.assertIn('"0x16" = "BeastT+1"', self.text)
+        self.assertNotIn("beast_time_program_ncp =", self.text)
         self.assertIn('"BeastOut\\neffect\\n+1 turn"', self.text)
 
     def test_patch_readmes_document_beast_time_instead_of_forced_five(self) -> None:

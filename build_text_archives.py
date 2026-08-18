@@ -332,9 +332,14 @@ def apply_changes(
             raise ValueError(f"unknown text archive {archive_name!r}")
         archive = archives[archive_name]
         for entry_index, entry in entries.items():
-            if not 0 <= entry_index < len(archive):
+            if entry_index < 0:
                 raise ValueError(
                     f"index 0x{entry_index:X} is outside text archive {archive_name!r}"
+                )
+            if entry_index >= len(archive):
+                archive.extend(
+                    bytes((RECORD_END,))
+                    for _ in range(entry_index + 1 - len(archive))
                 )
             archive[entry_index] = entry
 

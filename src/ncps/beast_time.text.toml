@@ -1,5 +1,5 @@
 [ncp-names]
-beast_time_program_ncp = "BeastT+1"
+"0x16" = "BeastT+1"
 
 [ncp-descriptions]
-beast_time_program_ncp = "BeastOut\neffect\n+1 turn"
+"0x16" = "BeastOut\neffect\n+1 turn"

@@ -11,6 +11,7 @@ import unittest
 from build_text_archives import (
     LINE_BREAK,
     RECORD_END,
+    apply_changes,
     build_archive,
     build_compressed_archive,
     encode_description,
@@ -320,6 +321,22 @@ class PackageCompilerTests(unittest.TestCase):
         )
         self.assertEqual(description.count(bytes((LINE_BREAK,))), 2)
 
+    def test_ncp_text_can_extend_to_an_explicit_custom_offset(self) -> None:
+        archives = {"ncp-descriptions": [bytes((RECORD_END,))] * 0x30}
+        replacement = b"custom" + bytes((RECORD_END,))
+
+        apply_changes(
+            archives,
+            {"ncp-descriptions": {0x32: replacement}},
+        )
+
+        self.assertEqual(len(archives["ncp-descriptions"]), 0x33)
+        self.assertEqual(
+            archives["ncp-descriptions"][0x30:0x32],
+            [bytes((RECORD_END,)), bytes((RECORD_END,))],
+        )
+        self.assertEqual(archives["ncp-descriptions"][0x32], replacement)
+
     def test_text_encoder_uses_longest_token_match(self) -> None:
         self.assertEqual(
             encode_text("[B][BX][bat]"),
@@ -559,15 +576,19 @@ class PackageCompilerTests(unittest.TestCase):
         for variant in ("gregar", "falzar"):
             config, packages = self.packages(variant)
             allocations = validate_and_allocate(config, packages)
-            assembly = "\n".join(emit_ncp_tables(config, packages, allocations))
+            assembly = "\n".join(emit_ncp_tables(config, packages))
             linker = generate_linker_values(packages, allocations)
             manifest = json.loads(
-                generate_text_manifest(config, packages, allocations)
+                generate_text_manifest(config, packages)
             )
 
-            self.assertEqual(allocations.ncps["beast_time_program_ncp"], 0x16)
+            beast_time = next(
+                package for package in packages if package.name == "beast_time"
+            )
+            self.assertEqual(beast_time.ncps[0].program_id, 0x16)
+            self.assertFalse(hasattr(allocations, "ncps"))
             self.assertIn(
-                "__bn67_meta__fixed_ncp__0x16__beast_time_program_ncp",
+                "__bn67_meta__ncp__0x16__beast_time_program_ncp",
                 "\n".join(self.metadata[variant]["beast_time"]),
             )
             self.assertNotIn("ncp_piece_table:", assembly)
@@ -608,10 +629,7 @@ class PackageCompilerTests(unittest.TestCase):
                 ".dw beast_time_ncp_main + 1 // 0x16",
                 assembly,
             )
-            self.assertIn(
-                "__bn67_ncp_id_beast_time_program_ncp = 0x16;",
-                linker,
-            )
+            self.assertNotIn("__bn67_ncp_id_", linker)
             ncp_text = [
                 item
                 for item in manifest["entries"]
@@ -619,6 +637,41 @@ class PackageCompilerTests(unittest.TestCase):
             ]
             self.assertEqual({item["index"] for item in ncp_text}, {0x16})
             self.assertIn("BeastT+1", {item["value"] for item in ncp_text})
+
+    def test_custom_ncp_compiles_at_its_explicit_offset(self) -> None:
+        config, packages = self.packages()
+        beast_time = next(
+            package for package in packages if package.name == "beast_time"
+        )
+        explicit_custom = replace(
+            beast_time,
+            ncps=(replace(beast_time.ncps[0], program_id=0x32),),
+            text=tuple(replace(item, index=0x32) for item in beast_time.text),
+        )
+        packages = [
+            explicit_custom if package.name == "beast_time" else package
+            for package in packages
+        ]
+
+        validate_and_allocate(config, packages)
+        assembly = "\n".join(emit_ncp_tables(config, packages))
+        manifest = json.loads(generate_text_manifest(config, packages))
+
+        self.assertIn("ncp_piece_table:", assembly)
+        self.assertIn("0x30/0: reserved program slot", assembly)
+        self.assertIn("0x31/0: reserved program slot", assembly)
+        self.assertIn(
+            ".dw beast_time_ncp_main + 1 // 0x32 beast_time_program_ncp",
+            assembly,
+        )
+        self.assertEqual(
+            {
+                item["index"]
+                for item in manifest["entries"]
+                if item["package"] == "beast_time"
+            },
+            {0x32},
+        )
 
     def test_sources_and_text_definition_files(self) -> None:
         self.assertFalse((ROOT / "packages").exists())

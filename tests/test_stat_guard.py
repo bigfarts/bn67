@@ -12,11 +12,11 @@ class StatGuardTests(unittest.TestCase):
         cls.text = (ROOT / "src/ncps/status_guard.text.toml").read_text()
 
     def test_replaces_bodypack_through_the_ncp_registry(self) -> None:
-        self.assertIn("BN67_FIXED_NCP(\n    0x1C,", self.source)
+        self.assertIn("BN67_NCP(\n    0x1C,", self.source)
         self.assertNotIn("BN67_PATCH", self.source)
 
     def test_is_a_pink_program_part_with_the_native_bug_group(self) -> None:
-        declaration = self.source.split("BN67_FIXED_NCP(", 1)[1].split(")", 1)[0]
+        declaration = self.source.split("BN67_NCP(", 1)[1].split(")", 1)[0]
         self.assertIn(
             "status_guard_ncp_main,\n    1,\n    0,\n    3,\n    0xFF,\n    0xFF,\n    0xFF",
             declaration,
@@ -36,7 +36,8 @@ class StatGuardTests(unittest.TestCase):
         self.assertIn('".byte 0,0,1,1,1,0,0\\n"', self.source)
 
     def test_name_and_description_replace_bodypack_text(self) -> None:
-        self.assertIn('status_guard_program_ncp = "StatGrd"', self.text)
+        self.assertIn('"0x1C" = "StatGrd"', self.text)
+        self.assertNotIn("status_guard_program_ncp =", self.text)
         self.assertIn('"Prevents\\nstatus\\nproblems"', self.text)
 
 

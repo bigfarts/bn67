@@ -30,7 +30,7 @@ BN67_ASM_RESOURCE(
 );
 
 /* BodyPack's native slot becomes the pink StatGrd program part. */
-BN67_FIXED_NCP(
+BN67_NCP(
     0x1C,
     status_guard_program_ncp,
     status_guard_ncp_main,

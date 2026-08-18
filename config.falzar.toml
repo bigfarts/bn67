@@ -84,8 +84,8 @@ piece_table_references = [0x0813B78C, 0x0813C064]
 native_effect_table = "build/ncp_effect_table_falzar.bin"
 native_effect_table_address = 0x0813C74C
 effect_table_references = [0x0813C748]
-# 0x2F is the NaviCust menu's special RUN string. Future allocated programs
-# begin at the next logical ID; fixed replacements retain their native ID.
+# 0x2F is the NaviCust menu's special RUN string. Explicit custom offsets begin
+# at the next logical ID; replacements use their native table offset.
 base_id = 0x30
 max_id = 0x3F
 
