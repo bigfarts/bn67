@@ -28,10 +28,35 @@ BN3_DARK_AURA_ID = 0x135
 BN3_DARK_AURA_SPRITE_OFFSET = 0x2F4B40
 BN3_DARK_AURA_SPRITE_LENGTH = 0x495C
 BN3_DARK_AURA_ANIMATION_0_POINTER = 0x04
+BN3_DARK_AURA_ANIMATION_1_POINTER = 0x08
 BN3_DARK_AURA_ANIMATION_2_POINTER = 0x0C
+BN3_DARK_AURA_ANIMATION_3_POINTER = 0x10
 BN3_DARK_AURA_LIFEAURA_PALETTE = 0x3D54
 BN3_DARK_AURA_PALETTE = 0x3D94
-BN3_DARK_AURA_NUMBER_OAM_OFFSETS = (0x4096, 0x40DE, 0x4126)
+BN3_DARK_AURA_NUMBER_OAM_STARTS = (
+    # Steady animation 0.
+    (0x4096, 26),
+    (0x40DE, 26),
+    (0x4126, 26),
+    # Flash animation 1.
+    (0x417E, 26),
+    (0x41D6, 26),
+    (0x422E, 26),
+    (0x4286, 26),
+    (0x42DE, 26),
+    (0x4336, 26),
+    # Enemy-positioned steady animation 2.
+    (0x43CA, 34),
+    (0x444E, 31),
+    (0x44D2, 31),
+    # Enemy-positioned flash animation 3.
+    (0x4566, 34),
+    (0x45FA, 31),
+    (0x468E, 31),
+    (0x4722, 34),
+    (0x47B6, 31),
+    (0x484A, 31),
+)
 BN3_IMAGE_WIDTH = 64
 BN3_IMAGE_HEIGHT = 56
 EXE6_IMAGE_WIDTH = 56
@@ -222,10 +247,21 @@ def prepare_bn3_dark_aura_battle_sprite(data: bytes) -> bytes:
     animation_0 = struct.unpack_from(
         "<I", archive, BN3_DARK_AURA_ANIMATION_0_POINTER
     )[0]
+    animation_1 = struct.unpack_from(
+        "<I", archive, BN3_DARK_AURA_ANIMATION_1_POINTER
+    )[0]
     animation_2 = struct.unpack_from(
         "<I", archive, BN3_DARK_AURA_ANIMATION_2_POINTER
     )[0]
-    if animation_0 != 0x14 or animation_2 != 0x154:
+    animation_3 = struct.unpack_from(
+        "<I", archive, BN3_DARK_AURA_ANIMATION_3_POINTER
+    )[0]
+    if (
+        animation_0 != 0x14
+        or animation_1 != 0x50
+        or animation_2 != 0x154
+        or animation_3 != 0x190
+    ):
         raise ValueError("BN3 DarkAura battle archive animation table changed")
 
     lifeaura = bytes(
@@ -243,22 +279,26 @@ def prepare_bn3_dark_aura_battle_sprite(data: bytes) -> bytes:
     if lifeaura == dark_aura:
         raise ValueError("BN3 LifeAura and DarkAura battle palettes are identical")
 
-    # BN6's native type-0x0F visual requests animation 2 and palette 0. Make
-    # those selectors resolve to BN3's centered animation 0 and its DarkAura
-    # palette. The original animation already contains the 300 label.
+    # BN6's native type-0x0F visual requests steady animation 2 and advances to
+    # flash animation 3 when the aura is struck. Redirect both selectors to
+    # BN3's centered player animations 0 and 1, respectively.
     struct.pack_into(
         "<I", archive, BN3_DARK_AURA_ANIMATION_2_POINTER, animation_0
+    )
+    struct.pack_into(
+        "<I", archive, BN3_DARK_AURA_ANIMATION_3_POINTER, animation_1
     )
     archive[
         BN3_DARK_AURA_LIFEAURA_PALETTE:
         BN3_DARK_AURA_LIFEAURA_PALETTE + 0x20
     ] = dark_aura
 
-    # Animation 0's three frames each contain six aura pieces followed by six
-    # pieces for the built-in "300" label. Terminate each OAM list immediately
-    # after the aura pieces so the port has no number at all.
-    expected_first_number_piece = bytes((26, 0xF8, 0, 1, 0))
-    for offset in BN3_DARK_AURA_NUMBER_OAM_OFFSETS:
+    # Animations 0 through 3 contain six pieces for the built-in "300" label in
+    # every visible frame. Terminate all of those OAM lists at the first number
+    # piece. This strips the label from steady, hit-flash, and otherwise-unused
+    # enemy-positioned entries rather than relying on selector aliases alone.
+    for offset, tile in BN3_DARK_AURA_NUMBER_OAM_STARTS:
+        expected_first_number_piece = bytes((tile, 0xF8, 0, 1, 0))
         if archive[offset:offset + 5] != expected_first_number_piece:
             raise ValueError("BN3 DarkAura number OAM layout changed")
         archive[offset:offset + 5] = b"\xFF" * 5

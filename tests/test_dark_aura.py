@@ -5,10 +5,12 @@ import unittest
 from extract_assets import (
     ASSETS,
     BN3_DARK_AURA_ANIMATION_0_POINTER,
+    BN3_DARK_AURA_ANIMATION_1_POINTER,
     BN3_DARK_AURA_ANIMATION_2_POINTER,
+    BN3_DARK_AURA_ANIMATION_3_POINTER,
     BN3_DARK_AURA_ID,
     BN3_DARK_AURA_LIFEAURA_PALETTE,
-    BN3_DARK_AURA_NUMBER_OAM_OFFSETS,
+    BN3_DARK_AURA_NUMBER_OAM_STARTS,
     BN3_DARK_AURA_PALETTE,
     BN3_DARK_AURA_SPRITE_LENGTH,
     BN3_DARK_AURA_SPRITE_OFFSET,
@@ -28,7 +30,7 @@ class DarkAuraTests(unittest.TestCase):
         self.assertEqual(BN3_DARK_AURA_ID, 0x135)
         self.assertIn("BN67_CHIP_RECORD(0x136)", self.source)
         self.assertIn("EXE6_CHIP_CODE_A", self.source)
-        self.assertRegex(self.source, re.compile(r"(?m)^    \.mb = 55,$"))
+        self.assertRegex(self.source, re.compile(r"(?m)^    \.mb = 61,$"))
         self.assertIn(".chip_class = EXE6_CHIP_CLASS_GIGA", self.source)
 
     def test_uses_bn3_dark_aura_visual_and_lifespan(self) -> None:
@@ -54,7 +56,9 @@ class DarkAuraTests(unittest.TestCase):
 
         archive = bytearray(BN3_DARK_AURA_SPRITE_LENGTH)
         archive[BN3_DARK_AURA_ANIMATION_0_POINTER:0x08] = (0x14).to_bytes(4, "little")
+        archive[BN3_DARK_AURA_ANIMATION_1_POINTER:0x0C] = (0x50).to_bytes(4, "little")
         archive[BN3_DARK_AURA_ANIMATION_2_POINTER:0x10] = (0x154).to_bytes(4, "little")
+        archive[BN3_DARK_AURA_ANIMATION_3_POINTER:0x14] = (0x190).to_bytes(4, "little")
         lifeaura = bytes(range(0x20))
         dark_aura = bytes(range(0x20, 0x40))
         archive[
@@ -64,9 +68,8 @@ class DarkAuraTests(unittest.TestCase):
         archive[
             BN3_DARK_AURA_PALETTE:BN3_DARK_AURA_PALETTE + 0x20
         ] = dark_aura
-        number_piece = bytes((26, 0xF8, 0, 1, 0))
-        for offset in BN3_DARK_AURA_NUMBER_OAM_OFFSETS:
-            archive[offset:offset + 5] = number_piece
+        for offset, tile in BN3_DARK_AURA_NUMBER_OAM_STARTS:
+            archive[offset:offset + 5] = bytes((tile, 0xF8, 0, 1, 0))
 
         prepared = prepare_bn3_dark_aura_battle_sprite(bytes(archive))
         self.assertEqual(
@@ -78,12 +81,19 @@ class DarkAuraTests(unittest.TestCase):
         )
         self.assertEqual(
             prepared[
+                BN3_DARK_AURA_ANIMATION_3_POINTER:
+                BN3_DARK_AURA_ANIMATION_3_POINTER + 4
+            ],
+            (0x50).to_bytes(4, "little"),
+        )
+        self.assertEqual(
+            prepared[
                 BN3_DARK_AURA_LIFEAURA_PALETTE:
                 BN3_DARK_AURA_LIFEAURA_PALETTE + 0x20
             ],
             dark_aura,
         )
-        for offset in BN3_DARK_AURA_NUMBER_OAM_OFFSETS:
+        for offset, _ in BN3_DARK_AURA_NUMBER_OAM_STARTS:
             self.assertEqual(prepared[offset:offset + 5], b"\xFF" * 5)
 
     def test_expands_native_threshold_to_three_hundred(self) -> None:

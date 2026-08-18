@@ -12,12 +12,14 @@ kind `8` is BN3's 300-threshold dark aura; attacks below 300 are rejected and
 an attack at or above 300 breaks it.
 
 The BN6 replacement occupies Falzar's BugDthTh slot `0x136` and uses the
-native barrier-chip attack at family/subfamily `0x15/0x04`. Barrier parameter
+native barrier-chip attack at family/subfamily `0x15/0x04`, with its MB cost
+set to 61. Barrier parameter
 `0x0F` selects BN6's enemy-positioned null-aura visual by default. The visual
 hooks at `0x080E1E52` Gregar / `0x080E0B16` Falzar redirect only the marked
 DarkAura instance to BN3 Blue's original centered archive, animation, and dark
-battle palette. The extractor terminates each animation-0 OAM list after its
-six aura pieces, omitting the six pieces that form BN3's embedded 300 label.
+battle palette. The extractor maps BN6's steady/flash selectors `2/3` to BN3's
+centered player animations `0/1`, then terminates every numeric OAM list in
+animations `0` through `3` before the pieces that form BN3's embedded 300 label.
 Ordinary users of parameter `0x0F` retain their native visual,
 100-damage threshold, and indefinite duration.
 

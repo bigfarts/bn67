@@ -8,7 +8,7 @@ Link battles start each player with five Beast Out turns instead of three.
 
 ### DarkAura
 
-Replaces BugDthTh (`0x136`) in Falzar with BN3 Blue's DarkAura. The 55 MB,
+Replaces BugDthTh (`0x136`) in Falzar with BN3 Blue's DarkAura. The 61 MB,
 Null-element GigaChip uses code A and BN3's 3,000-active-frame lifespan. It
 repels attacks below 300 damage and breaks when struck for 300 or more. The
 chip uses its original BN3 icon, center-cropped library art, palette, name,
