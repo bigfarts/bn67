@@ -12,9 +12,21 @@ flashing invulnerability variants instead.
 ### Beast Time +1
 
 Beast Time +1 replaces Millions in its original NaviCust slot. It is available
-in white, pink, and yellow as a Plus Part with the Emotion Window bug. Its shape
-is a 2x2 square in both compressed and uncompressed form. Each installed piece
-adds one turn to Beast Out's normal 3 turn duration, up to 9 turns.
+in white, pink, and yellow as a Plus Part with the Emotion Window bug. Each
+installed piece adds one turn to Beast Out's normal 3 turn duration, up to 9
+turns.
+
+Compressed:
+```
+xx
+x
+```
+
+Uncompressed:
+```
+xx
+xx
+```
 
 ### Status Guard
 
@@ -23,8 +35,6 @@ grants Super Armor, Float Shoes, Air Shoes, or Under Shirt. It also has a
 different shape. Uninstall and the Blue Moon phase of SunMoon remove Status
 Guard along with their native targets. Tomahawk Cross's separate innate Status
 Guard remains active until Cross Out, but StatGrd stays removed underneath it.
-
-The StatGrd shapes are:
 
 Compressed:
 ```
