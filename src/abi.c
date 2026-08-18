@@ -162,6 +162,22 @@ NATIVE_WRAPPER(exe6_cube_life_span_check, 0x0800F672, void, (void))
 NATIVE_WRAPPER(exe6_cube_erase2, 0x0800F8CE, uint32_t, (void))
 NATIVE_WRAPPER(exe6_cube_set_dust_suikomi_efc, 0x0800F90E, void, (uint32_t kind))
 NATIVE_WRAPPER(exe6_get_navi_adrs, 0x080103BC, Exe6Obj *, (uint32_t side))
+
+/* The native Uninstall routine takes the target player through fixed r5. */
+NAKED void exe6_navi_uninstall(Exe6Obj *player)
+{
+    __asm__(
+        ".syntax unified\n"
+        "push {r4-r7,lr}\n"
+        "adds r5,r0,#0\n"
+        "ldr r4,=0x080140EF\n"
+        "mov r12,r4\n"
+        "mov lr,pc\n"
+        "bx r12\n"
+        "pop {r4-r7,pc}\n"
+    );
+}
+
 NATIVE_WRAPPER(
     exe6_navi_select_chip_work_adrs_get,
     0x08010018,

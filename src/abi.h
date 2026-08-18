@@ -1189,6 +1189,7 @@ void exe6_battle_report_flag_on(uint32_t control_flags);
 void exe6_battle_report_flag_off(uint32_t control_flags);
 
 Exe6Obj *exe6_get_navi_adrs(uint32_t side);
+void exe6_navi_uninstall(Exe6Obj *player);
 uint32_t exe6_get_cur_pet_navi(void);
 Exe6NaviStatusWork *exe6_navi_status_work_adrs_get(uint32_t side);
 uint32_t exe6_navi_status_get(uint32_t side, uint32_t property);

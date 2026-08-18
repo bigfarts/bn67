@@ -162,10 +162,9 @@ Holding a direction while LaserMan raises his arms enables Blue Moon's command
 effect on Base, 2, and 3:
 
 - Up resets Attack, Rapid, and Charge to level 1.
-- Down disables SuperArmor, AirShoes, FloatShoes, Undershirt, StatusGuard, and
-  B+Left in the underlying base form. During an active Cross, only versions
-  innate to that Cross remain; matching NaviCust abilities are removed
-  immediately. Cross Out then exposes the stripped base-form configuration.
+- Down runs BN6's native Uninstall effect, including its normal Cross and Link
+  Navi rules. Native Uninstall removes the underlying B+Left ability, and the
+  shared hook also removes StatGrd's StatusGuard.
 - Right removes charge-shot replacements. It restores an active Cross's native
   charge shot while resetting the base form to the standard MegaBuster.
 - Left permanently reduces the target's Custom Screen selection by one chip,

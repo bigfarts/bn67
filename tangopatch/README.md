@@ -246,12 +246,9 @@ Hold a direction while LaserMan raises his arms to add the original command
 effect. This works for Base, V2, and V3:
 
 - **Up:** Resets Attack, Rapid, and Charge to level 1.
-- **Down:** Disables, for the rest of the battle, the underlying base form's
-  Super Armor, Air Shoes, Float Shoes, Under Shirt, Status Guard, and B+Left
-  abilities, including versions supplied by NaviCust programs. During an
-  active Cross, only versions innate to that Cross remain; matching NaviCust
-  abilities are removed immediately. Cross Out then exposes the stripped base
-  form. Other NaviCust effects are unchanged.
+- **Down:** Runs BN6's native Uninstall effect, including its normal Cross and
+  Link Navi rules. Native Uninstall removes the underlying B+Left ability, and
+  the shared hook also removes StatGrd's Status Guard.
 - **Right:** Removes charge-shot replacements. It restores an active Cross's
   native charge shot while resetting the base form to the standard MegaBuster.
 - **Left:** Permanently reduces the target's Custom Screen selection by one

@@ -707,12 +707,13 @@ port applies that direct Cust -1 behavior through BN6's Custom Level property
 `0x0A`; it does not translate the command into the separate Custom bug property
 `0x63`. Properties are read through the
 per-side accessor at `0x080136CC` and written through the setter at
-`0x080136B0`. The remaining Blue Moon property IDs translate to BN6 as
-follows: `5,6,7` zero Attack, Rapid, and Charge (`1,2,3`); `1,2,3,4` clear
-SuperArmor, FloatShoes, AirShoes, and UnderShirt (`23,1B,1C,1D`); `FF0C`
-restores B-Left to `FF`; and `010A` restores the B button and power attack to
-the default values `0` and `1`. Internal Buster levels are zero-based, so the
-three zeroes produced by Up are the displayed level 1 values.
+`0x080136B0`. The Up property IDs `5,6,7` translate to BN6 Attack, Rapid, and
+Charge (`1,2,3`), while `010A` restores the B button and power attack to the
+default values `0` and `1`. The port preserves Down's original five-event beam
+delay, but routes its effect through BN6's native Uninstall routine instead of
+translating and applying those properties separately.
+Internal Buster levels are zero-based, so the three zeroes produced by Up are
+the displayed level 1 values.
 After choosing palette 0 for normal/Down and palette 10 for the other commands,
 the source calls sprite-property setter `0x08002F22` with table values
 `0, B060, A80A, 0, B9C0`. BN6's structural setter is `0x08002ED0`; the port
@@ -731,17 +732,22 @@ normal attack region 25 before using the native hit helpers. The final
 but LaserMan's quiet cleanup, avoiding the
 six random miss-impact sparkles that SearchMan's own cleanup would create for
 the six block hits. Only the final `FD` damage event creates six block-contact
-objects. The chosen direction is latched outside the event halfword, and its
-entire property stream is translated exactly once only when BN6's hit result at
-`+0x70` reports contact and that row object occupies the opposing Navi's
-current block. On that contact, the object saves the target's HP, closes its
-hit record, and waits up to eight object updates for native damage processing.
-It applies the selected command only after observing the target's HP decrease.
+objects. The chosen direction is latched in each hit object's work area instead
+of replaying the original property stream. Its command effect is applied
+exactly once only when BN6's hit result at `+0x70` reports contact and that row
+object occupies the opposing Navi's current block. Each object snapshots the
+target's HP when its hit record opens, then closes that record on contact and
+waits up to eight object updates for native damage processing. It applies the
+selected command only after observing the target's HP decrease. Taking the HP
+snapshot during initialization is required because BN6 can apply damage before
+the shell receives its contact result; snapshotting on contact would record the
+already-reduced HP and prevent every command effect from firing.
 Consequently, a barrier, aura, AntiDamage trap, miss, or other zero-damage
-outcome cannot authorize the effect. The property words are not passed through
-BN6's incompatible extended-effect IDs. Thus no direction has no extra effect,
-while a held direction applies only its documented stat or Custom Window
-change after a damaging hit. The compiler-generated
+outcome cannot authorize the effect. The Up, Right, and Left property words are
+not passed through BN6's incompatible extended-effect IDs, while Down calls
+the native Uninstall routine. Thus no direction has no extra effect, while a
+held direction applies only its documented change after a damaging hit. The
+compiler-generated
 `LASERMAN_BATTLE_SPRITE_GROUP` / `LASERMAN_BATTLE_SPRITE` pair points directly
 at the expanded shared archive. The reused BN6 object tails still require the
 beam Z word to be cleared explicitly for the native actor and laser to render
@@ -754,31 +760,25 @@ LaserMan's hand. It also samples and latches commands during the raised-arms
 pose, and now takes an initial sample when the time-freeze summon is created so
 a direction held with the chip-use input is not lost during the cut-in delay.
 Blue Moon gated that parser away from Base; the BN6 port intentionally enables
-it for Base, EX, and SP. On each confirmed Down-command contact, the port
-clears the underlying base-form properties. When the target is in base form it
-also updates BN6's cached B-Left ID and clears the corresponding live
-FloatShoes, AirShoes, UnderShirt, and SuperArmor status bits. Standard Crosses
-are identified by transformation IDs `1`-`10` at Navi status offset `+0x2C`;
-offset `+0x29` is the Navi ID and is not a form indicator. With an active
-Cross, the property writes still edit the underlying base defaults in the
-current status record at `0x0203CE00 + side * 0x64`. The port then removes the
-corresponding live flags unless native Cross activation supplies them:
-TenguCross adds AirShoes flag `0x10`, and GroundCross adds SuperArmor flag
-`0x20000`. It similarly resets the live B-Left ID to `FF`, except for
-TenguCross's native `10` and DustCross's native `2A`. Thus inherited NaviCust
-abilities disappear immediately while innate Cross abilities remain. Native
-Cross Out removes the form flags and rebuilds the base form from the already
-edited properties. Right likewise sets the base Buster properties to `0` and
+it for Base, EX, and SP. On each confirmed Down-command contact, the port calls
+BN6's native Uninstall routine at `0x080140EE` with the target as the current
+player object. This preserves the native Link Navi eligibility guard, live
+ability refresh, active-Cross behavior, and the shared StatGrd removal hook;
+LaserMan no longer maintains a parallel set of property writes and cached-flag
+repairs. The native routine includes the original Down command's B+Left effect:
+it writes status property `0x07` to `FF` and, in base form, resets the live
+B+Left cache as well. Right still sets the base Buster properties to `0` and
 `1`, then restores the active Cross's native runtime power attack. Emulator
 traces give power-attack IDs
 `6, 11, 18, 20, 39, 12, 22, 15, 25, 40` for Cross IDs `1`-`10`; this removes
 temporary charge-shot replacements without turning the active Cross's charge
 shot into a MegaBuster. Outside those Crosses, the original cache comparison
 still avoids overwriting an unrelated temporary form override.
-Effect events retain the original six-frame
-cadence. Because the imported full-width beam is stationary in the BN6 object
-model, the sole `FD` damage event is represented on all six blocks; only one
-six-object damage event is alive at a time.
+The port reduces the original streams to command-dependent hit delays on the
+same six-frame cadence: none is immediate, Up waits three events, Down five,
+and Right/Left one. Because the imported full-width beam is stationary in the
+BN6 object model, the sole `FD` damage event is represented on all six blocks;
+only one six-object damage event is alive at a time.
 
 Blue Moon provides Base, SP, and DS chip records. As with SearchMan, the BN6
 series maps their object-spawn variants to Base/EX/SP values `0/3/4`. Base

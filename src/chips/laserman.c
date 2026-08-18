@@ -164,6 +164,13 @@ static const uint8_t HIT_CONFIRM_FRAMES = 8;
 static const Exe6HitType HIT_SELECTOR =
     EXE6_HIT_TYPE_STANDARD_TARGET;
 
+#define NAVI_PROPERTY_ATTACK 0x01u
+#define NAVI_PROPERTY_RAPID 0x02u
+#define NAVI_PROPERTY_CHARGE 0x03u
+#define NAVI_PROPERTY_B_BUTTON 0x04u
+#define NAVI_PROPERTY_POWER_ATTACK 0x05u
+#define NAVI_PROPERTY_CUSTOM_LEVEL 0x0Au
+
 enum ActorPhase {
     ACTOR_PHASE_WAIT,
     ACTOR_PHASE_ATTACK = 4,
@@ -187,21 +194,15 @@ enum HitPhase {
     HIT_PHASE_CONFIRM_DAMAGE = 4,
 };
 
-enum ChargeShotRestoreState {
-    CHARGE_SHOT_RESTORE_INACTIVE,
-    CHARGE_SHOT_RESTORE_BASE,
-    CHARGE_SHOT_RESTORE_CROSS,
-};
-
 struct HitWork {
     uint32_t reserved[5];
-    uint32_t command_stream;             // +0x74
+    uint32_t command;                    // +0x74
     uint16_t target_hp_before;           // +0x78
     uint8_t confirm_timer;               // +0x7A
 };
 
 _Static_assert(
-    offsetof(struct HitWork, command_stream) == 0x14,
+    offsetof(struct HitWork, command) == 0x14,
     "LaserMan hit work layout"
 );
 
@@ -210,57 +211,12 @@ _Static_assert(
     "LaserMan hit work size"
 );
 
-enum CommandEffect {
-    COMMAND_EFFECT_DISABLE_SUPER_ARMOR = 1,
-    COMMAND_EFFECT_DISABLE_FLOAT_SHOES = 2,
-    COMMAND_EFFECT_DISABLE_AIR_SHOES = 3,
-    COMMAND_EFFECT_DISABLE_UNDERSHIRT = 4,
-    COMMAND_EFFECT_RESET_ATTACK = 5,
-    COMMAND_EFFECT_RESET_RAPID = 6,
-    COMMAND_EFFECT_RESET_CHARGE = 7,
-    COMMAND_EFFECT_DISABLE_STATUS_GUARD = 8,
-    COMMAND_EFFECT_RESTORE_CHARGE_SHOT = 0x0A,
-    COMMAND_EFFECT_DISABLE_B_LEFT = 0x0C,
-    COMMAND_MARKER = 0xFD,
-    COMMAND_EFFECT_REDUCE_CUSTOM = 0xFE,
-    COMMAND_END = 0xFF,
-};
-
-static const uint16_t COMMAND_NONE[] = {COMMAND_MARKER, COMMAND_END};
-static const uint16_t COMMAND_UP[] = {
-    COMMAND_EFFECT_RESET_ATTACK,
-    COMMAND_EFFECT_RESET_RAPID,
-    COMMAND_EFFECT_RESET_CHARGE,
-    COMMAND_MARKER,
-    COMMAND_END,
-};
-static const uint16_t COMMAND_DOWN[] = {
-    COMMAND_EFFECT_DISABLE_SUPER_ARMOR,
-    COMMAND_EFFECT_DISABLE_FLOAT_SHOES,
-    COMMAND_EFFECT_DISABLE_AIR_SHOES,
-    COMMAND_EFFECT_DISABLE_UNDERSHIRT,
-    COMMAND_EFFECT_DISABLE_B_LEFT,
-    COMMAND_EFFECT_DISABLE_STATUS_GUARD,
-    COMMAND_MARKER,
-    COMMAND_END,
-};
-static const uint16_t COMMAND_RIGHT[] = {
-    COMMAND_EFFECT_RESTORE_CHARGE_SHOT,
-    COMMAND_MARKER,
-    COMMAND_END,
-};
-static const uint16_t COMMAND_LEFT[] = {
-    COMMAND_EFFECT_REDUCE_CUSTOM,
-    COMMAND_MARKER,
-    COMMAND_END,
-};
-
-static const uint16_t *const COMMAND_STREAMS[] = {
-    COMMAND_NONE,
-    COMMAND_UP,
-    COMMAND_DOWN,
-    COMMAND_RIGHT,
-    COMMAND_LEFT,
+enum LaserCommand {
+    LASERMAN_COMMAND_NONE,
+    LASERMAN_COMMAND_UP,
+    LASERMAN_COMMAND_DOWN,
+    LASERMAN_COMMAND_RIGHT,
+    LASERMAN_COMMAND_LEFT,
 };
 
 static const uint32_t BEAM_SCALES[] = {
@@ -275,21 +231,6 @@ static const uint32_t BEAM_SCALES[] = {
  * Heat, Elec, Slash, Erase, Charge, Aqua, Tomahawk, Tengu, Ground, Dust. */
 static const uint8_t CROSS_POWER_ATTACKS[] = {
     1, 6, 11, 18, 20, 39, 12, 22, 15, 25, 40,
-};
-
-/* Native B+Left attacks supplied by the standard Crosses. */
-static const uint8_t CROSS_B_LEFTS[] = {
-    UINT8_MAX, UINT8_MAX, UINT8_MAX, UINT8_MAX, UINT8_MAX, UINT8_MAX,
-    UINT8_MAX, UINT8_MAX, 0x10, UINT8_MAX, 0x2A,
-};
-
-/* Down-targeted live flags that are innate to each standard Cross. TenguCross
- * supplies AirShoes and GroundCross supplies SuperArmor. */
-static const uint32_t CROSS_INNATE_STATUS_FLAGS[] = {
-    0, 0, 0, 0, 0, 0, 0, 0,
-    EXE6_HIT_STATUS_FLAG_AIR_SHOES,
-    EXE6_HIT_STATUS_FLAG_SUPER_ARMOR,
-    0,
 };
 
 static uint8_t target_active_cross(uint32_t side)
@@ -309,13 +250,13 @@ static void read_command(Exe6Obj *actor)
     const uint8_t *input = exe6_battle_key_work_adrs_get(actor->owner);
     uint16_t keys = *(const uint16_t *)(input + 2);
     if ((keys & EXE6_KEY_UP) != 0) {
-        actor->subvariant = 1;
+        actor->subvariant = LASERMAN_COMMAND_UP;
     } else if ((keys & EXE6_KEY_DOWN) != 0) {
-        actor->subvariant = 2;
+        actor->subvariant = LASERMAN_COMMAND_DOWN;
     } else if ((keys & EXE6_KEY_RIGHT) != 0) {
-        actor->subvariant = 3;
+        actor->subvariant = LASERMAN_COMMAND_RIGHT;
     } else if ((keys & EXE6_KEY_LEFT) != 0) {
-        actor->subvariant = 4;
+        actor->subvariant = LASERMAN_COMMAND_LEFT;
     }
 }
 
@@ -416,12 +357,7 @@ static void actor_init(Exe6Obj *self)
     exe6_sound_req(BN67_SONG_ID(common_navi_summon_song));
 }
 
-static void spawn_hit(
-    Exe6Obj *beam,
-    uint32_t block_x,
-    uint32_t block_y,
-    uint16_t command
-)
+static void spawn_hit(Exe6Obj *beam, uint32_t block_x, uint32_t block_y)
 {
     Exe6Obj *hit = exe6_shl_open(
         BN67_OBJ_ID(laserman_hit_main),
@@ -436,20 +372,31 @@ static void spawn_hit(
     struct HitWork *work = (struct HitWork *)hit->work;
     hit->block_x = (uint8_t)block_x;
     hit->block_y = (uint8_t)block_y;
-    hit->animation_word = command;
-    work->command_stream = beam->variant;
+    work->command = beam->variant;
     hit->owner_word = beam->owner_word;
-    hit->attack = command == COMMAND_MARKER ? beam->attack : 0;
-    if (command != COMMAND_MARKER) {
-        hit->phase_timer_low = CHARGE_SHOT_RESTORE_INACTIVE;
-    }
+    hit->attack = beam->attack;
     hit->header_flags |= EXE6_OBJ_FLAG_UPDATE_DURING_DIMMING;
 }
 
-static void spawn_row_event(Exe6Obj *beam, uint16_t command)
+static void spawn_row_event(Exe6Obj *beam)
 {
     for (uint32_t block_x = 1; block_x <= 6; ++block_x) {
-        spawn_hit(beam, block_x, beam->block_y, command);
+        spawn_hit(beam, block_x, beam->block_y);
+    }
+}
+
+static uint8_t command_hit_delay(uint8_t command)
+{
+    switch ((enum LaserCommand)command) {
+    case LASERMAN_COMMAND_UP:
+        return 3;
+    case LASERMAN_COMMAND_DOWN:
+        return 5;
+    case LASERMAN_COMMAND_RIGHT:
+    case LASERMAN_COMMAND_LEFT:
+        return 1;
+    default:
+        return 0;
     }
 }
 
@@ -459,16 +406,15 @@ static void beam_command_tick(Exe6Obj *self)
         --self->removal_state;
         return;
     }
-    const uint16_t *stream = COMMAND_STREAMS[self->variant];
-    uint16_t command = stream[self->animation_state];
-    if ((uint8_t)command == COMMAND_END) {
+    uint8_t hit_delay = command_hit_delay(self->variant);
+    if (self->animation_state > hit_delay) {
         return;
+    }
+    if (self->animation_state == hit_delay) {
+        spawn_row_event(self);
     }
     ++self->animation_state;
     self->removal_state = 5;
-    if ((uint8_t)command == COMMAND_MARKER) {
-        spawn_row_event(self, command);
-    }
 }
 
 static void beam_update(Exe6Obj *self)
@@ -513,7 +459,10 @@ static void beam_init(Exe6Obj *self)
     set_animation_immediate(self, 17);
     exe6_obj_flip_set(exe6_enemy_flip_check());
     exe6_obj_clt_set(
-        self->variant == 0 || self->variant == 2 ? 0 : 10
+        self->variant == LASERMAN_COMMAND_NONE
+            || self->variant == LASERMAN_COMMAND_DOWN
+            ? 0
+            : 10
     );
     exe6_obj_prio_set(EXE6_OBJ_PRIORITY_BATTLE);
     exe6_obj_col_efc_set(BEAM_SCALES[self->variant]);
@@ -522,133 +471,67 @@ static void beam_init(Exe6Obj *self)
     self->phase = BEAM_PHASE_FORM;
 }
 
-static void apply_command_effect(Exe6Obj *hit, uint16_t command)
-{
-    uint32_t target_side = hit->owner ^ 1u;
-    enum CommandEffect effect = (enum CommandEffect)(uint8_t)command;
-
-    switch (effect) {
-    case COMMAND_EFFECT_DISABLE_SUPER_ARMOR:
-        exe6_navi_status_set(target_side, 0x23, 0);
-        break;
-    case COMMAND_EFFECT_DISABLE_FLOAT_SHOES:
-        exe6_navi_status_set(target_side, 0x1B, 0);
-        break;
-    case COMMAND_EFFECT_DISABLE_AIR_SHOES:
-        exe6_navi_status_set(target_side, 0x1C, 0);
-        break;
-    case COMMAND_EFFECT_DISABLE_UNDERSHIRT:
-        exe6_navi_status_set(target_side, 0x1D, 0);
-        break;
-    case COMMAND_EFFECT_DISABLE_STATUS_GUARD:
-        exe6_navi_status_set(target_side, 0x52, 0);
-        break;
-    case COMMAND_EFFECT_RESET_ATTACK:
-        exe6_navi_status_set(target_side, 0x01, 0);
-        break;
-    case COMMAND_EFFECT_RESET_RAPID:
-        exe6_navi_status_set(target_side, 0x02, 0);
-        break;
-    case COMMAND_EFFECT_RESET_CHARGE:
-        exe6_navi_status_set(target_side, 0x03, 0);
-        break;
-    case COMMAND_EFFECT_DISABLE_B_LEFT:
-        exe6_navi_status_set(target_side, 0x07, UINT8_MAX);
-        break;
-    case COMMAND_EFFECT_RESTORE_CHARGE_SHOT: {
-        uint32_t current = exe6_navi_status_get(target_side, 0x05);
-        Exe6Obj *player = exe6_get_navi_adrs(target_side);
-        if (player != NULL) {
-            Exe6PlayerRuntime *runtime = player->runtime_data;
-            if (target_active_cross(target_side) != 0) {
-                hit->phase_timer_low = CHARGE_SHOT_RESTORE_CROSS;
-            } else if (runtime->active_power_attack == current) {
-                hit->phase_timer_low = CHARGE_SHOT_RESTORE_BASE;
-            }
-        }
-        exe6_navi_status_set(target_side, 0x04, 0);
-        exe6_navi_status_set(target_side, 0x05, 1);
-        break;
-    }
-    case COMMAND_EFFECT_REDUCE_CUSTOM:
-        {
-            uint32_t value = exe6_navi_status_get(target_side, 0x0a);
-            if (value > 2) {
-                --value;
-            }
-            exe6_navi_status_set(target_side, 0x0a, value);
-            break;
-        }
-    default:
-        return;
-    }
-}
-
-static void refresh_target_player(Exe6Obj *hit, uint16_t command)
-{
-    uint32_t target_side = hit->owner ^ 1u;
-    Exe6Obj *player = exe6_get_navi_adrs(target_side);
-    if (player == NULL) {
-        return;
-    }
-    Exe6PlayerRuntime *runtime = player->runtime_data;
-    enum CommandEffect effect = (enum CommandEffect)(uint8_t)command;
-    uint8_t active_cross = target_active_cross(target_side);
-
-    if (effect == COMMAND_EFFECT_RESTORE_CHARGE_SHOT) {
-        if (hit->phase_timer_low == CHARGE_SHOT_RESTORE_CROSS) {
-            if (active_cross != 0) {
-                runtime->active_power_attack =
-                    CROSS_POWER_ATTACKS[active_cross];
-            }
-        } else if (hit->phase_timer_low == CHARGE_SHOT_RESTORE_BASE) {
-            runtime->active_power_attack =
-                (uint8_t)exe6_navi_status_get(target_side, 5);
-        }
-    } else if (effect == COMMAND_EFFECT_DISABLE_B_LEFT) {
-        runtime->b_left = active_cross == 0
-            ? (uint8_t)exe6_navi_status_get(target_side, 7)
-            : CROSS_B_LEFTS[active_cross];
-    }
-
-    if (command < COMMAND_EFFECT_DISABLE_SUPER_ARMOR
-        || command > COMMAND_EFFECT_DISABLE_UNDERSHIRT) {
-        return;
-    }
-    static const uint8_t PROPERTIES[] = {0x1B, 0x1C, 0x1D, 0x23};
-    static const uint32_t STATUS_FLAGS[] = {
-        EXE6_HIT_STATUS_FLAG_FLOAT_SHOES,
-        EXE6_HIT_STATUS_FLAG_AIR_SHOES,
-        EXE6_HIT_STATUS_FLAG_UNDERSHIRT,
-        EXE6_HIT_STATUS_FLAG_SUPER_ARMOR,
-    };
-    for (size_t index = 0; index < 4; ++index) {
-        bool cross_supplies_ability = active_cross != 0
-            && (CROSS_INNATE_STATUS_FLAGS[active_cross]
-                & STATUS_FLAGS[index]) != 0;
-        if (!cross_supplies_ability
-            && exe6_navi_status_get(target_side, PROPERTIES[index]) == 0) {
-            exe6_battle_hit_status_flag_off(
-                player,
-                STATUS_FLAGS[index]
-            );
-        }
-    }
-}
-
 static void apply_selected_command(Exe6Obj *hit)
 {
     struct HitWork *work = (struct HitWork *)hit->work;
-    const uint16_t *stream = COMMAND_STREAMS[work->command_stream];
-    for (size_t index = 0;; ++index) {
-        uint16_t command = stream[index];
-        uint8_t effect = (uint8_t)command;
-        if (effect == COMMAND_END || effect == COMMAND_MARKER) {
-            return;
+    uint32_t target_side = hit->owner ^ 1u;
+
+    switch ((enum LaserCommand)work->command) {
+    case LASERMAN_COMMAND_UP:
+        exe6_navi_status_set(target_side, NAVI_PROPERTY_ATTACK, 0);
+        exe6_navi_status_set(target_side, NAVI_PROPERTY_RAPID, 0);
+        exe6_navi_status_set(target_side, NAVI_PROPERTY_CHARGE, 0);
+        break;
+    case LASERMAN_COMMAND_DOWN: {
+        Exe6Obj *target = exe6_get_navi_adrs(target_side);
+        if (target != NULL) {
+            /* Native Uninstall also clears B+Left and its live base cache. */
+            exe6_navi_uninstall(target);
         }
-        hit->animation_word = command;
-        apply_command_effect(hit, command);
-        refresh_target_player(hit, command);
+        break;
+    }
+    case LASERMAN_COMMAND_RIGHT: {
+        uint32_t current = exe6_navi_status_get(
+            target_side,
+            NAVI_PROPERTY_POWER_ATTACK
+        );
+        Exe6Obj *target = exe6_get_navi_adrs(target_side);
+        uint8_t active_cross = target_active_cross(target_side);
+        bool restore_base = target != NULL
+            && active_cross == 0
+            && target->runtime_data->active_power_attack == current;
+
+        exe6_navi_status_set(target_side, NAVI_PROPERTY_B_BUTTON, 0);
+        exe6_navi_status_set(target_side, NAVI_PROPERTY_POWER_ATTACK, 1);
+        if (target != NULL && active_cross != 0) {
+            target->runtime_data->active_power_attack =
+                CROSS_POWER_ATTACKS[active_cross];
+        } else if (restore_base) {
+            target->runtime_data->active_power_attack =
+                (uint8_t)exe6_navi_status_get(
+                    target_side,
+                    NAVI_PROPERTY_POWER_ATTACK
+                );
+        }
+        break;
+    }
+    case LASERMAN_COMMAND_LEFT: {
+        uint32_t value = exe6_navi_status_get(
+            target_side,
+            NAVI_PROPERTY_CUSTOM_LEVEL
+        );
+        if (value > 2) {
+            --value;
+        }
+        exe6_navi_status_set(
+            target_side,
+            NAVI_PROPERTY_CUSTOM_LEVEL,
+            value
+        );
+        break;
+    }
+    default:
+        break;
     }
 }
 
@@ -673,6 +556,9 @@ static bool hit_init(Exe6Obj *self)
     );
     exe6_battle_hit_hit_mark_set(EXE6_HIT_EFFECT_NORMAL);
     exe6_battle_hit_set(0, self->variant);
+    Exe6Obj *target = exe6_get_navi_adrs(self->owner ^ 1u);
+    struct HitWork *work = (struct HitWork *)self->work;
+    work->target_hp_before = target == NULL ? 0 : target->hp;
     self->state_word = EXE6_OBJECT_STATE_ACTIVE;
     self->phase = HIT_PHASE_COLLIDE;
     return true;
@@ -709,21 +595,19 @@ static void check_hit_contact(Exe6Obj *self)
 {
     Exe6Hit *hit = self->hit;
     Exe6Obj *target = exe6_get_navi_adrs(self->owner ^ 1u);
-    uint16_t target_hp_before = target == NULL ? 0 : target->hp;
     exe6_battle_hit_check(hit);
     exe6_battle_hit_hit_mark_check();
     bool contacted_target = hit->received_hit_flags != 0
         && target != NULL
         && target->block_x == self->block_x
-        && target->block_y == self->block_y
-        && (uint8_t)self->animation_word == COMMAND_MARKER;
-    close_hit(self);
+        && target->block_y == self->block_y;
     if (!contacted_target) {
+        close_hit(self);
         exe6_obj_move_delete();
         return;
     }
+    close_hit(self);
     struct HitWork *work = (struct HitWork *)self->work;
-    work->target_hp_before = target_hp_before;
     work->confirm_timer = HIT_CONFIRM_FRAMES;
     self->phase = HIT_PHASE_CONFIRM_DAMAGE;
 }
