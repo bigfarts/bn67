@@ -4,6 +4,31 @@ All addresses are GBA ROM addresses unless identified as file offsets. The
 port was translated from the supplied English BN5 ROM rather than from the
 unrelated dormant effects originally mistaken for SearchMan in BN6.
 
+## DarkAura
+
+BN3 Blue's DarkAura is chip `0x135`. Its 32-byte record stores code A, 55 MB,
+Giga class, barrier kind `8`, and a `0x0BB8` (3,000-frame) lifespan. Barrier
+kind `8` is BN3's 300-threshold dark aura; attacks below 300 are rejected and
+an attack at or above 300 breaks it.
+
+The BN6 replacement occupies Falzar's BugDthTh slot `0x136` and uses the
+native barrier-chip attack at family/subfamily `0x15/0x04`. Barrier parameter
+`0x0F` selects BN6's enemy-positioned null-aura visual by default. The visual
+hooks at `0x080E1E52` Gregar / `0x080E0B16` Falzar redirect only the marked
+DarkAura instance to BN3 Blue's original centered archive, animation, and dark
+battle palette. The extractor terminates each animation-0 OAM list after its
+six aura pieces, omitting the six pieces that form BN3's embedded 300 label.
+Ordinary users of parameter `0x0F` retain their native visual,
+100-damage threshold, and indefinite duration.
+
+BN6 stores its active aura threshold in collision byte `+0x17`, so 300 cannot
+be represented directly. After the barrier controller calls the native setter
+at `0x0801A7CC`, the DarkAura-only hook at `0x080E4E50` Gregar /
+`0x080E3B10` Falzar writes sentinel `0xFF` and duration `0x0BB8` to the user's
+collision data. The shared comparison at `0x0801A948` expands only barrier
+type `0x0F` with that sentinel to 300. Every other barrier and aura follows the
+unchanged byte threshold and native duration path.
+
 ## VarSword ElementSonic
 
 BN6's VarSword action begins at `0x080F096E` in Gregar and `0x080EF62E` in
@@ -729,7 +754,7 @@ edited properties. Right likewise sets the base Buster properties to `0` and
 `1`, then restores the active Cross's native runtime power attack. Emulator
 traces give power-attack IDs
 `6, 11, 18, 20, 39, 12, 22, 15, 25, 40` for Cross IDs `1`-`10`; this removes
-replacements such as BugDeathThunder without turning the active Cross's charge
+temporary charge-shot replacements without turning the active Cross's charge
 shot into a MegaBuster. Outside those Crosses, the original cache comparison
 still avoids overwriting an unrelated temporary form override.
 Effect events retain the original six-frame

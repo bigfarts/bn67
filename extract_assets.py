@@ -24,6 +24,14 @@ BN3_CHIP_DATA = 0x11510
 BN3_CHIP_RECORD_SIZE = 0x20
 BN3_ROOK_ID = 0x99
 BN3_FOLDERBACK_ID = 0x12F
+BN3_DARK_AURA_ID = 0x135
+BN3_DARK_AURA_SPRITE_OFFSET = 0x2F4B40
+BN3_DARK_AURA_SPRITE_LENGTH = 0x495C
+BN3_DARK_AURA_ANIMATION_0_POINTER = 0x04
+BN3_DARK_AURA_ANIMATION_2_POINTER = 0x0C
+BN3_DARK_AURA_LIFEAURA_PALETTE = 0x3D54
+BN3_DARK_AURA_PALETTE = 0x3D94
+BN3_DARK_AURA_NUMBER_OAM_OFFSETS = (0x4096, 0x40DE, 0x4126)
 BN3_IMAGE_WIDTH = 64
 BN3_IMAGE_HEIGHT = 56
 EXE6_IMAGE_WIDTH = 56
@@ -203,6 +211,60 @@ def extract_bn3_chip_art(
     return normalize_exe6_icon_border(icon), encode_4bpp_tiles(cropped), palette
 
 
+def prepare_bn3_dark_aura_battle_sprite(data: bytes) -> bytes:
+    """Select BN3's centered DarkAura animation and battle palette."""
+    if len(data) != BN3_DARK_AURA_SPRITE_LENGTH:
+        raise ValueError(
+            "BN3 DarkAura battle archive has an unexpected length: "
+            f"0x{len(data):X}"
+        )
+    archive = bytearray(data)
+    animation_0 = struct.unpack_from(
+        "<I", archive, BN3_DARK_AURA_ANIMATION_0_POINTER
+    )[0]
+    animation_2 = struct.unpack_from(
+        "<I", archive, BN3_DARK_AURA_ANIMATION_2_POINTER
+    )[0]
+    if animation_0 != 0x14 or animation_2 != 0x154:
+        raise ValueError("BN3 DarkAura battle archive animation table changed")
+
+    lifeaura = bytes(
+        archive[
+            BN3_DARK_AURA_LIFEAURA_PALETTE:
+            BN3_DARK_AURA_LIFEAURA_PALETTE + 0x20
+        ]
+    )
+    dark_aura = bytes(
+        archive[
+            BN3_DARK_AURA_PALETTE:
+            BN3_DARK_AURA_PALETTE + 0x20
+        ]
+    )
+    if lifeaura == dark_aura:
+        raise ValueError("BN3 LifeAura and DarkAura battle palettes are identical")
+
+    # BN6's native type-0x0F visual requests animation 2 and palette 0. Make
+    # those selectors resolve to BN3's centered animation 0 and its DarkAura
+    # palette. The original animation already contains the 300 label.
+    struct.pack_into(
+        "<I", archive, BN3_DARK_AURA_ANIMATION_2_POINTER, animation_0
+    )
+    archive[
+        BN3_DARK_AURA_LIFEAURA_PALETTE:
+        BN3_DARK_AURA_LIFEAURA_PALETTE + 0x20
+    ] = dark_aura
+
+    # Animation 0's three frames each contain six aura pieces followed by six
+    # pieces for the built-in "300" label. Terminate each OAM list immediately
+    # after the aura pieces so the port has no number at all.
+    expected_first_number_piece = bytes((26, 0xF8, 0, 1, 0))
+    for offset in BN3_DARK_AURA_NUMBER_OAM_OFFSETS:
+        if archive[offset:offset + 5] != expected_first_number_piece:
+            raise ValueError("BN3 DarkAura number OAM layout changed")
+        archive[offset:offset + 5] = b"\xFF" * 5
+    return bytes(archive)
+
+
 ASSETS = (
     # Japanese BN6: event-chip menu art and the two removed battle archives.
     # These offsets come directly from the original BR5J/BR6J chip records and
@@ -248,6 +310,16 @@ ASSETS = (
     # animation 4; its menu art is decoded and cropped separately below because
     # BN3 stores it at 64x56, not 56x48.
     Asset("bn3_blue", "rook_battle_sprite.bin", 0x2CD434, 0x20A0),
+    # BN3 Blue: the native barrier-family archive used by DarkAura. Extraction
+    # aliases BN6's requested animation/palette selectors to BN3's DarkAura
+    # entries. Extraction removes the original animation's numeric OAM pieces,
+    # leaving only the centered DarkAura disk.
+    Asset(
+        "bn3_blue",
+        "dark_aura_battle_sprite.bin",
+        BN3_DARK_AURA_SPRITE_OFFSET,
+        BN3_DARK_AURA_SPRITE_LENGTH,
+    ),
     # BN3 Blue: FolderBack's original rumble sample. Its menu art uses the
     # same decoded-and-cropped path as Rook.
     Asset("bn3_blue", "folder_back_rumble_sample.bin", 0x215B68, 0x354E),
@@ -407,11 +479,14 @@ def extract_assets(roms: dict[str, bytes], output_dir: Path) -> tuple[int, int]:
                 data = decompress_sprite_archive(data)
             except ValueError as exc:
                 raise ValueError(f"cannot decompress {asset.output}: {exc}") from exc
+        if asset.output == "dark_aura_battle_sprite.bin":
+            data = prepare_bn3_dark_aura_battle_sprite(data)
         outputs.append((asset.output, data))
 
     for prefix, chip_id, chip_name in (
         ("rook", BN3_ROOK_ID, "Rook"),
         ("folder_back", BN3_FOLDERBACK_ID, "FolderBack"),
+        ("dark_aura", BN3_DARK_AURA_ID, "DarkAura"),
     ):
         chip_art_outputs = zip(
             (

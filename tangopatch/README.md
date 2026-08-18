@@ -6,12 +6,6 @@
 
 Link battles start each player with five Beast Out turns instead of three.
 
-### Bug Death Thunder
-
-Bug Death Thunder's Dark Thunder ball takes 60 frames to charge at every
-Navi Customizer Charge level. Its post-fire chip lockout is reduced from 30
-frames to 10 frames.
-
 ### Status Bug
 
 The normal- and high-severity green invulnerability outcomes now use their
@@ -277,6 +271,18 @@ The Japanese-only `Falzar X` is restored as a 99 MB, Null-element Giga chip.
 It uses Falzar's original chip art, palette, full summon sprite, Strike
 Feathers, Sonic Wave, and tornado sequence, and returns to battle normally.
 Its 100-damage Strike Feathers also receive the activating chip's attack bonus.
+
+#### DarkAura
+
+**Replaces:** Bug Death Thunder
+
+**Falzar GigaChip.**
+
+BN3 DarkAura is a 61 MB, Null-element Giga chip in code A. It lasts for 3,000
+active battle frames, repels attacks below 300 damage, and breaks when hit for
+300 or more. It uses DarkAura's original BN3 icon, center-cropped library art,
+name, description, centered aura animation, and dark battle palette. The
+battle aura displays no damage number.
 
 #### Black Weapon
 

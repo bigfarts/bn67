@@ -6,11 +6,14 @@
 
 Link battles start each player with five Beast Out turns instead of three.
 
-### BugDeathThunder
+### DarkAura
 
-BugDeathThunder's DarkThunder ball takes 60 frames to charge at every
-NaviCust Charge level. Its post-fire chip lockout is reduced from 30 frames to
-10 frames.
+Replaces BugDthTh (`0x136`) in Falzar with BN3 Blue's DarkAura. The 55 MB,
+Null-element GigaChip uses code A and BN3's 3,000-active-frame lifespan. It
+repels attacks below 300 damage and breaks when struck for 300 or more. The
+chip uses its original BN3 icon, center-cropped library art, palette, name,
+description, and centered DarkAura battle animation. Its built-in numeric OAM
+pieces are removed so the battle aura has no number below it.
 
 ### Title screen
 
@@ -282,10 +285,10 @@ samples, and SignalRed's menu art and battle sprite from Blue Moon; Jealousy's
 menu/overlay graphics, Django's menu art and complete battle sequence, and
 BugCharge's menu and Gospel-head assets from BN5;
 Rook's BN3 menu art and battle sprite; FolderBack's BN3 menu art and original
-rumble PCM; plus the full BN5 SearchMan actor archive, both scope/reticle
-archives, the chip icon, and the 56x48 library artwork; NumberMan's actor and
-die archives and library art; and BlackWeapon's menu art from EXE4.5. The SearchMan
-variant library-art palettes are:
+rumble PCM; DarkAura's BN3 menu art; plus the full BN5 SearchMan actor archive,
+both scope/reticle archives, the chip icon, and the 56x48 library artwork;
+NumberMan's actor and die archives and library art; and BlackWeapon's menu art
+from EXE4.5. The SearchMan variant library-art palettes are:
 
 - base: BN5 base palette (blue background)
 - 2: unchanged SearchMan foreground with a custom yellow background
