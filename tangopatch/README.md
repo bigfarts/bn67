@@ -289,7 +289,7 @@ It uses Falzar's original chip art, palette, full summon sprite, Strike
 Feathers, Sonic Wave, and tornado sequence, and returns to battle normally.
 Its 100-damage Strike Feathers also receive the activating chip's attack bonus.
 
-#### DarkAura
+#### Dark Aura
 
 **Replaces:** Bug Death Thunder
 
