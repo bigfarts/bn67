@@ -1,22 +1,22 @@
 #include "common.h"
 #include "runtime.h"
 
-BN67_SPRITE(deathphoenix_battle_sprite, "build/deathphoenix-battle-sprite.bin");
-BN67_SPRITE(deathphoenix_strike_sprite, "build/deathphoenix-strike-sprite.bin");
+BN67_SPRITE(death_phoenix_battle_sprite, "build/death_phoenix_battle_sprite.bin");
+BN67_SPRITE(death_phoenix_strike_sprite, "build/death_phoenix_strike_sprite.bin");
 
 #if FALZAR
-BN67_INCBIN(deathphoenix_icon, "build/deathphoenix-icon.bin");
-BN67_INCBIN(deathphoenix_image, "build/deathphoenix-image.bin");
-BN67_INCBIN(deathphoenix_palette, "build/deathphoenix-palette.bin");
+BN67_INCBIN(death_phoenix_icon, "build/death_phoenix_icon.bin");
+BN67_INCBIN(death_phoenix_image, "build/death_phoenix_image.bin");
+BN67_INCBIN(death_phoenix_palette, "build/death_phoenix_palette.bin");
 #endif
 
 #if FALZAR
 #define EFFECT_FLAGS                                                        \
     (EXE6_CHIP_EFFECT_FLAG_DIMMING | EXE6_CHIP_EFFECT_FLAG_ATTACK |         \
      EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE)
-#define ICON deathphoenix_icon
-#define IMAGE deathphoenix_image
-#define PALETTE deathphoenix_palette
+#define ICON death_phoenix_icon
+#define IMAGE death_phoenix_image
+#define PALETTE death_phoenix_palette
 #else
 #define EFFECT_FLAGS                                                     \
     (EXE6_CHIP_EFFECT_FLAG_DIMMING | EXE6_CHIP_EFFECT_FLAG_ATTACK)
@@ -40,8 +40,8 @@ BN67_CHIP_RECORD(0x134) {
     .behavior = {
         .effect_flags = EFFECT_FLAGS,
         .counter_settings = 0x94,
-        .family = BN67_ATTACK_FAMILY(deathphoenix_attack_main),
-        .subfamily = BN67_ATTACK_SUBFAMILY(deathphoenix_attack_main),
+        .family = BN67_ATTACK_FAMILY(death_phoenix_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(death_phoenix_attack_main),
         .dark_soul_usage = 0x0A,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
@@ -201,8 +201,8 @@ static void actor_init(Exe6Obj *self)
     struct ActorWork *work = (struct ActorWork *)self->work;
     exe6_battle_obj_char_init(
         0x00010000u
-        | (BN67_SPRITE_GROUP(deathphoenix_battle_sprite) << 8)
-        | BN67_SPRITE_ID(deathphoenix_battle_sprite)
+        | (BN67_SPRITE_GROUP(death_phoenix_battle_sprite) << 8)
+        | BN67_SPRITE_ID(death_phoenix_battle_sprite)
     );
     exe6_obj_flip_set(exe6_enemy_flip_check());
 
@@ -269,7 +269,7 @@ static void strike_spawn(
 )
 {
     Exe6Obj *strike = exe6_efc_open(
-        BN67_OBJ_ID(deathphoenix_strike_main),
+        BN67_OBJ_ID(death_phoenix_strike_main),
         exe6_obj_spawn_with_variant((uint8_t)alternate)
     );
     if (strike == NULL) {
@@ -460,7 +460,7 @@ static void actor_update(Exe6Obj *self)
 static void flame_spawn(Exe6Obj *strike, uint32_t alternate)
 {
     Exe6Obj *flame = exe6_efc_open(
-        BN67_OBJ_ID(deathphoenix_flame_main),
+        BN67_OBJ_ID(death_phoenix_flame_main),
         exe6_obj_spawn_with_variant((uint8_t)alternate)
     );
     if (flame == NULL) {
@@ -564,8 +564,8 @@ static void strike_init(Exe6Obj *self)
 {
     exe6_battle_obj_char_init(
         0x01000000u
-        | (BN67_SPRITE_GROUP(deathphoenix_strike_sprite) << 8)
-        | BN67_SPRITE_ID(deathphoenix_strike_sprite)
+        | (BN67_SPRITE_GROUP(death_phoenix_strike_sprite) << 8)
+        | BN67_SPRITE_ID(death_phoenix_strike_sprite)
     );
     exe6_obj_shadow_all_set();
     self->header_flags |= EXE6_OBJ_FLAG_VISIBLE;
@@ -627,8 +627,8 @@ static void flame_init(Exe6Obj *self)
     self->y -= 1 << 16;
     exe6_obj_char_init(
         0x80,
-        BN67_SPRITE_GROUP(deathphoenix_strike_sprite),
-        BN67_SPRITE_ID(deathphoenix_strike_sprite)
+        BN67_SPRITE_GROUP(death_phoenix_strike_sprite),
+        BN67_SPRITE_ID(death_phoenix_strike_sprite)
     );
     self->animation = 2;
     exe6_obj_dma_seq_set(2);
@@ -639,7 +639,7 @@ static void flame_init(Exe6Obj *self)
     self->state_word = EXE6_OBJECT_STATE_ACTIVE;
 }
 
-BN67_EFFECT(deathphoenix_flame_main)
+BN67_EFFECT(death_phoenix_flame_main)
 {
     if (self->state == EXE6_OBJECT_STATE_INIT) {
         flame_init(self);
@@ -651,7 +651,7 @@ BN67_EFFECT(deathphoenix_flame_main)
     exe6_battle_obj_char_move();
 }
 
-BN67_EFFECT(deathphoenix_strike_main)
+BN67_EFFECT(death_phoenix_strike_main)
 {
     if (self->state == EXE6_OBJECT_STATE_INIT) {
         strike_init(self);
@@ -663,7 +663,7 @@ BN67_EFFECT(deathphoenix_strike_main)
     exe6_battle_obj_char_move();
 }
 
-BN67_ENEMY(deathphoenix_actor_main)
+BN67_ENEMY(death_phoenix_actor_main)
 {
     if (self->state == EXE6_OBJECT_STATE_INIT) {
         actor_init(self);
@@ -676,10 +676,10 @@ BN67_ENEMY(deathphoenix_actor_main)
     exe6_battle_obj_char_move2();
 }
 
-BN67_SUMMON_ATTACK(0x134, deathphoenix_attack_main)
+BN67_SUMMON_ATTACK(0x134, death_phoenix_attack_main)
 {
     Exe6Obj *actor = exe6_em_open(
-        BN67_OBJ_ID(deathphoenix_actor_main), spawn_parameters
+        BN67_OBJ_ID(death_phoenix_actor_main), spawn_parameters
     );
     if (actor == NULL) {
         return;

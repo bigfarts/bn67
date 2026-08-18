@@ -1,12 +1,12 @@
 #include "runtime.h"
 
-BN67_SPRITE(rook_battle_sprite, "build/rook-battle-sprite.bin");
+BN67_SPRITE(rook_battle_sprite, "build/rook_battle_sprite.bin");
 BN67_DUST_SPRITE(rook_battle_sprite);
 BN67_FIELD_OBJECT(rook_battle_sprite, 4, 0, 1);
-BN67_USE_SONG(signalred_spawn_song);
-BN67_INCBIN(rook_icon, "build/rook-icon.bin");
-BN67_INCBIN(rook_image, "build/rook-image.bin");
-BN67_INCBIN(rook_palette, "build/rook-palette.bin");
+BN67_USE_SONG(signal_red_spawn_song);
+BN67_INCBIN(rook_icon, "build/rook_icon.bin");
+BN67_INCBIN(rook_image, "build/rook_image.bin");
+BN67_INCBIN(rook_palette, "build/rook_palette.bin");
 
 BN67_CHIP_RECORD(0x0c0) {
     .codes = {
@@ -208,7 +208,7 @@ static void obj_normal_update(Exe6Obj *obj)
     /* Do not replace an occupying Rook's deployable slot before rejecting. */
     exe6_cube_entry(obj, obj->owner, 0);
     obj->work[DEPLOYABLE_REGISTERED_WORK] = 1;
-    exe6_sound_req(BN67_SONG_ID(signalred_spawn_song));
+    exe6_sound_req(BN67_SONG_ID(signal_red_spawn_song));
     obj_animate(obj);
 }
 

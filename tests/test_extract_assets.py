@@ -18,7 +18,7 @@ class ExtractAssetsTests(unittest.TestCase):
         summon_tables = {
             asset.source: asset
             for asset in ASSETS
-            if asset.output.startswith("attack-family1B-table-")
+            if asset.output.startswith("attack_family1B_table_")
         }
         self.assertEqual(set(summon_tables), {"exe6_gregar", "exe6_falzar"})
         for asset in summon_tables.values():
@@ -29,7 +29,7 @@ class ExtractAssetsTests(unittest.TestCase):
         ephemeral_tables = {
             asset.source: asset
             for asset in ASSETS
-            if asset.output.startswith("attack-family1C-table-")
+            if asset.output.startswith("attack_family1C_table_")
         }
         self.assertEqual(set(ephemeral_tables), {"exe6_gregar", "exe6_falzar"})
         self.assertEqual(ephemeral_tables["exe6_gregar"].offset, 0xED730)
@@ -41,7 +41,7 @@ class ExtractAssetsTests(unittest.TestCase):
         tables = {
             asset.source: asset
             for asset in ASSETS
-            if asset.output.startswith("field-object-table-")
+            if asset.output.startswith("field_object_table_")
         }
         self.assertEqual(set(tables), {"exe6_gregar", "exe6_falzar"})
         for asset in tables.values():
@@ -50,8 +50,8 @@ class ExtractAssetsTests(unittest.TestCase):
 
     def test_default_navi_icon_is_not_extracted(self) -> None:
         outputs = {asset.output for asset in ASSETS}
-        self.assertNotIn("laserman-icon.bin", outputs)
-        self.assertNotIn("searchman-icon.bin", outputs)
+        self.assertNotIn("laserman_icon.bin", outputs)
+        self.assertNotIn("searchman_icon.bin", outputs)
 
     def test_django_uses_separate_bn5_chip_and_exe6_crossover_actors(
         self,
@@ -59,26 +59,26 @@ class ExtractAssetsTests(unittest.TestCase):
         django_assets = {
             asset.output: asset
             for asset in ASSETS
-            if asset.output.startswith("django-")
+            if asset.output.startswith("django_")
         }
         self.assertEqual(
-            django_assets["django-crossover-sprite.bin"].source,
+            django_assets["django_crossover_sprite.bin"].source,
             "exe6_jp_gregar",
         )
         self.assertEqual(
-            django_assets["django-crossover-sprite.bin"].offset,
+            django_assets["django_crossover_sprite.bin"].offset,
             0x30B980,
         )
         self.assertEqual(
-            django_assets["django-crossover-sprite.bin"].length,
+            django_assets["django_crossover_sprite.bin"].length,
             0x21CC,
         )
         # Keep the original type-0x10 stream compressed for the native loader.
-        self.assertFalse(django_assets["django-crossover-sprite.bin"].lz77)
+        self.assertFalse(django_assets["django_crossover_sprite.bin"].lz77)
         for output in (
-            "django-battle-sprite.bin",
-            "django-sun-sprite.bin",
-            "django-coffin-sprite.bin",
+            "django_battle_sprite.bin",
+            "django_sun_sprite.bin",
+            "django_coffin_sprite.bin",
         ):
             self.assertEqual(django_assets[output].source, "bn5_protoman")
 

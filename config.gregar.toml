@@ -2,41 +2,41 @@ variant = "gregar"
 
 [[object_classes]]
 number = 1
-native_table = "build/object-class1-table-gregar.bin"
+native_table = "build/object_class1_table_gregar.bin"
 references = [0x08003224]
 
 [[object_classes]]
 number = 3
-native_table = "build/object-class3-table-gregar.bin"
+native_table = "build/object_class3_table_gregar.bin"
 references = [0x0800322C]
 
 [[object_classes]]
 number = 4
-native_table = "build/object-class4-table-gregar.bin"
+native_table = "build/object_class4_table_gregar.bin"
 references = [0x08003230]
 
 [[sprite_groups]]
 number = 0x08
 references = [0x08031CCC]
-native_table = "build/sprite-group08-table-gregar.bin"
+native_table = "build/sprite_group08_table_gregar.bin"
 
 [[sprite_groups]]
 number = 0x0C
 references = [0x08031CD0]
-native_table = "build/sprite-group0C-table-gregar.bin"
+native_table = "build/sprite_group0C_table_gregar.bin"
 
 [[sprite_groups]]
 number = 0x10
 references = [0x08031CD4]
-native_table = "build/sprite-group10-table-gregar.bin"
+native_table = "build/sprite_group10_table_gregar.bin"
 
 [[sprite_groups]]
 number = 0x14
 references = [0x08031CD8]
-native_table = "build/sprite-group14-table-gregar.bin"
+native_table = "build/sprite_group14_table_gregar.bin"
 
 [dust_sprites]
-native_table = "build/dust-sprite-table-gregar.bin"
+native_table = "build/dust_sprite_table_gregar.bin"
 references = [0x08012010, 0x08012014, 0x080EACD0]
 max_kind = 0x0F
 
@@ -48,28 +48,28 @@ alias = 0x04
 references = [0x080D9DF8]
 
 [field_objects]
-native_table = "build/field-object-table-gregar.bin"
+native_table = "build/field_object_table_gregar.bin"
 references = [0x0800F4D4]
 base_id = 0xCD
 max_id = 0xFF
 
 [attack_pools.persistent_attack]
 family = 0x15
-native_table = "build/attack-family15-table-gregar.bin"
+native_table = "build/attack_family15_table_gregar.bin"
 references = [0x08017BB8, 0x080ED138]
 
 [attack_pools.summon_attack]
 family = 0x1B
-native_table = "build/attack-family1B-table-gregar.bin"
+native_table = "build/attack_family1B_table_gregar.bin"
 references = [0x08017BBC, 0x080E2CF0]
 
 [attack_pools.ephemeral_attack]
 family = 0x1C
-native_table = "build/attack-family1C-table-gregar.bin"
+native_table = "build/attack_family1C_table_gregar.bin"
 references = [0x080ED72C]
 
 [songs]
-native_table = "build/song-table-gregar.bin"
+native_table = "build/song_table_gregar.bin"
 references = [0x0815049C, 0x081504D0, 0x0815051C, 0x08150570, 0x081505A4]
 
 [chips]

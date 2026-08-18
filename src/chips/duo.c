@@ -1,7 +1,7 @@
 #include "common.h"
 #include "runtime.h"
 
-BN67_SPRITE(duo_battle_sprite, "build/duo-battle-sprite.bin");
+BN67_SPRITE(duo_battle_sprite, "build/duo_battle_sprite.bin");
 BN67_SONG(
     duo_summon_song,
     BN67_PCM(
@@ -10,7 +10,7 @@ BN67_SONG(
         0x00,
         ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
         ".byte 0xBE,0x7F,0xEB,0x37,0x7F,0x9C,0x81,0xB1\n",
-        "build/duo-fist-sound-sample.bin"
+        "build/duo_fist_sound_sample.bin"
     )
 );
 BN67_SONG(
@@ -21,7 +21,7 @@ BN67_SONG(
         0x08,
         ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
         ".byte 0xBE,0x60,0xEF,0x3C,0x7F,0xA0,0x83,0xB1\n",
-        "build/duo-arrival-sound-sample.bin"
+        "build/duo_arrival_sound_sample.bin"
     )
 );
 BN67_SONG(
@@ -32,14 +32,14 @@ BN67_SONG(
         0x08,
         ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
         ".byte 0xBE,0x7F,0xED,0x3C,0x7F,0x9E,0xB1\n",
-        "build/duo-fist-sound-sample.bin"
+        "build/duo_fist_sound_sample.bin"
     )
 );
 
 #if FALZAR
-BN67_INCBIN(duo_icon, "build/duo-icon.bin");
-BN67_INCBIN(duo_image, "build/duo-image.bin");
-BN67_INCBIN(duo_palette, "build/duo-palette.bin");
+BN67_INCBIN(duo_icon, "build/duo_icon.bin");
+BN67_INCBIN(duo_image, "build/duo_image.bin");
+BN67_INCBIN(duo_palette, "build/duo_palette.bin");
 #endif
 
 #if FALZAR

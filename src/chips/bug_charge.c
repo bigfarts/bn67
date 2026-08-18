@@ -1,34 +1,34 @@
 #include "common.h"
 #include "runtime.h"
 
-BN67_SPRITE(bugcharge_gospel_sprite, "build/bugcharge-gospel-sprite.bin");
+BN67_SPRITE(bug_charge_gospel_sprite, "build/bug_charge_gospel_sprite.bin");
 
-BN67_INCBIN(bugcharge_icon, "build/bugcharge-icon.bin");
-BN67_INCBIN(bugcharge_image, "build/bugcharge-image.bin");
-BN67_INCBIN(bugcharge_palette, "build/bugcharge-palette.bin");
+BN67_INCBIN(bug_charge_icon, "build/bug_charge_icon.bin");
+BN67_INCBIN(bug_charge_image, "build/bug_charge_image.bin");
+BN67_INCBIN(bug_charge_palette, "build/bug_charge_palette.bin");
 BN67_SONG(
-    bugcharge_charge_song,
+    bug_charge_charge_song,
     BN67_PCM(
-        bugcharge_charge,
+        bug_charge_charge,
         0x80,
         0x08,
         ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
         ".byte 0xBE,0x70,0xD9,0x3C,0x7F,0x8A,0xB1\n",
-        "build/bugcharge-charge-sample.bin"
+        "build/bug_charge_charge_sample.bin"
     )
 );
 BN67_SONG(
-    bugcharge_fire_song,
+    bug_charge_fire_song,
     ".byte 1,0,0x80,0\n"
-    ".long bugcharge_fire_voicegroup\n"
-    ".long bugcharge_fire_track\n"
-    ".global bugcharge_fire_voicegroup\n"
-    "bugcharge_fire_voicegroup:\n"
+    ".long bug_charge_fire_voicegroup\n"
+    ".long bug_charge_fire_track\n"
+    ".global bug_charge_fire_voicegroup\n"
+    "bug_charge_fire_voicegroup:\n"
     ".byte 0x0C,0x3C,0,0\n"
     ".long 0\n"
     ".byte 0,3,0,0\n"
-    ".global bugcharge_fire_track\n"
-    "bugcharge_fire_track:\n"
+    ".global bug_charge_fire_track\n"
+    "bug_charge_fire_track:\n"
     ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
     ".byte 0xBE,0x60,0xD2,0x3C,0x7F,0x83,0xEA,0x48\n"
     ".byte 0x9B,0x81,0xB1\n"
@@ -42,9 +42,9 @@ BN67_SONG(
 #else
 #define EFFECT_FLAGS \
     (EXE6_CHIP_EFFECT_FLAG_DIMMING | EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE)
-#define ICON bugcharge_icon
-#define IMAGE bugcharge_image
-#define PALETTE bugcharge_palette
+#define ICON bug_charge_icon
+#define IMAGE bug_charge_image
+#define PALETTE bug_charge_palette
 #endif
 
 BN67_CHIP_RECORD(0x131) {
@@ -62,8 +62,8 @@ BN67_CHIP_RECORD(0x131) {
     .behavior = {
         .effect_flags = EFFECT_FLAGS,
         .counter_settings = 0x8B,
-        .family = BN67_ATTACK_FAMILY(bugcharge_attack_main),
-        .subfamily = BN67_ATTACK_SUBFAMILY(bugcharge_attack_main),
+        .family = BN67_ATTACK_FAMILY(bug_charge_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(bug_charge_attack_main),
         .dark_soul_usage = 0x01,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
@@ -150,8 +150,8 @@ static void head_init(Exe6Obj *self)
 {
     exe6_obj_char_init(
         0x80,
-        BN67_SPRITE_GROUP(bugcharge_gospel_sprite),
-        BN67_SPRITE_ID(bugcharge_gospel_sprite)
+        BN67_SPRITE_GROUP(bug_charge_gospel_sprite),
+        BN67_SPRITE_ID(bug_charge_gospel_sprite)
     );
     exe6_obj_char_set();
     exe6_obj_no_shadow();
@@ -191,7 +191,7 @@ static void spawn_charge_head(
         return;
     }
     Exe6Obj *head = exe6_efc_open(
-        BN67_OBJ_ID(bugcharge_head_main), spawn_parameters
+        BN67_OBJ_ID(bug_charge_head_main), spawn_parameters
     );
     if (head == NULL) {
         return;
@@ -206,7 +206,7 @@ static void spawn_gospel(Exe6Obj *controller)
     int32_t direction =
         (int32_t)exe6_calc_pl_em_dir_spd_for(controller);
     Exe6Obj *gospel = exe6_shl_open(
-        BN67_OBJ_ID(bugcharge_gospel_main),
+        BN67_OBJ_ID(bug_charge_gospel_main),
         0,
         0,
         0,
@@ -231,7 +231,7 @@ static void effect_update(
     if (self->substate == EFFECT_STEP_INIT) {
         self->timer = count_and_clear_bugs(self);
         spawn_charge_head(self, spawn_parameters);
-        exe6_sound_req(BN67_SONG_ID(bugcharge_charge_song));
+        exe6_sound_req(BN67_SONG_ID(bug_charge_charge_song));
         self->aux_timer = CHARGE_FRAMES;
         self->substate = EFFECT_STEP_FIRE;
         return;
@@ -243,7 +243,7 @@ static void effect_update(
     }
 
     if (self->substate == EFFECT_STEP_FIRE) {
-        exe6_sound_req(BN67_SONG_ID(bugcharge_fire_song));
+        exe6_sound_req(BN67_SONG_ID(bug_charge_fire_song));
         spawn_gospel(self);
         exe6_camera_quake_set(2, 20);
         if (--self->timer != 0) {
@@ -324,7 +324,7 @@ static void hit_update(Exe6Obj *self)
 static void spawn_hit(Exe6Obj *source, uint32_t block_x, uint32_t block_y)
 {
     Exe6Obj *hit = exe6_shl_open(
-        BN67_OBJ_ID(bugcharge_hit_main),
+        BN67_OBJ_ID(bug_charge_hit_main),
         0,
         0,
         0,
@@ -368,8 +368,8 @@ static bool gospel_init(Exe6Obj *self)
     self->z = 0x14 << 16;
     exe6_obj_char_init(
         0x80,
-        BN67_SPRITE_GROUP(bugcharge_gospel_sprite),
-        BN67_SPRITE_ID(bugcharge_gospel_sprite)
+        BN67_SPRITE_GROUP(bug_charge_gospel_sprite),
+        BN67_SPRITE_ID(bug_charge_gospel_sprite)
     );
     exe6_obj_char_set();
     exe6_obj_no_shadow();
@@ -434,7 +434,7 @@ static bool gospel_update(Exe6Obj *self)
     return true;
 }
 
-BN67_SHELL(bugcharge_hit_main)
+BN67_SHELL(bug_charge_hit_main)
 {
     if (self->state == EXE6_OBJECT_STATE_INIT) {
         if (!hit_init(self)) {
@@ -450,7 +450,7 @@ BN67_SHELL(bugcharge_hit_main)
     exe6_battle_obj_char_move2();
 }
 
-BN67_SHELL(bugcharge_gospel_main)
+BN67_SHELL(bug_charge_gospel_main)
 {
     if (self->state == EXE6_OBJECT_STATE_INIT) {
         if (!gospel_init(self) || !gospel_update(self)) {
@@ -467,7 +467,7 @@ BN67_SHELL(bugcharge_gospel_main)
     exe6_battle_obj_char_move2();
 }
 
-BN67_EFFECT(bugcharge_head_main)
+BN67_EFFECT(bug_charge_head_main)
 {
     if (self->state == EXE6_OBJECT_STATE_INIT) {
         head_init(self);
@@ -482,7 +482,7 @@ BN67_EFFECT(bugcharge_head_main)
     exe6_battle_obj_char_move2();
 }
 
-BN67_EFFECT(bugcharge_controller_main)
+BN67_EFFECT(bug_charge_controller_main)
 {
     if (self->state == EXE6_OBJECT_STATE_INIT) {
         exe6_event_chip_common_init();
@@ -493,10 +493,10 @@ BN67_EFFECT(bugcharge_controller_main)
     }
 }
 
-BN67_PERSISTENT_ATTACK(0x131, bugcharge_attack_main)
+BN67_PERSISTENT_ATTACK(0x131, bug_charge_attack_main)
 {
     Exe6Obj *controller = exe6_efc_open(
-        BN67_OBJ_ID(bugcharge_controller_main), spawn_parameters
+        BN67_OBJ_ID(bug_charge_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;

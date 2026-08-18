@@ -1,14 +1,14 @@
 #include "runtime.h"
 
-BN67_INCBIN(jealousy_icon, "build/jealousy-icon.bin");
-BN67_INCBIN(jealousy_image, "build/jealousy-image.bin");
-BN67_INCBIN(jealousy_palette, "build/jealousy-palette.bin");
+BN67_INCBIN(jealousy_icon, "build/jealousy_icon.bin");
+BN67_INCBIN(jealousy_image, "build/jealousy_image.bin");
+BN67_INCBIN(jealousy_palette, "build/jealousy_palette.bin");
 
 extern const uint8_t jealousy_effect_tiles[0x100];
-BN67_INCBIN(jealousy_effect_tiles, "build/jealousy-effect-tiles.bin");
+BN67_INCBIN(jealousy_effect_tiles, "build/jealousy_effect_tiles.bin");
 
 extern const uint8_t jealousy_effect_palette[0x20];
-BN67_INCBIN(jealousy_effect_palette, "build/jealousy-effect-palette.bin");
+BN67_INCBIN(jealousy_effect_palette, "build/jealousy_effect_palette.bin");
 
 BN67_CHIP_RECORD(0x0bf) {
     .codes = {

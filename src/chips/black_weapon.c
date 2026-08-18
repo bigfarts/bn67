@@ -1,21 +1,21 @@
 #include "runtime.h"
 
-BN67_INCBIN(blackweapon_dark_palette, "build/blackweapon-dark-palette.bin");
+BN67_INCBIN(black_weapon_dark_palette, "build/black_weapon_dark_palette.bin");
 
 BN67_ASM_RESOURCE(
-    blackweapon_hp_bug_periods,
+    black_weapon_hp_bug_periods,
     ".byte 0,40,35,30,25,20,15,10,6\n"
 );
-BN67_PATCH_POINTER(0x080102A0, blackweapon_hp_bug_periods);
+BN67_PATCH_POINTER(0x080102A0, black_weapon_hp_bug_periods);
 
 /* Power-attack IDs 3 and 4 are the two Beast Out rapid-Buster variants. */
 BN67_PATCH_THUMB_POINTER(
     0x080117E0,
-    blackweapon_beast_buster_id3_dispatch
+    black_weapon_beast_buster_id3_dispatch
 );
 BN67_PATCH_THUMB_POINTER(
     0x080117E4,
-    blackweapon_beast_buster_id4_dispatch
+    black_weapon_beast_buster_id4_dispatch
 );
 
 /*
@@ -28,13 +28,13 @@ BN67_PATCH_THUMB_POINTER(
 BN67_PATCH_SECTION(
     0x08012646,
     0x0801264C,
-    blackweapon_attack_level_dispatch
+    black_weapon_attack_level_dispatch
 );
 
 #if !FALZAR
-BN67_INCBIN(blackweapon_icon, "build/blackweapon-icon.bin");
-BN67_INCBIN(blackweapon_image, "build/blackweapon-image.bin");
-BN67_INCBIN(blackweapon_palette, "build/blackweapon-palette.bin");
+BN67_INCBIN(black_weapon_icon, "build/black_weapon_icon.bin");
+BN67_INCBIN(black_weapon_image, "build/black_weapon_image.bin");
+BN67_INCBIN(black_weapon_palette, "build/black_weapon_palette.bin");
 #endif
 
 #if FALZAR
@@ -46,9 +46,9 @@ BN67_INCBIN(blackweapon_palette, "build/blackweapon-palette.bin");
 #define EFFECT_FLAGS                                                    \
     (EXE6_CHIP_EFFECT_FLAG_DIMMING |                                    \
      EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE)
-#define ICON blackweapon_icon
-#define IMAGE blackweapon_image
-#define PALETTE blackweapon_palette
+#define ICON black_weapon_icon
+#define IMAGE black_weapon_image
+#define PALETTE black_weapon_palette
 #endif
 
 BN67_CHIP_RECORD(0x12f) {
@@ -66,8 +66,8 @@ BN67_CHIP_RECORD(0x12f) {
     .behavior = {
         .effect_flags = EFFECT_FLAGS,
         .counter_settings = 0,
-        .family = BN67_ATTACK_FAMILY(blackweapon_attack_main),
-        .subfamily = BN67_ATTACK_SUBFAMILY(blackweapon_attack_main),
+        .family = BN67_ATTACK_FAMILY(black_weapon_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(black_weapon_attack_main),
         .dark_soul_usage = 0x0A,
         .unknown_0e = 0x04,
         .lock_on = 0,
@@ -103,7 +103,7 @@ enum EffectStep {
     EFFECT_STEP_WAIT_FOR_VISUAL = 4,
 };
 
-NAKED void blackweapon_beast_attack_level_apply(void)
+NAKED void black_weapon_beast_attack_level_apply(void)
 {
     __asm__(
         ".syntax unified\n"
@@ -121,7 +121,7 @@ NAKED void blackweapon_beast_attack_level_apply(void)
     );
 }
 
-NAKED void blackweapon_beast_buster_id3_dispatch(void)
+NAKED void black_weapon_beast_buster_id3_dispatch(void)
 {
     __asm__(
         ".syntax unified\n"
@@ -130,13 +130,13 @@ NAKED void blackweapon_beast_buster_id3_dispatch(void)
         "mov lr,pc\n"
         "bx r3\n"
         "push {r0}\n"
-        "bl blackweapon_beast_attack_level_apply\n"
+        "bl black_weapon_beast_attack_level_apply\n"
         "pop {r0,pc}\n"
         ".pool\n"
     );
 }
 
-NAKED void blackweapon_beast_buster_id4_dispatch(void)
+NAKED void black_weapon_beast_buster_id4_dispatch(void)
 {
     __asm__(
         ".syntax unified\n"
@@ -145,13 +145,13 @@ NAKED void blackweapon_beast_buster_id4_dispatch(void)
         "mov lr,pc\n"
         "bx r3\n"
         "push {r0}\n"
-        "bl blackweapon_beast_attack_level_apply\n"
+        "bl black_weapon_beast_attack_level_apply\n"
         "pop {r0,pc}\n"
         ".pool\n"
     );
 }
 
-NAKED void blackweapon_attack_level_dispatch(void)
+NAKED void black_weapon_attack_level_dispatch(void)
 {
     __asm__(
         ".syntax unified\n"
@@ -234,7 +234,7 @@ static void install_dark_palette(Exe6Obj *visual)
         return;
     }
     exe6_mem_trans256(
-        blackweapon_dark_palette,
+        black_weapon_dark_palette,
         palette_bank_address(palette_bank),
         0x20
     );
@@ -351,7 +351,7 @@ static void visual_init(Exe6Obj *visual)
     visual_flash_update(visual);
 }
 
-BN67_EFFECT(blackweapon_visual_main)
+BN67_EFFECT(black_weapon_visual_main)
 {
     switch (self->state) {
     case EXE6_OBJECT_STATE_INIT:
@@ -381,7 +381,7 @@ static void spawn_visual(
     work->visual_active = 0;
 
     Exe6Obj *visual = exe6_efc_open(
-        BN67_OBJ_ID(blackweapon_visual_main), spawn_parameters
+        BN67_OBJ_ID(black_weapon_visual_main), spawn_parameters
     );
     if (visual == NULL) {
         return;
@@ -392,7 +392,7 @@ static void spawn_visual(
     work->visual_active = 1;
 }
 
-static void apply_blackweapon(Exe6Obj *controller)
+static void apply_black_weapon(Exe6Obj *controller)
 {
     Exe6Obj *owner = controller->parent;
     if (owner != NULL) {
@@ -417,7 +417,7 @@ static void effect_update(
         controller->substate = EFFECT_STEP_WAIT_FOR_VISUAL;
     }
     if (work->visual_active == 0) {
-        apply_blackweapon(controller);
+        apply_black_weapon(controller);
     }
 }
 
@@ -442,7 +442,7 @@ static void controller_update(
     }
 }
 
-BN67_EFFECT(blackweapon_controller_main)
+BN67_EFFECT(black_weapon_controller_main)
 {
     switch (self->state) {
     case EXE6_OBJECT_STATE_INIT:
@@ -457,10 +457,10 @@ BN67_EFFECT(blackweapon_controller_main)
     }
 }
 
-BN67_PERSISTENT_ATTACK(0x12f, blackweapon_attack_main)
+BN67_PERSISTENT_ATTACK(0x12f, black_weapon_attack_main)
 {
     Exe6Obj *controller = exe6_efc_open(
-        BN67_OBJ_ID(blackweapon_controller_main), spawn_parameters
+        BN67_OBJ_ID(black_weapon_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;

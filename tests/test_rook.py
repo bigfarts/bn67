@@ -122,7 +122,7 @@ class RookTests(unittest.TestCase):
     def test_uses_bn3_rook_art_and_battle_sprite(self) -> None:
         self.assertEqual(BN3_ROOK_ID, 0x99)
         sprite = next(
-            asset for asset in ASSETS if asset.output == "rook-battle-sprite.bin"
+            asset for asset in ASSETS if asset.output == "rook_battle_sprite.bin"
         )
         self.assertEqual(sprite.source, "bn3_blue")
         self.assertEqual(sprite.offset, 0x2CD434)
@@ -135,9 +135,9 @@ class RookTests(unittest.TestCase):
         self.assertIn("exe6_event_chip_common_telop();", source)
         self.assertIn("static const uint16_t STARTUP_TICKS = 3;", source)
         self.assertIn("bn67_deployable_placement_check(", source)
-        self.assertIn("BN67_USE_SONG(signalred_spawn_song);", source)
+        self.assertIn("BN67_USE_SONG(signal_red_spawn_song);", source)
         self.assertIn(
-            "exe6_sound_req(BN67_SONG_ID(signalred_spawn_song));",
+            "exe6_sound_req(BN67_SONG_ID(signal_red_spawn_song));",
             source,
         )
         self.assertIn("static const uint32_t SPAWN_BLOB_EFFECT = 0x15;", source)
@@ -180,7 +180,7 @@ class RookTests(unittest.TestCase):
 
         expectations = (
             ("rook.c", "rook_battle_sprite", 4),
-            ("signalred.c", "signalred_battle_sprite", 0),
+            ("signal_red.c", "signal_red_battle_sprite", 0),
         )
         for filename, archive, animation in expectations:
             source = (ROOT / "src/chips" / filename).read_text()
@@ -228,7 +228,7 @@ class RookTests(unittest.TestCase):
         ]
         self.assertIn("obj->header_flags |= EXE6_OBJ_FLAG_VISIBLE;", rook_init)
 
-        source = (ROOT / "src/chips/signalred.c").read_text()
+        source = (ROOT / "src/chips/signal_red.c").read_text()
         self.assertIn("static const uint32_t SPAWN_BLOB_EFFECT = 0x15;", source)
         success = source[
             source.index("static void obj_normal_update"):
@@ -266,7 +266,7 @@ class RookTests(unittest.TestCase):
         self.assertIn("EXE6_BLOCK_FLAG_SUPPORT_OBJECT", runtime)
         self.assertIn("BN67_DEPLOYABLE_PLACEMENT_OCCUPIED", runtime)
 
-        for filename, deployable_slot in (("rook.c", 0), ("signalred.c", 1)):
+        for filename, deployable_slot in (("rook.c", 0), ("signal_red.c", 1)):
             source = (ROOT / "src/chips" / filename).read_text()
 
             placement = source[
@@ -287,10 +287,10 @@ class RookTests(unittest.TestCase):
             ]
             self.assertNotIn("exe6_cube_entry", spawn)
 
-        signalred = (ROOT / "src/chips/signalred.c").read_text()
+        signal_red = (ROOT / "src/chips/signal_red.c").read_text()
         self.assertIn(
             "if (obj->work[OPPONENT_CHIPS_DISABLED_WORK] == 0)",
-            signalred,
+            signal_red,
         )
 
     def test_rook_keeps_owner_collision_and_extends_the_windbreak_check(self) -> None:

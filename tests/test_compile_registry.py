@@ -413,7 +413,7 @@ class PackageCompilerTests(unittest.TestCase):
             linker,
         )
         self.assertIn(
-            "__bn67_dust_kind_signalred_battle_sprite = 0xF;",
+            "__bn67_dust_kind_signal_red_battle_sprite = 0xF;",
             linker,
         )
         self.assertIn(
@@ -426,16 +426,16 @@ class PackageCompilerTests(unittest.TestCase):
         )
         self.assertIn("dust_sprite_table:", assembly)
         self.assertIn(
-            '.incbin "build/dust-sprite-table-gregar.bin"',
+            '.incbin "build/dust_sprite_table_gregar.bin"',
             assembly,
         )
-        signalred_group, signalred_id = allocations.sprites[
-            "signalred_battle_sprite"
+        signal_red_group, signal_red_id = allocations.sprites[
+            "signal_red_battle_sprite"
         ]
         rook_group, rook_id = allocations.sprites["rook_battle_sprite"]
         self.assertIn(
-            f".byte 0x{signalred_group:02X},0x{signalred_id:02X} "
-            "// 0x0F signalred_battle_sprite",
+            f".byte 0x{signal_red_group:02X},0x{signal_red_id:02X} "
+            "// 0x0F signal_red_battle_sprite",
             assembly,
         )
         self.assertIn(
@@ -466,8 +466,8 @@ class PackageCompilerTests(unittest.TestCase):
             self.metadata["gregar"]["rook"],
         )
         self.assertIn(
-            "__bn67_meta__dust_sprite__signalred_battle_sprite",
-            self.metadata["gregar"]["signalred"],
+            "__bn67_meta__dust_sprite__signal_red_battle_sprite",
+            self.metadata["gregar"]["signal_red"],
         )
         self.assertIn(
             "__bn67_meta__fixed_dust_sprite__0x0E__otenko_battle_sprite",
@@ -486,7 +486,7 @@ class PackageCompilerTests(unittest.TestCase):
         )
         self.assertEqual(allocations.dust_sprites["rook_battle_sprite"], 0x0B)
         self.assertEqual(
-            allocations.dust_sprites["signalred_battle_sprite"],
+            allocations.dust_sprites["signal_red_battle_sprite"],
             0x0F,
         )
 
@@ -501,12 +501,12 @@ class PackageCompilerTests(unittest.TestCase):
             self.metadata["gregar"]["rook"],
         )
         self.assertIn(
-            "__bn67_meta__field_object__signalred_battle_sprite__0__0__1",
-            self.metadata["gregar"]["signalred"],
+            "__bn67_meta__field_object__signal_red_battle_sprite__0__0__1",
+            self.metadata["gregar"]["signal_red"],
         )
         self.assertEqual(allocations.field_objects["rook_battle_sprite"], 0xEC)
         self.assertEqual(
-            allocations.field_objects["signalred_battle_sprite"],
+            allocations.field_objects["signal_red_battle_sprite"],
             0xED,
         )
         self.assertIn(".org 0x0800F4D4\n    .dw field_object_sprite_table", assembly)
@@ -515,7 +515,7 @@ class PackageCompilerTests(unittest.TestCase):
             assembly,
         )
         self.assertIn(
-            "0x00,0x00,0x01 // 0xED signalred_battle_sprite",
+            "0x00,0x00,0x01 // 0xED signal_red_battle_sprite",
             assembly,
         )
         self.assertIn(
@@ -523,7 +523,7 @@ class PackageCompilerTests(unittest.TestCase):
             linker,
         )
         self.assertIn(
-            "__bn67_field_object_id_signalred_battle_sprite = 0xED;",
+            "__bn67_field_object_id_signal_red_battle_sprite = 0xED;",
             linker,
         )
 
@@ -571,13 +571,13 @@ class PackageCompilerTests(unittest.TestCase):
             emit_chip_records(falzar_config, falzar_packages)
         )
 
-        bugcharge = next(
+        bug_charge = next(
             chip
-            for package in gregar_packages if package.name == "bugcharge"
+            for package in gregar_packages if package.name == "bug_charge"
             for chip in package.chips
         )
-        self.assertEqual(bugcharge.chip_id, 0x131)
-        self.assertEqual(bugcharge.record, "bn67_chip_record_0x131")
+        self.assertEqual(bug_charge.chip_id, 0x131)
+        self.assertEqual(bug_charge.record, "bn67_chip_record_0x131")
         self.assertIn(
             0x0BA,
             {
@@ -587,12 +587,12 @@ class PackageCompilerTests(unittest.TestCase):
             },
         )
 
-        bugcharge_package = next(
-            package for package in gregar_packages if package.name == "bugcharge"
+        bug_charge_package = next(
+            package for package in gregar_packages if package.name == "bug_charge"
         )
         text_entries = {
             (entry.archive, entry.index): entry.value
-            for entry in bugcharge_package.text
+            for entry in bug_charge_package.text
         }
         self.assertEqual(text_entries[("chip-names-1", 0x31)], "BugCharg")
         self.assertEqual(
@@ -600,30 +600,30 @@ class PackageCompilerTests(unittest.TestCase):
             "All your\nbugs will\nattack!",
         )
 
-        self.assertIn("// bugcharge: chip 0x131", assembly)
+        self.assertIn("// bug_charge: chip 0x131", assembly)
         self.assertIn(
             "copy_c_data 0x08025214,bn67_chip_record_0x131,0x2C",
             assembly,
         )
         self.assertIn("bn67_chip_record_0x131", falzar_assembly)
-        bugcharge_attack = allocations.attacks["bugcharge_attack_main"]
+        bug_charge_attack = allocations.attacks["bug_charge_attack_main"]
         c_values = generate_c_values(allocations)
         self.assertIn(
-            f"#define bn67_attack_family_bugcharge_attack_main "
-            f"0x{bugcharge_attack.family:02X}u",
+            f"#define bn67_attack_family_bug_charge_attack_main "
+            f"0x{bug_charge_attack.family:02X}u",
             c_values,
         )
         self.assertIn(
-            f"#define bn67_attack_subfamily_bugcharge_attack_main "
-            f"0x{bugcharge_attack.subfamily:02X}u",
+            f"#define bn67_attack_subfamily_bug_charge_attack_main "
+            f"0x{bug_charge_attack.subfamily:02X}u",
             c_values,
         )
-        bugcharge_source = (ROOT / "src/chips/bugcharge.c").read_text()
-        self.assertIn("BN67_CHIP_RECORD(0x131)", bugcharge_source)
-        self.assertIn(".counter_settings = 0x8B", bugcharge_source)
+        bug_charge_source = (ROOT / "src/chips/bug_charge.c").read_text()
+        self.assertIn("BN67_CHIP_RECORD(0x131)", bug_charge_source)
+        self.assertIn(".counter_settings = 0x8B", bug_charge_source)
         self.assertIn(
-            ".family = BN67_ATTACK_FAMILY(bugcharge_attack_main)",
-            bugcharge_source,
+            ".family = BN67_ATTACK_FAMILY(bug_charge_attack_main)",
+            bug_charge_source,
         )
 
     def test_attack_entries_are_compiler_allocated(self) -> None:
@@ -712,12 +712,12 @@ class PackageCompilerTests(unittest.TestCase):
         numberman = next(package for package in packages if package.name == "numberman")
         self.assertIsNotNone(numberman.attack)
         self.assertEqual(numberman.attack.kind, "summon_attack")
-        signalred = next(package for package in packages if package.name == "signalred")
-        self.assertIsNotNone(signalred.attack)
-        self.assertEqual(signalred.attack.kind, "persistent_attack")
-        folderback = next(package for package in packages if package.name == "folderback")
-        self.assertIsNotNone(folderback.attack)
-        self.assertEqual(folderback.attack.kind, "persistent_attack")
+        signal_red = next(package for package in packages if package.name == "signal_red")
+        self.assertIsNotNone(signal_red.attack)
+        self.assertEqual(signal_red.attack.kind, "persistent_attack")
+        folder_back = next(package for package in packages if package.name == "folder_back")
+        self.assertIsNotNone(folder_back.attack)
+        self.assertEqual(folder_back.attack.kind, "persistent_attack")
 
     def test_ephemeral_attack_pool_follows_the_native_table(self) -> None:
         expected_references = {
@@ -733,20 +733,20 @@ class PackageCompilerTests(unittest.TestCase):
                 ephemeral_pool.references,
                 expected_references[variant],
             )
-            signalred = next(
-                package for package in packages if package.name == "signalred"
+            signal_red = next(
+                package for package in packages if package.name == "signal_red"
             )
-            self.assertIsNotNone(signalred.attack)
-            ephemeral_signalred = replace(
-                signalred,
-                attack=replace(signalred.attack, kind="ephemeral_attack"),
+            self.assertIsNotNone(signal_red.attack)
+            ephemeral_signal_red = replace(
+                signal_red,
+                attack=replace(signal_red.attack, kind="ephemeral_attack"),
             )
             packages = [
-                ephemeral_signalred if package.name == "signalred" else package
+                ephemeral_signal_red if package.name == "signal_red" else package
                 for package in packages
             ]
             allocations = validate_and_allocate(config, packages)
-            slot = allocations.attacks["signalred_attack_main"]
+            slot = allocations.attacks["signal_red_attack_main"]
             self.assertEqual(slot.family, 0x1C)
             self.assertEqual(slot.subfamily, 0x17)
             assembly = "\n".join(
@@ -758,15 +758,15 @@ class PackageCompilerTests(unittest.TestCase):
                 assembly,
             )
             self.assertIn(
-                ".dw signalred_attack_main + 1 // 0x17 signalred",
+                ".dw signal_red_attack_main + 1 // 0x17 signal_red",
                 assembly,
             )
 
-    def test_blackweapon_replaces_delta_ray_slot(self) -> None:
-        source = (ROOT / "src/chips/blackweapon.c").read_text()
+    def test_black_weapon_replaces_delta_ray_slot(self) -> None:
+        source = (ROOT / "src/chips/black_weapon.c").read_text()
         self.assertIn("BN67_CHIP_RECORD(0x12f)", source)
         self.assertIn(
-            "BN67_PERSISTENT_ATTACK(0x12f, blackweapon_attack_main)",
+            "BN67_PERSISTENT_ATTACK(0x12f, black_weapon_attack_main)",
             source,
         )
         self.assertIn(".library_number = 3", source)
@@ -775,36 +775,36 @@ class PackageCompilerTests(unittest.TestCase):
 
         for variant in ("gregar", "falzar"):
             _, packages = self.packages(variant)
-            blackweapon = next(
-                package for package in packages if package.name == "blackweapon"
+            black_weapon = next(
+                package for package in packages if package.name == "black_weapon"
             )
-            self.assertEqual([chip.chip_id for chip in blackweapon.chips], [0x12F])
-            self.assertEqual(blackweapon.attack.chip_id, 0x12F)
+            self.assertEqual([chip.chip_id for chip in black_weapon.chips], [0x12F])
+            self.assertEqual(black_weapon.attack.chip_id, 0x12F)
             text_entries = {
                 (entry.archive, entry.index): entry.value
-                for entry in blackweapon.text
+                for entry in black_weapon.text
             }
             self.assertEqual(text_entries[("chip-names-1", 0x2F)], "BlakWeap")
             self.assertIn(("chip-descriptions-1", 0x2F), text_entries)
 
     def test_giga_replacements_preserve_library_slots(self) -> None:
-        chaoslord = (ROOT / "src/chips/chaoslord.c").read_text()
-        self.assertIn("BN67_CHIP_RECORD(0x12e)", chaoslord)
-        self.assertIn(".library_number = 0x02", chaoslord)
-        self.assertIn(".library_flags = 0x18", chaoslord)
-        self.assertIn(".library_lock_on_type = 0x00", chaoslord)
+        chaos_lord = (ROOT / "src/chips/chaos_lord.c").read_text()
+        self.assertIn("BN67_CHIP_RECORD(0x12e)", chaos_lord)
+        self.assertIn(".library_number = 0x02", chaos_lord)
+        self.assertIn(".library_flags = 0x18", chaos_lord)
+        self.assertIn(".library_lock_on_type = 0x00", chaos_lord)
 
-        deathphoenix = (ROOT / "src/chips/deathphoenix.c").read_text()
-        self.assertIn("BN67_CHIP_RECORD(0x134)", deathphoenix)
-        self.assertIn(".library_number = 0x03", deathphoenix)
-        self.assertIn(".library_flags = 0x18", deathphoenix)
-        self.assertIn(".library_lock_on_type = 0x00", deathphoenix)
+        death_phoenix = (ROOT / "src/chips/death_phoenix.c").read_text()
+        self.assertIn("BN67_CHIP_RECORD(0x134)", death_phoenix)
+        self.assertIn(".library_number = 0x03", death_phoenix)
+        self.assertIn(".library_flags = 0x18", death_phoenix)
+        self.assertIn(".library_lock_on_type = 0x00", death_phoenix)
 
-    def test_folderback_replaces_color_point_slot(self) -> None:
-        source = (ROOT / "src/chips/folderback.c").read_text()
+    def test_folder_back_replaces_color_point_slot(self) -> None:
+        source = (ROOT / "src/chips/folder_back.c").read_text()
         self.assertIn("BN67_CHIP_RECORD(0x0c2)", source)
         self.assertIn(
-            "BN67_PERSISTENT_ATTACK(0x0c2, folderback_attack_main)",
+            "BN67_PERSISTENT_ATTACK(0x0c2, folder_back_attack_main)",
             source,
         )
         self.assertNotIn("BN67_CHIP_RECORD(0x0c6)", source)
@@ -814,14 +814,14 @@ class PackageCompilerTests(unittest.TestCase):
 
         for variant in ("gregar", "falzar"):
             _, packages = self.packages(variant)
-            folderback = next(
-                package for package in packages if package.name == "folderback"
+            folder_back = next(
+                package for package in packages if package.name == "folder_back"
             )
-            self.assertEqual([chip.chip_id for chip in folderback.chips], [0x0C2])
-            self.assertEqual(folderback.attack.chip_id, 0x0C2)
+            self.assertEqual([chip.chip_id for chip in folder_back.chips], [0x0C2])
+            self.assertEqual(folder_back.attack.chip_id, 0x0C2)
             text_entries = {
                 (entry.archive, entry.index): entry.value
-                for entry in folderback.text
+                for entry in folder_back.text
             }
             self.assertEqual(text_entries[("chip-names-0", 0xC2)], "FoldrBak")
             self.assertIn(("chip-descriptions-0", 0xC2), text_entries)
@@ -1132,96 +1132,96 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn(
             ".org 0x080031FA\n"
             "    push {r1}\n"
-            "    bl section_patch_folderback_dispatch_main_relay\n"
+            "    bl section_patch_folder_back_dispatch_main_relay\n"
             ".org 0x08003C9C\n"
-            "section_patch_folderback_dispatch_main_relay:",
+            "section_patch_folder_back_dispatch_main_relay:",
             assembly,
         )
-        self.assertIn("ldr r1,=folderback_dispatch_main + 1", assembly)
+        self.assertIn("ldr r1,=folder_back_dispatch_main + 1", assembly)
         self.assertIn(
             ".org 0x0800819A\n"
             "    push {r1}\n"
-            "    bl section_patch_folderback_custom_transition_dispatch_relay\n"
+            "    bl section_patch_folder_back_custom_transition_dispatch_relay\n"
             ".org 0x080E42C8\n"
-            "section_patch_folderback_custom_transition_dispatch_relay:",
+            "section_patch_folder_back_custom_transition_dispatch_relay:",
             assembly,
         )
         self.assertIn(
-            "ldr r1,=folderback_custom_transition_dispatch + 1",
+            "ldr r1,=folder_back_custom_transition_dispatch + 1",
             assembly,
         )
         self.assertIn(
             ".org 0x08012646\n"
             "    push {r1}\n"
-            "    bl section_patch_blackweapon_attack_level_dispatch_relay\n"
+            "    bl section_patch_black_weapon_attack_level_dispatch_relay\n"
             ".org 0x0801264C\n"
-            "section_patch_blackweapon_attack_level_dispatch_relay:",
+            "section_patch_black_weapon_attack_level_dispatch_relay:",
             assembly,
         )
         self.assertIn(
-            "ldr r1,=blackweapon_attack_level_dispatch + 1",
+            "ldr r1,=black_weapon_attack_level_dispatch + 1",
             assembly,
         )
         self.assertIn(
             ".org 0x080117E0\n"
-            "    .dw blackweapon_beast_buster_id3_dispatch + 1",
+            "    .dw black_weapon_beast_buster_id3_dispatch + 1",
             assembly,
         )
         self.assertIn(
             ".org 0x080117E4\n"
-            "    .dw blackweapon_beast_buster_id4_dispatch + 1",
+            "    .dw black_weapon_beast_buster_id4_dispatch + 1",
             assembly,
         )
-        folderback = (ROOT / "src/chips/folderback.c").read_text()
+        folder_back = (ROOT / "src/chips/folder_back.c").read_text()
         self.assertIn(
-            "BN67_PATCH_SECTION(0x080031FA, 0x08003C9C, folderback_dispatch_main)",
-            folderback,
+            "BN67_PATCH_SECTION(0x080031FA, 0x08003C9C, folder_back_dispatch_main)",
+            folder_back,
         )
-        self.assertNotIn("BN67_PATCH_POINTER(0x08003224", folderback)
-        self.assertNotIn("__bn67_object_kind", folderback)
-        self.assertIn("BN67_OBJ_ID(folderback_controller_main)", folderback)
-        self.assertIn("folderback_object_should_pause", folderback)
-        self.assertEqual(folderback.count("exe6_battle_chip_set();"), 1)
-        self.assertNotIn("exe6_deck_shuffle_sub(", folderback)
-        self.assertIn("selection->active_chip_index = 0;", folderback)
-        self.assertIn("selection->loaded_chip_count = 0;", folderback)
-        self.assertIn("clear_chip_use_counts();", folderback)
+        self.assertNotIn("BN67_PATCH_POINTER(0x08003224", folder_back)
+        self.assertNotIn("__bn67_object_kind", folder_back)
+        self.assertIn("BN67_OBJ_ID(folder_back_controller_main)", folder_back)
+        self.assertIn("folder_back_object_should_pause", folder_back)
+        self.assertEqual(folder_back.count("exe6_battle_chip_set();"), 1)
+        self.assertNotIn("exe6_deck_shuffle_sub(", folder_back)
+        self.assertIn("selection->active_chip_index = 0;", folder_back)
+        self.assertIn("selection->loaded_chip_count = 0;", folder_back)
+        self.assertIn("clear_chip_use_counts();", folder_back)
         self.assertIn(
             "*EXE6_USED_CHIP_CLASS_COUNTS = (Exe6ChipClassUseCounts){0};",
-            folderback,
+            folder_back,
         )
-        self.assertNotIn("sizeof(*selection)", folderback)
-        self.assertIn("const Exe6ObjectSlot *slots = EXE6_EFFECT_POOL_HEAD", folderback)
-        self.assertIn("EXE6_POOL_SLOT_COUNT", folderback)
-        self.assertIn("object->object_class", folderback)
-        self.assertIn("EXE6_OBJECT_CLASS_ENEMY", folderback)
-        self.assertIn("EXE6_OBJECT_CLASS_SHELL", folderback)
-        self.assertNotIn("exe6_navi_status_work_adrs_get", folderback)
-        self.assertNotIn("EXE6_NAVI_TRANSFORMATION", folderback)
-        self.assertNotIn("exe6_event_chip_state_get", folderback)
-        self.assertNotIn("EXE6_HIT_STATUS_FLAG_BEAST_OVER", folderback)
-        self.assertNotIn("exe6_event_chip_state_reset(owner ^ 1u)", folderback)
-        self.assertIn("folderback_coalesce_native_custom", folderback)
-        self.assertIn("restore_folder_once(controller);", folderback)
-        self.assertIn("delete_controller(controller);", folderback)
-        self.assertIn("->folder_restored = false;", folderback)
+        self.assertNotIn("sizeof(*selection)", folder_back)
+        self.assertIn("const Exe6ObjectSlot *slots = EXE6_EFFECT_POOL_HEAD", folder_back)
+        self.assertIn("EXE6_POOL_SLOT_COUNT", folder_back)
+        self.assertIn("object->object_class", folder_back)
+        self.assertIn("EXE6_OBJECT_CLASS_ENEMY", folder_back)
+        self.assertIn("EXE6_OBJECT_CLASS_SHELL", folder_back)
+        self.assertNotIn("exe6_navi_status_work_adrs_get", folder_back)
+        self.assertNotIn("EXE6_NAVI_TRANSFORMATION", folder_back)
+        self.assertNotIn("exe6_event_chip_state_get", folder_back)
+        self.assertNotIn("EXE6_HIT_STATUS_FLAG_BEAST_OVER", folder_back)
+        self.assertNotIn("exe6_event_chip_state_reset(owner ^ 1u)", folder_back)
+        self.assertIn("folder_back_coalesce_native_custom", folder_back)
+        self.assertIn("restore_folder_once(controller);", folder_back)
+        self.assertIn("delete_controller(controller);", folder_back)
+        self.assertIn("->folder_restored = false;", folder_back)
         self.assertIn(
             "BN67_PATCH_SECTION(0x0800819A, 0x080E42C8,",
-            folderback,
+            folder_back,
         )
-        controller_start = folderback.index(
-            "BN67_EFFECT(folderback_controller_main)"
+        controller_start = folder_back.index(
+            "BN67_EFFECT(folder_back_controller_main)"
         )
-        controller_end = folderback.index(
+        controller_end = folder_back.index(
             "BN67_PERSISTENT_ATTACK", controller_start
         )
-        controller = folderback[controller_start:controller_end]
+        controller = folder_back[controller_start:controller_end]
         self.assertNotIn("exe6_cockpit_pause_set();", controller)
         self.assertIn("hold_local_custom_gauge(self);", controller)
         held_gauge_capture = "exe6_cockpit_get_custom_gauge_value();"
         self.assertIn(held_gauge_capture, controller)
-        self.assertNotIn("local_operation_work", folderback)
-        self.assertNotIn("exe6_op_work_adrs_get", folderback)
+        self.assertNotIn("local_operation_work", folder_back)
+        self.assertNotIn("exe6_op_work_adrs_get", folder_back)
         self.assertLess(
             controller.index(held_gauge_capture),
             controller.index("hold_local_custom_gauge(self)"),
@@ -1230,22 +1230,22 @@ class PackageCompilerTests(unittest.TestCase):
             controller.index("hold_local_custom_gauge(self);"),
             controller.index("effect_update(self)"),
         )
-        self.assertIn("work->held_custom_gauge = FULL_GAUGE;", folderback)
-        self.assertNotIn("player + 0x28", folderback)
-        self.assertNotIn("EXE6_SHELL_TYPE_2", folderback)
-        self.assertNotIn("locked_opponents", folderback)
-        self.assertNotIn("object->parent", folderback)
-        self.assertNotIn("object->owner", folderback)
-        self.assertIn('"bl folderback_object_should_pause\\n"', folderback)
-        self.assertNotIn('"ldr r6,=0x02036870\\n"', folderback)
-        self.assertIn('"pop {r1}\\n"', folderback)
-        self.assertIn('"push {r0,r1,r2,r3,r4,r6,r7}\\n"', folderback)
+        self.assertIn("work->held_custom_gauge = FULL_GAUGE;", folder_back)
+        self.assertNotIn("player + 0x28", folder_back)
+        self.assertNotIn("EXE6_SHELL_TYPE_2", folder_back)
+        self.assertNotIn("locked_opponents", folder_back)
+        self.assertNotIn("object->parent", folder_back)
+        self.assertNotIn("object->owner", folder_back)
+        self.assertIn('"bl folder_back_object_should_pause\\n"', folder_back)
+        self.assertNotIn('"ldr r6,=0x02036870\\n"', folder_back)
+        self.assertIn('"pop {r1}\\n"', folder_back)
+        self.assertIn('"push {r0,r1,r2,r3,r4,r6,r7}\\n"', folder_back)
         self.assertEqual(
-            folderback.count('"pop {r0,r1,r2,r3,r4,r6,r7}\\n"'),
+            folder_back.count('"pop {r0,r1,r2,r3,r4,r6,r7}\\n"'),
             2,
         )
-        self.assertEqual(folderback.count('"lsrs r1,r1,#1\\n"'), 2)
-        self.assertEqual(folderback.count('"lsls r1,r1,#1\\n"'), 2)
+        self.assertEqual(folder_back.count('"lsrs r1,r1,#1\\n"'), 2)
+        self.assertEqual(folder_back.count('"lsls r1,r1,#1\\n"'), 2)
         for instruction in (
             "push {r0}",
             "ldr r0,=0x08003200 + 1",
@@ -1253,9 +1253,9 @@ class PackageCompilerTests(unittest.TestCase):
             "pop {r0}",
             "mov pc,lr",
         ):
-            self.assertIn(f'"{instruction}\\n"', folderback)
-        self.assertNotIn("0x08003206", folderback)
-        self.assertNotIn("0x0800372A", folderback)
+            self.assertIn(f'"{instruction}\\n"', folder_back)
+        self.assertNotIn("0x08003206", folder_back)
+        self.assertNotIn("0x0800372A", folder_back)
         runtime = (ROOT / "src/runtime.h").read_text()
         abi = (ROOT / "src/abi.h").read_text()
         self.assertIn("struct Exe6ObjectSlotFields", abi)
@@ -1281,7 +1281,7 @@ class PackageCompilerTests(unittest.TestCase):
 
     def test_out_of_range_c_chip_id_is_rejected(self) -> None:
         metadata = dict(self.metadata["gregar"])
-        metadata["antinavi"] = ["__bn67_meta__chip__0x13a"]
+        metadata["anti_navi"] = ["__bn67_meta__chip__0x13a"]
         config = self.config()
         packages = discover_packages(config, metadata)
         with self.assertRaisesRegex(PackageError, "chip ID must be between"):
@@ -1327,15 +1327,15 @@ class PackageCompilerTests(unittest.TestCase):
         allocations = validate_and_allocate(config, packages)
         linker = generate_linker_values(packages, allocations)
         self.assertIn(
-            f"__bn67_object_id_signalred_controller_main = "
-            f"0x{allocations.objects[4]['signalred_controller_main']:X};",
+            f"__bn67_object_id_signal_red_controller_main = "
+            f"0x{allocations.objects[4]['signal_red_controller_main']:X};",
             linker,
         )
-        group, sprite_id = allocations.sprites["signalred_battle_sprite"]
-        self.assertIn(f"__bn67_sprite_group_signalred_battle_sprite = 0x{group:X};", linker)
-        self.assertIn(f"__bn67_sprite_id_signalred_battle_sprite = 0x{sprite_id:X};", linker)
+        group, sprite_id = allocations.sprites["signal_red_battle_sprite"]
+        self.assertIn(f"__bn67_sprite_group_signal_red_battle_sprite = 0x{group:X};", linker)
+        self.assertIn(f"__bn67_sprite_id_signal_red_battle_sprite = 0x{sprite_id:X};", linker)
         self.assertIn(
-            "__bn67_dust_kind_signalred_battle_sprite = 0xF;",
+            "__bn67_dust_kind_signal_red_battle_sprite = 0xF;",
             linker,
         )
         self.assertIn(
@@ -1347,8 +1347,8 @@ class PackageCompilerTests(unittest.TestCase):
             linker,
         )
         self.assertIn(
-            f"__bn67_song_id_signalred_spawn_song = "
-            f"0x{allocations.songs['signalred_spawn_song']:X};",
+            f"__bn67_song_id_signal_red_spawn_song = "
+            f"0x{allocations.songs['signal_red_spawn_song']:X};",
             linker,
         )
 

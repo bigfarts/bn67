@@ -2,9 +2,9 @@
 #include "runtime.h"
 
 /* BN5 ProtoMan's actor, coffin, and sunlight archives for the restored chips. */
-BN67_SPRITE(django_battle_sprite, "build/django-battle-sprite.bin");
-BN67_SPRITE(django_sun_sprite, "build/django-sun-sprite.bin");
-BN67_SPRITE(django_coffin_sprite, "build/django-coffin-sprite.bin");
+BN67_SPRITE(django_battle_sprite, "build/django_battle_sprite.bin");
+BN67_SPRITE(django_sun_sprite, "build/django_sun_sprite.bin");
+BN67_SPRITE(django_coffin_sprite, "build/django_coffin_sprite.bin");
 
 /* Restore Japanese EXE6's compressed Django actor at the original handle used
  * by Crossover. The standalone chips intentionally keep their BN5 archives. */
@@ -12,18 +12,18 @@ BN67_FIXED_COMPRESSED_SPRITE(
     0x0C,
     0x0F,
     django_crossover_sprite,
-    "build/django-crossover-sprite.bin"
+    "build/django_crossover_sprite.bin"
 );
 
-BN67_INCBIN(django_icon, "build/django-icon.bin");
-BN67_INCBIN(django_image, "build/django-image.bin");
-BN67_INCBIN(django_palette, "build/django-palette.bin");
+BN67_INCBIN(django_icon, "build/django_icon.bin");
+BN67_INCBIN(django_image, "build/django_image.bin");
+BN67_INCBIN(django_palette, "build/django_palette.bin");
 BN67_ASM_RESOURCE(
     django2_palette,
-    ".incbin \"build/django-palette.bin\",0,0x1A\n"
+    ".incbin \"build/django_palette.bin\",0,0x1A\n"
     ".short 0x6BF7,0x5BAD,0x4743\n"
 );
-BN67_INCBIN(django3_palette, "build/django3-palette.bin");
+BN67_INCBIN(django3_palette, "build/django3_palette.bin");
 
 #define DJANGO_RECORD(                                                       \
     chip_id, second_code, rarity_value, mb_value, power_value, palette_value \

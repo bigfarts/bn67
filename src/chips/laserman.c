@@ -2,17 +2,17 @@
 #include "runtime.h"
 
 BN67_USE_SONG(common_navi_summon_song);
-BN67_SPRITE(laserman_battle_sprite, "build/laserman-battle-sprite.bin");
+BN67_SPRITE(laserman_battle_sprite, "build/laserman_battle_sprite.bin");
 
-BN67_INCBIN(laserman_image, "build/laserman-image.bin");
-BN67_INCBIN(laserman_palette_base, "build/laserman-pal-base.bin");
+BN67_INCBIN(laserman_image, "build/laserman_image.bin");
+BN67_INCBIN(laserman_palette_base, "build/laserman_pal_base.bin");
 BN67_ASM_RESOURCE(
     laserman_palette_ex,
-    ".incbin \"build/laserman-pal-base.bin\",0,0x02\n"
+    ".incbin \"build/laserman_pal_base.bin\",0,0x02\n"
     ".short 0x00C0,0x0180,0x0280,0x03E0,0x0060\n"
-    ".incbin \"build/laserman-pal-base.bin\",0x0C,0x14\n"
+    ".incbin \"build/laserman_pal_base.bin\",0x0C,0x14\n"
 );
-BN67_INCBIN(laserman_palette_sp, "build/laserman-pal-sp.bin");
+BN67_INCBIN(laserman_palette_sp, "build/laserman_pal_sp.bin");
 BN67_SONG(
     laserman_fire_song,
     BN67_PCM(
@@ -22,7 +22,7 @@ BN67_SONG(
         ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
         ".byte 0xBE,0x7F,0xF6,0x2F,0x7F,0xA2,0x81,0xBE\n"
         ".byte 0x60,0x84,0x40,0x84,0x20,0x84,0x10,0x84,0xB1\n",
-        "build/laserman-fire-sample.bin"
+        "build/laserman_fire_sample.bin"
     )
 );
 

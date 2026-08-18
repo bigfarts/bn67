@@ -10,7 +10,7 @@ Link battles start each player with five Beast Out turns instead of three.
 
 The gold `6` in both title logos now reads `67`. The finished, beveled `7` is
 stored at its final screen coordinates in the transparent 240x160
-`assets/title-screen-overlay.png`. The builder overlays that complete image at
+`assets/title_screen_overlay.png`. The builder overlays that complete image at
 `(0, 0)` and maps its reference colors to each version's native title palette.
 Each edition's complete 256x160 title layer and uniform 32x20 tile map are
 rebuilt wholesale rather than patching individual native atlas cells.
@@ -323,8 +323,8 @@ BN67_CHIP_RECORD(0x131) {
     .codes = { EXE6_CHIP_CODE_B, EXE6_CHIP_CODE_NONE,
                EXE6_CHIP_CODE_NONE, EXE6_CHIP_CODE_NONE },
     .behavior = {
-        .family = BN67_ATTACK_FAMILY(bugcharge_attack_main),
-        .subfamily = BN67_ATTACK_SUBFAMILY(bugcharge_attack_main),
+        .family = BN67_ATTACK_FAMILY(bug_charge_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(bug_charge_attack_main),
     },
     .power = 200,
     // Remaining Exe6ChipRecord fields omitted here for brevity.

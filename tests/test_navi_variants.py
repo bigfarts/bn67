@@ -60,7 +60,7 @@ class NaviVariantTests(unittest.TestCase):
         )
 
     def test_native_sp_powers_are_fixed_to_table_maximums(self) -> None:
-        source = (ROOT / "src/chips/navi-variants.asm").read_text()
+        source = (ROOT / "src/chips/navi_variants.asm").read_text()
         expected = {
             0x0E8: 210,
             0x0EB: 220,

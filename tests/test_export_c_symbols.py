@@ -12,11 +12,11 @@ class ExportCSymbolTests(unittest.TestCase):
         run.return_value = subprocess.CompletedProcess(
             [],
             0,
-            stdout="08801234 T chaoslord_attack_main\n",
+            stdout="08801234 T chaos_lord_attack_main\n",
         )
         self.assertEqual(
             symbols("arm-none-eabi-nm", Path("gameplay.elf")),
-            [(0x08801234, "chaoslord_attack_main")],
+            [(0x08801234, "chaos_lord_attack_main")],
         )
 
     @patch("export_c_symbols.subprocess.run")

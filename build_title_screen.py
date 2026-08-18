@@ -69,7 +69,7 @@ CONFIGS = {
     ),
 }
 
-OVERLAY_PATH = Path(__file__).resolve().parent / "assets" / "title-screen-overlay.png"
+OVERLAY_PATH = Path(__file__).resolve().parent / "assets" / "title_screen_overlay.png"
 REFERENCE_GRADIENT = (
     (230, 131, 32),
     (230, 148, 41),

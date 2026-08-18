@@ -4,10 +4,10 @@ BN67_FIXED_COMPRESSED_SPRITE(
     0x0C,
     0x66,
     falzar_battle_sprite,
-    "build/falzar-battle-sprite.bin"
+    "build/falzar_battle_sprite.bin"
 );
-BN67_INCBIN(falzar_icon, "build/falzar-icon.bin");
-BN67_INCBIN(falzar_image, "build/falzar-image.bin");
+BN67_INCBIN(falzar_icon, "build/falzar_icon.bin");
+BN67_INCBIN(falzar_image, "build/falzar_image.bin");
 BN67_ASM_RESOURCE(
     falzar_palette,
     ".byte 0x00,0x00,0xDE,0x7B,0x74,0x77,0xCC,0x49\n"

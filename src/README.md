@@ -69,7 +69,7 @@ Put declarations beside the implementation they register:
 #include "runtime.h"
 
 BN67_USE_SONG(common_navi_summon_song);
-BN67_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
+BN67_SPRITE(searchman_battle_sprite, "build/searchman_battle_sprite.bin");
 BN67_SONG(
     searchman_fire_song,
     BN67_PCM(
@@ -77,7 +77,7 @@ BN67_SONG(
         0x40,
         0x08,
         ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xB1\n",
-        "build/searchman-fire-sample.bin"
+        "build/searchman_fire_sample.bin"
     )
 );
 BN67_PATCH_POINTER(0x08012010, searchman_data);
@@ -101,7 +101,7 @@ in the edition config instead of individual chip sources. The sprite may be
 declared with either `BN67_SPRITE` or `BN67_FIXED_SPRITE`.
 
 ```c
-BN67_SPRITE(rook_battle_sprite, "build/rook-battle-sprite.bin");
+BN67_SPRITE(rook_battle_sprite, "build/rook_battle_sprite.bin");
 BN67_DUST_SPRITE(rook_battle_sprite);
 
 exe6_cube_set_dust_suikomi_efc(BN67_DUST_KIND(rook_battle_sprite));

@@ -15,7 +15,8 @@
 .include "src/hooks.asm"
 .include "src/chips/django.asm"
 .include "src/chips/otenko.asm"
-.include "src/chips/navi-variants.asm"
+.include "src/chips/bug_death_thunder.asm"
+.include "src/chips/navi_variants.asm"
 
 .if falzar
     .include "build/c-symbols-falzar.generated.asm"

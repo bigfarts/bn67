@@ -4,13 +4,13 @@ BN67_FIXED_SPRITE(
     0x0C,
     0x49,
     otenko_battle_sprite,
-    "build/otenko-battle-sprite.bin"
+    "build/otenko_battle_sprite.bin"
 );
 /* Replace the AirSpin handle in Otenko's native Dust ammo kind. */
 BN67_FIXED_DUST_SPRITE(0x0E, otenko_battle_sprite);
-BN67_INCBIN(otenko_icon, "build/otenko-icon.bin");
-BN67_INCBIN(otenko_image, "build/otenko-image.bin");
-BN67_INCBIN(otenko_palette, "build/otenko-palette.bin");
+BN67_INCBIN(otenko_icon, "build/otenko_icon.bin");
+BN67_INCBIN(otenko_image, "build/otenko_image.bin");
+BN67_INCBIN(otenko_palette, "build/otenko_palette.bin");
 
 /* Original BR5J chip 0x099. */
 BN67_CHIP_RECORD(0x099) {

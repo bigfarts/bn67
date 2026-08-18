@@ -1,17 +1,17 @@
 #include "common.h"
 #include "runtime.h"
 
-BN67_SPRITE(numberman_battle_sprite, "build/numberman-battle-sprite.bin");
-BN67_SPRITE(numberman_die_sprite, "build/numberman-die-sprite.bin");
+BN67_SPRITE(numberman_battle_sprite, "build/numberman_battle_sprite.bin");
+BN67_SPRITE(numberman_die_sprite, "build/numberman_die_sprite.bin");
 
-BN67_INCBIN(numberman_image, "build/numberman-image.bin");
-BN67_INCBIN(numberman_palette_base, "build/numberman-pal-base.bin");
+BN67_INCBIN(numberman_image, "build/numberman_image.bin");
+BN67_INCBIN(numberman_palette_base, "build/numberman_pal_base.bin");
 BN67_ASM_RESOURCE(
     numberman_palette_ex,
-    ".incbin \"build/numberman-pal-base.bin\",0,0x1A\n"
+    ".incbin \"build/numberman_pal_base.bin\",0,0x1A\n"
     ".short 0x7EF4,0x75E9,0x44C1\n"
 );
-BN67_INCBIN(numberman_palette_sp, "build/numberman-pal-sp.bin");
+BN67_INCBIN(numberman_palette_sp, "build/numberman_pal_sp.bin");
 BN67_SONG(
     numberman_explosion_song,
     ".byte 1,0,0x80,0\n"

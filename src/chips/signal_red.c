@@ -1,22 +1,22 @@
 #include "runtime.h"
 
-BN67_SPRITE(signalred_battle_sprite, "build/signalred-battle-sprite.bin");
-BN67_DUST_SPRITE(signalred_battle_sprite);
-BN67_FIELD_OBJECT(signalred_battle_sprite, 0, 0, 1);
+BN67_SPRITE(signal_red_battle_sprite, "build/signal_red_battle_sprite.bin");
+BN67_DUST_SPRITE(signal_red_battle_sprite);
+BN67_FIELD_OBJECT(signal_red_battle_sprite, 0, 0, 1);
 BN67_SONG(
-    signalred_spawn_song,
+    signal_red_spawn_song,
     BN67_PCM(
-        signalred_spawn,
+        signal_red_spawn,
         0x40,
         0x08,
         ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
         ".byte 0xBE,0x7F,0xDC,0x3C,0x7F,0x8D,0xB1,0x00\n",
-        "build/signalred-spawn-sample.bin"
+        "build/signal_red_spawn_sample.bin"
     )
 );
-BN67_INCBIN(signalred_icon, "build/signalred-icon.bin");
-BN67_INCBIN(signalred_image, "build/signalred-image.bin");
-BN67_INCBIN(signalred_palette, "build/signalred-palette.bin");
+BN67_INCBIN(signal_red_icon, "build/signal_red_icon.bin");
+BN67_INCBIN(signal_red_image, "build/signal_red_image.bin");
+BN67_INCBIN(signal_red_palette, "build/signal_red_palette.bin");
 
 BN67_CHIP_RECORD(0x0c1) {
     .codes = {
@@ -34,8 +34,8 @@ BN67_CHIP_RECORD(0x0c1) {
         .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
                         EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x00,
-        .family = BN67_ATTACK_FAMILY(signalred_attack_main),
-        .subfamily = BN67_ATTACK_SUBFAMILY(signalred_attack_main),
+        .family = BN67_ATTACK_FAMILY(signal_red_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(signal_red_attack_main),
         .dark_soul_usage = 0x0A,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
@@ -50,9 +50,9 @@ BN67_CHIP_RECORD(0x0c1) {
     .library_sort_order = 0x00C6,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = signalred_icon,
-    .image = signalred_image,
-    .palette = signalred_palette,
+    .icon = signal_red_icon,
+    .image = signal_red_image,
+    .palette = signal_red_palette,
 };
 
 static const uint32_t GREEN_SFX = 0x00D1;
@@ -171,7 +171,7 @@ static void obj_destroy(Exe6Obj *obj)
 
 static void play_spawn_sound(Exe6Obj *obj)
 {
-    exe6_sound_req(BN67_SONG_ID(signalred_spawn_song));
+    exe6_sound_req(BN67_SONG_ID(signal_red_spawn_song));
     obj->aux_timer = RED_TICKS;
     disable_opponent_chips(obj);
 }
@@ -249,7 +249,7 @@ static void obj_normal_update(Exe6Obj *obj)
 
 static void obj_store_dust_ammo(Exe6Obj *obj)
 {
-    exe6_cube_set_dust_suikomi_efc(BN67_DUST_KIND(signalred_battle_sprite));
+    exe6_cube_set_dust_suikomi_efc(BN67_DUST_KIND(signal_red_battle_sprite));
     obj_destroy(obj);
 }
 
@@ -348,8 +348,8 @@ static void obj_init(Exe6Obj *obj)
 
     exe6_obj_char_init(
         0x80,
-        BN67_SPRITE_GROUP(signalred_battle_sprite),
-        BN67_SPRITE_ID(signalred_battle_sprite)
+        BN67_SPRITE_GROUP(signal_red_battle_sprite),
+        BN67_SPRITE_ID(signal_red_battle_sprite)
     );
     exe6_obj_shadow_set();
     obj->animation_word = 0;
@@ -363,7 +363,7 @@ static void obj_init(Exe6Obj *obj)
 
     obj->hp = OBJ_HP;
     obj->max_hp = OBJ_HP;
-    obj->name_id = (uint16_t)BN67_FIELD_OBJECT_ID(signalred_battle_sprite);
+    obj->name_id = (uint16_t)BN67_FIELD_OBJECT_ID(signal_red_battle_sprite);
     obj->aux_timer = STARTUP_TICKS;
     obj->timer = 0x0960;
     if (exe6_battle_hit_open() == NULL) {
@@ -389,7 +389,7 @@ static Exe6Obj *spawn_persistent(Exe6Obj *controller)
 
     uint64_t coordinates = exe6_get_block_pos(block_x, block_y);
     Exe6Obj *obj = exe6_shl_open(
-        BN67_OBJ_ID(signalred_obj_main),
+        BN67_OBJ_ID(signal_red_obj_main),
         (int32_t)(uint32_t)coordinates,
         (int32_t)(uint32_t)(coordinates >> 32),
         0,
@@ -445,7 +445,7 @@ static void update(Exe6Obj *controller)
     }
 }
 
-BN67_EFFECT(signalred_controller_main)
+BN67_EFFECT(signal_red_controller_main)
 {
     switch (self->state) {
     case EXE6_OBJECT_STATE_INIT:
@@ -460,7 +460,7 @@ BN67_EFFECT(signalred_controller_main)
     }
 }
 
-BN67_SHELL(signalred_obj_main)
+BN67_SHELL(signal_red_obj_main)
 {
     switch (self->state) {
     case EXE6_OBJECT_STATE_INIT:
@@ -475,10 +475,10 @@ BN67_SHELL(signalred_obj_main)
     }
 }
 
-BN67_PERSISTENT_ATTACK(0x0C1, signalred_attack_main)
+BN67_PERSISTENT_ATTACK(0x0C1, signal_red_attack_main)
 {
     Exe6Obj *controller = exe6_efc_open(
-        BN67_OBJ_ID(signalred_controller_main), spawn_parameters
+        BN67_OBJ_ID(signal_red_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;

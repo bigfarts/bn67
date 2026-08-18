@@ -1,8 +1,8 @@
 #include "runtime.h"
 
-BN67_INCBIN(gundelsol_ex_icon, "build/gundelsol-ex-icon.bin");
-BN67_INCBIN(gundelsol_ex_image, "build/gundelsol-ex-image.bin");
-BN67_INCBIN(gundelsol_ex_palette, "build/gundelsol-ex-palette.bin");
+BN67_INCBIN(gun_del_sol_ex_icon, "build/gun_del_sol_ex_icon.bin");
+BN67_INCBIN(gun_del_sol_ex_image, "build/gun_del_sol_ex_image.bin");
+BN67_INCBIN(gun_del_sol_ex_palette, "build/gun_del_sol_ex_palette.bin");
 
 /* Original BR5J chip 0x012. Its family-0x37 attack remains native in BN6. */
 BN67_CHIP_RECORD(0x012) {
@@ -36,7 +36,7 @@ BN67_CHIP_RECORD(0x012) {
     .library_sort_order = 0x00C9,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = gundelsol_ex_icon,
-    .image = gundelsol_ex_image,
-    .palette = gundelsol_ex_palette,
+    .icon = gun_del_sol_ex_icon,
+    .image = gun_del_sol_ex_image,
+    .palette = gun_del_sol_ex_palette,
 };

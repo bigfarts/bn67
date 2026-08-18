@@ -1,20 +1,20 @@
 #include "runtime.h"
 
-BN67_SPRITE(bugchain_battle_sprite, "build/bugchain-battle-sprite.bin");
+BN67_SPRITE(bug_chain_battle_sprite, "build/bug_chain_battle_sprite.bin");
 BN67_SONG(
-    bugchain_aura_song,
+    bug_chain_aura_song,
     BN67_PCM(
-        bugchain_sound,
+        bug_chain_sound,
         0x40,
         0x00,
         ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBF,0x40\n"
         ".byte 0xBE,0x7F,0xD7,0x2E,0x7F,0x88,0xDB,0x39,0x8C,0xB1\n",
-        "build/bugchain-sound-sample.bin"
+        "build/bug_chain_sound_sample.bin"
     )
 );
-BN67_INCBIN(bugchain_icon, "build/bugchain-icon.bin");
-BN67_INCBIN(bugchain_image, "build/bugchain-image.bin");
-BN67_INCBIN(bugchain_palette, "build/bugchain-palette.bin");
+BN67_INCBIN(bug_chain_icon, "build/bug_chain_icon.bin");
+BN67_INCBIN(bug_chain_image, "build/bug_chain_image.bin");
+BN67_INCBIN(bug_chain_palette, "build/bug_chain_palette.bin");
 
 BN67_CHIP_RECORD(0x0be) {
     .codes = {
@@ -32,8 +32,8 @@ BN67_CHIP_RECORD(0x0be) {
         .effect_flags = EXE6_CHIP_EFFECT_FLAG_DIMMING |
                         EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
         .counter_settings = 0x00,
-        .family = BN67_ATTACK_FAMILY(bugchain_attack_main),
-        .subfamily = BN67_ATTACK_SUBFAMILY(bugchain_attack_main),
+        .family = BN67_ATTACK_FAMILY(bug_chain_attack_main),
+        .subfamily = BN67_ATTACK_SUBFAMILY(bug_chain_attack_main),
         .dark_soul_usage = 0x0A,
         .unknown_0e = 0x04,
         .lock_on = 0x00,
@@ -48,9 +48,9 @@ BN67_CHIP_RECORD(0x0be) {
     .library_sort_order = 0x00C2,
     .library_gate_usage = 0x03,
     .dark_chip_id = UINT8_MAX,
-    .icon = bugchain_icon,
-    .image = bugchain_image,
-    .palette = bugchain_palette,
+    .icon = bug_chain_icon,
+    .image = bug_chain_image,
+    .palette = bug_chain_palette,
 };
 
 static const uint16_t EFFECT_FRAMES = 60;
@@ -127,7 +127,7 @@ static void spawn_visual(
 )
 {
     Exe6Obj *visual = exe6_efc_open(
-        BN67_OBJ_ID(bugchain_visual_main), spawn_parameters
+        BN67_OBJ_ID(bug_chain_visual_main), spawn_parameters
     );
     if (visual == NULL) {
         return;
@@ -189,7 +189,7 @@ static void update(
     }
 }
 
-BN67_EFFECT(bugchain_controller_main)
+BN67_EFFECT(bug_chain_controller_main)
 {
     switch (self->state) {
     case EXE6_OBJECT_STATE_INIT:
@@ -218,7 +218,7 @@ static void copy_coords(Exe6Obj *visual)
 static void visual_update(Exe6Obj *visual)
 {
     if (visual->timer == SOUND_FRAME) {
-        exe6_sound_req(BN67_SONG_ID(bugchain_aura_song));
+        exe6_sound_req(BN67_SONG_ID(bug_chain_aura_song));
     }
 
     uint16_t timer = (uint16_t)(visual->timer - 1u);
@@ -233,8 +233,8 @@ static void visual_init(Exe6Obj *visual)
 {
     exe6_obj_char_init(
         0x80,
-        BN67_SPRITE_GROUP(bugchain_battle_sprite),
-        BN67_SPRITE_ID(bugchain_battle_sprite)
+        BN67_SPRITE_GROUP(bug_chain_battle_sprite),
+        BN67_SPRITE_ID(bug_chain_battle_sprite)
     );
     exe6_obj_char_set();
     exe6_obj_no_shadow();
@@ -250,7 +250,7 @@ static void visual_init(Exe6Obj *visual)
     visual_update(visual);
 }
 
-BN67_EFFECT(bugchain_visual_main)
+BN67_EFFECT(bug_chain_visual_main)
 {
     switch (self->state) {
     case EXE6_OBJECT_STATE_INIT:
@@ -266,10 +266,10 @@ BN67_EFFECT(bugchain_visual_main)
     exe6_battle_obj_char_move2();
 }
 
-BN67_PERSISTENT_ATTACK(0x0BE, bugchain_attack_main)
+BN67_PERSISTENT_ATTACK(0x0BE, bug_chain_attack_main)
 {
     Exe6Obj *controller = exe6_efc_open(
-        BN67_OBJ_ID(bugchain_controller_main), spawn_parameters
+        BN67_OBJ_ID(bug_chain_controller_main), spawn_parameters
     );
     if (controller == NULL) {
         return NULL;

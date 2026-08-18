@@ -63,6 +63,6 @@ chip after Custom closes. The working Gregar run retained queue value
 `0x0134`, displayed `DethPhnx150`, and invoked the replacement action.
 
 The temporary reference implementations are
-`tango-gamesupport-bn5/examples/deathphoenix_reference_probe.rs` and
-`tango-gamesupport-bn6/examples/deathphoenix_port_probe.rs` while those files
+`tango-gamesupport-bn5/examples/death_phoenix_reference_probe.rs` and
+`tango-gamesupport-bn6/examples/death_phoenix_port_probe.rs` while those files
 exist. This document is the durable recipe after the probes are removed.

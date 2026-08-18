@@ -196,7 +196,7 @@ $(EDITION_C_SYMBOLS): $(BUILD_DIR)/c-symbols-%.generated.asm: \
 		"$<" "$@"
 
 $(EDITION_TITLE_STAMPS): $(BUILD_DIR)/.title-%.stamp: \
-	$(PATCH_DIR)/build_title_screen.py $(PATCH_DIR)/assets/title-screen-overlay.png \
+	$(PATCH_DIR)/build_title_screen.py $(PATCH_DIR)/assets/title_screen_overlay.png \
 	| check-roms $(BUILD_DIR)
 	$(PYTHON) "$(PATCH_DIR)/build_title_screen.py" \
 		$* "$(EDITION_ROM_$*)" "$(BUILD_DIR)/title-67-$*.bin" \

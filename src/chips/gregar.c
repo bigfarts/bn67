@@ -4,10 +4,10 @@ BN67_FIXED_COMPRESSED_SPRITE(
     0x0C,
     0x68,
     gregar_battle_sprite,
-    "build/gregar-battle-sprite.bin"
+    "build/gregar_battle_sprite.bin"
 );
-BN67_INCBIN(gregar_icon, "build/gregar-icon.bin");
-BN67_INCBIN(gregar_image, "build/gregar-image.bin");
+BN67_INCBIN(gregar_icon, "build/gregar_icon.bin");
+BN67_INCBIN(gregar_image, "build/gregar_image.bin");
 BN67_ASM_RESOURCE(
     gregar_palette,
     ".byte 0x00,0x00,0xFF,0x77,0x9E,0x47,0x3F,0x1F\n"

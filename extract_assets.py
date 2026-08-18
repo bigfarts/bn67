@@ -207,177 +207,177 @@ ASSETS = (
     # Japanese BN6: event-chip menu art and the two removed battle archives.
     # These offsets come directly from the original BR5J/BR6J chip records and
     # sprite pointer tables; no redraws or palette conversions are involved.
-    Asset("exe6_jp_gregar", "gundelsol-ex-icon.bin", 0x74880C, 0x80),
-    Asset("exe6_jp_gregar", "gundelsol-ex-image.bin", 0x717B4C, 0x540),
-    Asset("exe6_jp_gregar", "gundelsol-ex-palette.bin", 0x745C6C, 0x20),
-    Asset("exe6_jp_gregar", "otenko-icon.bin", 0x74CB8C, 0x80),
-    Asset("exe6_jp_gregar", "otenko-image.bin", 0x72EACC, 0x540),
-    Asset("exe6_jp_gregar", "otenko-palette.bin", 0x746D4C, 0x20),
-    Asset("exe6_jp_gregar", "otenko-battle-sprite.bin", 0x33962C, 0x690),
+    Asset("exe6_jp_gregar", "gun_del_sol_ex_icon.bin", 0x74880C, 0x80),
+    Asset("exe6_jp_gregar", "gun_del_sol_ex_image.bin", 0x717B4C, 0x540),
+    Asset("exe6_jp_gregar", "gun_del_sol_ex_palette.bin", 0x745C6C, 0x20),
+    Asset("exe6_jp_gregar", "otenko_icon.bin", 0x74CB8C, 0x80),
+    Asset("exe6_jp_gregar", "otenko_image.bin", 0x72EACC, 0x540),
+    Asset("exe6_jp_gregar", "otenko_palette.bin", 0x746D4C, 0x20),
+    Asset("exe6_jp_gregar", "otenko_battle_sprite.bin", 0x33962C, 0x690),
     # Crossover's subtype-1 partner uses group 0x0C/index 0x0F. The complete
     # compressed Django archive, including the GunDelSol overlay animations, is
     # identical in Japanese Gregar and Falzar. The English releases replace its
     # table entry with a white dot and redirect the overlay effect selectors.
     Asset(
         "exe6_jp_gregar",
-        "django-crossover-sprite.bin",
+        "django_crossover_sprite.bin",
         0x30B980,
         0x21CC,
     ),
-    Asset("exe6_jp_gregar", "count-icon.bin", 0x74E48C, 0x80),
-    Asset("exe6_jp_gregar", "count-image.bin", 0x740B8C, 0x540),
-    Asset("exe6_jp_gregar", "count-pal-base.bin", 0x747A4C, 0x20),
-    Asset("exe6_jp_gregar", "count-pal-ex.bin", 0x747A6C, 0x20),
-    Asset("exe6_jp_gregar", "count-pal-sp.bin", 0x747A8C, 0x20),
-    Asset("exe6_jp_gregar", "count-battle-sprite.bin", 0x2EF3C0, 0x33DC),
-    Asset("exe6_jp_gregar", "doublebeast-icon.bin", 0x74EC8C, 0x80),
-    Asset("exe6_jp_gregar", "doublebeast-image.bin", 0x74304C, 0x540),
-    Asset("exe6_jp_gregar", "doublebeast-palette.bin", 0x747BAC, 0x20),
-    Asset("exe6_jp_gregar", "gregar-icon.bin", 0x74ED0C, 0x80),
-    Asset("exe6_jp_gregar", "gregar-image.bin", 0x74358C, 0x540),
-    Asset("exe6_jp_gregar", "gregar-battle-sprite.bin", 0x357464, 0x1E40),
-    Asset("exe6_jp_falzar", "falzar-icon.bin", 0x750E58, 0x80),
-    Asset("exe6_jp_falzar", "falzar-image.bin", 0x745658, 0x540),
-    Asset("exe6_jp_gregar", "falzar-battle-sprite.bin", 0x3557D8, 0x1A2C),
+    Asset("exe6_jp_gregar", "count_icon.bin", 0x74E48C, 0x80),
+    Asset("exe6_jp_gregar", "count_image.bin", 0x740B8C, 0x540),
+    Asset("exe6_jp_gregar", "count_pal_base.bin", 0x747A4C, 0x20),
+    Asset("exe6_jp_gregar", "count_pal_ex.bin", 0x747A6C, 0x20),
+    Asset("exe6_jp_gregar", "count_pal_sp.bin", 0x747A8C, 0x20),
+    Asset("exe6_jp_gregar", "count_battle_sprite.bin", 0x2EF3C0, 0x33DC),
+    Asset("exe6_jp_gregar", "double_beast_icon.bin", 0x74EC8C, 0x80),
+    Asset("exe6_jp_gregar", "double_beast_image.bin", 0x74304C, 0x540),
+    Asset("exe6_jp_gregar", "double_beast_palette.bin", 0x747BAC, 0x20),
+    Asset("exe6_jp_gregar", "gregar_icon.bin", 0x74ED0C, 0x80),
+    Asset("exe6_jp_gregar", "gregar_image.bin", 0x74358C, 0x540),
+    Asset("exe6_jp_gregar", "gregar_battle_sprite.bin", 0x357464, 0x1E40),
+    Asset("exe6_jp_falzar", "falzar_icon.bin", 0x750E58, 0x80),
+    Asset("exe6_jp_falzar", "falzar_image.bin", 0x745658, 0x540),
+    Asset("exe6_jp_gregar", "falzar_battle_sprite.bin", 0x3557D8, 0x1A2C),
     # EXE4.5: BlackWeapon's Advance Battle Chip menu art. Unlike the BN4
     # operation-battle placeholder, EXE4.5 contains the complete library art.
-    Asset("exe45", "blackweapon-icon.bin", 0x7640B0, 0x80),
-    Asset("exe45", "blackweapon-image.bin", 0x755CF0, 0x540),
-    Asset("exe45", "blackweapon-palette.bin", 0x75CEF0, 0x20),
+    Asset("exe45", "black_weapon_icon.bin", 0x7640B0, 0x80),
+    Asset("exe45", "black_weapon_image.bin", 0x755CF0, 0x540),
+    Asset("exe45", "black_weapon_palette.bin", 0x75CEF0, 0x20),
     # BN3 Blue: the shared group-0x10/id-0x3D chess-piece archive. Rook is
     # animation 4; its menu art is decoded and cropped separately below because
     # BN3 stores it at 64x56, not 56x48.
-    Asset("bn3_blue", "rook-battle-sprite.bin", 0x2CD434, 0x20A0),
+    Asset("bn3_blue", "rook_battle_sprite.bin", 0x2CD434, 0x20A0),
     # BN3 Blue: FolderBack's original rumble sample. Its menu art uses the
     # same decoded-and-cropped path as Rook.
-    Asset("bn3_blue", "folderback-rumble-sample.bin", 0x215B68, 0x354E),
+    Asset("bn3_blue", "folder_back_rumble_sample.bin", 0x215B68, 0x354E),
     # BN5 ProtoMan: Jealousy menu art and chip-delete overlay.
-    Asset("bn5_protoman", "jealousy-icon.bin", 0x748F38, 0x80),
-    Asset("bn5_protoman", "jealousy-image.bin", 0x7250E8, 0x540),
-    Asset("bn5_protoman", "jealousy-palette.bin", 0x734188, 0x20),
-    Asset("bn5_protoman", "jealousy-effect-tiles.bin", 0x6FAD2C, 0x100),
-    Asset("bn5_protoman", "jealousy-effect-palette.bin", 0x6FAE2C, 0x20),
+    Asset("bn5_protoman", "jealousy_icon.bin", 0x748F38, 0x80),
+    Asset("bn5_protoman", "jealousy_image.bin", 0x7250E8, 0x540),
+    Asset("bn5_protoman", "jealousy_palette.bin", 0x734188, 0x20),
+    Asset("bn5_protoman", "jealousy_effect_tiles.bin", 0x6FAD2C, 0x100),
+    Asset("bn5_protoman", "jealousy_effect_palette.bin", 0x6FAE2C, 0x20),
     # BN5 ProtoMan: Django's library art and complete base-chip sequence. The
     # actor, sunlight, and coffin archives use the animation layouts expected
     # by the restored standalone attack and remain separate from Crossover.
     # Django3 uses DjangoSP's original palette. Django2's Japanese BN6 green
     # background colors are defined beside its chip record in django.c.
-    Asset("bn5_protoman", "django-icon.bin", 0x7493B8, 0x80),
-    Asset("bn5_protoman", "django-image.bin", 0x72D968, 0x540),
+    Asset("bn5_protoman", "django_icon.bin", 0x7493B8, 0x80),
+    Asset("bn5_protoman", "django_image.bin", 0x72D968, 0x540),
     Asset(
         "bn5_protoman",
-        "django-palette.bin",
+        "django_palette.bin",
         0x7349C8,
         0x20,
     ),
-    Asset("bn5_protoman", "django3-palette.bin", 0x7349E8, 0x20),
-    Asset("bn5_protoman", "django-battle-sprite.bin", 0x31F1D0, 0x1C50),
-    Asset("bn5_protoman", "django-sun-sprite.bin", 0x322158, 0x8EC),
-    Asset("bn5_protoman", "django-coffin-sprite.bin", 0x322A44, 0x580),
+    Asset("bn5_protoman", "django3_palette.bin", 0x7349E8, 0x20),
+    Asset("bn5_protoman", "django_battle_sprite.bin", 0x31F1D0, 0x1C50),
+    Asset("bn5_protoman", "django_sun_sprite.bin", 0x322158, 0x8EC),
+    Asset("bn5_protoman", "django_coffin_sprite.bin", 0x322A44, 0x580),
     # BN5 ProtoMan: SearchMan library art, Navi archive, and both reticles.
-    Asset("bn5_protoman", "searchman-image.bin", 0x728568, 0x540),
-    Asset("bn5_protoman", "searchman-pal-base.bin", 0x7343C8, 0x20),
-    Asset("bn5_protoman", "searchman-pal-sp.bin", 0x7343E8, 0x20),
-    Asset("bn5_protoman", "searchman-battle-sprite.bin", 0x254F64, 0xABFC),
-    Asset("bn5_protoman", "searchman-reticle-alt.bin", 0x358410, 0x5B8),
-    Asset("bn5_protoman", "searchman-reticle.bin", 0x3589C8, 0x460),
+    Asset("bn5_protoman", "searchman_image.bin", 0x728568, 0x540),
+    Asset("bn5_protoman", "searchman_pal_base.bin", 0x7343C8, 0x20),
+    Asset("bn5_protoman", "searchman_pal_sp.bin", 0x7343E8, 0x20),
+    Asset("bn5_protoman", "searchman_battle_sprite.bin", 0x254F64, 0xABFC),
+    Asset("bn5_protoman", "searchman_reticle_alt.bin", 0x358410, 0x5B8),
+    Asset("bn5_protoman", "searchman_reticle.bin", 0x3589C8, 0x460),
     # BN5: NumberMan's library art, full Navi archive, and animated die.
-    Asset("bn5_colonel", "numberman-image.bin", 0x72AD24, 0x540),
-    Asset("bn5_colonel", "numberman-pal-base.bin", 0x735804, 0x20),
-    Asset("bn5_colonel", "numberman-pal-sp.bin", 0x735824, 0x20),
-    Asset("bn5_colonel", "numberman-battle-sprite.bin", 0x2918A0, 0x8824),
-    Asset("bn5_colonel", "numberman-die-sprite.bin", 0x2F8D08, 0x16A0),
+    Asset("bn5_colonel", "numberman_image.bin", 0x72AD24, 0x540),
+    Asset("bn5_colonel", "numberman_pal_base.bin", 0x735804, 0x20),
+    Asset("bn5_colonel", "numberman_pal_sp.bin", 0x735824, 0x20),
+    Asset("bn5_colonel", "numberman_battle_sprite.bin", 0x2918A0, 0x8824),
+    Asset("bn5_colonel", "numberman_die_sprite.bin", 0x2F8D08, 0x16A0),
     # BN5 ProtoMan: ChaosLord menu art and complete controller assets. The
     # teardown slice intentionally starts on the archive header at 0x389E68.
-    Asset("bn5_protoman", "chaoslord-icon.bin", 0x749C38, 0x80),
-    Asset("bn5_protoman", "chaoslord-image.bin", 0x72FE28, 0x540),
-    Asset("bn5_protoman", "chaoslord-palette.bin", 0x734AE8, 0x20),
-    Asset("bn5_protoman", "chaoslord-bass-sprite.bin", 0x2D3304, 0x1081C),
-    Asset("bn5_protoman", "chaoslord-apparition-sprite.bin", 0x398024, 0x186C),
-    Asset("bn5_protoman", "chaoslord-aura-sprite.bin", 0x2E3B20, 0x56E0, lz77=True),
-    Asset("bn5_protoman", "chaoslord-teardown-sprite.bin", 0x389E68, 0x11F0),
-    Asset("bn5_protoman", "chaoslord-trig.bin", 0x5CD0, 0x280),
+    Asset("bn5_protoman", "chaos_lord_icon.bin", 0x749C38, 0x80),
+    Asset("bn5_protoman", "chaos_lord_image.bin", 0x72FE28, 0x540),
+    Asset("bn5_protoman", "chaos_lord_palette.bin", 0x734AE8, 0x20),
+    Asset("bn5_protoman", "chaos_lord_bass_sprite.bin", 0x2D3304, 0x1081C),
+    Asset("bn5_protoman", "chaos_lord_apparition_sprite.bin", 0x398024, 0x186C),
+    Asset("bn5_protoman", "chaos_lord_aura_sprite.bin", 0x2E3B20, 0x56E0, lz77=True),
+    Asset("bn5_protoman", "chaos_lord_teardown_sprite.bin", 0x389E68, 0x11F0),
+    Asset("bn5_protoman", "chaos_lord_trig.bin", 0x5CD0, 0x280),
     # BN4 Blue Moon: SignalRed menu art, traffic light, and placement sample.
-    Asset("bn4_blue_moon", "signalred-icon.bin", 0x746EEC, 0x80),
-    Asset("bn4_blue_moon", "signalred-image.bin", 0x73A8EC, 0x540),
-    Asset("bn4_blue_moon", "signalred-palette.bin", 0x73FAEC, 0x20),
-    Asset("bn4_blue_moon", "signalred-battle-sprite.bin", 0x381C30, 0x694),
-    Asset("bn4_blue_moon", "signalred-spawn-sample.bin", 0x17C834, 0x891),
+    Asset("bn4_blue_moon", "signal_red_icon.bin", 0x746EEC, 0x80),
+    Asset("bn4_blue_moon", "signal_red_image.bin", 0x73A8EC, 0x540),
+    Asset("bn4_blue_moon", "signal_red_palette.bin", 0x73FAEC, 0x20),
+    Asset("bn4_blue_moon", "signal_red_battle_sprite.bin", 0x381C30, 0x694),
+    Asset("bn4_blue_moon", "signal_red_spawn_sample.bin", 0x17C834, 0x891),
     # BN4 Blue Moon: BlackWeapon's near-black MegaMan palette. The same
     # 16-color palette is repeated for the relevant animation groups.
-    Asset("bn4_blue_moon", "blackweapon-dark-palette.bin", 0x21B7F4, 0x20),
+    Asset("bn4_blue_moon", "black_weapon_dark_palette.bin", 0x21B7F4, 0x20),
     # BN4 Blue Moon: BugChain menu art, aura, and SFX 0x15D sample.
-    Asset("bn4_blue_moon", "bugchain-icon.bin", 0x74626C, 0x80),
-    Asset("bn4_blue_moon", "bugchain-image.bin", 0x7315EC, 0x540),
-    Asset("bn4_blue_moon", "bugchain-palette.bin", 0x73F1AC, 0x20),
-    Asset("bn4_blue_moon", "bugchain-battle-sprite.bin", 0x380CA4, 0xF8C),
-    Asset("bn4_blue_moon", "bugchain-sound-sample.bin", 0x1970A0, 0x4B1),
+    Asset("bn4_blue_moon", "bug_chain_icon.bin", 0x74626C, 0x80),
+    Asset("bn4_blue_moon", "bug_chain_image.bin", 0x7315EC, 0x540),
+    Asset("bn4_blue_moon", "bug_chain_palette.bin", 0x73F1AC, 0x20),
+    Asset("bn4_blue_moon", "bug_chain_battle_sprite.bin", 0x380CA4, 0xF8C),
+    Asset("bn4_blue_moon", "bug_chain_sound_sample.bin", 0x1970A0, 0x4B1),
     # BN4 Blue Moon: Duo's event icon and combined group-8/id-24 body/fist
     # archive. The source expands to the exact EWRAM archive selected by the
     # native event renderer; decompress_sprite_archive removes its size prefix
     # before the BN6 sprite registry installs it.
-    Asset("bn4_blue_moon", "duo-icon.bin", 0x7471EC, 0x80),
-    Asset("bn4_blue_moon", "duo-battle-sprite.bin", 0x33FC3C, 0x5833, lz77=True),
-    Asset("bn4_blue_moon", "duo-arrival-sound-sample.bin", 0x17D0C8, 0x227D),
-    Asset("bn4_blue_moon", "duo-fist-sound-sample.bin", 0x1DD24C, 0x1166),
+    Asset("bn4_blue_moon", "duo_icon.bin", 0x7471EC, 0x80),
+    Asset("bn4_blue_moon", "duo_battle_sprite.bin", 0x33FC3C, 0x5833, lz77=True),
+    Asset("bn4_blue_moon", "duo_arrival_sound_sample.bin", 0x17D0C8, 0x227D),
+    Asset("bn4_blue_moon", "duo_fist_sound_sample.bin", 0x1DD24C, 0x1166),
     # BN5 Colonel: BugCharge menu art, Gospel archive, and charge sample.
-    Asset("bn5_colonel", "bugcharge-icon.bin", 0x74AE3C, 0x80),
-    Asset("bn5_colonel", "bugcharge-image.bin", 0x730664, 0x540),
-    Asset("bn5_colonel", "bugcharge-palette.bin", 0x735D64, 0x20),
-    Asset("bn5_colonel", "bugcharge-gospel-sprite.bin", 0x3216D4, 0xA84),
-    Asset("bn5_colonel", "bugcharge-charge-sample.bin", 0x191A80, 0x676),
+    Asset("bn5_colonel", "bug_charge_icon.bin", 0x74AE3C, 0x80),
+    Asset("bn5_colonel", "bug_charge_image.bin", 0x730664, 0x540),
+    Asset("bn5_colonel", "bug_charge_palette.bin", 0x735D64, 0x20),
+    Asset("bn5_colonel", "bug_charge_gospel_sprite.bin", 0x3216D4, 0xA84),
+    Asset("bn5_colonel", "bug_charge_charge_sample.bin", 0x191A80, 0x676),
     # BN4 Blue Moon: shared Navi summon sample.
-    Asset("bn4_blue_moon", "common-navi-summon-sample.bin", 0x184D70, 0xF3E),
+    Asset("bn4_blue_moon", "common_navi_summon_sample.bin", 0x184D70, 0xF3E),
     # BN4 Blue Moon: LaserMan library art, shared sprite, and fire SFX. Extraction
     # expands the source archive so packages never need compression metadata.
-    Asset("bn4_blue_moon", "laserman-image.bin", 0x73842C, 0x540),
-    Asset("bn4_blue_moon", "laserman-pal-base.bin", 0x73F94C, 0x20),
-    Asset("bn4_blue_moon", "laserman-pal-sp.bin", 0x73F96C, 0x20),
-    Asset("bn4_blue_moon", "laserman-battle-sprite.bin", 0x339B6C, 0x395C, lz77=True),
-    Asset("bn4_blue_moon", "laserman-fire-sample.bin", 0x1BCFF8, 0x144E),
+    Asset("bn4_blue_moon", "laserman_image.bin", 0x73842C, 0x540),
+    Asset("bn4_blue_moon", "laserman_pal_base.bin", 0x73F94C, 0x20),
+    Asset("bn4_blue_moon", "laserman_pal_sp.bin", 0x73F96C, 0x20),
+    Asset("bn4_blue_moon", "laserman_battle_sprite.bin", 0x339B6C, 0x395C, lz77=True),
+    Asset("bn4_blue_moon", "laserman_fire_sample.bin", 0x1BCFF8, 0x144E),
     # Native BN6 attack dispatch prefixes. The registry relocates each one and
     # appends package attacks in the remaining 8-bit subfamily namespace.
-    Asset("exe6_gregar", "attack-family15-table-gregar.bin", 0x2CCB4, 0xA8),
-    Asset("exe6_gregar", "attack-family1B-table-gregar.bin", 0x2CD5C, 0x74),
-    Asset("exe6_gregar", "attack-family1C-table-gregar.bin", 0xED730, 0x5C),
-    Asset("exe6_falzar", "attack-family15-table-falzar.bin", 0x2CCB4, 0xA8),
-    Asset("exe6_falzar", "attack-family1B-table-falzar.bin", 0x2CD5C, 0x74),
-    Asset("exe6_falzar", "attack-family1C-table-falzar.bin", 0xEC3F0, 0x5C),
+    Asset("exe6_gregar", "attack_family15_table_gregar.bin", 0x2CCB4, 0xA8),
+    Asset("exe6_gregar", "attack_family1B_table_gregar.bin", 0x2CD5C, 0x74),
+    Asset("exe6_gregar", "attack_family1C_table_gregar.bin", 0xED730, 0x5C),
+    Asset("exe6_falzar", "attack_family15_table_falzar.bin", 0x2CCB4, 0xA8),
+    Asset("exe6_falzar", "attack_family1B_table_falzar.bin", 0x2CD5C, 0x74),
+    Asset("exe6_falzar", "attack_family1C_table_falzar.bin", 0xEC3F0, 0x5C),
     # Native BN6 object dispatch prefixes. The registry relocates each class
     # to a complete 256-entry object-ID table before appending package objects.
-    Asset("exe6_gregar", "object-class1-table-gregar.bin", 0x3C9C, 0x17C),
-    Asset("exe6_gregar", "object-class3-table-gregar.bin", 0x3EC4, 0x354),
-    Asset("exe6_gregar", "object-class4-table-gregar.bin", 0x42C8, 0x248),
-    Asset("exe6_falzar", "object-class1-table-falzar.bin", 0x3C9C, 0x17C),
-    Asset("exe6_falzar", "object-class3-table-falzar.bin", 0x3EC4, 0x354),
-    Asset("exe6_falzar", "object-class4-table-falzar.bin", 0x42C8, 0x248),
+    Asset("exe6_gregar", "object_class1_table_gregar.bin", 0x3C9C, 0x17C),
+    Asset("exe6_gregar", "object_class3_table_gregar.bin", 0x3EC4, 0x354),
+    Asset("exe6_gregar", "object_class4_table_gregar.bin", 0x42C8, 0x248),
+    Asset("exe6_falzar", "object_class1_table_falzar.bin", 0x3C9C, 0x17C),
+    Asset("exe6_falzar", "object_class3_table_falzar.bin", 0x3EC4, 0x354),
+    Asset("exe6_falzar", "object_class4_table_falzar.bin", 0x42C8, 0x248),
     # Native BN6 sprite pointer tables that receive appended archives.
-    Asset("exe6_gregar", "sprite-group08-table-gregar.bin", 0x31DA4, 0x5C),
-    Asset("exe6_gregar", "sprite-group0C-table-gregar.bin", 0x31E00, 0x1A4),
-    Asset("exe6_gregar", "sprite-group10-table-gregar.bin", 0x31FA4, 0x170),
-    Asset("exe6_gregar", "sprite-group14-table-gregar.bin", 0x32114, 0x80),
-    Asset("exe6_falzar", "sprite-group08-table-falzar.bin", 0x31DA4, 0x5C),
-    Asset("exe6_falzar", "sprite-group0C-table-falzar.bin", 0x31E00, 0x1A4),
-    Asset("exe6_falzar", "sprite-group10-table-falzar.bin", 0x31FA4, 0x170),
-    Asset("exe6_falzar", "sprite-group14-table-falzar.bin", 0x32114, 0x80),
+    Asset("exe6_gregar", "sprite_group08_table_gregar.bin", 0x31DA4, 0x5C),
+    Asset("exe6_gregar", "sprite_group0C_table_gregar.bin", 0x31E00, 0x1A4),
+    Asset("exe6_gregar", "sprite_group10_table_gregar.bin", 0x31FA4, 0x170),
+    Asset("exe6_gregar", "sprite_group14_table_gregar.bin", 0x32114, 0x80),
+    Asset("exe6_falzar", "sprite_group08_table_falzar.bin", 0x31DA4, 0x5C),
+    Asset("exe6_falzar", "sprite_group0C_table_falzar.bin", 0x31E00, 0x1A4),
+    Asset("exe6_falzar", "sprite_group10_table_falzar.bin", 0x31FA4, 0x170),
+    Asset("exe6_falzar", "sprite_group14_table_falzar.bin", 0x32114, 0x80),
     # Native DustCross ammo sprite selectors. The registry appends imported
     # obstacle sprites and redirects every suction/firing lookup to one table.
-    Asset("exe6_gregar", "dust-sprite-table-gregar.bin", 0xEAC00, 0x1E),
-    Asset("exe6_falzar", "dust-sprite-table-falzar.bin", 0xE98C0, 0x1E),
+    Asset("exe6_gregar", "dust_sprite_table_gregar.bin", 0xEAC00, 0x1E),
+    Asset("exe6_falzar", "dust_sprite_table_falzar.bin", 0xE98C0, 0x1E),
     # Native field-object NameID render records (IDs 0xCD through 0xEB).
     # The registry relocates this prefix and allocates the remaining IDs through
     # 0xFF for imported obstacles consumed by JunkMan and BlizzardBall.
-    Asset("exe6_gregar", "field-object-table-gregar.bin", 0x21220, 0x9B),
-    Asset("exe6_falzar", "field-object-table-falzar.bin", 0x21220, 0x9B),
+    Asset("exe6_gregar", "field_object_table_gregar.bin", 0x21220, 0x9B),
+    Asset("exe6_falzar", "field_object_table_falzar.bin", 0x21220, 0x9B),
     # Complete native BN6 song tables, relocated before imported cues append.
-    Asset("exe6_gregar", "song-table-gregar.bin", 0x159F48, 0xED0),
-    Asset("exe6_falzar", "song-table-falzar.bin", 0x1583F8, 0xED0),
+    Asset("exe6_gregar", "song_table_gregar.bin", 0x159F48, 0xED0),
+    Asset("exe6_falzar", "song_table_falzar.bin", 0x1583F8, 0xED0),
     # BN5 ProtoMan: DeathPhoenix menu art, Navi, and strike/flame archive.
-    Asset("bn5_protoman", "deathphoenix-icon.bin", 0x749CB8, 0x80),
-    Asset("bn5_protoman", "deathphoenix-image.bin", 0x730368, 0x540),
-    Asset("bn5_protoman", "deathphoenix-palette.bin", 0x734B08, 0x20),
-    Asset("bn5_protoman", "deathphoenix-battle-sprite.bin", 0x333400, 0x20F4),
-    Asset("bn5_protoman", "deathphoenix-strike-sprite.bin", 0x36F074, 0x748),
+    Asset("bn5_protoman", "death_phoenix_icon.bin", 0x749CB8, 0x80),
+    Asset("bn5_protoman", "death_phoenix_image.bin", 0x730368, 0x540),
+    Asset("bn5_protoman", "death_phoenix_palette.bin", 0x734B08, 0x20),
+    Asset("bn5_protoman", "death_phoenix_battle_sprite.bin", 0x333400, 0x20F4),
+    Asset("bn5_protoman", "death_phoenix_strike_sprite.bin", 0x36F074, 0x748),
 )
 
 
@@ -411,13 +411,13 @@ def extract_assets(roms: dict[str, bytes], output_dir: Path) -> tuple[int, int]:
 
     for prefix, chip_id, chip_name in (
         ("rook", BN3_ROOK_ID, "Rook"),
-        ("folderback", BN3_FOLDERBACK_ID, "FolderBack"),
+        ("folder_back", BN3_FOLDERBACK_ID, "FolderBack"),
     ):
         chip_art_outputs = zip(
             (
-                f"{prefix}-icon.bin",
-                f"{prefix}-image.bin",
-                f"{prefix}-palette.bin",
+                f"{prefix}_icon.bin",
+                f"{prefix}_image.bin",
+                f"{prefix}_palette.bin",
             ),
             extract_bn3_chip_art(roms["bn3_blue"], chip_id, chip_name),
             strict=True,
@@ -429,8 +429,8 @@ def extract_assets(roms: dict[str, bytes], output_dir: Path) -> tuple[int, int]:
             outputs.append((name, data))
 
     for name, data in (
-        ("duo-image.bin", DUO_IMAGE),
-        ("duo-palette.bin", DUO_PALETTE),
+        ("duo_image.bin", DUO_IMAGE),
+        ("duo_palette.bin", DUO_PALETTE),
     ):
         if name in output_names:
             raise ValueError(f"duplicate output name: {name}")

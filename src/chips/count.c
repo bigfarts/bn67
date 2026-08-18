@@ -4,13 +4,13 @@ BN67_FIXED_COMPRESSED_SPRITE(
     0x08,
     0x16,
     count_battle_sprite,
-    "build/count-battle-sprite.bin"
+    "build/count_battle_sprite.bin"
 );
-BN67_INCBIN(count_icon, "build/count-icon.bin");
-BN67_INCBIN(count_image, "build/count-image.bin");
-BN67_INCBIN(count_palette_base, "build/count-pal-base.bin");
-BN67_INCBIN(count_palette_ex, "build/count-pal-ex.bin");
-BN67_INCBIN(count_palette_sp, "build/count-pal-sp.bin");
+BN67_INCBIN(count_icon, "build/count_icon.bin");
+BN67_INCBIN(count_image, "build/count_image.bin");
+BN67_INCBIN(count_palette_base, "build/count_pal_base.bin");
+BN67_INCBIN(count_palette_ex, "build/count_pal_ex.bin");
+BN67_INCBIN(count_palette_sp, "build/count_pal_sp.bin");
 
 /* These are the original BR5J Count object and attack slots. */
 BN67_FIXED_OBJECT(1, 0x11, count_native_main);

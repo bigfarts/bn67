@@ -2,41 +2,41 @@ variant = "falzar"
 
 [[object_classes]]
 number = 1
-native_table = "build/object-class1-table-falzar.bin"
+native_table = "build/object_class1_table_falzar.bin"
 references = [0x08003224]
 
 [[object_classes]]
 number = 3
-native_table = "build/object-class3-table-falzar.bin"
+native_table = "build/object_class3_table_falzar.bin"
 references = [0x0800322C]
 
 [[object_classes]]
 number = 4
-native_table = "build/object-class4-table-falzar.bin"
+native_table = "build/object_class4_table_falzar.bin"
 references = [0x08003230]
 
 [[sprite_groups]]
 number = 0x08
 references = [0x08031CCC]
-native_table = "build/sprite-group08-table-falzar.bin"
+native_table = "build/sprite_group08_table_falzar.bin"
 
 [[sprite_groups]]
 number = 0x0C
 references = [0x08031CD0]
-native_table = "build/sprite-group0C-table-falzar.bin"
+native_table = "build/sprite_group0C_table_falzar.bin"
 
 [[sprite_groups]]
 number = 0x10
 references = [0x08031CD4]
-native_table = "build/sprite-group10-table-falzar.bin"
+native_table = "build/sprite_group10_table_falzar.bin"
 
 [[sprite_groups]]
 number = 0x14
 references = [0x08031CD8]
-native_table = "build/sprite-group14-table-falzar.bin"
+native_table = "build/sprite_group14_table_falzar.bin"
 
 [dust_sprites]
-native_table = "build/dust-sprite-table-falzar.bin"
+native_table = "build/dust_sprite_table_falzar.bin"
 references = [0x08012010, 0x08012014, 0x080E9990]
 max_kind = 0x0F
 
@@ -48,28 +48,28 @@ alias = 0x04
 references = [0x080D8588]
 
 [field_objects]
-native_table = "build/field-object-table-falzar.bin"
+native_table = "build/field_object_table_falzar.bin"
 references = [0x0800F4D4]
 base_id = 0xCD
 max_id = 0xFF
 
 [attack_pools.persistent_attack]
 family = 0x15
-native_table = "build/attack-family15-table-falzar.bin"
+native_table = "build/attack_family15_table_falzar.bin"
 references = [0x08017BB8, 0x080EBDF8]
 
 [attack_pools.summon_attack]
 family = 0x1B
-native_table = "build/attack-family1B-table-falzar.bin"
+native_table = "build/attack_family1B_table_falzar.bin"
 references = [0x08017BBC, 0x080E19B0]
 
 [attack_pools.ephemeral_attack]
 family = 0x1C
-native_table = "build/attack-family1C-table-falzar.bin"
+native_table = "build/attack_family1C_table_falzar.bin"
 references = [0x080EC3EC]
 
 [songs]
-native_table = "build/song-table-falzar.bin"
+native_table = "build/song_table_falzar.bin"
 references = [0x0814E94C, 0x0814E980, 0x0814E9CC, 0x0814EA20, 0x0814EA54]
 
 [chips]

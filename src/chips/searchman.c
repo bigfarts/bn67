@@ -2,18 +2,18 @@
 #include "common.h"
 #include "runtime.h"
 
-BN67_SPRITE(searchman_battle_sprite, "build/searchman-battle-sprite.bin");
-BN67_SPRITE(searchman_reticle_alt_sprite, "build/searchman-reticle-alt.bin");
-BN67_SPRITE(searchman_reticle_sprite, "build/searchman-reticle.bin");
+BN67_SPRITE(searchman_battle_sprite, "build/searchman_battle_sprite.bin");
+BN67_SPRITE(searchman_reticle_alt_sprite, "build/searchman_reticle_alt.bin");
+BN67_SPRITE(searchman_reticle_sprite, "build/searchman_reticle.bin");
 
-BN67_INCBIN(searchman_image, "build/searchman-image.bin");
-BN67_INCBIN(searchman_palette_base, "build/searchman-pal-base.bin");
+BN67_INCBIN(searchman_image, "build/searchman_image.bin");
+BN67_INCBIN(searchman_palette_base, "build/searchman_pal_base.bin");
 BN67_ASM_RESOURCE(
     searchman_palette_ex,
-    ".incbin \"build/searchman-pal-base.bin\",0,0x1A\n"
+    ".incbin \"build/searchman_pal_base.bin\",0,0x1A\n"
     ".short 0x03FF,0x0299,0x0190\n"
 );
-BN67_INCBIN(searchman_palette_sp, "build/searchman-pal-sp.bin");
+BN67_INCBIN(searchman_palette_sp, "build/searchman_pal_sp.bin");
 
 #if FALZAR
 #define ICON ((const uint8_t *)0x0872BE14u)

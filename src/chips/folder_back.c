@@ -1,14 +1,14 @@
 #include "abi.h"
 #include "runtime.h"
 
-BN67_INCBIN(folderback_icon, "build/folderback-icon.bin");
-BN67_INCBIN(folderback_image, "build/folderback-image.bin");
-BN67_INCBIN(folderback_palette, "build/folderback-palette.bin");
-BN67_SONG(folderback_rumble_song,
-          BN67_PCM(folderback_rumble, 0x40, 0x08,
+BN67_INCBIN(folder_back_icon, "build/folder_back_icon.bin");
+BN67_INCBIN(folder_back_image, "build/folder_back_image.bin");
+BN67_INCBIN(folder_back_palette, "build/folder_back_palette.bin");
+BN67_SONG(folder_back_rumble_song,
+          BN67_PCM(folder_back_rumble, 0x40, 0x08,
                    ".byte 0xBC,0x00,0xBB,0x4B,0xBD,0x00,0xBE,0x7F\n"
                    ".byte 0xBF,0x40,0xF9,0x3C,0x7F,0xAA,0x81,0xB1\n",
-                   "build/folderback-rumble-sample.bin"));
+                   "build/folder_back_rumble_sample.bin"));
 
 BN67_CHIP_RECORD(0x0c2){
     .codes =
@@ -27,8 +27,8 @@ BN67_CHIP_RECORD(0x0c2){
         {
             .effect_flags = EXE6_CHIP_EFFECT_FLAG_VERSION_AVAILABLE,
             .counter_settings = 0x00,
-            .family = BN67_ATTACK_FAMILY(folderback_attack_main),
-            .subfamily = BN67_ATTACK_SUBFAMILY(folderback_attack_main),
+            .family = BN67_ATTACK_FAMILY(folder_back_attack_main),
+            .subfamily = BN67_ATTACK_SUBFAMILY(folder_back_attack_main),
             .dark_soul_usage = 0x0A,
             .unknown_0e = 0x00,
             .lock_on = 0x00,
@@ -44,9 +44,9 @@ BN67_CHIP_RECORD(0x0c2){
     .library_sort_order = 0x00C7,
     .library_gate_usage = 0x01,
     .dark_chip_id = UINT8_MAX,
-    .icon = folderback_icon,
-    .image = folderback_image,
-    .palette = folderback_palette,
+    .icon = folder_back_icon,
+    .image = folder_back_image,
+    .palette = folder_back_palette,
 };
 
 static const uint32_t FULL_GAUGE = 0x4000;
@@ -72,7 +72,7 @@ _Static_assert(sizeof(struct ControllerWork) <=
                "FolderBack controller work exceeds object work storage");
 
 static USED __attribute__((noinline)) bool
-folderback_object_should_pause(const Exe6Obj *object) {
+folder_back_object_should_pause(const Exe6Obj *object) {
   const enum Exe6ObjectClass object_class =
       (enum Exe6ObjectClass)(object->object_class & 0x0Fu);
   const bool is_enemy = object_class == EXE6_OBJECT_CLASS_ENEMY;
@@ -83,7 +83,7 @@ folderback_object_should_pause(const Exe6Obj *object) {
 
   const Exe6ObjectSlot *slots = EXE6_EFFECT_POOL_HEAD;
   const uint8_t controller_id =
-      (uint8_t)BN67_OBJ_ID(folderback_controller_main);
+      (uint8_t)BN67_OBJ_ID(folder_back_controller_main);
   for (size_t slot_index = 0; slot_index < EXE6_POOL_SLOT_COUNT;
        ++slot_index) {
     const Exe6Obj *controller = &slots[slot_index].object;
@@ -99,14 +99,14 @@ folderback_object_should_pause(const Exe6Obj *object) {
 
 // The class-1 dispatch table is relocated by the registry compiler, leaving
 // its original first two entries available for the section-patch relay.
-BN67_PATCH_SECTION(0x080031FA, 0x08003C9C, folderback_dispatch_main);
+BN67_PATCH_SECTION(0x080031FA, 0x08003C9C, folder_back_dispatch_main);
 
 /* The original class-4 table is dead after registry relocation, so its first
  * two entries can relay the native Custom-opening path to the linked code. */
 BN67_PATCH_SECTION(0x0800819A, 0x080E42C8,
-                   folderback_custom_transition_dispatch);
+                   folder_back_custom_transition_dispatch);
 
-NAKED void folderback_dispatch_main(void) {
+NAKED void folder_back_dispatch_main(void) {
   // Native object mains consume the dispatcher's live registers and flags.
   // Preserve them around the C predicate, then reproduce the final flag-setting
   // shift from the native table lookup. Rejoin at the native pop/call sequence
@@ -116,7 +116,7 @@ NAKED void folderback_dispatch_main(void) {
           "push {r7}\n"
           "push {r0,r1,r2,r3,r4,r6,r7}\n"
           "adds r0,r5,#0\n"
-          "bl folderback_object_should_pause\n"
+          "bl folder_back_object_should_pause\n"
           "cmp r0,#0\n"
           "bne 1f\n"
           "pop {r0,r1,r2,r3,r4,r6,r7}\n"
@@ -151,7 +151,7 @@ static void restore_palette(void) {
 
 static void impact(void) {
   exe6_camera_quake_set(3, IMPACT_FRAMES);
-  exe6_sound_req(BN67_SONG_ID(folderback_rumble_song));
+  exe6_sound_req(BN67_SONG_ID(folder_back_rumble_song));
 }
 
 static void hold_local_custom_gauge(Exe6Obj *self) {
@@ -226,10 +226,10 @@ static void delete_controller(Exe6Obj *self) {
 }
 
 static USED __attribute__((noinline)) void
-folderback_coalesce_native_custom(void) {
+folder_back_coalesce_native_custom(void) {
   Exe6ObjectSlot *slots = EXE6_EFFECT_POOL_HEAD;
   const uint8_t controller_id =
-      (uint8_t)BN67_OBJ_ID(folderback_controller_main);
+      (uint8_t)BN67_OBJ_ID(folder_back_controller_main);
   for (size_t slot_index = 0; slot_index < EXE6_POOL_SLOT_COUNT;
        ++slot_index) {
     Exe6Obj *controller = &slots[slot_index].object;
@@ -248,11 +248,11 @@ folderback_coalesce_native_custom(void) {
   exe6_battle_pause_on();
 }
 
-NAKED void folderback_custom_transition_dispatch(void) {
+NAKED void folder_back_custom_transition_dispatch(void) {
   __asm__(".syntax unified\n"
           "pop {r1}\n"
           "push {r4-r7,lr}\n"
-          "bl folderback_coalesce_native_custom\n"
+          "bl folder_back_coalesce_native_custom\n"
           "movs r0,#0x20\n"
           "pop {r4-r7,pc}\n");
 }
@@ -301,7 +301,7 @@ static void open_custom(uint32_t owner) {
   }
 }
 
-BN67_EFFECT(folderback_controller_main) {
+BN67_EFFECT(folder_back_controller_main) {
   struct ControllerWork *work = (struct ControllerWork *)self->work;
   if (self->state == EXE6_OBJECT_STATE_INIT) {
     /* Link battles advance the displayed cockpit gauge directly.  Their
@@ -332,9 +332,9 @@ BN67_EFFECT(folderback_controller_main) {
   open_custom(owner);
 }
 
-BN67_PERSISTENT_ATTACK(0x0c2, folderback_attack_main) {
+BN67_PERSISTENT_ATTACK(0x0c2, folder_back_attack_main) {
   Exe6Obj *controller =
-      exe6_efc_open(BN67_OBJ_ID(folderback_controller_main), spawn_parameters);
+      exe6_efc_open(BN67_OBJ_ID(folder_back_controller_main), spawn_parameters);
   if (controller == NULL) {
     return NULL;
   }

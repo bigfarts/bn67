@@ -202,7 +202,7 @@ pointers and appends these SearchMan mappings:
 
 Both halves of each selector are compiler outputs, not duplicated numeric
 constants. An
-archive label such as `bugcharge_gospel_sprite` is only a ROM address; it cannot
+archive label such as `bug_charge_gospel_sprite` is only a ROM address; it cannot
 identify a table slot until a generated pointer-table entry refers to it.
 
 ChaosLrd deliberately appends the Bass archive twice. The main Bass actor and
@@ -418,10 +418,10 @@ The compiler installs the translated SignalRed entries through relocated tables:
 
 | Hook | BN6 file offset | Patched target |
 | --- | ---: | ---: |
-| family `0x15` table | compiler-relocated | `signalred_attack_main` entry |
-| class-4 table | compiler-relocated | `signalred_controller_main` entry |
+| family `0x15` table | compiler-relocated | `signal_red_attack_main` entry |
+| class-4 table | compiler-relocated | `signal_red_controller_main` entry |
 
-The unified sprite installer appends `signalred_battle_sprite` to group `0x10`
+The unified sprite installer appends `signal_red_battle_sprite` to group `0x10`
 at derived index `0x61`; it does not modify the native entry formerly used by
 the port.
 
@@ -494,7 +494,7 @@ path handled by `0x0800F8CE`; its 20-frame visibility timer owns object byte
 
 The BN6 battle-flag helpers at `0x08001382` and `0x0800138E` retain Blue
 Moon's set/clear contract; the battle structure field moved from `+0x64` to
-`+0x5C`. SignalRed's gameplay routines live in `src/chips/signalred.c`;
+`+0x5C`. SignalRed's gameplay routines live in `src/chips/signal_red.c`;
 its assembly file contains only binary resources and the DustCross table
 extension.
 
