@@ -246,9 +246,11 @@ Hold a direction while LaserMan raises his arms to add the original command
 effect. This works for Base, V2, and V3:
 
 - **Up:** Resets Attack, Rapid, and Charge to level 1.
-- **Down:** Runs BN6's native Uninstall effect, including its normal Cross and
-  Link Navi rules. Native Uninstall removes the underlying B+Left ability, and
-  the shared hook also removes StatGrd's Status Guard.
+- **Down:** Uninstalls the target's Super Armor, Float Shoes, Air Shoes, Under
+  Shirt, B+Left, and tatus Guard for the rest of the battle. Abilities built
+  into the target's current Cross remain available until Cross Out, but
+  installed copies stay removed underneath the Cross. Link Navis are immune,
+  just as they are to the regular Uninstall chip.
 - **Right:** Removes charge-shot replacements. It restores an active Cross's
   native charge shot while resetting the base form to the standard MegaBuster.
 - **Left:** Permanently reduces the target's Custom Screen selection by one
