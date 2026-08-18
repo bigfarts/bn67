@@ -171,8 +171,9 @@ effect on Base, 2, and 3:
 - Left permanently reduces the target's Custom Screen selection by one chip,
   to a minimum of two chips.
 
-Command effects require the beam to contact the target. A missed LaserMan does
-not alter stats, abilities, charge shots, or Custom behavior.
+Command effects require the beam to reduce the target's HP. Barriers, auras,
+AntiDamage, and missed attacks prevent the stat, ability, charge-shot, and
+Custom changes.
 
 All three are Null-element MegaChips. Base uses Blue Moon's base art palette,
 LaserMan2 preserves every base LaserMan foreground color while changing only

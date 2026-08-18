@@ -160,6 +160,7 @@ static const uint16_t WAIT_FRAMES = 20;
 static const uint16_t RAISE_FRAMES = 30;
 static const uint16_t LASER_FRAMES = 80;
 static const uint16_t BEAM_FRAMES = 60;
+static const uint8_t HIT_CONFIRM_FRAMES = 8;
 static const Exe6HitType HIT_SELECTOR =
     EXE6_HIT_TYPE_STANDARD_TARGET;
 
@@ -181,6 +182,11 @@ enum BeamPhase {
     BEAM_PHASE_DISAPPEAR = 8,
 };
 
+enum HitPhase {
+    HIT_PHASE_COLLIDE,
+    HIT_PHASE_CONFIRM_DAMAGE = 4,
+};
+
 enum ChargeShotRestoreState {
     CHARGE_SHOT_RESTORE_INACTIVE,
     CHARGE_SHOT_RESTORE_BASE,
@@ -190,11 +196,18 @@ enum ChargeShotRestoreState {
 struct HitWork {
     uint32_t reserved[5];
     uint32_t command_stream;             // +0x74
+    uint16_t target_hp_before;           // +0x78
+    uint8_t confirm_timer;               // +0x7A
 };
 
 _Static_assert(
     offsetof(struct HitWork, command_stream) == 0x14,
     "LaserMan hit work layout"
+);
+
+_Static_assert(
+    sizeof(struct HitWork) <= sizeof(((Exe6Obj *)0)->work),
+    "LaserMan hit work size"
 );
 
 enum CommandEffect {
@@ -661,26 +674,67 @@ static bool hit_init(Exe6Obj *self)
     exe6_battle_hit_hit_mark_set(EXE6_HIT_EFFECT_NORMAL);
     exe6_battle_hit_set(0, self->variant);
     self->state_word = EXE6_OBJECT_STATE_ACTIVE;
+    self->phase = HIT_PHASE_COLLIDE;
     return true;
+}
+
+static void close_hit(Exe6Obj *self)
+{
+    Exe6Hit *hit = self->hit;
+    if (hit == NULL) {
+        return;
+    }
+    exe6_battle_hit_off(hit);
+    exe6_battle_hit_close(hit);
+    self->hit = NULL;
+}
+
+static void confirm_hit_damage(Exe6Obj *self)
+{
+    struct HitWork *work = (struct HitWork *)self->work;
+    Exe6Obj *target = exe6_get_navi_adrs(self->owner ^ 1u);
+    if (target != NULL && target->hp < work->target_hp_before) {
+        apply_selected_command(self);
+        exe6_obj_move_delete();
+        return;
+    }
+    if (work->confirm_timer == 0 || exe6_battle_end_check() != 0) {
+        exe6_obj_move_delete();
+        return;
+    }
+    --work->confirm_timer;
+}
+
+static void check_hit_contact(Exe6Obj *self)
+{
+    Exe6Hit *hit = self->hit;
+    Exe6Obj *target = exe6_get_navi_adrs(self->owner ^ 1u);
+    uint16_t target_hp_before = target == NULL ? 0 : target->hp;
+    exe6_battle_hit_check(hit);
+    exe6_battle_hit_hit_mark_check();
+    bool contacted_target = hit->received_hit_flags != 0
+        && target != NULL
+        && target->block_x == self->block_x
+        && target->block_y == self->block_y
+        && (uint8_t)self->animation_word == COMMAND_MARKER;
+    close_hit(self);
+    if (!contacted_target) {
+        exe6_obj_move_delete();
+        return;
+    }
+    struct HitWork *work = (struct HitWork *)self->work;
+    work->target_hp_before = target_hp_before;
+    work->confirm_timer = HIT_CONFIRM_FRAMES;
+    self->phase = HIT_PHASE_CONFIRM_DAMAGE;
 }
 
 static void hit_update(Exe6Obj *self)
 {
-    Exe6Hit *hit = self->hit;
-    exe6_battle_hit_check(hit);
-    exe6_battle_hit_hit_mark_check();
-    if (hit->received_hit_flags != 0) {
-        Exe6Obj *target = exe6_get_navi_adrs(self->owner ^ 1u);
-        if (target != NULL
-            && target->block_x == self->block_x
-            && target->block_y == self->block_y
-            && (uint8_t)self->animation_word == COMMAND_MARKER) {
-            apply_selected_command(self);
-        }
+    if (self->phase == HIT_PHASE_CONFIRM_DAMAGE) {
+        confirm_hit_damage(self);
+        return;
     }
-    exe6_battle_hit_off(hit);
-    exe6_battle_hit_close(self->hit);
-    exe6_obj_move_delete();
+    check_hit_contact(self);
 }
 
 BN67_SHELL(laserman_hit_main)

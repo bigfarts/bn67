@@ -26,7 +26,11 @@ class LaserManTests(unittest.TestCase):
             self.source.index("static void apply_command_effect"):
             self.source.index("static void refresh_target_player")
         ]
-        self.assertIn("exe6_navi_status_set(target_side, property, value);", apply_effect)
+        for property_id in ("0x23", "0x1B", "0x1C", "0x1D"):
+            self.assertIn(
+                f"exe6_navi_status_set(target_side, {property_id}, 0);",
+                apply_effect,
+            )
 
         refresh = self.source[
             self.source.index("static void refresh_target_player"):
@@ -50,9 +54,26 @@ class LaserManTests(unittest.TestCase):
             "CROSS_POWER_ATTACKS[active_cross]",
             self.source,
         )
-        self.assertIn("exe6_navi_status_set(target_side, 4, 0);", self.source)
-        self.assertIn("property = 5;", self.source)
-        self.assertIn("value = 1;", self.source)
+        self.assertIn("exe6_navi_status_set(target_side, 0x04, 0);", self.source)
+        self.assertIn("exe6_navi_status_set(target_side, 0x05, 1);", self.source)
+
+    def test_command_effect_requires_confirmed_hp_damage(self) -> None:
+        contact = self.source[
+            self.source.index("static void check_hit_contact"):
+            self.source.index("static void hit_update")
+        ]
+        self.assertIn("hit->received_hit_flags != 0", contact)
+        self.assertIn("work->target_hp_before = target_hp_before;", contact)
+        self.assertIn("self->phase = HIT_PHASE_CONFIRM_DAMAGE;", contact)
+        self.assertNotIn("apply_selected_command(self);", contact)
+
+        confirm = self.source[
+            self.source.index("static void confirm_hit_damage"):
+            self.source.index("static void check_hit_contact")
+        ]
+        self.assertIn("target->hp < work->target_hp_before", confirm)
+        self.assertIn("apply_selected_command(self);", confirm)
+        self.assertIn("work->confirm_timer == 0", confirm)
 
 
 if __name__ == "__main__":

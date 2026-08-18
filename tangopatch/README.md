@@ -247,8 +247,8 @@ effect. This works for Base, V2, and V3:
 - **Left:** Permanently reduces the target's Custom Screen selection by one
   chip, to a minimum of two.
 
-Command effects require the beam to hit the target, so a miss does not alter
-the target.
+Command effects require the beam to reduce the target's HP. Barriers, auras,
+AntiDamage, and missed attacks prevent the command effect.
 
 Base uses the native red-background menu palette. LaserMan V2 keeps the base
 LaserMan foreground and changes only its five background entries to green.

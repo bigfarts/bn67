@@ -732,13 +732,16 @@ but LaserMan's quiet cleanup, avoiding the
 six random miss-impact sparkles that SearchMan's own cleanup would create for
 the six block hits. Only the final `FD` damage event creates six block-contact
 objects. The chosen direction is latched outside the event halfword, and its
-entire property stream is translated exactly once only when BN6's hit
-result at `+0x70` reports contact and that row object occupies the opposing
-Navi's current block. A trap or obstacle elsewhere in the beam cannot authorize
-the effect, and missed beams have no command effect. The property words are not
-passed through BN6's incompatible extended-effect IDs. Thus no direction has
-no extra effect, while a held direction applies only its documented stat or
-Custom Window change after a hit. The compiler-generated
+entire property stream is translated exactly once only when BN6's hit result at
+`+0x70` reports contact and that row object occupies the opposing Navi's
+current block. On that contact, the object saves the target's HP, closes its
+hit record, and waits up to eight object updates for native damage processing.
+It applies the selected command only after observing the target's HP decrease.
+Consequently, a barrier, aura, AntiDamage trap, miss, or other zero-damage
+outcome cannot authorize the effect. The property words are not passed through
+BN6's incompatible extended-effect IDs. Thus no direction has no extra effect,
+while a held direction applies only its documented stat or Custom Window
+change after a damaging hit. The compiler-generated
 `LASERMAN_BATTLE_SPRITE_GROUP` / `LASERMAN_BATTLE_SPRITE` pair points directly
 at the expanded shared archive. The reused BN6 object tails still require the
 beam Z word to be cleared explicitly for the native actor and laser to render
