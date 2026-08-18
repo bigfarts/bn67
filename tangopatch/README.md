@@ -6,6 +6,12 @@
 
 Link battles start each player with five Beast Out turns instead of three.
 
+### Bug Death Thunder
+
+Bug Death Thunder's Dark Thunder ball takes 60 frames to charge at every
+Navi Customizer Charge level. Its post-fire chip lockout is reduced from 30
+frames to 10 frames.
+
 ### Status Bug
 
 The normal- and high-severity green invulnerability outcomes now use their

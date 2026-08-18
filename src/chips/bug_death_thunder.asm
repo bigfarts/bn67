@@ -4,8 +4,8 @@
     .dh 60,60,60,60,60
 
 // After the projectile firing phase, the action handler seeds a 30-frame
-// recovery timer at work offset +0x10. Starting it at zero makes the existing
-// decrement-and-cleanup path finish the action immediately on that same update.
+// recovery timer at work offset +0x10. Reduce it to 10 frames while preserving
+// the existing decrement-and-cleanup path.
 .if falzar
     .org 0x080EC826
 .else

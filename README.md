@@ -6,6 +6,12 @@
 
 Link battles start each player with five Beast Out turns instead of three.
 
+### BugDeathThunder
+
+BugDeathThunder's DarkThunder ball takes 60 frames to charge at every
+NaviCust Charge level. Its post-fire chip lockout is reduced from 30 frames to
+10 frames.
+
 ### Title screen
 
 The gold `6` in both title logos now reads `67`. The finished, beveled `7` is

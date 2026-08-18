@@ -16,7 +16,7 @@ class BugDeathThunderTests(unittest.TestCase):
             re.compile(r"(?m)^\.org 0x08020558\n    \.dh 60,60,60,60,60$"),
         )
 
-    def test_post_fire_chip_lockout_is_removed_in_both_editions(self) -> None:
+    def test_post_fire_chip_lockout_is_ten_frames_in_both_editions(self) -> None:
         self.assertRegex(
             self.source,
             re.compile(
@@ -25,7 +25,7 @@ class BugDeathThunderTests(unittest.TestCase):
                 r"\.else\n"
                 r"    \.org 0x080EDB66\n"
                 r"\.endif\n"
-                r"    mov r0,0$"
+                r"    mov r0,10$"
             ),
         )
 
