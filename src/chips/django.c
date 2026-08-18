@@ -332,6 +332,15 @@ static void actor_wait(Exe6Obj *self)
         self->substate = UPDATE_STEP_ACTIVE;
     }
     if (decrement_timer(&self->timer) <= 0) {
+        if (exe6_block_move_check(
+                self->block_x,
+                self->block_y,
+                EXE6_BLOCK_FLAG_SOLID,
+                0
+            ) == 0) {
+            self->state_word = EXE6_OBJECT_STATE_DESTROY;
+            return;
+        }
         set_phase(
             self,
             work->has_target != 0 ? ACTOR_PHASE_READY : ACTOR_PHASE_EXIT

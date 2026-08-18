@@ -30,6 +30,17 @@ class DjangoTests(unittest.TestCase):
         )
         self.assertIn("work->paralysis_pending = 0;", sunlight)
 
+    def test_actor_rejects_hole_before_attack(self) -> None:
+        wait = self.source[
+            self.source.index("static void actor_wait"):
+            self.source.index("static void actor_ready")
+        ]
+        panel_check = wait.index("exe6_block_move_check(")
+        ready_phase = wait.index("ACTOR_PHASE_READY")
+        self.assertLess(panel_check, ready_phase)
+        self.assertIn("EXE6_BLOCK_FLAG_SOLID", wait)
+        self.assertIn("self->state_word = EXE6_OBJECT_STATE_DESTROY;", wait)
+
 
 if __name__ == "__main__":
     unittest.main()
