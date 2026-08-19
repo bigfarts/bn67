@@ -10,9 +10,8 @@ flashing invulnerability variants instead.
 ### Heat Cross
 
 Heat Cross's charged Fire Arm keeps its normal forward flame pattern and also
-creates BurnSquare flames on the adjacent panels above, below, and behind the
-user. The added flames deal the same resolved damage as Fire Arm. Invalid edge
-panels are skipped.
+creates Burn Square flames on the adjacent panels above, below, and behind the
+user. The added flames deal the same damage as Fire Arm.
 
 ## Navi Customizer
 
