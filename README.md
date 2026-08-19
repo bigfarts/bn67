@@ -20,6 +20,13 @@ stored at its final screen coordinates in the transparent 240x160
 Each edition's complete 256x160 title layer and uniform 32x20 tile map are
 rebuilt wholesale rather than patching individual native atlas cells.
 
+### HeatCross
+
+HeatCross's charged Fire Arm keeps its native forward flame pattern and also
+creates BurnSquare flames on the three adjacent panels above, below, and behind
+the user. Each added flame uses Fire Arm's resolved damage, attack bonus, and
+Fire element. Invalid or missing edge panels are skipped.
+
 ### AntiNavi
 
 AntiNavi retains its native BN6 behavior, codes, and metadata, but its MB cost
