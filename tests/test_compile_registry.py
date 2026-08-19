@@ -1454,6 +1454,25 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertNotIn("exe6_deck_shuffle_sub(", folder_back)
         self.assertIn("selection->active_chip_index = 0;", folder_back)
         self.assertIn("selection->loaded_chip_count = 0;", folder_back)
+        self.assertIn("clear_player_hand_state(self->owner);", folder_back)
+        self.assertIn("player->active_chip_id = UINT16_MAX;", folder_back)
+        self.assertIn("player->loaded_chip_count = 0;", folder_back)
+        self.assertIn("clear_remote_folder_back_hand();", folder_back)
+        self.assertIn(
+            "selection->chip_ids[cursor - 1] != 0x0C2", folder_back
+        )
+        self.assertIn(
+            "selection->active_chip_index = (uint8_t)cursor;", folder_back
+        )
+        self.assertLess(
+            folder_back.index("clear_player_hand_state(self->owner);"),
+            folder_back.index("exe6_battle_one_self_check(self->owner)"),
+        )
+        predicate = folder_back[
+            folder_back.index("folder_back_object_should_pause") :
+            folder_back.index("BN67_PATCH_SECTION(0x080031FA")
+        ]
+        self.assertIn("clear_remote_folder_back_hand();", predicate)
         self.assertIn("clear_chip_use_counts();", folder_back)
         self.assertIn(
             "*EXE6_USED_CHIP_CLASS_COUNTS = (Exe6ChipClassUseCounts){0};",

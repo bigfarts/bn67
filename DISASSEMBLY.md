@@ -163,13 +163,19 @@ the property therefore strips the underlying StatGrd program without removing
 Tomahawk Cross's innate status immunity. Cross Out exposes the cleared base
 property.
 
-FolderBack's Folder restore runs only on the chip owner's local peer. Its hand
-reset therefore clears only that owner's two hand counters and six loaded-chip
+FolderBack's Folder restore runs only on the chip owner's local peer. Its local
+hand reset clears that owner's two selection-work counters and six loaded-chip
 IDs. The rest of the `0x50`-byte selection-work block is Custom-screen state;
 zeroing it makes later chips render blank. The native initializer at
 `0x0800A954` clears both players' blocks; calling it from this local-only path
 erases the opponent's retained chips on just one peer and desynchronizes the
-battle when the opponent next uses one.
+battle when the opponent next uses one. FolderBack's persistent controller also
+exists only on its owner's core, so clearing the Navi object's loaded-chip count
+from that controller cannot update the remote core. The shared object dispatcher
+therefore watches the remote hand cursor: when it advances past FolderBack, the
+dispatcher exhausts the remaining loaded IDs and invalidates the remote Navi's
+active chip and loaded count. Leaving the remote cursor populated lets its next
+A press replay the final chip that had been queued before FolderBack.
 The restore calls BN6's Folder setup at `0x0800A318`, which already shuffles the
 rebuilt 30-chip queue. It does not call the shuffle routine a second time;
 doing so changes both the restored draw order and the shared RNG stream twice.

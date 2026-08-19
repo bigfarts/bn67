@@ -72,8 +72,14 @@ _Static_assert(sizeof(struct ControllerWork) <=
                    sizeof(((Exe6Obj *)0)->work),
                "FolderBack controller work exceeds object work storage");
 
+static void clear_remote_folder_back_hand(void);
+
 static USED __attribute__((noinline)) bool
 folder_back_object_should_pause(const Exe6Obj *object) {
+  /* Persistent attacks run only on their owner's core. The shared object
+   * dispatcher is where the other core observes and clears the remote hand. */
+  clear_remote_folder_back_hand();
+
   const enum Exe6ObjectClass object_class =
       (enum Exe6ObjectClass)(object->object_class & 0x0Fu);
   const bool is_enemy = object_class == EXE6_OBJECT_CLASS_ENEMY;
@@ -174,11 +180,53 @@ static void clear_loaded_hand(uint32_t owner) {
   }
 }
 
+static void clear_player_hand_state(uint32_t owner) {
+  Exe6Obj *player = exe6_get_navi_adrs(owner);
+  if (player == NULL) {
+    return;
+  }
+  player->active_chip_id = UINT16_MAX;
+  player->loaded_chip_count = 0;
+}
+
+static void clear_remote_folder_back_hand(void) {
+  for (uint32_t owner = 0; owner < 2; ++owner) {
+    if (exe6_battle_one_self_check(owner) == 0) {
+      continue;
+    }
+
+    Exe6NaviSelectChipWork *selection =
+        exe6_navi_select_chip_work_adrs_get(owner);
+    const size_t hand_capacity =
+        sizeof(selection->chip_ids) / sizeof(selection->chip_ids[0]);
+    size_t cursor = selection->active_chip_index;
+    if (cursor == 0 || cursor > hand_capacity ||
+        selection->chip_ids[cursor - 1] != 0x0C2) {
+      continue;
+    }
+
+    /* The cursor advancing past FolderBack is the remote core's observable
+     * activation signal. Exhaust the remaining IDs without erasing them; the
+     * next Custom selection can safely replace this block in the usual way. */
+    while (cursor < hand_capacity &&
+           selection->chip_ids[cursor] != UINT16_MAX) {
+      ++cursor;
+    }
+    selection->active_chip_index = (uint8_t)cursor;
+    selection->loaded_chip_count = 0;
+    clear_player_hand_state(owner);
+  }
+}
+
 static void clear_chip_use_counts(void) {
   *EXE6_USED_CHIP_CLASS_COUNTS = (Exe6ChipClassUseCounts){0};
 }
 
 static void restore_local_folder(Exe6Obj *self) {
+  /* Clear the owner's live action state on the core that runs this controller.
+   * The shared dispatcher handles the remote core, where no controller exists. */
+  clear_player_hand_state(self->owner);
+
   if (exe6_battle_one_self_check(self->owner) != 0) {
     return;
   }
@@ -198,9 +246,9 @@ static void restore_local_folder(Exe6Obj *self) {
   context->regular_chip_available = regular_chip_available;
   context->tag_chips_available = tag_chips_available;
 
-  /* The native initializer clears both players, but only this core restores
-   * the local user's Folder.  Clearing the opponent here loses their retained
-   * chips on one peer and desynchronizes the next time they fire one. */
+  /* The native initializer clears both Custom-selection blocks, but only this
+   * core restores the local user's Folder. Clearing the opponent's selection
+   * block here would lose their retained chips on one peer. */
   clear_loaded_hand(self->owner);
 }
 
