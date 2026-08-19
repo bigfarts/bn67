@@ -9,6 +9,11 @@
 #define BEAST_OUT_BASE_TURNS 3u
 #define BEAST_OUT_MAX_TURNS 9u
 
+/* Link setup has a separate hard-coded three-turn write into copied battle
+ * stats. Give that site its own compiler-allocated relay instead of placing a
+ * hand-owned veneer after the native Beast Out initializer. */
+BN67_PATCH_SECTION(0x0800B1A2, beast_time_link_counter_init);
+
 /* The game stores both forms as independent 7x7 masks. The compressed form
  * drops the lower-right cell from the uncompressed centered 2x2 square. */
 #define BEAST_TIME_UNCOMPRESSED_SHAPE \
@@ -84,6 +89,7 @@ NAKED void beast_time_link_counter_init(void)
 {
     __asm__(
         ".syntax unified\n"
+        "pop {r1}\n"
         "movs r0,#0x33\n"
         "ldrb r0,[r6,r0]\n"
         "adds r0,#3\n"

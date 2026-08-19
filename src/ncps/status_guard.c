@@ -2,6 +2,10 @@
 
 #define STATUS_GUARD_PROPERTY 0x52u
 
+/* The registry compiler places this feature's long-call relay only in native
+ * attack-table storage retired by this build's table relocation. */
+BN67_PATCH_SECTION(0x0801414A, status_guard_uninstall_main);
+
 static USED __attribute__((noinline)) void status_guard_uninstall(
     Exe6Obj *player
 )
@@ -13,20 +17,24 @@ static USED __attribute__((noinline)) void status_guard_uninstall(
 
 /*
  * Native Uninstall and SunMoon's BlueMoon attack both finish their successful
- * removal path at 0x0801414A. Clear StatGrd there, then tail-call the native
- * refresh routine displaced by the hook.
+ * removal path with a BL to the refresh routine followed by POP {pc}. The
+ * six-byte section patch replaces both instructions, so discard its saved r1,
+ * clear StatGrd, invoke the displaced refresh routine, and perform the original
+ * return. The extra LR save keeps the C helper's stack 8-byte aligned.
  */
 NAKED void status_guard_uninstall_main(void)
 {
     __asm__(
         ".syntax unified\n"
+        "pop {r1}\n"
         "push {lr}\n"
         "adds r0,r5,#0\n"
         "bl status_guard_uninstall\n"
-        "pop {r3}\n"
-        "mov lr,r3\n"
+        "pop {r1}\n"
         "ldr r3,=0x0801469D\n"
+        "mov lr,pc\n"
         "bx r3\n"
+        "pop {pc}\n"
     );
 }
 

@@ -153,15 +153,25 @@ startup.
 Uninstall's `0x2000` damage flag becomes native inflicted-effect `0xF8`, whose
 player response calls the shared removal routine at `0x080140EE`. SunMoon's
 BlueMoon hit carries the same flag and reaches that routine as well. Its
-successful tail call at `0x0801414A` is redirected through
-the nearby veneer at `0x080141BC` and then `status_guard_uninstall_main`, which
-clears battle Navi property `0x52` before continuing to the displaced native
-refresh routine at `0x0801469C`. The hook is after the native Link Navi guard,
-so it does not broaden Uninstall's target eligibility. BN6's status gate checks
-active transformation `0x2C == 7` independently of property `0x52`; clearing
-the property therefore strips the underlying StatGrd program without removing
+successful tail call and return at `0x0801414A` are replaced by StatGrd's own
+six-byte section patch. The registry compiler allocates its long-call relay
+from the original storage of the attack table that this build relocates, never
+from live code or an ad-hoc code cave. `status_guard_uninstall_main` clears
+battle Navi property `0x52`, invokes the displaced native refresh routine at
+`0x0801469C`, and performs the displaced return. The adjacent words at
+`0x080141BC` and `0x080141C0` remain the native 300- and 600-frame Status Bug
+duration constants in both editions. The hook is after the native Link Navi
+guard, so it does not broaden Uninstall's target eligibility. BN6's status gate
+checks active transformation `0x2C == 7` independently of property `0x52`;
+clearing the property therefore strips the underlying StatGrd program without removing
 Tomahawk Cross's innate status immunity. Cross Out exposes the cleared base
 property.
+
+BeastT+1 deliberately replaces the native 16-byte Beast Out counter
+initializer beginning at `0x080141AC`; its direct expanded-ROM jump occupies
+only the first eight bytes. The link-battle counter patch at `0x0800B1A2` has
+an independent compiler-allocated section relay instead of placing another
+veneer in the remaining initializer bytes.
 
 FolderBack's Folder restore runs only on the chip owner's local peer. Its local
 hand reset clears that owner's two selection-work counters and six loaded-chip

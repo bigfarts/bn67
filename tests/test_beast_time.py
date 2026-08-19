@@ -14,7 +14,6 @@ class BeastTimeTests(unittest.TestCase):
     def test_replaces_millions_without_a_runtime_order_hook(self) -> None:
         self.assertIn("BN67_NCP(\n    0x16,", self.source)
         self.assertNotIn("order_pack", self.source)
-        self.assertNotIn("BN67_PATCH", self.source)
 
     def test_has_three_plus_part_colors_and_emotion_bug(self) -> None:
         declaration = self.source.split("BN67_NCP(", 1)[1].split(")", 1)[0]
@@ -60,9 +59,17 @@ class BeastTimeTests(unittest.TestCase):
         )
         hooks = (ROOT / "src/ncps/beast_time.asm").read_text()
         self.assertIn(".org 0x080141AC", hooks)
-        self.assertIn("ldr r0,=beast_time_counter_init + 1", hooks)
-        self.assertIn(".org 0x0800B1A2", hooks)
-        self.assertIn("bl beast_time_link_counter_veneer", hooks)
+        self.assertIn(
+            "ldr r0,=beast_time_counter_init + 1",
+            hooks,
+        )
+        self.assertIn(
+            "BN67_PATCH_SECTION(0x0800B1A2, beast_time_link_counter_init)",
+            self.source,
+        )
+        self.assertNotIn("beast_time_link_counter_veneer", hooks)
+        self.assertIn('"pop {r1}\\n"', self.source)
+        self.assertNotIn("status_guard", self.source)
 
     def test_repurposes_the_entire_millions_byte(self) -> None:
         self.assertNotIn("nibble", self.source)

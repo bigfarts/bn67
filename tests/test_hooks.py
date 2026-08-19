@@ -9,15 +9,13 @@ ROOT = Path(__file__).resolve().parents[1]
 class GlobalHookTests(unittest.TestCase):
     def test_link_battles_add_installed_piece_bonus_without_forced_five(self) -> None:
         hooks = (ROOT / "src/ncps/beast_time.asm").read_text()
+        source = (ROOT / "src/ncps/beast_time.c").read_text()
 
         self.assertNotIn("mov r0,5", hooks)
-        self.assertRegex(
-            hooks,
-            re.compile(
-                r"(?m)^\.org 0x0800B1A2\n"
-                r"    bl beast_time_link_counter_veneer\n"
-                r"    nop$"
-            ),
+        self.assertNotIn("beast_time_link_counter_veneer", hooks)
+        self.assertIn(
+            "BN67_PATCH_SECTION(0x0800B1A2, beast_time_link_counter_init)",
+            source,
         )
 
     def test_beast_out_initializer_uses_installed_piece_bonus(self) -> None:

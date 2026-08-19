@@ -6,18 +6,6 @@
     bx r0
     .pool
 
-// Ordinary Uninstall and SunMoon's BlueMoon phase share the native removal
-// tail. Extend that successful path to clear status property 0x52 before
-// refreshing the target's battle abilities.
-.org 0x080141BC
-status_guard_uninstall_veneer:
-    ldr r0,=status_guard_uninstall_main + 1
-    bx r0
-    .pool
-
-.org 0x0801414A
-    bl status_guard_uninstall_veneer
-
 // BN6 mirrors conveyor terrain IDs for player 2 before checking the 0xFF
 // hidden-panel sentinel.  Exempt the sentinel and swap the only two conveyor
 // states in place; 0x0B ^ 7 == 0x0C and 0x0C ^ 7 == 0x0B.

@@ -13,7 +13,7 @@ class StatGuardTests(unittest.TestCase):
 
     def test_replaces_bodypack_through_the_ncp_registry(self) -> None:
         self.assertIn("BN67_NCP(\n    0x1C,", self.source)
-        self.assertNotIn("BN67_PATCH", self.source)
+        self.assertNotIn("BN67_PATCH_POINTER", self.source)
 
     def test_is_a_pink_program_part_with_the_native_bug_group(self) -> None:
         declaration = self.source.split("BN67_NCP(", 1)[1].split(")", 1)[0]
@@ -30,23 +30,32 @@ class StatGuardTests(unittest.TestCase):
         self.assertIn("#define STATUS_GUARD_PROPERTY 0x52u", self.source)
 
     def test_uninstall_and_sunmoon_bluemoon_remove_status_guard(self) -> None:
-        hooks = (ROOT / "src/hooks.asm").read_text()
-
         self.assertIn(
             "exe6_navi_status_set(player->owner, STATUS_GUARD_PROPERTY, 0)",
             self.source,
         )
         self.assertIn(
-            ".org 0x080141BC\n"
-            "status_guard_uninstall_veneer:\n"
-            "    ldr r0,=status_guard_uninstall_main + 1",
-            hooks,
+            "BN67_PATCH_SECTION(0x0801414A, status_guard_uninstall_main)",
+            self.source,
         )
-        self.assertIn(
-            ".org 0x0801414A\n    bl status_guard_uninstall_veneer",
-            hooks,
-        )
+        hooks = (ROOT / "src/hooks.asm").read_text()
+        self.assertNotIn(".org 0x080141BC", hooks)
+        self.assertNotIn("status_guard_uninstall_veneer", hooks)
+        self.assertIn('"pop {r1}\\n"', self.source)
+        self.assertIn('"mov lr,pc\\n"', self.source)
+        self.assertIn('"pop {pc}\\n"', self.source)
         self.assertIn('"ldr r3,=0x0801469D\\n"', self.source)
+
+    def test_status_bug_duration_constants_are_not_used_as_hook_space(self) -> None:
+        hooks = (ROOT / "src/hooks.asm").read_text()
+        beast_hooks = (ROOT / "src/ncps/beast_time.asm").read_text()
+
+        for address in ("0x080141BC", "0x080141C0"):
+            self.assertNotIn(f".org {address}", hooks)
+            self.assertNotIn(f".org {address}", beast_hooks)
+
+        beast_source = (ROOT / "src/ncps/beast_time.c").read_text()
+        self.assertNotIn("status_guard", beast_source)
 
     def test_uses_distinct_uncompressed_and_compressed_shapes(self) -> None:
         self.assertIn("STATUS_GUARD_UNCOMPRESSED_SHAPE", self.source)

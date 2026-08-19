@@ -6,19 +6,6 @@
     bx r0
     .pool
 
-// This nearby veneer lets the link initializer reach expanded-ROM C code
-// from a Thumb BL whose direct range is too short.
-beast_time_link_counter_veneer:
-    ldr r0,=beast_time_link_counter_init + 1
-    bx r0
-    .pool
-
-// Link setup has a separate hard-coded three-turn write into the copied
-// battle stats. Replace that write with the same full-byte per-piece bonus.
-.org 0x0800B1A2
-    bl beast_time_link_counter_veneer
-    nop
-
 // Millions sets r5 when its NaviCust stat byte is active, then uses that flag
 // to grant its field reward. BeastT+1 owns the byte now, so force the native
 // false path by removing the branch that skips `mov r5,0`. The Falzar routine
