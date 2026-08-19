@@ -13,7 +13,8 @@ Heat Cross's charged Fire Arm keeps its normal behavior.
 
 B+Left performs BN2's Burner: creating a five-panel plus on the user's panel
 and the panels in front of, behind, above, and below it. Each flame deals 50
-Fire damage, and the flames appear when MegaMan's throwing hand is fully lowered.
+Fire damage. The center flame appears when MegaMan's throwing hand is fully
+lowered, and the four outer flames follow 10 frames later.
 
 ## Navi Customizer
 

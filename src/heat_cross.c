@@ -28,8 +28,10 @@
 #define HEAT_CROSS_BURN_PARAMETERS 0x00001E04
 #define HEAT_CROSS_MINIBOMB_THROW_POSE 0x06
 #define HEAT_CROSS_MINIBOMB_RELEASE_TICK 9
+#define HEAT_CROSS_BURNER_SPREAD_DELAY 10
 #define HEAT_CROSS_PHASE_WAIT_FOR_THROW_RELEASE 4
-#define HEAT_CROSS_PHASE_BURNS_ACTIVE 8
+#define HEAT_CROSS_PHASE_WAIT_FOR_OUTER_BURNS 8
+#define HEAT_CROSS_PHASE_BURNS_ACTIVE 12
 
 BN67_PATCH_SECTION(
     HEAT_CROSS_B_LEFT_INPUT_GATE,
@@ -141,7 +143,20 @@ static void heat_cross_try_spawn_burn(
     );
 }
 
-static void heat_cross_spawn_burns(
+static void heat_cross_spawn_center_burn(
+    Exe6Obj *player,
+    const struct HeatCrossAttackWork *work
+)
+{
+    heat_cross_try_spawn_burn(
+        player,
+        work,
+        player->block_x,
+        player->block_y
+    );
+}
+
+static void heat_cross_spawn_outer_burns(
     Exe6Obj *player,
     const struct HeatCrossAttackWork *work
 )
@@ -150,7 +165,6 @@ static void heat_cross_spawn_burns(
     uint32_t block_y = player->block_y;
     int32_t front = (int32_t)exe6_calc_pl_em_dir_spd_for(player);
 
-    heat_cross_try_spawn_burn(player, work, block_x, block_y);
     heat_cross_try_spawn_burn(
         player,
         work,
@@ -204,7 +218,18 @@ static USED void heat_cross_b_left_action_update(
             ++work->timer;
             return;
         }
-        heat_cross_spawn_burns(player, work);
+        heat_cross_spawn_center_burn(player, work);
+        work->timer = 0;
+        work->phase = HEAT_CROSS_PHASE_WAIT_FOR_OUTER_BURNS;
+        return;
+    }
+
+    if (work->phase == HEAT_CROSS_PHASE_WAIT_FOR_OUTER_BURNS) {
+        ++work->timer;
+        if (work->timer < HEAT_CROSS_BURNER_SPREAD_DELAY) {
+            return;
+        }
+        heat_cross_spawn_outer_burns(player, work);
         work->timer = 0;
         work->phase = HEAT_CROSS_PHASE_BURNS_ACTIVE;
         return;

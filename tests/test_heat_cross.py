@@ -31,7 +31,7 @@ class HeatCrossTests(unittest.TestCase):
 
     def test_adds_five_panel_plus_including_center(self) -> None:
         plus = self.source[
-            self.source.index("static void heat_cross_spawn_burns"):
+            self.source.index("static void heat_cross_spawn_center_burn"):
             self.source.index("static USED uint32_t heat_cross_b_left_init_work")
         ]
         self.assertIn("(int32_t)block_x + front", plus)
@@ -39,7 +39,13 @@ class HeatCrossTests(unittest.TestCase):
         self.assertIn("block_y - 1u", plus)
         self.assertIn("block_y + 1u", plus)
         self.assertEqual(plus.count("heat_cross_try_spawn_burn("), 5)
-        self.assertIn("player, work, block_x, block_y);", plus)
+        center = plus[
+            plus.index("static void heat_cross_spawn_center_burn"):
+            plus.index("static void heat_cross_spawn_outer_burns")
+        ]
+        self.assertEqual(center.count("heat_cross_try_spawn_burn("), 1)
+        self.assertIn("player->block_x", center)
+        self.assertIn("player->block_y", center)
 
     def test_has_fixed_50_damage_and_native_burnsquare_flames(self) -> None:
         self.assertIn("#define HEAT_CROSS_B_LEFT_DAMAGE 50", self.source)
@@ -67,7 +73,7 @@ class HeatCrossTests(unittest.TestCase):
             "set_animation_immediate(player, HEAT_CROSS_MINIBOMB_THROW_POSE)"
         )
         release_tick = update.index("HEAT_CROSS_MINIBOMB_RELEASE_TICK")
-        spawn = update.index("heat_cross_spawn_burns(player, work)")
+        spawn = update.index("heat_cross_spawn_center_burn(player, work)")
         self.assertLess(pose, release_tick)
         self.assertLess(release_tick, spawn)
         self.assertIn("work->timer = 1", update)
@@ -80,6 +86,21 @@ class HeatCrossTests(unittest.TestCase):
             "set_animation_immediate(player, HEAT_CROSS_MINIBOMB_THROW_POSE)",
             self.source,
         )
+
+    def test_staggers_outer_flames_by_ten_frames(self) -> None:
+        self.assertIn("#define HEAT_CROSS_BURNER_SPREAD_DELAY 10", self.source)
+        update = self.source[
+            self.source.index("static USED void heat_cross_b_left_action_update"):
+            self.source.index("NAKED void heat_cross_b_left_input_gate")
+        ]
+        center = update.index("heat_cross_spawn_center_burn(player, work)")
+        spread_phase = update.index("HEAT_CROSS_PHASE_WAIT_FOR_OUTER_BURNS", center)
+        delay = update.index("work->timer < HEAT_CROSS_BURNER_SPREAD_DELAY")
+        outer = update.index("heat_cross_spawn_outer_burns(player, work)")
+        self.assertLess(center, spread_phase)
+        self.assertLess(spread_phase, delay)
+        self.assertLess(delay, outer)
+        self.assertIn("++work->timer", update[spread_phase:outer])
 
 
 if __name__ == "__main__":

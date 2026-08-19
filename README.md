@@ -25,8 +25,8 @@ rebuilt wholesale rather than patching individual native atlas cells.
 HeatCross's charged Fire Arm keeps its native behavior. B+Left uses the
 MiniBomb throwing animation and creates a five-panel plus of BurnSquare flames:
 the user's panel and the panels in front of, behind, above, and below it. Each
-flame appears when MegaMan's throwing hand is fully lowered and deals 50 Fire
-damage.
+flame deals 50 Fire damage. The center flame appears when MegaMan's throwing
+hand is fully lowered, followed by the four outer flames 10 frames later.
 Invalid or missing edge panels are skipped.
 
 ### AntiNavi
