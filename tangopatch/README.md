@@ -14,6 +14,12 @@ and the panels in front of, behind, above, and below it. Each flame deals 150
 Fire damage. The center flame appears when MegaMan's throwing hand is fully
 lowered, and the four outer flames follow 10 frames later.
 
+### Slash Cross
+
+B+Left performs Moon Blade. It deals a flat 130 Sword damage with no Buster or
+attack-power scaling and keeps Moon Blade's original surrounding-panel
+behavior.
+
 ## Navi Customizer
 
 ### Beast Time +1

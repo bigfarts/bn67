@@ -25,9 +25,15 @@ rebuilt wholesale rather than patching individual native atlas cells.
 HeatCross's charged Fire Arm keeps its native behavior. B+Left uses the
 MiniBomb throwing animation and creates a five-panel plus of BurnSquare flames:
 the user's panel and the panels in front of, behind, above, and below it. Each
-flame deals 50 Fire damage. The center flame appears when MegaMan's throwing
+flame deals 150 Fire damage. The center flame appears when MegaMan's throwing
 hand is fully lowered, followed by the four outer flames 10 frames later.
 Invalid or missing edge panels are skipped.
+
+### SlashCross
+
+SlashCross's B+Left uses MoonBlade's native BN6 action, animation, and
+surrounding-panel behavior. It deals a flat 130 Sword damage with no Buster or
+attack-power scaling.
 
 ### AntiNavi
 

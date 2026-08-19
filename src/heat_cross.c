@@ -2,6 +2,7 @@
 #include "runtime.h"
 
 #define HEAT_CROSS_ACTIVE_FORM 1
+#define SLASH_CROSS_ACTIVE_FORM 3
 #define HEAT_CROSS_B_LEFT_INPUT_GATE 0x08013130
 #define HEAT_CROSS_B_LEFT_INIT_DISPATCH 0x08011796
 #define HEAT_CROSS_B_LEFT_INPUT_SKIP 0x08013176
@@ -32,6 +33,10 @@
 #define HEAT_CROSS_PHASE_WAIT_FOR_THROW_RELEASE 4
 #define HEAT_CROSS_PHASE_WAIT_FOR_OUTER_BURNS 8
 #define HEAT_CROSS_PHASE_BURNS_ACTIVE 12
+
+#define SLASH_CROSS_B_LEFT_ACTION 0x40
+#define SLASH_CROSS_B_LEFT_DAMAGE 130
+#define SLASH_CROSS_MOON_BLADE_COUNTER_FRAMES 0x1E
 
 BN67_PATCH_SECTION(
     HEAT_CROSS_B_LEFT_INPUT_GATE,
@@ -68,14 +73,21 @@ _Static_assert(
     "Heat Cross parameter offset"
 );
 
-static USED bool heat_cross_active_for_player(const Exe6Obj *player)
+static USED uint32_t cross_b_left_active_form(const Exe6Obj *player)
 {
     if (player == NULL) {
-        return false;
+        return 0;
     }
     const Exe6NaviStatusWork *status =
         exe6_navi_status_work_adrs_get(player->owner);
-    return status != NULL && status->active_form == HEAT_CROSS_ACTIVE_FORM;
+    if (status == NULL) {
+        return 0;
+    }
+    if (status->active_form == HEAT_CROSS_ACTIVE_FORM
+        || status->active_form == SLASH_CROSS_ACTIVE_FORM) {
+        return status->active_form;
+    }
+    return 0;
 }
 
 /* Convert the ordinary C ABI to BurnSquare shell 0x26's native ABI. */
@@ -199,6 +211,25 @@ static USED uint32_t heat_cross_b_left_init_work(
     return HEAT_CROSS_B_LEFT_ACTION;
 }
 
+static USED uint32_t slash_cross_b_left_init_work(
+    struct HeatCrossAttackWork *work
+)
+{
+    work->action_state = 0;
+    work->phase = 0;
+    work->element = 0;
+    work->version = 0;
+    work->marker = 0;
+    work->lockout = 0;
+    work->attack_bonus = 0;
+    work->attack =
+        ((uint32_t)SLASH_CROSS_MOON_BLADE_COUNTER_FRAMES << 16)
+        | SLASH_CROSS_B_LEFT_DAMAGE;
+    work->parameters = 0;
+    work->timer = 0;
+    return SLASH_CROSS_B_LEFT_ACTION;
+}
+
 static USED void heat_cross_b_left_action_update(
     Exe6Obj *player,
     struct HeatCrossAttackWork *work
@@ -243,7 +274,8 @@ static USED void heat_cross_b_left_action_update(
 
 /*
  * The native input gate skips B-left when no NaviCust B-left is installed.
- * Heat Cross always falls through; every other form keeps the native check.
+ * Heat Cross and Slash Cross always fall through; every other form keeps the
+ * native check.
  */
 NAKED void heat_cross_b_left_input_gate(void)
 {
@@ -252,7 +284,7 @@ NAKED void heat_cross_b_left_input_gate(void)
         "pop {r1}\n"
         "push {r4,lr}\n"
         "adds r0,r5,#0\n"
-        "bl heat_cross_active_for_player\n"
+        "bl cross_b_left_active_form\n"
         "cmp r0,#0\n"
         "pop {r4}\n"
         "pop {r1}\n"
@@ -270,8 +302,9 @@ NAKED void heat_cross_b_left_input_gate(void)
 
 /*
  * The native B-left dispatcher has already saved r6/r7/lr and prepared r7 as
- * attack work. Heat Cross initializes the standalone 50-damage attack; every
- * other form resumes the displaced native power-attack table lookup.
+ * attack work. Heat Cross initializes Burner and Slash Cross initializes
+ * BN6's native MoonBlade action. Every other form resumes the displaced native
+ * power-attack table lookup.
  */
 NAKED void heat_cross_b_left_init_dispatch(void)
 {
@@ -280,22 +313,31 @@ NAKED void heat_cross_b_left_init_dispatch(void)
         "pop {r1}\n"
         "push {r2,r3,lr}\n"
         "adds r0,r5,#0\n"
-        "bl heat_cross_active_for_player\n"
-        "cmp r0,#0\n"
+        "bl cross_b_left_active_form\n"
+        "cmp r0,#" BN67_STRINGIFY(HEAT_CROSS_ACTIVE_FORM) "\n"
         "pop {r2,r3}\n"
         "pop {r1}\n"
         "mov lr,r1\n"
-        "beq 1f\n"
-        "push {r4}\n"
-        "adds r0,r7,#0\n"
-        "bl heat_cross_b_left_init_work\n"
-        "pop {r4}\n"
-        "pop {r6,r7,pc}\n"
+        "beq 2f\n"
+        "cmp r0,#" BN67_STRINGIFY(SLASH_CROSS_ACTIVE_FORM) "\n"
+        "beq 3f\n"
         "1:\n"
         "ldr r1,=" BN67_STRINGIFY(HEAT_CROSS_POWER_ATTACK_TABLE) "\n"
         "ldrb r0,[r6,#8]\n"
         "lsls r0,r0,#2\n"
         "bx lr\n"
+        "2:\n"
+        "push {r4}\n"
+        "adds r0,r7,#0\n"
+        "bl heat_cross_b_left_init_work\n"
+        "pop {r4}\n"
+        "pop {r6,r7,pc}\n"
+        "3:\n"
+        "push {r4}\n"
+        "adds r0,r7,#0\n"
+        "bl slash_cross_b_left_init_work\n"
+        "pop {r4}\n"
+        "pop {r6,r7,pc}\n"
     );
 }
 

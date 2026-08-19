@@ -16,13 +16,15 @@ class HeatCrossTests(unittest.TestCase):
         self.assertIn("heat_cross_b_left_init_dispatch", self.source)
         self.assertNotIn("FIRE_ARM", self.source)
 
-    def test_dispatches_only_active_heat_cross_to_custom_action(self) -> None:
+    def test_dispatches_active_cross_b_left_attacks(self) -> None:
         self.assertIn("#define HEAT_CROSS_ACTIVE_FORM 1", self.source)
+        self.assertIn("#define SLASH_CROSS_ACTIVE_FORM 3", self.source)
         active = self.source[
-            self.source.index("static USED bool heat_cross_active_for_player"):
+            self.source.index("static USED uint32_t cross_b_left_active_form"):
             self.source.index("static NAKED Exe6Obj *heat_cross_burn_spawn_native")
         ]
         self.assertIn("status->active_form == HEAT_CROSS_ACTIVE_FORM", active)
+        self.assertIn("status->active_form == SLASH_CROSS_ACTIVE_FORM", active)
         action = self.source[
             self.source.index("NAKED void heat_cross_persistent_action_dispatch"):
         ]
@@ -47,8 +49,8 @@ class HeatCrossTests(unittest.TestCase):
         self.assertIn("player->block_x", center)
         self.assertIn("player->block_y", center)
 
-    def test_has_fixed_50_damage_and_native_burnsquare_flames(self) -> None:
-        self.assertIn("#define HEAT_CROSS_B_LEFT_DAMAGE 50", self.source)
+    def test_has_fixed_150_damage_and_native_burnsquare_flames(self) -> None:
+        self.assertIn("#define HEAT_CROSS_B_LEFT_DAMAGE 150", self.source)
         self.assertIn("#define HEAT_CROSS_BURN_PARAMETERS 0x00001E04", self.source)
         init = self.source[
             self.source.index("static USED uint32_t heat_cross_b_left_init_work"):
