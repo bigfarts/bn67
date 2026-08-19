@@ -8,23 +8,21 @@ ROOT = Path(__file__).resolve().parents[1]
 class HeatCrossTests(unittest.TestCase):
     def setUp(self) -> None:
         self.source = (ROOT / "src/heat_cross.c").read_text()
+        self.dispatch = (ROOT / "src/cross_b_left.c").read_text()
 
     def test_routes_heat_cross_b_left_as_a_standalone_attack(self) -> None:
-        self.assertIn("#define HEAT_CROSS_B_LEFT_INPUT_GATE 0x08013130", self.source)
-        self.assertIn("#define HEAT_CROSS_B_LEFT_INIT_DISPATCH 0x08011796", self.source)
-        self.assertIn("heat_cross_b_left_input_gate", self.source)
-        self.assertIn("heat_cross_b_left_init_dispatch", self.source)
+        self.assertIn("#define CROSS_B_LEFT_INPUT_GATE 0x08013130", self.dispatch)
+        self.assertIn("#define CROSS_B_LEFT_INIT_DISPATCH 0x08011796", self.dispatch)
+        self.assertIn("cross_b_left_input_gate", self.dispatch)
+        self.assertIn("cross_b_left_init_dispatch", self.dispatch)
+        self.assertIn("heat_cross_b_left_init_work", self.dispatch)
         self.assertNotIn("FIRE_ARM", self.source)
 
-    def test_dispatches_active_cross_b_left_attacks(self) -> None:
-        self.assertIn("#define HEAT_CROSS_ACTIVE_FORM 1", self.source)
-        self.assertIn("#define SLASH_CROSS_ACTIVE_FORM 3", self.source)
-        active = self.source[
-            self.source.index("static USED uint32_t cross_b_left_active_form"):
-            self.source.index("static NAKED Exe6Obj *heat_cross_burn_spawn_native")
-        ]
-        self.assertIn("status->active_form == HEAT_CROSS_ACTIVE_FORM", active)
-        self.assertIn("status->active_form == SLASH_CROSS_ACTIVE_FORM", active)
+    def test_dispatches_active_heat_cross_to_burner(self) -> None:
+        self.assertIn("#define HEAT_CROSS_ACTIVE_FORM 1", self.dispatch)
+        self.assertIn("switch (status->active_form)", self.dispatch)
+        self.assertIn("case HEAT_CROSS_ACTIVE_FORM:", self.dispatch)
+        self.assertIn("return heat_cross_b_left_init_work;", self.dispatch)
         action = self.source[
             self.source.index("NAKED void heat_cross_persistent_action_dispatch"):
         ]
@@ -34,7 +32,7 @@ class HeatCrossTests(unittest.TestCase):
     def test_adds_five_panel_plus_including_center(self) -> None:
         plus = self.source[
             self.source.index("static void heat_cross_spawn_center_burn"):
-            self.source.index("static USED uint32_t heat_cross_b_left_init_work")
+            self.source.index("USED uint32_t heat_cross_b_left_init_work")
         ]
         self.assertIn("(int32_t)block_x + front", plus)
         self.assertIn("(int32_t)block_x - front", plus)
@@ -53,7 +51,7 @@ class HeatCrossTests(unittest.TestCase):
         self.assertIn("#define HEAT_CROSS_B_LEFT_DAMAGE 150", self.source)
         self.assertIn("#define HEAT_CROSS_BURN_PARAMETERS 0x00001E04", self.source)
         init = self.source[
-            self.source.index("static USED uint32_t heat_cross_b_left_init_work"):
+            self.source.index("USED uint32_t heat_cross_b_left_init_work"):
             self.source.index("static USED void heat_cross_b_left_action_update")
         ]
         self.assertIn("HEAT_CROSS_B_LEFT_HIT_PROPERTIES", init)
@@ -69,7 +67,7 @@ class HeatCrossTests(unittest.TestCase):
     def test_spawns_at_native_minibomb_lowered_hand_tick(self) -> None:
         update = self.source[
             self.source.index("static USED void heat_cross_b_left_action_update"):
-            self.source.index("NAKED void heat_cross_b_left_input_gate")
+            self.source.index("NAKED void heat_cross_persistent_action_dispatch")
         ]
         pose = update.index(
             "set_animation_immediate(player, HEAT_CROSS_MINIBOMB_THROW_POSE)"
@@ -93,7 +91,7 @@ class HeatCrossTests(unittest.TestCase):
         self.assertIn("#define HEAT_CROSS_BURNER_SPREAD_DELAY 10", self.source)
         update = self.source[
             self.source.index("static USED void heat_cross_b_left_action_update"):
-            self.source.index("NAKED void heat_cross_b_left_input_gate")
+            self.source.index("NAKED void heat_cross_persistent_action_dispatch")
         ]
         center = update.index("heat_cross_spawn_center_burn(player, work)")
         spread_phase = update.index("HEAT_CROSS_PHASE_WAIT_FOR_OUTER_BURNS", center)
