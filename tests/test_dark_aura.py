@@ -30,7 +30,7 @@ class DarkAuraTests(unittest.TestCase):
         self.assertEqual(BN3_DARK_AURA_ID, 0x135)
         self.assertIn("BN67_CHIP_RECORD(0x136)", self.source)
         self.assertIn("EXE6_CHIP_CODE_A", self.source)
-        self.assertRegex(self.source, re.compile(r"(?m)^    \.mb = 61,$"))
+        self.assertRegex(self.source, re.compile(r"(?m)^    \.mb = 89,$"))
         self.assertIn(".chip_class = EXE6_CHIP_CLASS_GIGA", self.source)
 
     def test_uses_bn3_dark_aura_visual_and_lifespan(self) -> None:
@@ -123,7 +123,7 @@ class DarkAuraTests(unittest.TestCase):
 
     def test_restores_bn3_menu_text_and_art(self) -> None:
         self.assertIn('"0x36" = "DarkAura"', self.text)
-        self.assertIn('"0x36" = "Dark aura\\nrepels\\nbelow 300"', self.text)
+        self.assertIn('"0x36" = "Dark aura\\nrepels\\nunder 300"', self.text)
         for asset in ("icon", "image", "palette"):
             self.assertIn(f"build/dark_aura_{asset}.bin", self.source)
 

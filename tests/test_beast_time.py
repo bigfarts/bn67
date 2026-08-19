@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 import unittest
 
 
@@ -24,11 +23,17 @@ class BeastTimeTests(unittest.TestCase):
             declaration,
         )
 
-    def test_both_shapes_are_the_same_centered_two_by_two_square(self) -> None:
-        self.assertEqual(self.source.count("BEAST_TIME_SHAPE\n);"), 2)
+    def test_compressed_shape_drops_the_lower_right_square(self) -> None:
+        self.assertEqual(self.source.count("BEAST_TIME_UNCOMPRESSED_SHAPE\n);"), 1)
+        self.assertEqual(self.source.count("BEAST_TIME_COMPRESSED_SHAPE\n);"), 1)
         self.assertIn(
             '".byte 0,0,1,1,0,0,0\\n" \\\n'
             '    ".byte 0,0,1,1,0,0,0\\n"',
+            self.source,
+        )
+        self.assertIn(
+            '".byte 0,0,1,1,0,0,0\\n" \\\n'
+            '    ".byte 0,0,1,0,0,0,0\\n"',
             self.source,
         )
 
@@ -62,9 +67,11 @@ class BeastTimeTests(unittest.TestCase):
     def test_repurposes_the_entire_millions_byte(self) -> None:
         self.assertNotIn("nibble", self.source)
         self.assertNotIn("BEAST_TIME_BONUS_STEP", self.source)
+        self.assertIn("#define BEAST_TIME_BONUS_PROPERTY 0x33u", self.source)
         hooks = (ROOT / "src/ncps/beast_time.asm").read_text()
-        self.assertIn(".org 0x0809FCAA", hooks)
-        self.assertIn("Millions' old field-reward check", hooks)
+        self.assertNotIn(".org 0x0809FCAA", hooks)
+        self.assertIn(".org 0x0809FCAC", hooks)
+        self.assertIn(".org 0x080A118C", hooks)
 
     def test_beast_hooks_live_with_the_ncp(self) -> None:
         common = (ROOT / "src/common.asm").read_text()
@@ -84,8 +91,11 @@ class BeastTimeTests(unittest.TestCase):
         self.assertIn("Beast Time +1", packaged_readme)
         for readme in (root_readme, packaged_readme):
             self.assertIn("Millions", readme)
-            self.assertRegex(readme, re.compile(r"2x2\s+square"))
             self.assertNotIn("five Beast Out turns", readme)
+        self.assertIn("three-cell compressed L shape", root_readme)
+        self.assertIn("2x2 uncompressed square", root_readme)
+        self.assertIn("Compressed:\n```\nxx\nx\n```", packaged_readme)
+        self.assertIn("Uncompressed:\n```\nxx\nxx\n```", packaged_readme)
 
 
 if __name__ == "__main__":

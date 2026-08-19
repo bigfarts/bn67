@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class FullCustTests(unittest.TestCase):
     def test_retains_native_record_with_51_mb_cost(self) -> None:
-        source = (ROOT / "src/chips/full_cust.c").read_text()
+        source = (ROOT / "src/chips/full_custom.c").read_text()
 
         self.assertIn("BN67_CHIP_RECORD(0x0ae)", source)
         self.assertIn(".mb = 51", source)

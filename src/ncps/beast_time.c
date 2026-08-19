@@ -9,8 +9,8 @@
 #define BEAST_OUT_BASE_TURNS 3u
 #define BEAST_OUT_MAX_TURNS 9u
 
-/* The game stores both forms as independent 7x7 masks. Keep this plus part a
- * centered 2x2 square in either orientation/compression state. */
+/* The game stores both forms as independent 7x7 masks. The compressed form
+ * drops the lower-right cell from the uncompressed centered 2x2 square. */
 #define BEAST_TIME_UNCOMPRESSED_SHAPE \
     ".byte 0,0,0,0,0,0,0\n" \
     ".byte 0,0,0,0,0,0,0\n" \

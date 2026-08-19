@@ -19,10 +19,14 @@ beast_time_link_counter_veneer:
     bl beast_time_link_counter_veneer
     nop
 
-// Millions' old field-reward check reads Navi-stats byte 0x33. BeastT+1 now
-// owns that entire byte as its piece count, so permanently disable the stale
-// boolean consumer instead of treating a one-piece bonus as Millions.
-.org 0x0809FCAA
-    mov r5,0
-    nop
+// Millions sets r5 when its NaviCust stat byte is active, then uses that flag
+// to grant its field reward. BeastT+1 owns the byte now, so force the native
+// false path by removing the branch that skips `mov r5,0`. The Falzar routine
+// is shifted in Gregar; using Falzar's address in both editions corrupts
+// Gregar's ACDC Town field-object initializer instead.
+.if falzar
+    .org 0x0809FCAC
+.else
+    .org 0x080A118C
+.endif
     nop

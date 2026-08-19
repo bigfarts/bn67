@@ -26,18 +26,23 @@ class GlobalHookTests(unittest.TestCase):
         self.assertIn(".org 0x080141AC", hooks)
         self.assertIn("ldr r0,=beast_time_counter_init + 1", hooks)
 
-    def test_repurposed_millions_stat_does_not_grant_millions_reward(self) -> None:
+    def test_beast_time_disables_the_edition_specific_millions_reward(self) -> None:
         hooks = (ROOT / "src/ncps/beast_time.asm").read_text()
 
+        self.assertNotIn(".org 0x0809FCAA", hooks)
+        self.assertNotRegex(hooks, r"(?m)^    mov r5,0$")
         self.assertRegex(
             hooks,
             re.compile(
-                r"(?m)^\.org 0x0809FCAA\n"
-                r"    mov r5,0\n"
-                r"    nop\n"
+                r"(?m)^\.if falzar\n"
+                r"    \.org 0x0809FCAC\n"
+                r"\.else\n"
+                r"    \.org 0x080A118C\n"
+                r"\.endif\n"
                 r"    nop$"
             ),
         )
+        self.assertIn("Gregar's ACDC Town field-object initializer", hooks)
 
     def test_aquaneedle_keeps_stagger_without_fixed_invulnerability(self) -> None:
         hooks = (ROOT / "src/hooks.asm").read_text()

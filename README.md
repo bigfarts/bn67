@@ -4,7 +4,7 @@
 
 ### DarkAura
 
-Replaces BugDthTh (`0x136`) in Falzar with BN3 Blue's DarkAura. The 61 MB,
+Replaces BugDthTh (`0x136`) in Falzar with BN3 Blue's DarkAura. The 89 MB,
 Null-element GigaChip uses code A and BN3's 3,000-active-frame lifespan. It
 repels attacks below 300 damage and breaks when struck for 300 or more. The
 chip uses its original BN3 icon, center-cropped library art, palette, name,
@@ -42,9 +42,9 @@ Cross Out, but StatGrd stays removed underneath it.
 ### BeastT+1
 
 Millions is replaced in its original NaviCust slot (`0x16`) by BeastT+1. It
-is a white, pink, or yellow Plus Part with the Emotion Window bug and a 2x2
-square shape in both compressed and uncompressed form. Each installed piece
-adds one turn to Beast Out's normal three-turn duration, up to nine turns.
+is a white, pink, or yellow Plus Part with the Emotion Window bug. It has a
+three-cell compressed L shape and a 2x2 uncompressed square. Each installed
+piece adds one turn to Beast Out's normal three-turn duration, up to nine turns.
 
 ### Japanese event chips
 
