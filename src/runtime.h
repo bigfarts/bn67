@@ -196,12 +196,11 @@
         BN67_STRINGIFY(address) "__" BN67_STRINGIFY(symbol) \
     )
 
-/* Section targets are entered with the original r1 pushed on the stack. */
-#define BN67_PATCH_SECTION(address, relay_address, symbol) \
+/* The compiler allocates the relay; targets receive the original r1 on stack. */
+#define BN67_PATCH_SECTION(address, symbol) \
     BN67_METADATA_RECORD( \
         "section", \
-        BN67_STRINGIFY(address) "__" BN67_STRINGIFY(relay_address) "__" \
-            BN67_STRINGIFY(symbol) \
+        BN67_STRINGIFY(address) "__" BN67_STRINGIFY(symbol) \
     )
 
 /* Replace a Thumb call inside a routine linked into the expanded code image. */

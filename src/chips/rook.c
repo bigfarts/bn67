@@ -82,13 +82,13 @@ static const uint32_t DESTROY_SFX = 0x70;
  * WindRack and Tengu's wind object only checks the neutral support-object bit
  * before continuing through a panel. Keep Rook's owner-specific collision so
  * friendly attacks pass, but extend that check to the opposing side's support
- * bit. The relocated Custom-opening path provides an eight-byte relay slot.
+ * bit.
  */
 #if FALZAR
-BN67_PATCH_SECTION(0x080CD418, 0x080E42D0, rook_windbreak_filter_main);
+BN67_PATCH_SECTION(0x080CD418, rook_windbreak_filter_main);
 #define ROOK_WINDBREAK_FILTER_RETURN 0x080CD41F
 #else
-BN67_PATCH_SECTION(0x080CEC88, 0x080E42D0, rook_windbreak_filter_main);
+BN67_PATCH_SECTION(0x080CEC88, rook_windbreak_filter_main);
 #define ROOK_WINDBREAK_FILTER_RETURN 0x080CEC8F
 #endif
 

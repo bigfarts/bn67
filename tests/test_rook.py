@@ -300,13 +300,11 @@ class RookTests(unittest.TestCase):
         self.assertIn("#if FALZAR", source)
         self.assertNotIn("#ifdef FALZAR", source)
         self.assertIn(
-            "BN67_PATCH_SECTION(0x080CD418, 0x080E42D0, "
-            "rook_windbreak_filter_main);",
+            "BN67_PATCH_SECTION(0x080CD418, rook_windbreak_filter_main);",
             source,
         )
         self.assertIn(
-            "BN67_PATCH_SECTION(0x080CEC88, 0x080E42D0, "
-            "rook_windbreak_filter_main);",
+            "BN67_PATCH_SECTION(0x080CEC88, rook_windbreak_filter_main);",
             source,
         )
         self.assertIn('"lsls r1,r1,#23\\n"', source)

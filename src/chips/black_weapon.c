@@ -27,7 +27,6 @@ BN67_PATCH_THUMB_POINTER(
  */
 BN67_PATCH_SECTION(
     0x08012646,
-    0x0801264C,
     black_weapon_attack_level_dispatch
 );
 

@@ -23,6 +23,15 @@ animations `0` through `3` before the pieces that form BN3's embedded 300 label.
 Ordinary users of parameter `0x0F` retain their native visual,
 100-damage threshold, and indefinite duration.
 
+The registry compiler allocates this hook's long-branch relay, along with every
+other section-patch relay, inside `0x0802CCB4` through `0x0802CD5B`. Those bytes
+are the original family-`0x15` dispatch table; the compiler relocates the whole
+table and rewrites all of its references before reusing that retired table
+storage. Feature code no longer supplies relay addresses. In particular, the
+family-`0x15`/subfamily-`0x26` launchers at `0x080EAADC` Gregar /
+`0x080E979C` Falzar remain native: HubBatch and several related records dispatch
+through them without the section hook's saved stack word.
+
 BN6 stores its active aura threshold in collision byte `+0x17`, so 300 cannot
 be represented directly. After the barrier controller calls the native setter
 at `0x0801A7CC`, the DarkAura-only hook at `0x080E4E50` Gregar /

@@ -44,6 +44,26 @@ class DarkAuraTests(unittest.TestCase):
         self.assertIn("__bn67_sprite_group_dark_aura_battle_sprite", self.source)
         self.assertIn('"ldr r1,=3000\\n"', self.source)
 
+    def test_visual_relay_preserves_native_hubbatch_launcher(self) -> None:
+        # Family 0x15 / subfamily 0x26 enters these native launchers.  They
+        # cannot double as section-patch relays: HubBatch reaches them without
+        # the saved-r1 stack word dark_aura_visual_sprite_dispatch consumes.
+        for forbidden in (
+            "0x080E979C",
+            "0x080EAADC",
+            "0x080E92F0",
+            "0x080EA630",
+        ):
+            self.assertNotIn(forbidden, self.source)
+        self.assertIn(
+            "0x080E0B16,\n    dark_aura_visual_sprite_dispatch",
+            self.source,
+        )
+        self.assertIn(
+            "0x080E1E52,\n    dark_aura_visual_sprite_dispatch",
+            self.source,
+        )
+
     def test_uses_centered_bn3_aura_with_bn3_dark_palette(self) -> None:
         sprite = next(
             asset

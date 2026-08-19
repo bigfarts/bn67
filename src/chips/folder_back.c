@@ -97,14 +97,9 @@ folder_back_object_should_pause(const Exe6Obj *object) {
   return false;
 }
 
-// The class-1 dispatch table is relocated by the registry compiler, leaving
-// its original first two entries available for the section-patch relay.
-BN67_PATCH_SECTION(0x080031FA, 0x08003C9C, folder_back_dispatch_main);
+BN67_PATCH_SECTION(0x080031FA, folder_back_dispatch_main);
 
-/* The original class-4 table is dead after registry relocation, so its first
- * two entries can relay the native Custom-opening path to the linked code. */
-BN67_PATCH_SECTION(0x0800819A, 0x080E42C8,
-                   folder_back_custom_transition_dispatch);
+BN67_PATCH_SECTION(0x0800819A, folder_back_custom_transition_dispatch);
 
 NAKED void folder_back_dispatch_main(void) {
   // Native object mains consume the dispatcher's live registers and flags.

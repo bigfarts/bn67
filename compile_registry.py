@@ -13,6 +13,7 @@ import tomllib
 from typing import Any
 
 from build_title_screen import decompress_lz77
+from extract_assets import ASSETS
 
 NAME_RE = re.compile(r"^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$")
 SNAKE_CASE_RE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
@@ -21,7 +22,7 @@ THUMB_POINTER_METADATA_RE = re.compile(
     r"^thumb_pointer__(0[xX][0-9A-Fa-f]+)__([a-z][a-z0-9_]*)$"
 )
 SECTION_METADATA_RE = re.compile(
-    r"^section__(0[xX][0-9A-Fa-f]+)__(0[xX][0-9A-Fa-f]+)__([a-z][a-z0-9_]*)$"
+    r"^section__(0[xX][0-9A-Fa-f]+)__([a-z][a-z0-9_]*)$"
 )
 LINKED_CALL_METADATA_RE = re.compile(
     r"^linked_call__([a-z][a-z0-9_]*)__(0[xX][0-9A-Fa-f]+)__"
@@ -121,6 +122,7 @@ class AttackPool:
     family: int
     native_entries: int
     native_table: str
+    native_address: int
     references: tuple[int, ...]
 
 
@@ -149,6 +151,7 @@ class Config:
     text: TextConfig
     chips: ChipConfig
     attack_pools: dict[str, AttackPool]
+    section_relay_pool: str
     ncps: NcpConfig
 
 
@@ -260,7 +263,6 @@ class PointerPatch:
 class SectionPatch:
     symbol: str
     address: int
-    relay_address: int
 
 
 @dataclass(frozen=True)
@@ -450,6 +452,7 @@ def load_config(path: Path) -> Config:
             "text",
             "chips",
             "attack_pools",
+            "section_relay_pool",
             "ncps",
         },
         context,
@@ -676,7 +679,7 @@ def load_config(path: Path) -> Config:
             raise PackageError(f"{item_context}: must be a table")
         check_keys(
             item,
-            {"family", "native_table", "references"},
+            {"family", "native_table", "native_address", "references"},
             item_context,
         )
         family = checked_int(
@@ -693,6 +696,38 @@ def load_config(path: Path) -> Config:
             0x100,
             f"{item_context}: native_table",
         )
+        native_address = checked_int(
+            require_int(item, "native_address", item_context),
+            0x08000000,
+            0x09FFFFFC,
+            f"{item_context}: native_address",
+        )
+        if native_address % 4:
+            raise PackageError(
+                f"{item_context}: native_address must be word-aligned"
+            )
+        matching_assets = [
+            asset
+            for asset in ASSETS
+            if asset.source == f"exe6_{variant}"
+            and asset.output == Path(native_table).name
+        ]
+        if len(matching_assets) != 1:
+            raise PackageError(
+                f"{item_context}: native table must have one extraction-manifest "
+                "entry for this edition"
+            )
+        native_asset = matching_assets[0]
+        catalog_address = 0x08000000 + native_asset.offset
+        if native_address != catalog_address:
+            raise PackageError(
+                f"{item_context}: native_address 0x{native_address:08X} does not "
+                f"match extraction manifest 0x{catalog_address:08X}"
+            )
+        if native_entries * 4 != native_asset.length:
+            raise PackageError(
+                f"{item_context}: native table size does not match extraction manifest"
+            )
         references = require_int_array(item, "references", item_context)
         if not references:
             raise PackageError(f"{item_context}: references must not be empty")
@@ -702,7 +737,15 @@ def load_config(path: Path) -> Config:
             family,
             native_entries,
             native_table,
+            native_address,
             references,
+        )
+
+    section_relay_pool = require_str(raw, "section_relay_pool", context)
+    if section_relay_pool not in attack_pools:
+        raise PackageError(
+            f"{path}: section_relay_pool {section_relay_pool!r} is not an "
+            "attack pool"
         )
 
     ncps_raw = require_table(raw, "ncps", context)
@@ -917,6 +960,7 @@ def load_config(path: Path) -> Config:
         text,
         chips,
         attack_pools,
+        section_relay_pool,
         ncps,
     )
 
@@ -1080,11 +1124,8 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
             continue
         section = SECTION_METADATA_RE.fullmatch(body)
         if section is not None:
-            address_text, relay_address_text, patch_symbol = section.groups()
+            address_text, patch_symbol = section.groups()
             address = checked_int(int(address_text, 0), 0, 0xFFFFFFFF, symbol)
-            relay_address = checked_int(
-                int(relay_address_text, 0), 0, 0xFFFFFFFF, symbol
-            )
             if SNAKE_CASE_RE.fullmatch(patch_symbol) is None:
                 raise PackageError(
                     f"{package.name}: patch symbol {patch_symbol} must be snake_case"
@@ -1093,13 +1134,7 @@ def apply_metadata(package: Package, symbols: list[str]) -> Package:
                 raise PackageError(
                     f"{package.name}: section patch address must be halfword-aligned"
                 )
-            if relay_address % 4:
-                raise PackageError(
-                    f"{package.name}: section patch relay must be word-aligned"
-                )
-            section_patches.append(
-                SectionPatch(patch_symbol, address, relay_address)
-            )
+            section_patches.append(SectionPatch(patch_symbol, address))
             continue
         linked_call = LINKED_CALL_METADATA_RE.fullmatch(body)
         if linked_call is not None:
@@ -1287,6 +1322,7 @@ def discover_packages(config: Config, metadata: dict[str, list[str]]) -> list[Pa
 
 
 def validate_and_allocate(config: Config, packages: list[Package]) -> Allocations:
+    allocate_section_relays(config, packages)
     objects = [item for package in packages for item in package.objects]
     fixed_objects = [item for package in packages for item in package.fixed_objects]
     sprites = [item for package in packages for item in package.sprites]
@@ -1602,6 +1638,116 @@ def validate_and_allocate(config: Config, packages: list[Package]) -> Allocation
     )
 
 
+def allocate_section_relays(
+    config: Config,
+    packages: list[Package],
+) -> list[tuple[Package, SectionPatch, int]]:
+    """Assign relays only from a native dispatch table relocated by this build."""
+    pool = config.attack_pools[config.section_relay_pool]
+    relay_size = 8
+    relay_capacity = pool.native_entries * 4 // relay_size
+    patches = [
+        (package, patch)
+        for package in packages
+        for patch in package.section_patches
+    ]
+    if len(patches) > relay_capacity:
+        raise PackageError(
+            f"section relay pool {config.section_relay_pool!r} has "
+            f"{relay_capacity} slots for {len(patches)} patches"
+        )
+
+    allocated: list[tuple[Package, SectionPatch, int]] = []
+    writes: list[tuple[int, int, str]] = []
+    relay_symbols: dict[str, str] = {}
+    for package in packages:
+        for patch in package.pointer_patches:
+            writes.append(
+                (
+                    patch.address,
+                    patch.address + 4,
+                    f"{package.name} pointer patch {patch.symbol}",
+                )
+            )
+        for patch in package.sprite_load_patches:
+            writes.append(
+                (
+                    patch.address,
+                    patch.address + 4,
+                    f"{package.name} sprite-load patch {patch.archive}",
+                )
+            )
+
+    for index, (package, patch) in enumerate(patches):
+        owner = relay_symbols.get(patch.symbol)
+        if owner is not None:
+            raise PackageError(
+                f"section target {patch.symbol} is declared by both "
+                f"{owner} and {package.name}"
+            )
+        relay_symbols[patch.symbol] = package.name
+        relay_address = pool.native_address + index * relay_size
+        # Thumb-1 BL uses a signed 22-bit halfword displacement from PC.
+        displacement = relay_address - (patch.address + 6)
+        if not -0x400000 <= displacement <= 0x3FFFFE:
+            raise PackageError(
+                f"{package.name}: section relay for {patch.symbol} at "
+                f"0x{relay_address:08X} is outside Thumb BL range of "
+                f"0x{patch.address:08X}"
+            )
+        writes.extend(
+            [
+                (
+                    patch.address,
+                    patch.address + 6,
+                    f"{package.name} section patch {patch.symbol}",
+                ),
+                (
+                    relay_address,
+                    relay_address + relay_size,
+                    f"{package.name} section relay {patch.symbol}",
+                ),
+            ]
+        )
+        allocated.append((package, patch, relay_address))
+
+    native_handlers: dict[int, str] = {}
+    callable_tables = [
+        (f"object class {number}", item.native_table)
+        for number, item in config.object_classes.items()
+    ] + [
+        (f"attack family 0x{item.family:02X}", item.native_table)
+        for item in config.attack_pools.values()
+    ]
+    callable_tables.append(("NCP effect", config.ncps.native_effect_table))
+    for table_name, relative in callable_tables:
+        data = (config.root / relative).read_bytes()
+        for offset in range(0, len(data), 4):
+            target = int.from_bytes(data[offset : offset + 4], "little") & ~1
+            if 0x08000000 <= target < 0x0A000000:
+                native_handlers.setdefault(target, table_name)
+    for package, patch, relay_address in allocated:
+        handler_table = native_handlers.get(relay_address)
+        if handler_table is not None:
+            raise PackageError(
+                f"{package.name}: section relay for {patch.symbol} at "
+                f"0x{relay_address:08X} aliases a live {handler_table} handler"
+            )
+
+    writes.sort()
+    for previous, current in zip(writes, writes[1:]):
+        previous_start, previous_end, previous_owner = previous
+        current_start, current_end, current_owner = current
+        if current_start < previous_end:
+            raise PackageError(
+                f"fixed writes overlap at 0x{current_start:08X}: "
+                f"{previous_owner} [0x{previous_start:08X},"
+                f"0x{previous_end:08X}) and {current_owner} "
+                f"[0x{current_start:08X},0x{current_end:08X})"
+            )
+    return allocated
+
+
 def allocate_attacks(
     config: Config,
     packages: list[Package],
@@ -1859,27 +2005,29 @@ def emit_pointer_patches(packages: list[Package]) -> list[str]:
     return lines
 
 
-def emit_section_patches(packages: list[Package]) -> list[str]:
-    lines = ["// Package-declared fixed section patches."]
-    for package in packages:
-        for patch in package.section_patches:
-            relay = f"section_patch_{patch.symbol}_relay"
-            # Keep the fixed-site patch to six bytes so literals cannot consume
-            # adjacent native instructions or internal branch targets. The
-            # package supplies eight dead, word-aligned bytes for the relay.
-            lines.extend(
-                [
-                    f"// {package.name}: {patch.symbol}",
-                    f".org 0x{patch.address:08X}",
-                    "    push {r1}",
-                    f"    bl {relay}",
-                    f".org 0x{patch.relay_address:08X}",
-                    f"{relay}:",
-                    f"    ldr r1,={patch.symbol} + 1",
-                    "    bx r1",
-                    "    .pool",
-                ]
-            )
+def emit_section_patches(config: Config, packages: list[Package]) -> list[str]:
+    lines = [
+        "// Package-declared fixed section patches.",
+        "// Relays are compiler-allocated from a relocated native dispatch table.",
+    ]
+    for package, patch, relay_address in allocate_section_relays(config, packages):
+        relay = f"section_patch_{patch.symbol}_relay"
+        # Keep the fixed-site patch to six bytes so literals cannot consume
+        # adjacent native instructions or internal branch targets. The relay
+        # occupies eight bytes in native table storage retired by relocation.
+        lines.extend(
+            [
+                f"// {package.name}: {patch.symbol}",
+                f".org 0x{patch.address:08X}",
+                "    push {r1}",
+                f"    bl {relay}",
+                f".org 0x{relay_address:08X}",
+                f"{relay}:",
+                f"    ldr r1,={patch.symbol} + 1",
+                "    bx r1",
+                "    .pool",
+            ]
+        )
     return lines
 
 
@@ -2355,7 +2503,7 @@ def generate(config: Config, packages: list[Package], allocations: Allocations) 
         ],
         emit_pointer_patches(packages),
         [""],
-        emit_section_patches(packages),
+        emit_section_patches(config, packages),
         [""],
         emit_linked_call_patches(packages),
         [""],

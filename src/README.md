@@ -134,13 +134,16 @@ build.
 Use `BN67_PATCH_THUMB_POINTER(address, symbol)` for native function-pointer
 tables; it writes `symbol + 1` so the indirect branch remains in Thumb state.
 
-`BN67_PATCH_SECTION(address, relay_address, symbol)` replaces six bytes of
-native instructions with a Thumb call through an eight-byte, word-aligned relay
-at `relay_address`. That relay must be dead ROM within Thumb `bl` range of the
-patch site. The target is entered with the original `r1` pushed on the stack;
-it must pop `r1`, own any displaced instructions, and continue or return
-according to that native call site. FolderBack uses the original class-1 table
-after the registry relocates that table and its reference.
+`BN67_PATCH_SECTION(address, symbol)` replaces six bytes of native instructions
+with a Thumb call through an eight-byte relay. Feature code cannot choose the
+relay address: the registry compiler allocates every relay from the original
+ROM storage of the native dispatch table named by `section_relay_pool`. That
+table is relocated in full and all configured references are rewritten. The
+compiler rejects relay exhaustion, overlapping fixed writes, out-of-range
+Thumb calls, and any relay address that aliases a native attack, object, or NCP
+handler target. The target is entered with the original `r1` pushed on the
+stack; it must pop `r1`, own any displaced instructions, and continue or return
+according to that native call site.
 
 `BN67_PATCH_LINKED_CALL(source, offset, target)` replaces a Thumb call inside a
 routine linked into the expanded gameplay image. Both symbols must live in that

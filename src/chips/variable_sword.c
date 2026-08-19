@@ -70,20 +70,20 @@ BN67_ASM_RESOURCE(
 BN67_PATCH_POINTER(0x080EF66C, variable_sword_command_tables);
 BN67_PATCH_POINTER(0x080EF7D4, variable_sword_command_results);
 BN67_PATCH_THUMB_POINTER(0x080EF984, variable_sword_sonic_boom_init);
-BN67_PATCH_SECTION(0x080EF650, 0x080EF670, variable_sword_command_table_setup);
-BN67_PATCH_SECTION(0x080EF760, 0x080EF678, variable_sword_command_matcher_setup);
-BN67_PATCH_SECTION(0x080EF9F8, 0x080EF680, variable_sword_element_wave_dispatch);
-BN67_PATCH_SECTION(0x080EFA02, 0x080EF688, variable_sword_sonic_shell_finalize);
-BN67_PATCH_SECTION(0x080CF87E, 0x080EF690, variable_sword_sonic_hit_modifier);
+BN67_PATCH_SECTION(0x080EF650, variable_sword_command_table_setup);
+BN67_PATCH_SECTION(0x080EF760, variable_sword_command_matcher_setup);
+BN67_PATCH_SECTION(0x080EF9F8, variable_sword_element_wave_dispatch);
+BN67_PATCH_SECTION(0x080EFA02, variable_sword_sonic_shell_finalize);
+BN67_PATCH_SECTION(0x080CF87E, variable_sword_sonic_hit_modifier);
 #else
 BN67_PATCH_POINTER(0x080F09AC, variable_sword_command_tables);
 BN67_PATCH_POINTER(0x080F0B14, variable_sword_command_results);
 BN67_PATCH_THUMB_POINTER(0x080F0CC4, variable_sword_sonic_boom_init);
-BN67_PATCH_SECTION(0x080F0990, 0x080F09B0, variable_sword_command_table_setup);
-BN67_PATCH_SECTION(0x080F0AA0, 0x080F09B8, variable_sword_command_matcher_setup);
-BN67_PATCH_SECTION(0x080F0D38, 0x080F09C0, variable_sword_element_wave_dispatch);
-BN67_PATCH_SECTION(0x080F0D42, 0x080F09C8, variable_sword_sonic_shell_finalize);
-BN67_PATCH_SECTION(0x080D10EE, 0x080F09D0, variable_sword_sonic_hit_modifier);
+BN67_PATCH_SECTION(0x080F0990, variable_sword_command_table_setup);
+BN67_PATCH_SECTION(0x080F0AA0, variable_sword_command_matcher_setup);
+BN67_PATCH_SECTION(0x080F0D38, variable_sword_element_wave_dispatch);
+BN67_PATCH_SECTION(0x080F0D42, variable_sword_sonic_shell_finalize);
+BN67_PATCH_SECTION(0x080D10EE, variable_sword_sonic_hit_modifier);
 #endif
 
 /*

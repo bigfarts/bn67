@@ -22,6 +22,9 @@ from build_text_archives import (
 )
 from compile_registry import (
     PackageError,
+    PointerPatch,
+    SectionPatch,
+    allocate_section_relays,
     discover_packages,
     emit_attack_tables,
     emit_chip_records,
@@ -112,6 +115,109 @@ class PackageCompilerTests(unittest.TestCase):
             self.assertNotIn("abi", metadata)
             self.assertNotIn("runtime", metadata)
 
+    def test_section_relays_are_confined_to_retired_dispatch_storage(self) -> None:
+        former_relays_in_native_code_or_feature_data = {
+            0x0801264C,
+            0x080E42C8,
+            0x080E42D0,
+            0x080E92F0,
+            0x080E979C,
+            0x080EA630,
+            0x080EAADC,
+            0x080EF670,
+            0x080EF678,
+            0x080EF680,
+            0x080EF688,
+            0x080EF690,
+            0x080F09B0,
+            0x080F09B8,
+            0x080F09C0,
+            0x080F09C8,
+            0x080F09D0,
+        }
+        for variant in ("gregar", "falzar"):
+            config, packages = self.packages(variant)
+            pool = config.attack_pools[config.section_relay_pool]
+            allocated = allocate_section_relays(config, packages)
+            relay_addresses = [address for _, _, address in allocated]
+            self.assertEqual(len(relay_addresses), len(set(relay_addresses)))
+            self.assertTrue(relay_addresses)
+            for address in relay_addresses:
+                self.assertGreaterEqual(address, pool.native_address)
+                self.assertLessEqual(
+                    address + 8,
+                    pool.native_address + pool.native_entries * 4,
+                )
+            self.assertTrue(
+                former_relays_in_native_code_or_feature_data.isdisjoint(
+                    relay_addresses
+                )
+            )
+
+            callable_targets: set[int] = set()
+            callable_tables = [
+                item.native_table for item in config.object_classes.values()
+            ] + [item.native_table for item in config.attack_pools.values()]
+            callable_tables.append(config.ncps.native_effect_table)
+            for relative in callable_tables:
+                data = (ROOT / relative).read_bytes()
+                callable_targets.update(
+                    int.from_bytes(data[offset : offset + 4], "little") & ~1
+                    for offset in range(0, len(data), 4)
+                )
+            self.assertTrue(callable_targets.isdisjoint(relay_addresses))
+
+    def test_section_relay_allocator_rejects_overflow_range_and_overlap(self) -> None:
+        config, packages = self.packages("falzar")
+        pool = config.attack_pools[config.section_relay_pool]
+        capacity = pool.native_entries * 4 // 8
+        overflow = tuple(
+            SectionPatch(f"overflow_{index}", 0x08010000 + index * 8)
+            for index in range(capacity + 1)
+        )
+        overflow_packages = [
+            replace(packages[0], section_patches=overflow),
+            *packages[1:],
+        ]
+        with self.assertRaisesRegex(PackageError, "section relay pool.*slots"):
+            validate_and_allocate(config, overflow_packages)
+
+        owner = next(package for package in packages if package.section_patches)
+        patch = owner.section_patches[0]
+        out_of_range = replace(
+            owner,
+            section_patches=(SectionPatch(patch.symbol, 0x09000000),),
+        )
+        range_packages = [
+            out_of_range if package.name == owner.name else package
+            for package in packages
+        ]
+        with self.assertRaisesRegex(PackageError, "outside Thumb BL range"):
+            validate_and_allocate(config, range_packages)
+
+        collision = replace(
+            owner,
+            pointer_patches=owner.pointer_patches
+            + (PointerPatch("relay_collision", patch.address + 2),),
+        )
+        collision_packages = [
+            collision if package.name == owner.name else package
+            for package in packages
+        ]
+        with self.assertRaisesRegex(PackageError, "fixed writes overlap"):
+            validate_and_allocate(config, collision_packages)
+
+        live_pool = replace(pool, native_address=0x080E979C)
+        live_config = replace(
+            config,
+            attack_pools={
+                **config.attack_pools,
+                config.section_relay_pool: live_pool,
+            },
+        )
+        with self.assertRaisesRegex(PackageError, "aliases a live attack.*handler"):
+            validate_and_allocate(live_config, packages)
+
     @classmethod
     def tearDownClass(cls) -> None:
         cls.temporary.cleanup()
@@ -181,6 +287,10 @@ class PackageCompilerTests(unittest.TestCase):
             )
             for kind, pool in config.attack_pools.items():
                 self.assertEqual(pool.family, raw["attack_pools"][kind]["family"])
+                self.assertEqual(
+                    pool.native_address,
+                    raw["attack_pools"][kind]["native_address"],
+                )
                 self.assertNotIn("native_entries", raw["attack_pools"][kind])
                 self.assertEqual(
                     pool.native_entries,
@@ -190,6 +300,15 @@ class PackageCompilerTests(unittest.TestCase):
                     ).stat().st_size
                     // 4,
                 )
+                asset = next(
+                    asset
+                    for asset in ASSETS
+                    if asset.source == f"exe6_{variant}"
+                    and asset.output == Path(pool.native_table).name
+                )
+                self.assertEqual(pool.native_address, 0x08000000 + asset.offset)
+                self.assertEqual(pool.native_entries * 4, asset.length)
+            self.assertEqual(config.section_relay_pool, "persistent_attack")
             self.assertEqual(config.ncps.native_programs, 0x2F)
             self.assertEqual(config.ncps.base_id, 0x30)
             self.assertEqual(config.ncps.max_id, 0x3F)
@@ -1270,6 +1389,10 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertNotIn("object_class_1_dispatch_table", assembly)
         self.assertNotIn("object_dispatch_interceptor_main:", assembly)
         self.assertIn("// Package-declared fixed section patches.", assembly)
+        relay_addresses = {
+            patch.symbol: address
+            for _, patch, address in allocate_section_relays(config, packages)
+        }
         self.assertIn(
             ".org falzar_controller_main + 0x302\n"
             "    bl falzar_strike_feather_spawn_with_bonus",
@@ -1279,7 +1402,7 @@ class PackageCompilerTests(unittest.TestCase):
             ".org 0x080031FA\n"
             "    push {r1}\n"
             "    bl section_patch_folder_back_dispatch_main_relay\n"
-            ".org 0x08003C9C\n"
+            f".org 0x{relay_addresses['folder_back_dispatch_main']:08X}\n"
             "section_patch_folder_back_dispatch_main_relay:",
             assembly,
         )
@@ -1288,7 +1411,7 @@ class PackageCompilerTests(unittest.TestCase):
             ".org 0x0800819A\n"
             "    push {r1}\n"
             "    bl section_patch_folder_back_custom_transition_dispatch_relay\n"
-            ".org 0x080E42C8\n"
+            f".org 0x{relay_addresses['folder_back_custom_transition_dispatch']:08X}\n"
             "section_patch_folder_back_custom_transition_dispatch_relay:",
             assembly,
         )
@@ -1300,7 +1423,7 @@ class PackageCompilerTests(unittest.TestCase):
             ".org 0x08012646\n"
             "    push {r1}\n"
             "    bl section_patch_black_weapon_attack_level_dispatch_relay\n"
-            ".org 0x0801264C\n"
+            f".org 0x{relay_addresses['black_weapon_attack_level_dispatch']:08X}\n"
             "section_patch_black_weapon_attack_level_dispatch_relay:",
             assembly,
         )
@@ -1320,7 +1443,7 @@ class PackageCompilerTests(unittest.TestCase):
         )
         folder_back = (ROOT / "src/chips/folder_back.c").read_text()
         self.assertIn(
-            "BN67_PATCH_SECTION(0x080031FA, 0x08003C9C, folder_back_dispatch_main)",
+            "BN67_PATCH_SECTION(0x080031FA, folder_back_dispatch_main)",
             folder_back,
         )
         self.assertNotIn("BN67_PATCH_POINTER(0x08003224", folder_back)
@@ -1352,7 +1475,7 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn("delete_controller(controller);", folder_back)
         self.assertIn("->folder_restored = false;", folder_back)
         self.assertIn(
-            "BN67_PATCH_SECTION(0x0800819A, 0x080E42C8,",
+            "BN67_PATCH_SECTION(0x0800819A,",
             folder_back,
         )
         controller_start = folder_back.index(

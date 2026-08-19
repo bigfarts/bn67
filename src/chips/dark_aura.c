@@ -16,19 +16,16 @@ BN67_INCBIN(dark_aura_palette, "build/dark_aura_palette.bin");
  */
 BN67_PATCH_SECTION(
     0x0801A948,
-    0x0802CD48,
     dark_aura_threshold_dispatch
 );
 
 #if FALZAR
 BN67_PATCH_SECTION(
     0x080E0B16,
-    0x080E979C,
     dark_aura_visual_sprite_dispatch
 );
 BN67_PATCH_SECTION(
     0x080E3B10,
-    0x0802CD50,
     dark_aura_activation_dispatch
 );
 #define EFFECT_FLAGS                                                    \
@@ -37,12 +34,10 @@ BN67_PATCH_SECTION(
 #else
 BN67_PATCH_SECTION(
     0x080E1E52,
-    0x080EAADC,
     dark_aura_visual_sprite_dispatch
 );
 BN67_PATCH_SECTION(
     0x080E4E50,
-    0x0802CD50,
     dark_aura_activation_dispatch
 );
 #define EFFECT_FLAGS EXE6_CHIP_EFFECT_FLAG_DIMMING

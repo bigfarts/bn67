@@ -1,4 +1,7 @@
 variant = "gregar"
+# Section-patch relays are allocated only from the original ROM storage of
+# this compiler-relocated native dispatch table.
+section_relay_pool = "persistent_attack"
 
 [[object_classes]]
 number = 1
@@ -56,16 +59,19 @@ max_id = 0xFF
 [attack_pools.persistent_attack]
 family = 0x15
 native_table = "build/attack_family15_table_gregar.bin"
+native_address = 0x0802CCB4
 references = [0x08017BB8, 0x080ED138]
 
 [attack_pools.summon_attack]
 family = 0x1B
 native_table = "build/attack_family1B_table_gregar.bin"
+native_address = 0x0802CD5C
 references = [0x08017BBC, 0x080E2CF0]
 
 [attack_pools.ephemeral_attack]
 family = 0x1C
 native_table = "build/attack_family1C_table_gregar.bin"
+native_address = 0x080ED730
 references = [0x080ED72C]
 
 [songs]
