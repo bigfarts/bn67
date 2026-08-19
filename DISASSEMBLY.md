@@ -184,6 +184,12 @@ owner's class totals after rebuilding the Folder. The Standard total is not an
 overall class limit but is reset with the restored Folder for consistent usage
 bookkeeping; the opponent's totals remain untouched on that peer.
 
+The native final-turn predicate at `0x0800A97A` first requires link-battle
+effect flag `0x08`, then tests the battle-state turn byte at `+0x07` against
+`0x0F`. FolderBack uses that predicate to keep its rumble, shake, and flash on
+turn 15 while suppressing its Folder restore, Custom Gauge writes, and Custom
+transition so the native Damage Judge remains authoritative.
+
 BN67 runtime code and imported assets are allocated from file offset `0x800000`
 onward in an expanded 16 MiB image; exact addresses are selected by Armips.
 The object state machine, timers, reticle movement/input, five-shot loop, and

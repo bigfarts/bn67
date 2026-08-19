@@ -65,6 +65,7 @@ enum EffectStep {
 struct ControllerWork {
   uint16_t held_custom_gauge;
   bool folder_restored;
+  bool final_turn;
 };
 
 _Static_assert(sizeof(struct ControllerWork) <=
@@ -203,9 +204,19 @@ static void restore_local_folder(Exe6Obj *self) {
   clear_loaded_hand(self->owner);
 }
 
+static bool gameplay_effects_enabled(Exe6Obj *self) {
+  struct ControllerWork *work = (struct ControllerWork *)self->work;
+  if (exe6_battle_final_turn_check() != 0) {
+    /* Turn 15 ends in Damage Judge instead of another Custom Screen. Keep
+     * FolderBack's presentation, but do not let it alter that final turn. */
+    work->final_turn = true;
+  }
+  return !work->final_turn;
+}
+
 static void restore_folder_once(Exe6Obj *self) {
   struct ControllerWork *work = (struct ControllerWork *)self->work;
-  if (work->folder_restored) {
+  if (work->folder_restored || !gameplay_effects_enabled(self)) {
     return;
   }
   work->folder_restored = true;
@@ -309,9 +320,12 @@ BN67_EFFECT(folder_back_controller_main) {
     return;
   }
 
-  // Restore the displayed snapshot every controller frame so the per-frame
-  // gauge update cannot accumulate. FullCust replaces it below.
-  hold_local_custom_gauge(self);
+  bool gameplay_enabled = gameplay_effects_enabled(self);
+  if (gameplay_enabled) {
+    // Restore the displayed snapshot every controller frame so the per-frame
+    // gauge update cannot accumulate. FullCust replaces it below.
+    hold_local_custom_gauge(self);
+  }
 
   if (exe6_battle_end_check() != 0) {
     restore_palette();
@@ -323,8 +337,11 @@ BN67_EFFECT(folder_back_controller_main) {
   }
 
   uint32_t owner = self->owner;
+  gameplay_enabled = gameplay_effects_enabled(self);
   delete_controller(self);
-  open_custom(owner);
+  if (gameplay_enabled) {
+    open_custom(owner);
+  }
 }
 
 BN67_PERSISTENT_ATTACK(0x0c2, folder_back_attack_main) {
@@ -341,5 +358,6 @@ BN67_PERSISTENT_ATTACK(0x0c2, folder_back_attack_main) {
   controller->attack = attack;
   controller->chip_data = chip_data;
   ((struct ControllerWork *)controller->work)->folder_restored = false;
+  ((struct ControllerWork *)controller->work)->final_turn = false;
   return controller;
 }

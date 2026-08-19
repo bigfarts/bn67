@@ -1180,6 +1180,7 @@ void exe6_cockpit_kokoro_navicus_bug_clear(void);
 
 uint32_t exe6_battle_end_check(void);
 uint32_t exe6_battle_event_busy_check(void);
+uint32_t exe6_battle_final_turn_check(void);
 uint32_t exe6_em_set_flag_get(void);
 uint32_t exe6_real_operation_battle_check(void);
 uint32_t exe6_battle_one_self_check(uint32_t side);

@@ -150,8 +150,10 @@ reshuffles the Folder, resets that user's Mega chip and Giga chip usage totals,
 and immediately returns to Custom. A consumed Regular chip returns as an
 ordinary chip. The ending uses BN3's original rumble, 70-frame shake and
 alternating white flash, briefly fills the Custom Gauge, and opens the native
-Custom window with its normal sound. The chip also uses Folder Back's BN3 menu
-art and text.
+Custom window with its normal sound. On link battle turn 15, only that rumble,
+shake, and flash play; the Folder restore, gauge fill, and Custom transition
+are skipped so Damage Judge proceeds normally. The chip also uses Folder Back's
+BN3 menu art and text.
 
 ### Mega Chips
 

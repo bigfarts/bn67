@@ -280,8 +280,11 @@ Chip returns as an ordinary chip rather than regaining its Regular
 designation. The ending ports BN3's SFX 0x120 rumble, 0x46-frame shake and
 alternating white flash,
 then shows a full Custom Gauge for 20 frames before the native Custom window
-opens with its normal sound. Its wildcard code, 99 MB cost, icon,
-center-cropped library art, palette, name, and description come from BN3 Blue.
+opens with its normal sound. On link battle turn 15, only the rumble, shake,
+and flash play; the Folder restore, gauge fill, and Custom transition are
+suppressed so Damage Judge proceeds normally. Its wildcard code, 99 MB cost,
+icon, center-cropped library art, palette, name, and description come from BN3
+Blue.
 
 ## Assets and palettes
 

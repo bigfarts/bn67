@@ -1474,6 +1474,14 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertIn("restore_folder_once(controller);", folder_back)
         self.assertIn("delete_controller(controller);", folder_back)
         self.assertIn("->folder_restored = false;", folder_back)
+        self.assertIn("bool final_turn;", folder_back)
+        self.assertIn("exe6_battle_final_turn_check()", folder_back)
+        self.assertIn("work->final_turn = true;", folder_back)
+        self.assertIn("->final_turn = false;", folder_back)
+        self.assertIn(
+            "work->folder_restored || !gameplay_effects_enabled(self)",
+            folder_back,
+        )
         self.assertIn(
             "BN67_PATCH_SECTION(0x0800819A,",
             folder_back,
@@ -1498,6 +1506,24 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertLess(
             controller.index("hold_local_custom_gauge(self);"),
             controller.index("effect_update(self)"),
+        )
+        self.assertIn(
+            "bool gameplay_enabled = gameplay_effects_enabled(self);",
+            controller,
+        )
+        self.assertIn(
+            "if (gameplay_enabled) {\n"
+            "    // Restore the displayed snapshot every controller frame",
+            controller,
+        )
+        self.assertIn(
+            "if (gameplay_enabled) {\n    open_custom(owner);", controller
+        )
+        self.assertIn(
+            "if (exe6_battle_end_check() != 0) {\n"
+            "    restore_palette();\n"
+            "    delete_controller(self);",
+            controller,
         )
         self.assertIn("work->held_custom_gauge = FULL_GAUGE;", folder_back)
         self.assertNotIn("player + 0x28", folder_back)
@@ -1527,10 +1553,19 @@ class PackageCompilerTests(unittest.TestCase):
         self.assertNotIn("0x0800372A", folder_back)
         runtime = (ROOT / "src/runtime.h").read_text()
         abi = (ROOT / "src/abi.h").read_text()
+        abi_source = (ROOT / "src/abi.c").read_text()
         self.assertIn("struct Exe6ObjectSlotFields", abi)
         self.assertIn("sizeof(Exe6ObjectSlot) == 0xC8", abi)
         self.assertIn(
             "uint32_t exe6_cockpit_get_custom_gauge_value(void);", abi
+        )
+        self.assertIn(
+            "uint32_t exe6_battle_final_turn_check(void);", abi
+        )
+        self.assertIn(
+            "NATIVE_WRAPPER(exe6_battle_final_turn_check, "
+            "0x0800A97A, uint32_t, (void))",
+            abi_source,
         )
         self.assertNotIn("exe6_op_work_adrs_get", abi)
         self.assertIn("EXE6_ENEMY_POOL_HEAD", abi)

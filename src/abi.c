@@ -127,6 +127,7 @@ NATIVE_CHAIN(exe6_obj_mosaic_link_copy, 0x08002F3E, 0x08002F02)
 NATIVE_WRAPPER(exe6_obj_move_delete, 0x08003458, void, (void))
 NATIVE_WRAPPER(exe6_battle_event_busy_check, 0x0800A098, uint32_t, (void))
 NATIVE_WRAPPER(exe6_battle_end_check, 0x0800A18E, uint32_t, (void))
+NATIVE_WRAPPER(exe6_battle_final_turn_check, 0x0800A97A, uint32_t, (void))
 NATIVE_WRAPPER(exe6_battle_pause_on, 0x0800A028, void, (void))
 NATIVE_WRAPPER(exe6_battle_chip_set, 0x0800A318, void, (void))
 NATIVE_WRAPPER(
