@@ -9,9 +9,11 @@ flashing invulnerability variants instead.
 
 ### Heat Cross
 
-Heat Cross's charged Fire Arm keeps its normal forward flame pattern and also
-creates Burn Square flames on the adjacent panels above, below, and behind the
-user. The added flames deal the same damage as Fire Arm.
+Heat Cross's charged Fire Arm keeps its normal behavior.
+
+B+Left performs BN2's Burner: creating a five-panel plus on the user's panel
+and the panels in front of, behind, above, and below it. Each flame deals 50
+Fire damage, and the flames appear when MegaMan's throwing hand is fully lowered.
 
 ## Navi Customizer
 

@@ -22,10 +22,12 @@ rebuilt wholesale rather than patching individual native atlas cells.
 
 ### HeatCross
 
-HeatCross's charged Fire Arm keeps its native forward flame pattern and also
-creates BurnSquare flames on the three adjacent panels above, below, and behind
-the user. Each added flame uses Fire Arm's resolved damage, attack bonus, and
-Fire element. Invalid or missing edge panels are skipped.
+HeatCross's charged Fire Arm keeps its native behavior. B+Left uses the
+MiniBomb throwing animation and creates a five-panel plus of BurnSquare flames:
+the user's panel and the panels in front of, behind, above, and below it. Each
+flame appears when MegaMan's throwing hand is fully lowered and deals 50 Fire
+damage.
+Invalid or missing edge panels are skipped.
 
 ### AntiNavi
 
