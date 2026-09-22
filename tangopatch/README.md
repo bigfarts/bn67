@@ -322,8 +322,8 @@ battle aura displays no damage number.
 **Gregar GigaChip.**
 
 The 64 MB, Null-element Giga chip uses code B, sets Buster Attack to level 10
-and Rapid and Charge to level 5, and drains 1 HP every 6 active battle frames
-without reducing the user below 1 HP.
+and Rapid and Charge to level 5, grants Super Armor, and drains 1 HP every 6
+active battle frames without reducing the user below 1 HP.
 
 Cross-charged Buster attacks, chargeable Cross chip attacks, and both Beast Out
 rapid Buster variants scale through all 10 Buster Attack levels. The activation

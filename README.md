@@ -131,7 +131,7 @@ that already use deliberately fixed power retain those values.
 Replaces DeltaRay (`0x12F`) in both versions with Blue Moon's BlackWeapon
 behavior; Bass and BassAnly are unchanged. The 64 MB, Null-element GigaChip
 uses code B, sets Buster Attack to level 10 while Rapid and Charge remain at
-level 5, and drains 1 HP every 6
+level 5, grants SuperArmor, and drains 1 HP every 6
 active battle frames without reducing the user below 1 HP. Cross charged
 Buster attacks, chargeable Cross chip attacks, and the two Beast Out rapid-
 Buster variants now scale continuously through all 10 Buster Attack levels;

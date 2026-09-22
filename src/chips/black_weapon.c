@@ -88,6 +88,7 @@ BN67_CHIP_RECORD(0x12f) {
 
 static const uint8_t BUSTER_ATTACK_LEVEL_10 = 9;
 static const uint8_t BUSTER_STAT_MAX = 4;
+static const uint8_t SUPER_ARMOR_PROPERTY = 0x23;
 static const uint8_t HP_BUG = 8;
 static const uint16_t FLASH_FRAMES = 60;
 static const uint16_t HOLD_FRAMES = 30;
@@ -400,6 +401,9 @@ static void apply_black_weapon(Exe6Obj *controller)
         exe6_navi_status_set(side, 2, BUSTER_STAT_MAX);
         exe6_navi_status_set(side, 3, BUSTER_STAT_MAX);
         exe6_navi_status_set(side, 0x18, HP_BUG);
+        exe6_navi_status_set(side, SUPER_ARMOR_PROPERTY, 1);
+        /* The status property persists; the live hit flag takes effect now. */
+        exe6_battle_hit_status_flag_on(owner, EXE6_HIT_STATUS_FLAG_SUPER_ARMOR);
     }
     controller->phase = EXE6_EVENT_CHIP_PHASE_OUTRO;
     controller->phase_timer = EFFECT_STEP_INIT;

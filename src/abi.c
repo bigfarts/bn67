@@ -297,6 +297,24 @@ NAKED Exe6Obj *exe6_em_open(
     );
 }
 
+NAKED void exe6_battle_hit_status_flag_on(
+    Exe6Obj *player,
+    uint32_t status_flags
+)
+{
+    __asm__(
+        ".syntax unified\n"
+        "push {r4-r7,lr}\n"
+        "adds r5,r0,#0\n"
+        "adds r0,r1,#0\n"
+        "ldr r4,=0x0801A153\n"
+        "mov r12,r4\n"
+        "mov lr,pc\n"
+        "bx r12\n"
+        "pop {r4-r7,pc}\n"
+    );
+}
+
 NAKED void exe6_battle_hit_status_flag_off(
     Exe6Obj *player,
     uint32_t status_flags

@@ -642,6 +642,12 @@ pointer at `0x080102A0`; the replacement table leaves native entries 0 through
 This lets native HP-bug processing provide BN4's cadence without changing any
 ordinary BN6 bug level.
 
+The port also grants SuperArmor by setting BN6 status property `0x23 = 1`
+and enabling live hit flag `0x00020000` through `0x0801A152`. Both writes
+target the chip user when the activation animation finishes, so the armor
+applies immediately and remains available when native form logic rebuilds
+the user's abilities. Native Uninstall can remove it normally.
+
 Cross charged Buster attacks and chargeable Cross chip attacks share the
 base-plus-per-level damage scaler at `0x08012642`. Its helper at `0x0801265A`
 already calculates Attack levels through 10, but the caller reduces every

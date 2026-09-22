@@ -1208,6 +1208,10 @@ uint32_t exe6_cur_pet_navi_stats_get(uint32_t slot, uint32_t property);
 uint8_t *exe6_cur_pet_navi_stats_adrs_get(uint32_t navi);
 uint8_t *exe6_special_navi_stats_adrs_get(uint32_t index);
 const uint8_t *exe6_battle_key_work_adrs_get(uint32_t side);
+void exe6_battle_hit_status_flag_on(
+    Exe6Obj *player,
+    uint32_t status_flags
+);
 void exe6_battle_hit_status_flag_off(
     Exe6Obj *player,
     uint32_t status_flags
