@@ -9,6 +9,9 @@
 
 #define HEAT_CROSS_ACTIVE_FORM 1
 #define SLASH_CROSS_ACTIVE_FORM 3
+/* Native Cross Beast form IDs are the corresponding Cross IDs plus 12. */
+#define HEAT_BEAST_ACTIVE_FORM 13
+#define SLASH_BEAST_ACTIVE_FORM 15
 
 typedef uint32_t (*CrossBLeftInitWork)(struct CrossBLeftAttackWork *work);
 
@@ -36,8 +39,10 @@ cross_b_left_init_work_for_player(const Exe6Obj *player)
 
     switch (status->active_form) {
     case HEAT_CROSS_ACTIVE_FORM:
+    case HEAT_BEAST_ACTIVE_FORM:
         return heat_cross_b_left_init_work;
     case SLASH_CROSS_ACTIVE_FORM:
+    case SLASH_BEAST_ACTIVE_FORM:
         return slash_cross_b_left_init_work;
     default:
         return NULL;

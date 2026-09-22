@@ -27,13 +27,14 @@ MiniBomb throwing animation and creates a five-panel plus of BurnSquare flames:
 the user's panel and the panels in front of, behind, above, and below it. Each
 flame deals 150 Fire damage. The center flame appears when MegaMan's throwing
 hand is fully lowered, followed by the four outer flames 10 frames later.
-Invalid or missing edge panels are skipped.
+Invalid or missing edge panels are skipped. B+Left remains available in
+HeatBeast after Beast Out.
 
 ### SlashCross
 
 SlashCross's B+Left uses MoonBlade's native BN6 action, animation, and
 surrounding-panel behavior. It deals a flat 130 Sword damage with no Buster or
-attack-power scaling.
+attack-power scaling. B+Left remains available in SlashBeast after Beast Out.
 
 ### AntiNavi
 

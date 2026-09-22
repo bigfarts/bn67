@@ -12,13 +12,14 @@ flashing invulnerability variants instead.
 B+Left performs BN2's Burner: creating a five-panel plus on the user's panel
 and the panels in front of, behind, above, and below it. Each flame deals 150
 Fire damage. The center flame appears when MegaMan's throwing hand is fully
-lowered, and the four outer flames follow 10 frames later.
+lowered, and the four outer flames follow 10 frames later. The ability remains
+available in Heat Beast after Beast Out.
 
 ### Slash Cross
 
 B+Left performs Moon Blade. It deals a flat 130 Sword damage with no Buster or
 attack-power scaling and keeps Moon Blade's original surrounding-panel
-behavior.
+behavior. The ability remains available in Slash Beast after Beast Out.
 
 ## Navi Customizer
 
