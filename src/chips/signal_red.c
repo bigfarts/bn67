@@ -57,7 +57,7 @@ BN67_CHIP_RECORD(0x0c1) {
 
 static const uint32_t GREEN_SFX = 0x00D1;
 static const uint16_t STARTUP_TICKS = 3;
-static const uint16_t RED_TICKS = 420;
+static const uint16_t RED_TICKS = 100;
 static const uint16_t GREEN_TICKS = 50;
 static const uint16_t OBJ_HP = 100;
 static const Exe6HitType PASSIVE_HIT_TYPE =
