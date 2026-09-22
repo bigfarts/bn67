@@ -260,12 +260,13 @@ selector table.
 
 ### SignlRed
 
-Replaces Navi+20 with the complete Blue Moon SignalRed behavior. The 100-HP
+Replaces Navi+20 with Blue Moon's SignalRed using BN6 Fanfare's timing. The 100-HP
 traffic light appears on the block in front of the user, disables the opposing
-side's BattleChip use for 420 red frames, opens a 50-frame green window, and
-repeats until destroyed. It is a 61 MB Obstacle-element StandardChip in code
-S and keeps Navi+20's library position. Both versions import the Blue Moon menu
-art and battle sprite. Its placement cue imports Blue Moon's original sample
+side's BattleChip use for 171 red frames, opens a 202-frame green window, and
+repeats until destroyed. Red matches Fanfare's playing phase; green covers its
+rest and windup before playing again. It is a 61 MB Obstacle-element StandardChip
+in code S and keeps Navi+20's library position. Both versions import the Blue
+Moon menu art and battle sprite. Its placement cue imports Blue Moon's original sample
 and sequence; the green-light cue uses its matching BN6 sound,
 and the light is registered as a normal deployable so DustCross can suck it in
 with B+Left. Its 100-HP hurtbox remains active every frame, but only the opposing

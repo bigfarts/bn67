@@ -485,6 +485,15 @@ Blue Moon's green cue `0x15C` corresponds to BN6 sound `0x0D1` (the same
 sequence with BN6's native volume balance), rather than the unrelated
 same-numbered sounds.
 
+The port uses BN6 Fanfare's repeating animation cadence instead of Blue Moon's
+red/green timers. Fanfare's variant-0 parameter table at `0x080D58E8` in Gregar
+(`0x080D4078` in Falzar) gives `0x55 * 2 = 170` playing countdown frames.
+The rest table at `0x080D5B38` (`0x080D42C8` in Falzar) gives 170 frames,
+followed by a 30-frame windup. The native dispatcher runs one phase per tick:
+playing also has one entry frame, and rest and windup each have one entry
+frame. SignalRed therefore uses 171 red frames and 202 green frames, switching
+when its countdown reaches zero so it does not add an extra frame per color.
+
 The compiler installs the translated SignalRed entries through relocated tables:
 
 | Hook | BN6 file offset | Patched target |

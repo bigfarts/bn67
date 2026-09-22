@@ -57,8 +57,10 @@ BN67_CHIP_RECORD(0x0c1) {
 
 static const uint32_t GREEN_SFX = 0x00D1;
 static const uint16_t STARTUP_TICKS = 3;
-static const uint16_t RED_TICKS = 100;
-static const uint16_t GREEN_TICKS = 50;
+/* Match Fanfare's full playing/rest cycle, including phase-entry frames:
+ * playing = 1 + 170; resting/windup = 1 + 170 + 1 + 30. */
+static const uint16_t RED_TICKS = 171;
+static const uint16_t GREEN_TICKS = 202;
 static const uint16_t OBJ_HP = 100;
 static const Exe6HitType PASSIVE_HIT_TYPE =
     EXE6_HIT_TYPE_13;
@@ -197,7 +199,7 @@ static void obj_cycle_update(Exe6Obj *obj)
 {
     uint16_t timer = (uint16_t)(obj->aux_timer - 1u);
     obj->aux_timer = timer;
-    if ((int16_t)timer >= 0) {
+    if (timer != 0) {
         obj_animate(obj);
         return;
     }

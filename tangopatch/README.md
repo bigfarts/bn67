@@ -130,9 +130,10 @@ palette, battle aura, and sound effect.
 **Replaces:** Navi +20
 
 BN4 Signal Red's 100-HP traffic light spawns in front of the user, blocks the
-opponent's chips for 420 red frames, then permits them during a 50-frame green
-window. It repeats this cycle until destroyed. The light fails cleanly instead
-of spawning if the block in front of the user is not solid.
+opponent's chips for 171 red frames, then permits them during a 202-frame green
+window. This matches BN6 Fanfare's playing and resting/windup phases. It repeats
+this cycle until destroyed. The light fails cleanly instead of spawning if the
+block in front of the user is not solid.
 
 Signal Red is a 61 MB Obstacle-element Standard chip in code S and keeps
 Navi +20's library position. Both versions use its BN4 chip art and battle
