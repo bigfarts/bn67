@@ -23,6 +23,7 @@ BN3_ROM_BASE = 0x08000000
 BN3_CHIP_DATA = 0x11510
 BN3_CHIP_RECORD_SIZE = 0x20
 BN3_ROOK_ID = 0x99
+BN3_AIR_SHOES_ID = 0xA8
 BN3_FOLDERBACK_ID = 0x12F
 BN3_DARK_AURA_ID = 0x135
 BN3_DARK_AURA_SPRITE_OFFSET = 0x2F4B40
@@ -350,6 +351,10 @@ ASSETS = (
     # animation 4; its menu art is decoded and cropped separately below because
     # BN3 stores it at 64x56, not 56x48.
     Asset("bn3_blue", "rook_battle_sprite.bin", 0x2CD434, 0x20A0),
+    # BN3 AirShoes: effect 0x25 uses group 0x0C/id 0x14, animation 0.
+    Asset("bn3_blue", "air_shoes_battle_sprite.bin", 0x308630, 0x13CC),
+    # Song 0x91, voice 0: the original AirShoes activation cue.
+    Asset("bn3_blue", "air_shoes_activate_sample.bin", 0x198A8C, 0xB71),
     # BN3 Blue: the native barrier-family archive used by DarkAura. Extraction
     # aliases BN6's requested animation/palette selectors to BN3's DarkAura
     # entries. Extraction removes the original animation's numeric OAM pieces,
@@ -531,6 +536,7 @@ def extract_assets(roms: dict[str, bytes], output_dir: Path) -> tuple[int, int]:
 
     for prefix, chip_id, chip_name in (
         ("rook", BN3_ROOK_ID, "Rook"),
+        ("air_shoes", BN3_AIR_SHOES_ID, "AirShoes"),
         ("folder_back", BN3_FOLDERBACK_ID, "FolderBack"),
         ("dark_aura", BN3_DARK_AURA_ID, "DarkAura"),
     ):

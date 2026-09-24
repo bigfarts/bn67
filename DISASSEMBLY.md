@@ -843,3 +843,25 @@ the complete sortable chip table from the relocated names. The relocated sound
 table uses the common package's imported BN4 summon SFX `0xB0` directly and
 adds the exact BN4 SFX `0x103` track, voicegroup, and PCM sample for the firing
 cue.
+
+
+## AirShoes (BN3 Blue → BN6 AirShot)
+
+BN3 Blue chip `0xA8` uses family `0x0C`, parameter `4`. The pair table
+at `0x080B1BE0` resolves that parameter to cutscene type `0x0D`, whose
+handler is `0x080F96AC`. After its banner, the handler spawns effect `0x25`
+and plays sound `0x91`, waits 10 frames, sets the user's AirShoes bit at
+`0x080B5914`, then holds 30 frames before fading out. The status setter ORs
+`0x4000` into the user's flags and has no expiry timer.
+
+Effect `0x25` uses sprite group `0x0C`, index `0x14`, animation 0. The archive
+is `0x08308630`–`0x083099FC`. Sound `0x91` has header `0x08174C30`, track
+`0x08174C20`, voicegroup `0x08148100`, and a `0xB71`-byte PCM sample including
+its header at `0x08198A8C`. Both resources are extracted from BN3 Blue.
+
+The BN6 replacement occupies chip `0x004`, retains wildcard code and library
+position 4, and uses a registered family-`0x15` dimming controller. The native
+BN6 fade/banner/outro helpers wrap the imported effect and its 10/30-frame
+sequence. AirShoes uses battle-status property `0x1C` and live hit flag `0x10`;
+property `0x1B` belongs to FloatShoes and is left alone. Native Uninstall
+clears the AirShoes live flag at `0x08014124` and property at `0x0801412A`.

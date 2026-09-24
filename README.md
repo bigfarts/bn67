@@ -55,6 +55,15 @@ is reduced from 50 MB to 33 MB in both versions.
 FullCust retains its native BN6 behavior, wildcard code, and metadata, but its
 MB cost is increased from 50 MB to 51 MB in both versions.
 
+### AirShoes
+
+Replaces AirShot (`0x004`) in both versions with BN3's AirShoes. The 26 MB,
+Null-element StandardChip retains wildcard code and AirShot's library slot.
+It grants AirShoes for the battle, allowing movement over empty panels;
+Uninstall removes the effect. The chip imports BN3's icon, center-cropped
+library artwork, palette, activation animation, and sound, with a time-freeze
+sequence that applies the effect after 10 frames and holds for 30 more.
+
 ### StatGrd
 
 BodyPack is renamed StatGrd and grants StatusGuard only. It no longer grants
@@ -320,7 +329,8 @@ LaserMan's menu art and palettes, shared actor/beam archive, summon and firing
 samples, and SignalRed's menu art and battle sprite from Blue Moon; Jealousy's
 menu/overlay graphics, Django's menu art and complete battle sequence, and
 BugCharge's menu and Gospel-head assets from BN5;
-Rook's BN3 menu art and battle sprite; FolderBack's BN3 menu art and original
+AirShoes' BN3 menu art, activation sprite, and sound; Rook's BN3 menu art and
+battle sprite; FolderBack's BN3 menu art and original
 rumble PCM; DarkAura's BN3 menu art; plus the full BN5 SearchMan actor archive,
 both scope/reticle archives, the chip icon, and the 56x48 library artwork;
 NumberMan's actor and die archives and library art; and BlackWeapon's menu art

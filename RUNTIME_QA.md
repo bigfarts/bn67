@@ -4,6 +4,27 @@ This file records working emulator setup procedures that took non-trivial
 reverse engineering to establish. Read it before writing another runtime
 probe for this patch.
 
+## AirShoes activation and Uninstall
+
+`tests/air_shoes_runtime.c` executes the assembled AirShoes controller in
+mGBA. It checks the final chip record's dimming flag, 10-frame activation,
+30-frame hold, both player sides, existing AirShoes, repeat use, and exhausted
+visual allocation. Sound and effect allocation are stubbed; the status setter,
+live hit-flag setter, and Uninstall run the actual native ROM routines. This
+isolated check does not render a battle or exercise the cut-in UI.
+
+Use the same mGBA build and compile definitions described below:
+
+```sh
+cc -std=c11 -Wall -Wextra -Werror \
+  -DENABLE_VFS -DENABLE_DIRECTORIES -DMINIMAL_CORE=1 \
+  -DCOLOR_16_BIT -DDISABLE_THREADING -I"$MGBA_PREFIX/include" \
+  tests/air_shoes_runtime.c "$MGBA_PREFIX/lib/libmgba.a" \
+  -lz -lm -lpthread -framework CoreFoundation -o build/air_shoes_probe
+build/air_shoes_probe build/bn67-gregar.gba build/gregar.sym
+build/air_shoes_probe build/bn67-falzar.gba build/falzar.sym
+```
+
 ## Cross Beast B+Left input
 
 The native parser at `0x08013130` recognizes B+Left for eight frames after B.

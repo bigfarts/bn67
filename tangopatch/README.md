@@ -67,6 +67,13 @@ xxx
 
 ### Standard Chips
 
+#### Air Shoes
+
+Replaces Air Shot with BN3's Air Shoes, a dimming 26 MB Null chip with wildcard
+code. Grants Air Shoes for the battle, allowing movement over empty panels.
+Uninstall removes the effect. Uses BN3's artwork, activation animation, and
+sound.
+
 #### Variable Sword
 
 Variable Sword gains BN3's Element Sonic command. Hold A and enter
