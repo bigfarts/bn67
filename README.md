@@ -4,8 +4,9 @@
 
 ### Battle theme
 
-Song 21 uses the eight-track arrangement in `src/battle_theme.asm` in both
-editions, with each edition's native instruments, priority, and reverb.
+Song 21 uses a six-track BN6-style arrangement of BN4's "Virus Busting" in
+`src/battle_theme.asm` in both editions, with each edition's native instruments,
+priority, and reverb.
 
 ### DarkAura
 
