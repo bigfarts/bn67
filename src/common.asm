@@ -37,3 +37,15 @@
 .endif
 
 .include "src/battle_theme.asm"
+
+.if falzar
+    .definelabel battle_theme_voicegroup, 0x081568BC
+    .org 0x081584A0
+.else
+    .definelabel battle_theme_voicegroup, 0x0815840C
+    .org 0x08159FF0
+.endif
+    .word battle_theme
+
+.org relocated_song_table + 21 * 8
+    .word battle_theme

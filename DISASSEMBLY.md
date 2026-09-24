@@ -657,6 +657,10 @@ target the chip user when the activation animation finishes, so the armor
 applies immediately and remains available when native form logic rebuilds
 the user's abilities. Native Uninstall can remove it normally.
 
+BlackWeapon also sets BN6 status property `0x52 = 1` to grant StatusGuard
+when activation finishes. The native status gate reads this property directly,
+and the shared Uninstall/SunMoon removal hook clears it just like StatGrd.
+
 Cross charged Buster attacks and chargeable Cross chip attacks share the
 base-plus-per-level damage scaler at `0x08012642`. Its helper at `0x0801265A`
 already calculates Attack levels through 10, but the caller reduces every
