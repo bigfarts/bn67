@@ -2,6 +2,11 @@
 
 ## Changes
 
+### Battle theme
+
+Song 21 uses the eight-track arrangement in `src/battle_theme.asm` in both
+editions, with each edition's native instruments, priority, and reverb.
+
 ### DarkAura
 
 Replaces BugDthTh (`0x136`) in Falzar with BN3 Blue's DarkAura. The 89 MB,
@@ -35,6 +40,9 @@ HeatBeast after Beast Out.
 SlashCross's B+Left uses MoonBlade's native BN6 action, animation, and
 surrounding-panel behavior. It deals a flat 130 Sword damage with no Buster or
 attack-power scaling. B+Left remains available in SlashBeast after Beast Out.
+
+HeatBeast and SlashBeast allow the normal eight-frame B+Left input window
+before starting held-B rapid fire. A short B tap still fires on release.
 
 ### AntiNavi
 

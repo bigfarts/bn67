@@ -35,3 +35,5 @@
 .else
     .include "build/registry-gregar.generated.asm"
 .endif
+
+.include "src/battle_theme.asm"

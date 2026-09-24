@@ -710,8 +710,14 @@ struct Exe6PlayerRuntimeFields {
     uint8_t unknown_01[6];
     uint8_t active_power_attack;         // +0x07
     uint8_t b_left;                      // +0x08
-    uint8_t unknown_09[0x23];
+    uint8_t unknown_09[0x0A];
+    uint8_t b_left_window;               // +0x13
+    uint8_t unknown_14[0x12];
+    uint16_t released_input;             // +0x26
+    uint8_t unknown_28[4];
     uint16_t input;                      // +0x2C
+    uint8_t unknown_2e[0x16];
+    uint32_t action_flags;               // +0x44
 };
 
 struct Exe6NaviSelectChipWorkFields {
@@ -892,8 +898,20 @@ _Static_assert(
     "player runtime B-Left offset"
 );
 _Static_assert(
+    offsetof(struct Exe6PlayerRuntimeFields, b_left_window) == 0x13,
+    "player runtime B-Left window offset"
+);
+_Static_assert(
+    offsetof(struct Exe6PlayerRuntimeFields, released_input) == 0x26,
+    "player runtime released input offset"
+);
+_Static_assert(
     offsetof(struct Exe6PlayerRuntimeFields, input) == 0x2C,
     "player runtime input offset"
+);
+_Static_assert(
+    offsetof(struct Exe6PlayerRuntimeFields, action_flags) == 0x44,
+    "player runtime action flags offset"
 );
 _Static_assert(
     offsetof(struct Exe6NaviSelectChipWorkFields, active_chip_index) == 0,
