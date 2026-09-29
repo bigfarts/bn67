@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import math
 import struct
 from dataclasses import dataclass
 from pathlib import Path
@@ -62,6 +63,11 @@ BN3_IMAGE_WIDTH = 64
 BN3_IMAGE_HEIGHT = 56
 EXE6_IMAGE_WIDTH = 56
 EXE6_IMAGE_HEIGHT = 48
+# Seam-carving importance at the center of chip art, in 5-bit RGB distance
+# units per pixel, and the falloff's standard deviation as a fraction of the
+# image size. Higher weights push seams toward the edges, approaching a crop.
+CHIP_ART_CENTER_WEIGHT = 8.0
+CHIP_ART_CENTER_SIGMA = 0.25
 EXE6_ICON_SIZE = 16
 EXE6_ICON_BORDER_INDEX = 5
 
@@ -195,6 +201,130 @@ def encode_4bpp_tiles(pixels: list[list[int]]) -> bytes:
     return bytes(encoded)
 
 
+def gba_palette_colors(palette: bytes) -> list[tuple[int, int, int]]:
+    """Decode BGR555 palette entries into 5-bit RGB triples."""
+    return [
+        (value & 0x1F, (value >> 5) & 0x1F, (value >> 10) & 0x1F)
+        for (value,) in struct.iter_unpack("<H", palette)
+    ]
+
+
+def _transpose(grid: list[list]) -> list[list]:
+    return [list(column) for column in zip(*grid)]
+
+
+def _remove_seam(grid: list[list], seam: list[int]) -> list[list]:
+    return [row[:x] + row[x + 1 :] for row, x in zip(grid, seam, strict=True)]
+
+
+def _find_vertical_seam(
+    pixels: list[list[int]],
+    importance: list[list[float]],
+    distance: list[list[float]],
+) -> tuple[float, list[int]]:
+    """Return the cheapest 8-connected top-to-bottom seam and its cost."""
+    height = len(pixels)
+    width = len(pixels[0])
+    totals: list[list[float]] = []
+    parents: list[list[int]] = []
+    for y, row in enumerate(pixels):
+        row_totals = []
+        row_parents = []
+        for x in range(width):
+            # Removing (x, y) makes its horizontal neighbors adjacent. At an
+            # image edge, the surviving neighbor becomes the new edge instead.
+            left = row[x - 1] if x > 0 else row[x]
+            right = row[x + 1] if x < width - 1 else row[x]
+            cost = distance[left][right] + importance[y][x]
+            if y == 0:
+                row_totals.append(cost)
+                row_parents.append(x)
+                continue
+            above = pixels[y - 1][x]
+            best = totals[y - 1][x]
+            parent = x
+            # A diagonal step also shifts the pixel above into a new column,
+            # so it is charged for the vertical edge that shift creates.
+            if x > 0:
+                total = totals[y - 1][x - 1] + distance[above][row[x - 1]]
+                if total < best:
+                    best = total
+                    parent = x - 1
+            if x < width - 1:
+                total = totals[y - 1][x + 1] + distance[above][row[x + 1]]
+                if total < best:
+                    best = total
+                    parent = x + 1
+            row_totals.append(best + cost)
+            row_parents.append(parent)
+        totals.append(row_totals)
+        parents.append(row_parents)
+
+    x = min(range(width), key=lambda column: totals[-1][column])
+    cost = totals[-1][x]
+    seam = [0] * height
+    for y in range(height - 1, -1, -1):
+        seam[y] = x
+        x = parents[y][x]
+    return cost, seam
+
+
+def carve_pixel_art(
+    pixels: list[list[int]],
+    palette: bytes,
+    width: int,
+    height: int,
+) -> list[list[int]]:
+    """Shrink indexed pixel art by removing its least noticeable seams.
+
+    This is forward-energy seam carving (Rubinstein et al., 2008): a seam is
+    charged for the color edges its removal would create rather than for the
+    pixels it deletes, so flat fills and dithering shrink without leaving
+    jaggies. Chip art centers its subject, so a Gaussian importance term steers
+    seams away from the middle. Removing pixels never adds palette indices.
+    """
+    source_height = len(pixels)
+    source_width = len(pixels[0])
+    if width > source_width or height > source_height:
+        raise ValueError("seam carving cannot enlarge an image")
+    colors = gba_palette_colors(palette)
+    distance = [[math.dist(a, b) for b in colors] for a in colors]
+    importance = [
+        [
+            CHIP_ART_CENTER_WEIGHT
+            * math.exp(
+                -(
+                    ((x + 0.5) / source_width - 0.5) ** 2
+                    + ((y + 0.5) / source_height - 0.5) ** 2
+                )
+                / (2 * CHIP_ART_CENTER_SIGMA**2)
+            )
+            for x in range(source_width)
+        ]
+        for y in range(source_height)
+    ]
+
+    while len(pixels[0]) > width or len(pixels) > height:
+        # Greedily take whichever direction's seam is cheaper per pixel.
+        candidates = []
+        if len(pixels[0]) > width:
+            cost, seam = _find_vertical_seam(pixels, importance, distance)
+            candidates.append((cost / len(pixels), False, seam))
+        if len(pixels) > height:
+            cost, seam = _find_vertical_seam(
+                _transpose(pixels), _transpose(importance), distance
+            )
+            candidates.append((cost / len(pixels[0]), True, seam))
+        _, horizontal, seam = min(candidates, key=lambda candidate: candidate[0])
+        if horizontal:
+            pixels = _transpose(_remove_seam(_transpose(pixels), seam))
+            importance = _transpose(_remove_seam(_transpose(importance), seam))
+        else:
+            pixels = _remove_seam(pixels, seam)
+            importance = _remove_seam(importance, seam)
+    return pixels
+
+
 def normalize_exe6_icon_border(icon: bytes) -> bytes:
     """Remap a source icon's inner frame to EXE6's shared palette index."""
     pixels = decode_4bpp_tiles(icon, EXE6_ICON_SIZE, EXE6_ICON_SIZE)
@@ -212,8 +342,9 @@ def extract_bn3_chip_art(
     rom: bytes,
     chip_id: int,
     chip_name: str,
+    seam_carve: bool,
 ) -> tuple[bytes, bytes, bytes]:
-    """Extract BN3 menu art and crop it to BN6's chip-art size."""
+    """Extract BN3 menu art and seam-carve or center-crop it to BN6's size."""
     record = BN3_CHIP_DATA + chip_id * BN3_CHIP_RECORD_SIZE
     if record + BN3_CHIP_RECORD_SIZE > len(rom):
         raise ValueError(f"BN3 {chip_name} chip record is outside the ROM")
@@ -228,13 +359,18 @@ def extract_bn3_chip_art(
         raise ValueError(f"BN3 {chip_name} art is truncated")
 
     pixels = decode_4bpp_tiles(source_image, BN3_IMAGE_WIDTH, BN3_IMAGE_HEIGHT)
-    crop_x = (BN3_IMAGE_WIDTH - EXE6_IMAGE_WIDTH) // 2
-    crop_y = (BN3_IMAGE_HEIGHT - EXE6_IMAGE_HEIGHT) // 2
-    cropped = [
-        row[crop_x : crop_x + EXE6_IMAGE_WIDTH]
-        for row in pixels[crop_y : crop_y + EXE6_IMAGE_HEIGHT]
-    ]
-    return normalize_exe6_icon_border(icon), encode_4bpp_tiles(cropped), palette
+    if seam_carve:
+        fitted = carve_pixel_art(
+            pixels, palette, EXE6_IMAGE_WIDTH, EXE6_IMAGE_HEIGHT
+        )
+    else:
+        crop_x = (BN3_IMAGE_WIDTH - EXE6_IMAGE_WIDTH) // 2
+        crop_y = (BN3_IMAGE_HEIGHT - EXE6_IMAGE_HEIGHT) // 2
+        fitted = [
+            row[crop_x : crop_x + EXE6_IMAGE_WIDTH]
+            for row in pixels[crop_y : crop_y + EXE6_IMAGE_HEIGHT]
+        ]
+    return normalize_exe6_icon_border(icon), encode_4bpp_tiles(fitted), palette
 
 
 def prepare_bn3_dark_aura_battle_sprite(data: bytes) -> bytes:
@@ -348,8 +484,8 @@ ASSETS = (
     Asset("exe45", "black_weapon_image.bin", 0x755CF0, 0x540),
     Asset("exe45", "black_weapon_palette.bin", 0x75CEF0, 0x20),
     # BN3 Blue: the shared group-0x10/id-0x3D chess-piece archive. Rook is
-    # animation 4; its menu art is decoded and cropped separately below because
-    # BN3 stores it at 64x56, not 56x48.
+    # animation 4; its menu art is decoded and seam-carved separately below
+    # because BN3 stores it at 64x56, not 56x48.
     Asset("bn3_blue", "rook_battle_sprite.bin", 0x2CD434, 0x20A0),
     # BN3 AirShoes: effect 0x25 uses group 0x0C/id 0x14, animation 0.
     Asset("bn3_blue", "air_shoes_battle_sprite.bin", 0x308630, 0x13CC),
@@ -365,8 +501,8 @@ ASSETS = (
         BN3_DARK_AURA_SPRITE_OFFSET,
         BN3_DARK_AURA_SPRITE_LENGTH,
     ),
-    # BN3 Blue: FolderBack's original rumble sample. Its menu art uses the
-    # same decoded-and-cropped path as Rook.
+    # BN3 Blue: FolderBack's original rumble sample. Its menu art is decoded
+    # with Rook's, but center-cropped rather than seam-carved.
     Asset("bn3_blue", "folder_back_rumble_sample.bin", 0x215B68, 0x354E),
     # BN5 ProtoMan: Jealousy menu art and chip-delete overlay.
     Asset("bn5_protoman", "jealousy_icon.bin", 0x748F38, 0x80),
@@ -534,11 +670,11 @@ def extract_assets(roms: dict[str, bytes], output_dir: Path) -> tuple[int, int]:
             data = prepare_bn3_dark_aura_battle_sprite(data)
         outputs.append((asset.output, data))
 
-    for prefix, chip_id, chip_name in (
-        ("rook", BN3_ROOK_ID, "Rook"),
-        ("air_shoes", BN3_AIR_SHOES_ID, "AirShoes"),
-        ("folder_back", BN3_FOLDERBACK_ID, "FolderBack"),
-        ("dark_aura", BN3_DARK_AURA_ID, "DarkAura"),
+    for prefix, chip_id, chip_name, seam_carve in (
+        ("rook", BN3_ROOK_ID, "Rook", True),
+        ("air_shoes", BN3_AIR_SHOES_ID, "AirShoes", True),
+        ("folder_back", BN3_FOLDERBACK_ID, "FolderBack", False),
+        ("dark_aura", BN3_DARK_AURA_ID, "DarkAura", True),
     ):
         chip_art_outputs = zip(
             (
@@ -546,7 +682,9 @@ def extract_assets(roms: dict[str, bytes], output_dir: Path) -> tuple[int, int]:
                 f"{prefix}_image.bin",
                 f"{prefix}_palette.bin",
             ),
-            extract_bn3_chip_art(roms["bn3_blue"], chip_id, chip_name),
+            extract_bn3_chip_art(
+                roms["bn3_blue"], chip_id, chip_name, seam_carve
+            ),
             strict=True,
         )
         for name, data in chip_art_outputs:

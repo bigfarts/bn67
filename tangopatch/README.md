@@ -320,7 +320,7 @@ Its 100-damage Strike Feathers also receive the activating chip's attack bonus.
 
 BN3 DarkAura is an 89 MB, Null-element Giga chip in code A. It lasts for 3,000
 active battle frames, repels attacks below 300 damage, and breaks when hit for
-300 or more. It uses DarkAura's original BN3 icon, center-cropped library art,
+300 or more. It uses DarkAura's original BN3 icon, seam-carved library art,
 name, description, centered aura animation, and dark battle palette. The
 battle aura displays no damage number.
 

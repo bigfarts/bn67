@@ -13,7 +13,7 @@ priority, and reverb.
 Replaces BugDthTh (`0x136`) in Falzar with BN3 Blue's DarkAura. The 89 MB,
 Null-element GigaChip uses code A and BN3's 3,000-active-frame lifespan. It
 repels attacks below 300 damage and breaks when struck for 300 or more. The
-chip uses its original BN3 icon, center-cropped library art, palette, name,
+chip uses its original BN3 icon, seam-carved library art, palette, name,
 description, and centered DarkAura battle animation. Its built-in numeric OAM
 pieces are removed so the battle aura has no number below it.
 
@@ -60,7 +60,7 @@ MB cost is increased from 50 MB to 51 MB in both versions.
 Replaces AirShot (`0x004`) in both versions with BN3's AirShoes. The 26 MB,
 Null-element StandardChip retains wildcard code and AirShot's library slot.
 It grants AirShoes for the battle, allowing movement over empty panels;
-Uninstall removes the effect. The chip imports BN3's icon, center-cropped
+Uninstall removes the effect. The chip imports BN3's icon, seam-carved
 library artwork, palette, activation animation, and sound, with a time-freeze
 sequence that applies the effect after 10 frames and holds for 30 more.
 
@@ -271,7 +271,7 @@ Break attacks deal their normal damage, so they must deplete the full 500 HP
 rather than deleting Rook in one hit. Like BN3's original, Rook lasts 1,800
 active frames and blinks during its final 180 before expiring. Both versions
 import Rook's BN3 icon,
-center-cropped library art,
+seam-carved library art,
 palette, and original tower-shaped battle sprite. DustCross can suck Rook in
 and fire that same sprite as ammo, using the registry's shared DustCross
 selector table.

@@ -1,7 +1,9 @@
+import struct
 import unittest
 
 from extract_assets import (
     ASSETS,
+    carve_pixel_art,
     decode_4bpp_tiles,
     decompress_gba_lz77,
     encode_4bpp_tiles,
@@ -112,6 +114,18 @@ class ExtractAssetsTests(unittest.TestCase):
             self.assertEqual(normalized[coordinate][1], 5)
             self.assertEqual(normalized[coordinate][14], 5)
         self.assertEqual(normalized[2][2], 3)
+
+    def test_seam_carving_shrinks_flat_fills_before_details(self) -> None:
+        # Black, red, green, blue, and white; the rest of the palette is unused.
+        palette = struct.pack("<16H", 0, 0x001F, 0x03E0, 0x7C00, 0x7FFF, *[0] * 11)
+        pixels = [[1, 2, 3, 3, 3, 3, 4, 1] for _ in range(8)]
+
+        carved = carve_pixel_art(pixels, palette, 6, 6)
+
+        self.assertEqual(carved, [[1, 2, 3, 3, 4, 1] for _ in range(6)])
+        self.assertEqual(carve_pixel_art(carved, palette, 6, 6), carved)
+        with self.assertRaises(ValueError):
+            carve_pixel_art(carved, palette, 7, 6)
 
 
 if __name__ == "__main__":
